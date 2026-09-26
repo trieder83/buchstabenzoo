@@ -132,3 +132,9 @@ Turnaround with four views side by side in one row, same scale and same baseline
 - [ ] Expression sheet has all 8 expressions in the order of ART-RIG §6.2; eyes and mouth
       are clean shapes that work as a 64 × 64 px face decal.
 - [ ] Hair ends above the shoulder blades (rigid on `head`, no hair bones — ART-RIG §3.3).
+| 2026-09-26 | front.png | gemini-3-pro-image (1K, 2:3) | — | prompt 1 + negative as 'Avoid', ref: style_frame.png + extra text | replaced by sheet_v1 split |
+| 2026-09-26 | back.png | gemini-3-pro-image (1K, 2:3) | — | prompt 3 + negative as 'Avoid', ref: style_frame.png, front.jpg + extra text | replaced by sheet_v1 split |
+| 2026-09-26 | side.png | gemini-3-pro-image (1K, 2:3) | — | prompt 2 + negative as 'Avoid', ref: style_frame.png, front.jpg + extra text | replaced by sheet_v1 split |
+| 2026-09-26 | three_quarter.png | gemini-3-pro-image (1K, 2:3) | — | prompt 4 + negative as 'Avoid', ref: style_frame.png, front.jpg + extra text | replaced by sheet_v1 split (¾ was turned too little) |
+| 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | to review — chosen, split into front/side/back/three_quarter.png |
+| 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | alternative (ground shadows) |

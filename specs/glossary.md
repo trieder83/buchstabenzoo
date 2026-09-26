@@ -48,3 +48,6 @@ language for player-facing text.
 | `boundary` | Zoogrenze | boundary | Permanent outer limit of the zoo (wall, hedge, water). |
 
 † German term is a proposal until confirmed (Q-045).
+| `map` | Karte | map | Full-screen zoo map opened from the HUD; shows only explored areas (GAME-MAP). |
+| `explored` | erkundet | explored | A map cell the player has been close to; shown on the map, never hidden again. |
+| `fog` | Nebel | fog | How unexplored cells are drawn on the map. |

@@ -139,3 +139,5 @@ Front view of two children, full body from head to toe, standing side by side at
 - [ ] Distinguishable from `player_girl` from the front, from behind and from above.
 - [ ] Expression sheet has all 8 expressions in the order of ART-RIG §6.2; eyes and mouth
       are clean shapes that work as a 64 × 64 px face decal.
+| 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | alternative (no hair tuft) |
+| 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | to review — chosen, split into the four views; side view mirrored (was facing right) |

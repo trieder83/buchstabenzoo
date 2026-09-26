@@ -96,4 +96,6 @@ not voxel, nothing scary, no sky." at the end of the prompt.
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
-| | | | | | |
+| 2026-09-26 | style_frame_v1.jpg | gemini-3-pro-image (1K, 16:9) | — | prompt 1 + negative as 'Avoid' | generated, to review |
+| 2026-09-26 | style_frame_v2.jpg | gemini-3-pro-image (1K, 16:9) | — | prompt 1 + negative as 'Avoid' | generated, to review |
+| 2026-09-26 | style_frame_v3.jpg | gemini-3-pro-image (1K, 16:9) | — | prompt 1 + negative as 'Avoid' | **approved by user** → `style_frame.png` |

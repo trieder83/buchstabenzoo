@@ -89,7 +89,7 @@ animations = ["idle", "walk", "eat", "happy"]
 id = "style_frame"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]

@@ -1,0 +1,626 @@
+# Level 2 layout data — mirrors the element table in specs/10-gameplay/levels/level-2.md
+# (GAME-LEVEL-2). LAYOUT-005 checks that ids and rectangles agree with the spec.
+#
+# Grid: 1 m cells in the SAME level coordinates as level 1 (origin = centre of the zoo entrance
+# gate, +X east, +Z north; GAME-LAYOUT). Level 2 lies east of level 1 and is joined to it at the
+# level-1 barrier `barrier_ne_tree` (GAME-LAYOUT "Joining levels", proposal Q-088).
+# rect = [x, z, w, d] → covers cells x .. x+w-1, z .. z+d-1 (x/z = south-west corner).
+#
+# PROPOSALS (not yet decided, see specs/open-questions.md): [[entry]] tables and joined levels
+# (Q-088); own food storage per level (Q-089); barrier unlock conditions (Q-022, Q-091);
+# hiding-place list, scenery, perch height (Q-080, Q-094); tree density (Q-085);
+# enclosure features (Q-085).
+
+[level]
+id = "level_2"
+spec = "GAME-LEVEL-2"
+cell_size_m = 1.0
+bounds = [24, 12, 52, 50]   # x, z, w, d — every border cell is solid except the [[entry]] cells
+ground_walkable = true       # decided Q-046
+ground_surface = "grass"
+
+[spawn]
+cell = [27, 29]               # first path cells behind the opened barrier (level start / continue, proposal)
+facing = "+x"
+camera_yaw = "+x"
+
+# Level entries (GAME-LAYOUT "Joining levels", proposal Q-088): cells of this level that are
+# edge-adjacent to a barrier of an earlier level; they are the only walkable border cells.
+[[entry]]
+id = "entry_l2_west"
+cells = [24, 28, 1, 3]
+from_level = "level_1"
+barrier = "barrier_ne_tree"
+
+# ---------------------------------------------------------------- outer limits (west edge = entry from level 1, construction fence = exit to level 3)
+[[element]]
+id = "hedge_l2_w_a"
+type = "decoration"
+kind = "hedge"
+rect = [24, 12, 2, 16]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge south of the entry (behind it: level-1 hedge_east_b / river grate)."
+
+[[element]]
+id = "hedge_l2_w_b"
+type = "decoration"
+kind = "hedge"
+rect = [24, 31, 2, 21]
+blocks_view = true
+height_m = 3.0
+
+[[element]]
+id = "barrier_l2_construction"
+type = "barrier"
+kind = "construction_fence"
+rect = [24, 52, 2, 3]
+transition = "level_2->level_3"
+unlock = "proposal: missions koala, elephant, giraffe and lion complete, then the next morning (after night 2) (Q-022, Q-078)"
+notes = "Construction fence of the new adventure playground (level 3): striped fence panels, a sign with a digger/shovel icon, a small digger and a zookeeper. Next morning: the fence is gone, a ribbon and balloons mark the opening."
+
+[[element]]
+id = "hedge_l2_w_c"
+type = "decoration"
+kind = "hedge"
+rect = [24, 55, 2, 7]
+blocks_view = true
+height_m = 3.0
+
+[[element]]
+id = "wall_l2_south"
+type = "boundary"
+kind = "zoo_wall"
+rect = [26, 12, 50, 2]
+blocks_view = true
+height_m = 2.5
+notes = "Outer zoo wall (south-east part of the zoo), permanent."
+
+[[element]]
+id = "wall_l2_east"
+type = "boundary"
+kind = "zoo_wall"
+rect = [74, 14, 2, 48]
+blocks_view = true
+height_m = 2.5
+notes = "Outer zoo wall, permanent."
+
+[[element]]
+id = "hedge_l2_north"
+type = "decoration"
+kind = "hedge"
+rect = [26, 60, 48, 2]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent."
+
+# ---------------------------------------------------------------- paths
+[[element]]
+id = "path_l2_entry"
+type = "path"
+kind = "main"
+rect = [24, 28, 12, 3]
+notes = "From the opened fallen tree (barrier_ne_tree, level 1) east to the ring. First cells = level entry."
+
+[[element]]
+id = "path_l2_ring_s"
+type = "path"
+kind = "main"
+rect = [36, 24, 18, 3]
+
+[[element]]
+id = "path_l2_ring_w"
+type = "path"
+kind = "main"
+rect = [36, 27, 3, 12]
+
+[[element]]
+id = "path_l2_ring_e"
+type = "path"
+kind = "main"
+rect = [51, 27, 3, 12]
+
+[[element]]
+id = "path_l2_ring_n"
+type = "path"
+kind = "main"
+rect = [36, 39, 18, 3]
+
+[[element]]
+id = "path_l2_sw"
+type = "path"
+kind = "side"
+rect = [33, 16, 3, 12]
+notes = "Side path south from the entry path to the playground and the fountain."
+
+[[element]]
+id = "path_l2_se"
+type = "path"
+kind = "side"
+rect = [54, 24, 16, 3]
+notes = "Side path east from the ring to the zoo train station and the lookout tower."
+
+[[element]]
+id = "path_l2_station"
+type = "path"
+kind = "side"
+rect = [54, 17, 2, 7]
+notes = "Narrow platform path from path_l2_se down to the zoo train station."
+
+[[element]]
+id = "path_l2_e"
+type = "path"
+kind = "side"
+rect = [67, 27, 3, 4]
+notes = "Short path from path_l2_se north to the giant tree east of the elephant enclosure."
+
+[[element]]
+id = "path_l2_ne"
+type = "path"
+kind = "side"
+rect = [52, 42, 3, 10]
+notes = "Side path north from the ring past the giraffe enclosure to the music stage."
+
+[[element]]
+id = "path_l2_ne_e"
+type = "path"
+kind = "side"
+rect = [55, 49, 12, 3]
+notes = "Side path east to the deckchairs and the blossom tree."
+
+[[element]]
+id = "path_l2_north"
+type = "path"
+kind = "side"
+rect = [36, 42, 3, 10]
+notes = "Side path north from the ring to the construction fence (level 3)."
+
+[[element]]
+id = "path_l2_nw"
+type = "path"
+kind = "side"
+rect = [26, 52, 13, 3]
+notes = "Leads west to barrier_l2_construction."
+
+# ---------------------------------------------------------------- centre: food storage 2, grove, map board
+[[element]]
+id = "food_storage_2"
+type = "building"
+kind = "food_storage"
+rect = [39, 27, 6, 8]
+door = [39, 30]
+blocks_view = true
+height_m = 4.5
+notes = "Second food storage (proposal Q-085): all 10 food boxes, row in front of the west facade facing the arriving child."
+
+[[element]]
+id = "grove_l2_center"
+type = "decoration"
+kind = "tree_grove"
+rect = [45, 27, 6, 12]
+density = "dense"
+blocks_view = true
+height_m = 6.0
+
+[[element]]
+id = "trees_l2_center_n"
+type = "decoration"
+kind = "trees"
+rect = [39, 35, 6, 4]
+density = "dense"
+blocks_view = true
+height_m = 6.0
+
+[[element]]
+id = "map_board_l2"
+type = "landmark"
+kind = "map_board"
+rect = [32, 31, 1, 2]
+blocks_view = false
+notes = "Picture map at the level entry (opens the map, GAME-MAP)."
+
+# ---------------------------------------------------------------- koala (west)
+[[element]]
+id = "enc_koala"
+type = "enclosure"
+animal = "koala"
+rect = [27, 33, 8, 10]
+gate = [34, 36, 1, 2]
+blocks_view = false
+notes = "Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter, feeding trough (GAME-FAMILY). No tree taller than the others, no blossoms, no tree house (riddle guards)."
+
+[[element]]
+id = "board_koala"
+type = "decoration"
+kind = "info_board"
+rect = [35, 39, 1, 1]
+enclosure = "enc_koala"
+
+# ---------------------------------------------------------------- elephant (east)
+[[element]]
+id = "enc_elephant"
+type = "enclosure"
+animal = "elephant"
+rect = [55, 28, 12, 13]
+gate = [55, 33, 1, 2]
+blocks_view = false
+notes = "Elephant pool (still water, stones, a shallow ramp — like hippo_pool), hay rack, sand-coloured ground patch, one big boulder. No fountain, no logs, no ball (riddle guards)."
+home_wander_on = ["grass", "water"]
+
+[[element]]
+id = "board_elephant"
+type = "decoration"
+kind = "info_board"
+rect = [54, 36, 1, 1]
+enclosure = "enc_elephant"
+
+# ---------------------------------------------------------------- lion (south)
+[[element]]
+id = "enc_lion"
+type = "enclosure"
+animal = "lion"
+rect = [41, 14, 12, 8]
+gate = [46, 21, 2, 1]
+blocks_view = false
+notes = "Wooden sun deck with a straw roof, a big lying log, dry grass. NO flat rocks, no stage, no chairs (riddle guards)."
+
+[[element]]
+id = "board_lion"
+type = "decoration"
+kind = "info_board"
+rect = [44, 23, 1, 1]
+enclosure = "enc_lion"
+
+# ---------------------------------------------------------------- giraffe (north)
+[[element]]
+id = "enc_giraffe"
+type = "enclosure"
+animal = "giraffe"
+rect = [40, 44, 12, 12]
+gate = [45, 44, 2, 1]
+blocks_view = false
+notes = "Tall feeding rack with leafy branches (4 m), giraffe house with a tall door. No tower, no slide, no train (riddle guards)."
+
+[[element]]
+id = "board_giraffe"
+type = "decoration"
+kind = "info_board"
+rect = [43, 42, 1, 1]
+enclosure = "enc_giraffe"
+
+# ---------------------------------------------------------------- koala hiding places
+[[element]]
+id = "treehouse_sw"
+type = "decoration"
+kind = "treehouse"
+rect = [28, 15, 3, 3]
+blocks_view = true
+height_m = 7.0
+notes = "Old oak with a wooden tree house (roof, window, rope ladder). The only tree house in the zoo (loc_treehouse)."
+
+[[element]]
+id = "tree_giant_e"
+type = "decoration"
+kind = "giant_tree"
+rect = [70, 31, 2, 2]
+blocks_view = true
+height_m = 12.0
+notes = "The tallest tree of the whole zoo (12 m, twice as tall as every other tree; levels 1-3 have no tree above 7 m). loc_tallest_tree."
+
+[[element]]
+id = "tree_blossom_ne"
+type = "decoration"
+kind = "blossom_tree"
+rect = [70, 55, 2, 2]
+blocks_view = true
+height_m = 6.0
+notes = "Tree full of pink blossoms; pink petals on the ground (petals_ne). The only blossoming tree in the zoo (loc_blossom_tree)."
+
+# ---------------------------------------------------------------- elephant hiding places
+[[element]]
+id = "fountain_sw"
+type = "landmark"
+kind = "fountain"
+rect = [27, 24, 3, 3]
+blocks_view = false
+height_m = 2.0
+notes = "Round stone basin with a water jet in the middle, coins shining on the bottom. The only fountain in the zoo (loc_fountain)."
+
+[[element]]
+id = "log_pile_nw"
+type = "decoration"
+kind = "log_pile"
+rect = [27, 45, 4, 2]
+blocks_view = false
+height_m = 1.2
+notes = "Stacked logs of the fallen tree (barrier_ne_tree), sawdust around. The only log pile in the zoo (loc_log_pile)."
+
+[[element]]
+id = "ball_n"
+type = "decoration"
+kind = "play_ball"
+rect = [50, 57, 2, 2]
+blocks_view = false
+height_m = 1.8
+notes = "Giant red-and-white play ball (1.8 m) for the elephants (enrichment toy). loc_big_ball."
+
+# ---------------------------------------------------------------- giraffe hiding places
+[[element]]
+id = "tower_sw"
+type = "landmark"
+kind = "lookout_tower"
+rect = [36, 15, 3, 3]
+blocks_view = true
+height_m = 5.0
+notes = "Wooden lookout tower for visitors: stairs, platform at 4 m with a railing and a small roof. loc_lookout_tower."
+
+[[element]]
+id = "train_se"
+type = "landmark"
+kind = "zoo_train"
+rect = [54, 14, 8, 2]
+blocks_view = false
+height_m = 2.2
+notes = "Little zoo train (locomotive with chimney and bell + 2 open wagons) standing on a short piece of track at a small station platform along the south wall. loc_train."
+
+[[element]]
+id = "playground_se_slide"
+type = "decoration"
+kind = "slide"
+rect = [66, 15, 2, 3]
+blocks_view = false
+height_m = 1.8
+notes = "Playground slide (1.8 m). loc_playground."
+
+[[element]]
+id = "playground_se_swings"
+type = "decoration"
+kind = "swings"
+rect = [69, 15, 4, 2]
+blocks_view = false
+height_m = 2.2
+notes = "Double swing. loc_playground."
+
+# ---------------------------------------------------------------- lion hiding places
+[[element]]
+id = "stage_ne"
+type = "landmark"
+kind = "stage"
+rect = [58, 43, 4, 4]
+blocks_view = false
+height_m = 3.5
+notes = "Round wooden music stage (0.5 m high) with a pointed roof, drums and a xylophone on it. loc_stage."
+
+[[element]]
+id = "deckchairs_ne"
+type = "decoration"
+kind = "deckchairs"
+rect = [58, 56, 4, 2]
+blocks_view = false
+height_m = 2.0
+notes = "Three striped deckchairs and a big sunshade. loc_deckchairs."
+
+# ---------------------------------------------------------------- food boxes (GAME-FEED §7)
+# Own storage (proposal Q-089): the 10 boxes stand in a row in front of the west facade of
+# food_storage_2 (labels facing west, towards the arriving child), on the east row of path_l2_ring_w.
+[[food_box]]
+food = "melons"
+pos = [38.66, 27.4]
+facing = "-x"
+
+[[food_box]]
+food = "hay"
+pos = [38.66, 28.2]
+facing = "-x"
+
+[[food_box]]
+food = "bananas"
+pos = [38.66, 29.0]
+facing = "-x"
+
+[[food_box]]
+food = "bamboo"
+pos = [38.66, 29.8]
+facing = "-x"
+
+[[food_box]]
+food = "grass"
+pos = [38.66, 30.6]
+facing = "-x"
+
+[[food_box]]
+food = "meat"
+pos = [38.66, 31.4]
+facing = "-x"
+
+[[food_box]]
+food = "leaves"
+pos = [38.66, 32.2]
+facing = "-x"
+
+[[food_box]]
+food = "fish_food"
+pos = [38.66, 33.0]
+facing = "-x"
+
+[[food_box]]
+food = "berries"
+pos = [38.66, 33.8]
+facing = "-x"
+
+[[food_box]]
+food = "eucalyptus"
+pos = [38.66, 34.6]
+facing = "-x"
+
+# ================================================================ enclosure features
+# Same data shape as level-1 [[enclosure_feature]] (proposal Q-085): not elements, cells stay solid.
+[[enclosure_feature]]
+id = "elephant_pool"
+enclosure = "enc_elephant"
+kind = "pool"
+rect = [59, 31, 7, 8]
+water = "still"
+ramp = [59, 33, 1, 3]
+ramp_side = "-x"
+model = "pool_tiled"
+notes = "Elephant bathing pool (tiled rim like hippo_pool, but larger ramp), 56 of 143 enclosure cells (39 %), 3 cells from the gate. No jet, no coins (must not look like fountain_sw)."
+
+# ================================================================ hiding places (candidates)
+# Same fields as level-1 [[hiding_place]] (Q-080). rect = bounding box of the wander area and the
+# scenery. perch_height_m (proposal Q-094): the animal sits up in a tree / on the ship at
+# this height above the spot instead of wandering on the ground (the ground wander area stays the
+# fallback if the proposal is rejected). water_kinds: which water elements count as "water".
+[[hiding_place]]
+id = "loc_treehouse"
+animal = "koala"
+rect = [26, 14, 4, 5]
+animal_spot = [27, 15]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 3.5
+features = ["tree_house", "rope_ladder", "wooden_roof", "window"]
+scenery = ["treehouse_sw"]
+pose = "climb"
+
+[[hiding_place]]
+id = "loc_tallest_tree"
+animal = "koala"
+rect = [67, 31, 5, 5]
+animal_spot = [69, 32]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 9.0
+features = ["tallest_tree", "thick_trunk", "crown_above_all_trees"]
+scenery = ["tree_giant_e"]
+pose = "climb"
+
+[[hiding_place]]
+id = "loc_blossom_tree"
+animal = "koala"
+rect = [66, 52, 6, 7]
+animal_spot = [69, 55]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 3.0
+features = ["pink_blossoms", "falling_petals", "bees"]
+scenery = ["tree_blossom_ne", "petals_ne"]
+pose = "climb"
+
+[[hiding_place]]
+id = "loc_fountain"
+animal = "elephant"
+rect = [28, 22, 5, 6]
+animal_spot = [30, 25]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["water_jet", "stone_basin", "coins", "splashing"]
+scenery = ["fountain_sw"]
+pose = "drink"
+
+[[hiding_place]]
+id = "loc_log_pile"
+animal = "elephant"
+rect = [26, 46, 7, 6]
+animal_spot = [29, 48]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["stacked_logs", "bark", "sawdust"]
+scenery = ["log_pile_nw"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_big_ball"
+animal = "elephant"
+rect = [51, 55, 6, 5]
+animal_spot = [53, 58]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["giant_ball", "red_white", "round"]
+scenery = ["ball_n"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_lookout_tower"
+animal = "giraffe"
+rect = [37, 14, 4, 7]
+animal_spot = [39, 17]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["wooden_tower", "stairs", "high_platform", "visitors_look_down"]
+scenery = ["tower_sw"]
+pose = "eat"
+
+[[hiding_place]]
+id = "loc_train"
+animal = "giraffe"
+rect = [54, 16, 7, 4]
+animal_spot = [57, 16]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["train", "locomotive", "wagons", "rails", "bell"]
+scenery = ["train_se"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_playground"
+animal = "giraffe"
+rect = [66, 14, 5, 6]
+animal_spot = [68, 16]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["slide", "swings"]
+scenery = ["playground_se_slide", "playground_se_swings"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_sun_rocks"
+animal = "lion"
+rect = [28, 55, 7, 5]
+animal_spot = [31, 57]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["flat_rocks", "warm", "full_sun", "no_shade"]
+scenery = ["flat_rocks_nw"]
+pose = "sleep"
+
+[[hiding_place]]
+id = "loc_stage"
+animal = "lion"
+rect = [55, 42, 5, 7]
+animal_spot = [57, 45]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["stage", "pointed_roof", "drums", "xylophone"]
+scenery = ["stage_ne"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_deckchairs"
+animal = "lion"
+rect = [57, 52, 7, 6]
+animal_spot = [60, 55]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["striped_deckchairs", "sunshade"]
+scenery = ["deckchairs_ne"]
+pose = "sleep"
+
+# ================================================================ scenery (non-solid)
+# Proposal Q-080: walkable ground dressing (surface "grass"); each kind exists once in the whole zoo.
+[[scenery]]
+id = "petals_ne"
+kind = "petal_carpet"
+rect = [66, 52, 4, 7]
+hiding_place = "loc_blossom_tree"
+props = ["petal_decal", "grass_tuft"]
+notes = "Pink petals scattered on the grass under and west of the blossom tree; a few petals float down (particle). The only petals in the zoo."
+
+[[scenery]]
+id = "flat_rocks_nw"
+kind = "flat_rocks"
+rect = [28, 55, 7, 4]
+hiding_place = "loc_sun_rocks"
+props = ["flat_rock_slab", "grass_tuft"]
+notes = "Big flat, light-grey rock slabs lying flush in the grass (walkable, 0.2-0.4 m high), no tree, no shade: the sunniest spot in the zoo. The only flat rocks in the zoo."
+

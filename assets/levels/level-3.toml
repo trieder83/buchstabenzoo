@@ -1,0 +1,575 @@
+# Level 3 layout data — mirrors the element table in specs/10-gameplay/levels/level-3.md
+# (GAME-LEVEL-3). LAYOUT-005 checks that ids and rectangles agree with the spec.
+#
+# Grid: 1 m cells in the SAME level coordinates as levels 1 and 2 (origin = centre of the zoo
+# entrance gate, +X east, +Z north; GAME-LAYOUT). Level 3 lies north of level 1 and west of
+# level 2; it is joined to level 2 at `barrier_l2_construction` and (proposal Q-090) to
+# level 1 at `barrier_north_gate` (GAME-LAYOUT "Joining levels", proposal Q-088).
+# rect = [x, z, w, d] → covers cells x .. x+w-1, z .. z+d-1 (x/z = south-west corner).
+#
+# PROPOSALS (not yet decided, see specs/open-questions.md): [[entry]] tables (Q-088); second
+# entry through the level-1 north gate (Q-090); own food storage (Q-089); enterable
+# building `interior` (Q-092); [[item]] fish bowl and [[water_source]] (Q-093, Q-084);
+# pirate ship as a playground landmark (Q-017); hiding places, scenery, perch (Q-080, Q-094).
+
+[level]
+id = "level_3"
+spec = "GAME-LEVEL-3"
+cell_size_m = 1.0
+bounds = [-24, 48, 48, 46]   # x, z, w, d — every border cell is solid except the [[entry]] cells
+ground_walkable = true       # decided Q-046
+ground_surface = "grass"
+
+[spawn]
+cell = [20, 53]               # first path cells behind the opened barrier (level start / continue, proposal)
+facing = "-x"
+camera_yaw = "-x"
+
+# Level entries (GAME-LAYOUT "Joining levels", proposal Q-088): cells of this level that are
+# edge-adjacent to a barrier of an earlier level; they are the only walkable border cells.
+[[entry]]
+id = "entry_l3_east"
+cells = [23, 52, 1, 3]
+from_level = "level_2"
+barrier = "barrier_l2_construction"
+
+[[entry]]
+id = "entry_l3_south"
+cells = [-9, 48, 3, 1]
+from_level = "level_1"
+barrier = "barrier_north_gate"
+
+# ---------------------------------------------------------------- outer limits (east edge = entry from level 2, south path = entry through the level-1 north gate)
+[[element]]
+id = "wall_l3_west"
+type = "boundary"
+kind = "zoo_wall"
+rect = [-24, 48, 2, 46]
+blocks_view = true
+height_m = 2.5
+notes = "Outer zoo wall (continues level-1 wall_west); the stream leaves through a grate under it at z 52-54."
+
+[[element]]
+id = "wall_l3_north"
+type = "boundary"
+kind = "zoo_wall"
+rect = [-22, 92, 46, 2]
+blocks_view = true
+height_m = 2.5
+notes = "Outer zoo wall, north edge of the zoo, permanent."
+
+[[element]]
+id = "hedge_l3_south_a"
+type = "decoration"
+kind = "hedge"
+rect = [-22, 48, 13, 2]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge; behind it lies level-1 hedge_north_a."
+
+[[element]]
+id = "path_l3_gate"
+type = "path"
+kind = "side"
+rect = [-9, 48, 3, 2]
+notes = "Path behind the level-1 barrier_north_gate (second level entry entry_l3_south, proposal Q-new): the gate opens together with level 3, a shortcut to the level-1 ring and entrance."
+
+[[element]]
+id = "hedge_l3_south_b"
+type = "decoration"
+kind = "hedge"
+rect = [-6, 48, 28, 2]
+blocks_view = true
+height_m = 3.0
+
+[[element]]
+id = "hedge_l3_east_a"
+type = "decoration"
+kind = "hedge"
+rect = [22, 48, 2, 4]
+blocks_view = true
+height_m = 3.0
+
+[[element]]
+id = "hedge_l3_east_b"
+type = "decoration"
+kind = "hedge"
+rect = [22, 55, 2, 37]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge towards level 2 (behind it: level-2 hedge_l2_w_c and outside area)."
+
+# ---------------------------------------------------------------- stream (goldfish hiding places)
+[[element]]
+id = "waterfall_rocks"
+type = "landmark"
+kind = "waterfall"
+rect = [-22, 88, 5, 4]
+blocks_view = true
+height_m = 3.5
+notes = "Rock ledge at the north wall; the stream springs from it and falls 2.5 m in a white foaming waterfall into the stream below (loc_waterfall). The only waterfall in the zoo."
+
+[[element]]
+id = "stream_l3"
+type = "landmark"
+kind = "stream"
+rect = [-22, 52, 3, 36]
+flow = "S"
+blocks_view = false
+notes = "Narrow clear stream, flowing south from the waterfall; leaves west through a grate under wall_l3_west at z 52-54. Pebbles on the bottom, small reeds. No bridge, no ducks, no lilies (riddle guards)."
+
+[[element]]
+id = "mill_hut"
+type = "decoration"
+kind = "mill_hut"
+rect = [-18, 70, 3, 3]
+blocks_view = true
+height_m = 3.5
+notes = "Tiny wooden mill hut; its big wooden water wheel turns in the stream at x -20, z 70-72 (model overhangs the water cells, axle at 2.5 m over the bank - not solid). The only water wheel in the zoo (loc_water_wheel)."
+
+[[element]]
+id = "tree_willow"
+type = "decoration"
+kind = "willow"
+rect = [-18, 56, 3, 3]
+blocks_view = true
+height_m = 6.0
+notes = "Weeping willow on the east bank; its long hanging branches reach over the bank and dip into the water (canopy not solid, occluder fade). The only willow in the zoo (loc_willow)."
+
+# ---------------------------------------------------------------- paths
+[[element]]
+id = "path_l3_entry"
+type = "path"
+kind = "main"
+rect = [7, 52, 17, 3]
+notes = "From the opened construction fence (level 2) west to the ring; first cells = level entry."
+
+[[element]]
+id = "path_l3_link"
+type = "path"
+kind = "main"
+rect = [7, 55, 3, 3]
+
+[[element]]
+id = "path_l3_ring_s"
+type = "path"
+kind = "main"
+rect = [-14, 58, 24, 3]
+
+[[element]]
+id = "path_l3_ring_w"
+type = "path"
+kind = "main"
+rect = [-14, 61, 3, 16]
+
+[[element]]
+id = "path_l3_ring_e"
+type = "path"
+kind = "main"
+rect = [7, 61, 3, 16]
+
+[[element]]
+id = "path_l3_ring_n"
+type = "path"
+kind = "main"
+rect = [-14, 77, 24, 3]
+
+[[element]]
+id = "path_l3_south"
+type = "path"
+kind = "side"
+rect = [-9, 50, 3, 8]
+notes = "Side path from the ring south to the hedge behind the level-1 north gate (entry_l3_south if Q-new is accepted)."
+
+[[element]]
+id = "path_l3_bank"
+type = "path"
+kind = "side"
+rect = [-19, 60, 5, 2]
+notes = "Short path from the ring to the stream bank at the willow."
+
+[[element]]
+id = "path_l3_mill"
+type = "path"
+kind = "side"
+rect = [-19, 73, 5, 2]
+notes = "Short path from the ring to the stream bank just north of the mill hut."
+
+[[element]]
+id = "path_l3_ne"
+type = "path"
+kind = "side"
+rect = [10, 77, 10, 3]
+notes = "Side path east from the ring towards the ice cream kiosk and the trampoline."
+
+# ---------------------------------------------------------------- centre: zookeeper house (fish bowl, tap), food storage 3, trees
+[[element]]
+id = "zookeeper_house_3"
+type = "building"
+kind = "zookeeper_house"
+rect = [-11, 61, 7, 6]
+door = [-8, 61]
+interior = [-10, 62, 5, 4]
+blocks_view = true
+height_m = 4.5
+notes = "Enterable zookeeper house (roof cut-away inside, GAME-PLAYER §2): shelves, a table, a bed, and the big empty glass bowl (fish_bowl) on the table. Water tap on the outside wall next to the door."
+
+[[element]]
+id = "food_storage_3"
+type = "building"
+kind = "food_storage"
+rect = [-1, 61, 8, 6]
+door = [3, 61]
+blocks_view = true
+height_m = 4.5
+notes = "Third food storage (proposal Q-new): all 10 food boxes in a row in front of the south facade."
+
+[[element]]
+id = "trees_l3_center"
+type = "decoration"
+kind = "tree_grove"
+rect = [-4, 61, 3, 16]
+density = "dense"
+blocks_view = true
+height_m = 6.0
+
+[[element]]
+id = "trees_l3_center_e"
+type = "decoration"
+kind = "tree_grove"
+rect = [-1, 67, 8, 10]
+density = "dense"
+blocks_view = true
+height_m = 6.0
+
+[[element]]
+id = "trees_l3_garden"
+type = "decoration"
+kind = "tree_grove"
+rect = [-11, 67, 7, 10]
+density = "dense"
+blocks_view = true
+height_m = 6.0
+
+[[element]]
+id = "map_board_l3"
+type = "landmark"
+kind = "map_board"
+rect = [18, 55, 2, 1]
+blocks_view = false
+notes = "Picture map at the level entry."
+
+# ---------------------------------------------------------------- goldfish (east)
+[[element]]
+id = "enc_goldfish"
+type = "enclosure"
+animal = "goldfish"
+rect = [11, 63, 11, 10]
+gate = [11, 67, 1, 2]
+blocks_view = false
+notes = "Goldfish pond enclosure: round pond with a low stone rim, water plants, a low wooden fence; the \"gate\" is a flat stone step where the bowl is put down to let the fish in (GAME-RESCUE goldfish bowl step 6). No waterfall, no wheel, no willow (riddle guards)."
+home_wander_on = ["water"]
+
+[[element]]
+id = "board_goldfish"
+type = "decoration"
+kind = "info_board"
+rect = [10, 70, 1, 1]
+enclosure = "enc_goldfish"
+
+# ---------------------------------------------------------------- monkey (north)
+[[element]]
+id = "enc_monkey"
+type = "enclosure"
+animal = "monkey"
+rect = [-4, 82, 12, 10]
+gate = [1, 82, 2, 1]
+blocks_view = false
+notes = "Climbing frame of logs and ropes, hanging tyres, a wooden monkey house, a banana basket. No ship, no carousel, no trampoline (riddle guards)."
+
+[[element]]
+id = "board_monkey"
+type = "decoration"
+kind = "info_board"
+rect = [-2, 80, 1, 1]
+enclosure = "enc_monkey"
+
+# ---------------------------------------------------------------- snow fox (south)
+[[element]]
+id = "enc_snow_fox"
+type = "enclosure"
+animal = "snow_fox"
+rect = [-5, 50, 10, 7]
+gate = [-1, 56, 2, 1]
+blocks_view = false
+notes = "Shady enclosure: wooden den with a straw bed under two pine trees, light rocks, a shallow drinking bowl. No freezer, no sprinkler, no washing line (riddle guards)."
+
+[[element]]
+id = "board_snow_fox"
+type = "decoration"
+kind = "info_board"
+rect = [-3, 57, 1, 1]
+enclosure = "enc_snow_fox"
+
+# ---------------------------------------------------------------- monkey hiding places (adventure playground)
+[[element]]
+id = "pirate_ship"
+type = "landmark"
+kind = "pirate_ship"
+rect = [14, 56, 7, 4]
+blocks_view = false
+height_m = 6.0
+notes = "Pirate ship climbing frame (playground landmark, Q-017 proposal): hull on bark mulch, mast with a crow's nest, white sail, black pirate flag with a big white paw print (friendly, no skull), treasure chest on deck, rope ladder. No slide (riddle guard vs. the level-2 playground). loc_pirate_ship."
+
+[[element]]
+id = "carousel_sw"
+type = "landmark"
+kind = "carousel"
+rect = [-16, 52, 4, 4]
+blocks_view = false
+height_m = 4.0
+notes = "Small carousel with wooden horses and a striped round roof, slowly turning, music box sound. loc_carousel."
+
+# ---------------------------------------------------------------- snow fox hiding places
+[[element]]
+id = "ice_cream_kiosk"
+type = "building"
+kind = "kiosk"
+rect = [15, 83, 4, 3]
+blocks_view = true
+height_m = 3.5
+notes = "Ice cream kiosk with a striped awning, a big ice-cream-cone icon on the roof (no text), a freezer chest with a glass lid in front (cold mist) and a cone stand. loc_ice_cream_kiosk."
+
+[[element]]
+id = "laundry_line"
+type = "decoration"
+kind = "washing_line"
+rect = [-19, 82, 5, 1]
+blocks_view = false
+height_m = 2.0
+notes = "Washing line of the zookeepers between two posts on the lawn by the stream with big white sheets and towels flapping in the wind, a peg bag and a laundry basket. loc_laundry."
+
+# ---------------------------------------------------------------- food boxes (GAME-FEED §7)
+# Own storage (proposal Q-089): the 10 boxes stand in a row in front of the south facade of
+# food_storage_3 (labels facing south), on the north row of path_l3_ring_s.
+[[food_box]]
+food = "melons"
+pos = [-0.6, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "hay"
+pos = [0.2, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "bananas"
+pos = [1.0, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "bamboo"
+pos = [1.8, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "grass"
+pos = [2.6, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "meat"
+pos = [3.4, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "leaves"
+pos = [4.2, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "fish_food"
+pos = [5.0, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "berries"
+pos = [5.8, 60.66]
+facing = "-z"
+
+[[food_box]]
+food = "eucalyptus"
+pos = [6.6, 60.66]
+facing = "-z"
+
+# ================================================================ enclosure features
+# Same data shape as level-1 [[enclosure_feature]] (proposal Q-085): not elements, cells stay solid.
+[[enclosure_feature]]
+id = "goldfish_pond"
+enclosure = "enc_goldfish"
+kind = "pool"
+rect = [13, 64, 8, 8]
+water = "still"
+model = "pond_stone_rim"
+notes = "Round pond with a low stone rim, water plants and two flat stones, filling most of the enclosure; the goldfish swims only here (home_wander_on = water). Not adjacent to the gate step (x 11, z 67-68)."
+
+# ================================================================ carryable items (proposal Q-093)
+# Props the player can pick up. pos = level (x, z) centre; building = where it stands.
+[[item]]
+id = "fish_bowl"
+kind = "fish_bowl"
+pos = [-8.5, 64.5]
+building = "zookeeper_house_3"
+animal = "goldfish"
+notes = "Big empty glass bowl on the table in the zookeeper house (GAME-RESCUE goldfish bowl step 1)."
+
+# ================================================================ water sources (proposal Q-093)
+# Where the fish bowl is filled (GAME-RESCUE goldfish bowl step 2). kind "tap" = prop at pos;
+# kind "bank" = every walkable cell edge-adjacent to a cell of the named water element.
+[[water_source]]
+id = "tap_l3"
+kind = "tap"
+pos = [-6.5, 60.75]
+facing = "-z"
+notes = "Water tap with a small basin on the south facade of zookeeper_house_3, right of the door."
+
+[[water_source]]
+id = "bank_stream_l3"
+kind = "bank"
+water = "stream_l3"
+notes = "Every walkable cell edge-adjacent to a stream_l3 cell is a fill point (kneel at the bank)."
+
+# ================================================================ hiding places (candidates)
+# Same fields as level-1 [[hiding_place]] (Q-080). rect = bounding box of the wander area and the
+# scenery. perch_height_m (proposal Q-094): the animal sits up in a tree / on the ship at
+# this height above the spot instead of wandering on the ground (the ground wander area stays the
+# fallback if the proposal is rejected). water_kinds: which water elements count as "water".
+[[hiding_place]]
+id = "loc_pirate_ship"
+animal = "monkey"
+rect = [10, 55, 6, 7]
+animal_spot = [13, 58]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 4.0
+features = ["ship", "mast", "sail", "flag", "treasure_chest", "rope_ladder"]
+scenery = ["pirate_ship", "bark_mulch_se"]
+pose = "climb"
+
+[[hiding_place]]
+id = "loc_carousel"
+animal = "monkey"
+rect = [-14, 51, 5, 7]
+animal_spot = [-12, 54]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["carousel", "wooden_horses", "music", "turning_roof"]
+scenery = ["carousel_sw"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_trampoline"
+animal = "monkey"
+rect = [-19, 62, 5, 6]
+animal_spot = [-17, 64]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["trampoline", "jumping", "springy_mat"]
+scenery = ["trampoline_w"]
+pose = "happy"
+
+[[hiding_place]]
+id = "loc_waterfall"
+animal = "goldfish"
+rect = [-22, 82, 3, 6]
+animal_spot = [-21, 85]
+wander_radius_m = 3.0
+wander_on = "water"
+water_kinds = ["stream"]
+features = ["falling_water", "foam", "splashing", "rock_ledge"]
+scenery = ["waterfall_rocks", "stream_l3"]
+pose = "swim"
+
+[[hiding_place]]
+id = "loc_water_wheel"
+animal = "goldfish"
+rect = [-22, 68, 3, 7]
+animal_spot = [-21, 71]
+wander_radius_m = 3.0
+wander_on = "water"
+water_kinds = ["stream"]
+features = ["water_wheel", "turning", "clattering", "wooden_hut"]
+scenery = ["mill_hut", "stream_l3"]
+pose = "swim"
+
+[[hiding_place]]
+id = "loc_willow"
+animal = "goldfish"
+rect = [-22, 54, 3, 7]
+animal_spot = [-21, 57]
+wander_radius_m = 3.0
+wander_on = "water"
+water_kinds = ["stream"]
+features = ["weeping_willow", "hanging_branches", "shade_on_water"]
+scenery = ["tree_willow", "stream_l3"]
+pose = "swim"
+
+[[hiding_place]]
+id = "loc_ice_cream_kiosk"
+animal = "snow_fox"
+rect = [14, 80, 7, 4]
+animal_spot = [17, 81]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["freezer_chest", "cold_air", "cones", "scoops"]
+scenery = ["ice_cream_kiosk"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_sprinkler"
+animal = "snow_fox"
+rect = [-13, 84, 7, 7]
+animal_spot = [-10, 87]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["sprinkler", "cold_drops", "rainbow", "wet_grass"]
+scenery = ["sprinkler_lawn"]
+pose = "happy"
+
+[[hiding_place]]
+id = "loc_laundry"
+animal = "snow_fox"
+rect = [-19, 77, 6, 5]
+animal_spot = [-17, 80]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["white_sheets", "washing_line", "white_camouflage", "wind"]
+scenery = ["laundry_line"]
+pose = "idle"
+
+# ================================================================ scenery (non-solid)
+# Proposal Q-080: walkable ground dressing (surface "grass"); each kind exists once in the whole zoo.
+[[scenery]]
+id = "bark_mulch_se"
+kind = "bark_mulch"
+rect = [11, 55, 3, 6]
+hiding_place = "loc_pirate_ship"
+props = ["bark_mulch_tile"]
+notes = "Soft brown bark-mulch ground of the adventure playground around the pirate ship (walkable)."
+
+[[scenery]]
+id = "trampoline_w"
+kind = "trampoline"
+rect = [-18, 63, 3, 3]
+hiding_place = "loc_trampoline"
+props = ["trampoline_ground"]
+notes = "Ground-level trampoline (flush with the lawn, walkable): round blue springy mat with a soft red rim. The only trampoline in the zoo."
+
+[[scenery]]
+id = "sprinkler_lawn"
+kind = "wet_lawn"
+rect = [-13, 84, 7, 7]
+hiding_place = "loc_sprinkler"
+props = ["sprinkler", "grass_tuft", "water_drops"]
+notes = "Lawn with a turning garden sprinkler in the middle: arcs of cold water drops, a small rainbow in the spray, glossy wet grass. The only sprinkler in the zoo."
+

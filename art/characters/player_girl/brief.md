@@ -138,6 +138,8 @@ Turnaround with four views side by side in one row, same scale and same baseline
 | 2026-09-26 | three_quarter.png | gemini-3-pro-image (1K, 2:3) | — | prompt 4 + negative as 'Avoid', ref: style_frame.png, front.jpg + extra text | replaced by sheet_v1 split (¾ was turned too little) |
 | 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | to review — chosen, split into front/side/back/three_quarter.png |
 | 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | alternative (ground shadows) |
+| 2026-09-26 | expressions_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 5 + negative as 'Avoid' + extra text, ref: front.png | **chosen** → converted to expressions.png (source jpg deleted); all 8 expressions in order; hair drawn with a middle parting (no fringe) as in front.png |
+| 2026-09-26 | expressions_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 5 + negative as 'Avoid' + extra text, ref: front.png | alternative |
 
 ## 3D model (stage 3, after `concept_approved = true`)
 

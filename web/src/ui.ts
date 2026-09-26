@@ -9,6 +9,9 @@ export interface UiApp {
   target_kind(): string;
   target_key(): string;
   interact(): string;
+  close_panel(): void;
+  panel_key(): string;
+  panel_json(): string;
   take_food(food: string): boolean;
   carry_food(): string;
   carry_text(): string;
@@ -50,6 +53,20 @@ export const PLACE_ICONS: Record<string, string> = {
   loc_ice_cream_kiosk: '🍦',
 };
 
+/** Placeholder animal pictures (info board heading, kiga facts picture). */
+export const ANIMAL_ICONS: Record<string, string> = {
+  zebra: '🦓',
+  hippo: '🦛',
+  panda: '🐼',
+  koala: '🐨',
+  elephant: '🐘',
+  goldfish: '🐠',
+  monkey: '🐒',
+  giraffe: '🦒',
+  lion: '🦁',
+  snow_fox: '🦊',
+};
+
 /** Icon of the interact button per target kind. */
 export const TARGET_ICONS: Record<string, string> = {
   info_board: '👀',
@@ -76,8 +93,8 @@ const KEY_LANG = 'zoo.language';
 const KEY_LEVEL = 'zoo.readingLevel';
 
 /**
- * Stored settings, falling back to the device language (CONT-L10N §5, via `defaultLanguage`)
- * and `klasse1`. Invalid stored values are ignored.
+ * Stored settings, falling back to `defaultLanguage` (always `de`, CONT-L10N §5 — the stored
+ * choice from the settings wins) and `klasse1`. Invalid stored values are ignored.
  */
 export function loadSettings(store: KeyValue | null, defaultLanguage: string): Settings {
   let lang: string | null = null;
@@ -106,6 +123,11 @@ export function saveSettings(store: KeyValue | null, s: Settings): void {
 interface PanelData {
   kind: string;
   key?: string;
+  animal?: string;
+  /** Info board: animal name, "more about" heading and facts (GAME-ANIMALS "Info board" 4). */
+  title?: string;
+  more?: string;
+  facts?: string;
   text?: string;
   picture?: string | boolean | null;
   food?: string;
@@ -115,6 +137,7 @@ interface PanelData {
 
 interface GameEventMsg {
   type: string;
+  panel?: PanelData;
   animal?: string;
   key?: string;
   text?: string;
@@ -126,6 +149,31 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: 
   if (cls) e.className = cls;
   if (text !== undefined) e.textContent = text;
   return e;
+}
+
+/** Smallest letter size the riddle may shrink to so it fits without scrolling (Q-070). */
+export const MIN_READ_PX = 18;
+
+/**
+ * Shrinks the reading size (`--read`) until the riddle + food word (`.panel-main`) fit in
+ * the panel without scrolling, never below {@link MIN_READ_PX}; the facts part scrolls.
+ * Returns the final size in px.
+ */
+export function fitReadingText(body: HTMLElement): number {
+  const main = body.querySelector<HTMLElement>('.panel-main');
+  const cs = getComputedStyle(body);
+  let px = parseFloat(getComputedStyle(body.querySelector('#panel-text') ?? body).fontSize) || 24;
+  if (!main) return px;
+  const available = () => {
+    const max = parseFloat(cs.maxHeight);
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) * 2;
+    return (Number.isFinite(max) ? max : body.clientHeight) - pad;
+  };
+  while (main.offsetHeight > available() && px > MIN_READ_PX) {
+    px = Math.max(MIN_READ_PX, px - 2);
+    body.style.setProperty('--read', `${px}px`);
+  }
+  return px;
 }
 
 export class Ui {
@@ -148,6 +196,7 @@ export class Ui {
   constructor(
     private readonly app: UiApp,
     private readonly store: KeyValue | null,
+    private readonly onNewGame: () => void = () => {},
   ) {
     for (const b of [this.act, this.hint]) {
       b.addEventListener('pointerdown', (e) => {
@@ -170,7 +219,7 @@ export class Ui {
 
   /** Interact button / key: take from an open food panel, else interact with the target. */
   interact(): void {
-    if (this.panelFood && this.app.target_key() === this.panelKey) {
+    if (this.panelFood && this.app.panel_key() === this.panelKey) {
       this.take();
       return;
     }
@@ -194,7 +243,7 @@ export class Ui {
       this.hint.hidden = this.touch || !kind;
       this.hint.dataset.kind = kind;
       (this.hint.querySelector('.icon') as HTMLElement).textContent = icon;
-      if (this.panelKey && key !== this.panelKey) this.closePanel();
+      // reading panels open/close by themselves: decided in Rust (panel_open/panel_close)
     }
     const carry = this.app.carry_food();
     if (carry !== this.lastCarry) {
@@ -219,6 +268,8 @@ export class Ui {
     for (const e of events) {
       if (e.type === 'say' && e.text) this.say(e.text, e.key ?? '');
       else if (e.type === 'mission_complete' && e.text) this.celebrateMission(e.text, e.key ?? '');
+      else if (e.type === 'panel_open' && e.panel) this.openPanel(e.panel);
+      else if (e.type === 'panel_close' && e.key === this.panelKey) this.hidePanel();
     }
   }
 
@@ -232,28 +283,46 @@ export class Ui {
     close.addEventListener('click', () => this.closePanel());
     const text = el('p', 'panel-text', data.text ?? '');
     text.id = 'panel-text';
-    const kids: HTMLElement[] = [close];
+    const kids: HTMLElement[] = [];
     if (data.kind === 'info_board') {
+      // riddle → food word first (always visible, never scrolls), then "more about" + facts
+      // in their own scrolling part (GAME-ANIMALS "Info board" 4, QA F2, Q-070)
+      const main = el('div', 'panel-main');
+      main.id = 'panel-main';
+      main.append(close);
       if (typeof data.picture === 'string') {
         const pic = el('div', 'panel-picture', PLACE_ICONS[data.picture] ?? '❓');
         pic.id = 'panel-picture';
         pic.dataset.place = data.picture;
-        kids.push(pic);
+        main.append(pic);
       }
-      kids.push(text);
+      main.append(text);
       const food = el('p', 'panel-food');
       food.id = 'panel-food';
       if (data.picture) food.append(el('span', 'icon', FOOD_ICONS[data.food ?? ''] ?? ''));
       food.append(el('span', 'word', data.food_text ?? ''));
       food.dataset.food = data.food ?? '';
-      kids.push(food);
+      main.append(food);
+      kids.push(main);
+      const more = el('div', 'panel-more');
+      more.id = 'panel-more';
+      const title = el('h2', 'panel-title');
+      title.id = 'panel-title';
+      title.append(el('span', 'icon', ANIMAL_ICONS[data.animal ?? ''] ?? ''), el('span', 'word', data.more ?? data.title ?? ''));
+      more.append(title);
+      if (data.facts) {
+        const facts = el('p', 'panel-facts', data.facts);
+        facts.id = 'panel-facts';
+        more.append(facts);
+      }
+      kids.push(more);
     } else {
       if (data.picture === true) {
         const pic = el('div', 'panel-picture', FOOD_ICONS[data.food ?? ''] ?? '❓');
         pic.id = 'panel-picture';
         kids.push(pic);
       }
-      kids.push(text);
+      kids.push(close, text);
       const take = el('button', 'take', '✋');
       take.id = 'take';
       take.setAttribute('aria-label', data.take ?? this.app.t('ui-take'));
@@ -261,12 +330,21 @@ export class Ui {
       kids.push(take);
     }
     body.append(...kids);
+    body.dataset.kind = data.kind;
     this.panel.replaceChildren(body);
     this.panel.dataset.kind = data.kind;
     this.panel.hidden = false;
+    if (data.kind === 'info_board') fitReadingText(body);
   }
 
+  /** Closed by hand (✖, Esc): stays closed until the player leaves and returns (PLAY-026). */
   closePanel(): void {
+    if (this.panelKey) this.app.close_panel();
+    this.hidePanel();
+  }
+
+  /** Hides the panel without telling the game (it closed it itself). */
+  private hidePanel(): void {
     this.panel.hidden = true;
     this.panel.replaceChildren();
     this.panelKey = null;
@@ -343,15 +421,42 @@ export class Ui {
       b.addEventListener('click', () => this.change({ readingLevel: r }));
       levelRow.append(b);
     }
-    this.settings.replaceChildren(langRow, levelRow);
+    // New game (GAME-SAVE §6): icon button, then a big yes/no icon pair — no reading needed.
+    const gameRow = el('div', 'row');
+    gameRow.id = 'settings-game';
+    const newGame = el('button', 'choice', '🔄');
+    newGame.id = 'new-game';
+    const confirm = el('div', 'row confirm');
+    confirm.id = 'new-game-confirm';
+    confirm.hidden = true;
+    const yes = el('button', 'choice yes', '✔');
+    yes.id = 'new-game-yes';
+    const no = el('button', 'choice no', '✖');
+    no.id = 'new-game-no';
+    confirm.append(yes, no);
+    newGame.addEventListener('click', () => {
+      confirm.hidden = !confirm.hidden;
+    });
+    no.addEventListener('click', () => {
+      confirm.hidden = true;
+    });
+    yes.addEventListener('click', () => {
+      confirm.hidden = true;
+      this.settings.hidden = true;
+      this.onNewGame();
+    });
+    gameRow.append(newGame, confirm);
+    this.settings.replaceChildren(langRow, levelRow, gameRow);
   }
 
   private change(part: Partial<Settings>): void {
     if (part.language) this.app.set_language(part.language);
     if (part.readingLevel) this.app.set_reading_level(part.readingLevel);
     saveSettings(this.store, { language: this.app.language(), readingLevel: this.app.reading_level() });
-    // All visible texts follow at once (L10N-004): labels, HUD; open panels close.
-    this.closePanel();
+    // All visible texts follow at once (L10N-004): labels, HUD, an open panel.
+    const panel = this.panelKey ? this.app.panel_json() : '';
+    if (panel) this.openPanel(JSON.parse(panel) as PanelData);
+    else this.hidePanel();
     this.applyLabels();
     this.renderCarry();
     this.markSettings();
@@ -372,6 +477,9 @@ export class Ui {
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
+    this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));
+    this.settings.querySelector('#new-game-yes')?.setAttribute('aria-label', this.app.t('ui-yes'));
+    this.settings.querySelector('#new-game-no')?.setAttribute('aria-label', this.app.t('ui-no'));
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
       if (b.dataset.lang) b.setAttribute('aria-label', this.app.t(`ui-lang-${b.dataset.lang}`));
       if (b.dataset.level) b.setAttribute('aria-label', this.app.t(`ui-level-${b.dataset.level}`));

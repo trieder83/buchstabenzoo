@@ -81,6 +81,27 @@ impl FollowCamera {
         }
     }
 
+    /// Rotation in whole 45° steps (GAME-SAVE: saved with the zoom distance).
+    pub fn yaw_steps(&self) -> i32 {
+        self.yaw_steps
+    }
+
+    /// Target zoom distance in metres.
+    pub fn target_distance(&self) -> f32 {
+        self.target_distance
+    }
+
+    /// Restores a saved rotation and zoom at once (no easing; GAME-SAVE §4).
+    pub fn set_state(&mut self, yaw_steps: i32, distance: f32) {
+        self.yaw_steps = yaw_steps;
+        if distance.is_finite() {
+            self.target_distance =
+                distance.clamp(self.params.min_distance_m, self.params.max_distance_m);
+        }
+        self.yaw = self.target_yaw();
+        self.distance = self.target_distance;
+    }
+
     pub fn target_yaw(&self) -> f32 {
         self.yaw_steps as f32 * self.params.yaw_step_deg.to_radians()
     }

@@ -1,6 +1,6 @@
 # Brief — `env_level1_overview`
 
-Spec: GAME-LEVEL-1. Status: **brief — images not generated yet**. Layout: `layout.md` in this
+Spec: GAME-LEVEL-1. Status: **in-review — first mockups generated 2026-09-26**. Layout: `layout.md` in this
 folder; level data `assets/levels/level-1.toml`.
 
 ## Purpose
@@ -118,3 +118,15 @@ Tools without a negative-prompt field: add "No text anywhere, no logos, not phot
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
 | | | | | | |
+| 2026-09-26 | top_down_v1.jpg | gemini-3-pro-image (2K, 1:1) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v3.jpg | **chosen** → top_down.png — clean map; shows animals at home in their enclosures (fine for the map board, not the found state) |
+| 2026-09-26 | top_down_v2.jpg | gemini-3-pro-image (2K, 1:1) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v3.jpg | alternative |
+| 2026-09-26 | overview_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v3.jpg, sheet_v1.jpg | **chosen** → overview.png — layout matches the ASCII map well (zebra+arch W, pond NW, panda N, grove+barn centre, river/bridge/zebras NE, hippo E, rock hill SE); deviations: entrance is a plain stone arch (not the kit arch), cave mouth faces the entrance (should face north) |
+| 2026-09-26 | overview_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v3.jpg, sheet_v1.jpg | alternative — flatter camera; zebras inside the enclosure (should be empty), road-like service path |
+
+**Mockup notes (2026-09-26):** generated with gemini-3-pro-image (2K), chosen image downscaled
+to ≤ 2048 px and saved as PNG, the alternative kept as `*_v*.jpg`. References: the style frame
+plus the approved kit/model sheets named in the log; `--extra`: "The first attached image is the approved style frame of this game: match its comic style, colours, line weight, outlines and high camera look exactly, but not its layout. The other attached image(s) are approved asset sheets of props that appear in this scene: draw those props exactly like on the sheets (shapes, colours, materials); do not copy the grey sheet background or the sheet layout. No text anywhere."
+These are concept mockups from text only (no greybox guide yet) — positions are approximate.
+**The level layout may still change:** the level designer is adding more hiding places
+(GAME-LEVEL-1 `[[hiding_place]]`), so the mockups must be re-checked against
+`specs/10-gameplay/levels/level-1.md` before approval.

@@ -26,64 +26,64 @@ animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 id = "hippo"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "walk", "eat", "swim", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
 
 [[asset]]
 id = "panda"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse"]
 
 [[asset]]
 id = "koala"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "climb", "eat", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse"]
 
 [[asset]]
 id = "elephant"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 
 [[asset]]
 id = "goldfish"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
+concept_approved = true
 animations = ["swim", "eat"]
 
 [[asset]]
 id = "monkey"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "climb", "eat", "happy"]
 
 [[asset]]
 id = "giraffe"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse"]
 
 [[asset]]
 id = "lion"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 
 [[asset]]
 id = "snow_fox"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 
 [[asset]]
 id = "style_frame"
@@ -155,6 +155,49 @@ spec = "ART-ENVIRONMENT"
 concept_approved = false
 animations = []
 
+# Further level-1 candidate hiding places (discovery, user decision 2026-09-26; GAME-LEVEL-1)
+[[asset]]
+id = "loc_meadow"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_sand"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_mud"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_shade"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_bamboo"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_leaves"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
 [[asset]]
 id = "kit_ground"
 kind = "props"
@@ -195,4 +238,67 @@ id = "kit_barriers"
 kind = "props"
 spec = "ART-ENVIRONMENT"
 concept_approved = true
+animations = []
+
+[[asset]]
+id = "zebra_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "zebra_foal"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "koala_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "climb", "eat", "happy"]
+
+[[asset]]
+id = "koala_joey"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "climb", "eat", "happy"]
+
+[[asset]]
+id = "kit_buildings"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "food_storage_building"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "kit_enclosure_buildings"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "rock_hill_cave"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "kit_furniture"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
 animations = []

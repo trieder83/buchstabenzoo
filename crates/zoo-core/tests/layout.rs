@@ -309,76 +309,79 @@ fn layout_l1_005_walking_times_between_neighbours() {
             spawn.clone(),
             door.clone(),
             8.0,
-            5.7,
+            4.6,
         ),
         (
             "food storage -> zebra info board",
             door.clone(),
             board("board_zebra"),
             10.2,
-            7.5,
+            6.2,
         ),
         (
             "zebra info board -> pond",
             board("board_zebra"),
             pond.clone(),
             7.8,
-            7.2,
+            5.9,
         ),
         (
             "pond -> panda info board",
             pond.clone(),
             board("board_panda"),
             9.9,
-            7.5,
+            6.0,
         ),
         (
             "panda info board -> river",
             board("board_panda"),
             river.clone(),
             10.4,
-            8.7,
+            7.1,
         ),
         (
             "river -> hippo info board",
             river.clone(),
             board("board_hippo"),
             13.4,
-            9.6,
+            7.7,
         ),
         (
             "hippo info board -> cave",
             board("board_hippo"),
             cave.clone(),
             11.2,
-            8.2,
+            6.7,
         ),
         (
             "cave -> food storage door",
             cave.clone(),
             door.clone(),
             10.1,
-            8.3,
+            6.8,
         ),
         (
             "hippo info board -> food storage door",
             board("board_hippo"),
             door.clone(),
             12.2,
-            9.0,
+            7.3,
         ),
         (
             "spawn -> map board",
             spawn.clone(),
             board("map_board"),
             6.4,
-            4.7,
+            3.9,
         ),
     ];
+    // GAME-PLAYER §6 (2026-09-26): path 1.75 m/s, grass 0.98 m/s
+    let mp = zoo_core::player::MoveParams::default();
     let time = Cost::Time {
-        path_speed: 1.4,
-        grass_speed: 0.98,
+        path_speed: mp.speed_on(zoo_core::level::Surface::Path),
+        grass_speed: mp.speed_on(zoo_core::level::Surface::Grass),
     };
+    assert!((mp.walk_speed - 1.75).abs() < 1e-6);
     let mut too_slow = Vec::new();
     for (name, from, to, spec_m, spec_s) in &pairs {
         assert!(

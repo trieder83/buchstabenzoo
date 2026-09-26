@@ -17,9 +17,10 @@ use zoo_core::coords::level_to_world;
 use zoo_core::game::{Interaction, Target};
 use zoo_core::level::{cell_center, ElementType};
 use zoo_core::nav::Autopilot;
+use zoo_core::player::walk_clip_rate;
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
 use zoo_render::renderer::CAPSULE;
-use zoo_render::scene::model_placeholder;
+use zoo_render::scene::{model_placeholder, Decal, DecalImage};
 use zoo_render::{CameraParams, CharacterDraw, FollowCamera, Instance, LevelScene, Renderer};
 
 /// The player character model (GAME-PLAYER §1; `player_boy` later).
@@ -51,6 +52,14 @@ pub fn required_assets(level_toml: &str) -> Result<Vec<String>, JsError> {
     models.dedup();
     let mut out = vec!["textures/palette.png".to_owned()];
     out.extend(models.iter().map(|m| format!("models/props/{m}.glb")));
+    // decal images (enclosure sign silhouettes); missing ones leave the panel blank
+    for d in &scene.decals {
+        if let DecalImage::Texture(path) = &d.image {
+            if !out.contains(path) {
+                out.push(path.clone());
+            }
+        }
+    }
     out.push(format!("models/characters/{PLAYER_MODEL}.glb"));
     out.extend(SHOWN_ANIMALS.iter().map(|a| animal_model_path(a)));
     Ok(out)
@@ -109,6 +118,12 @@ pub struct App {
     autopilot: Option<Autopilot>,
     outbox: Vec<String>,
     time: f64,
+    /// Decals of the level scene (debug getters, AENV-011/012).
+    decals: Vec<Decal>,
+    /// Text textures the host renders: (texture id, Fluent key, width, height).
+    text_textures: Vec<(String, &'static str, u32, u32)>,
+    /// Text textures must be (re-)rendered (start, language change).
+    text_dirty: bool,
 }
 
 #[wasm_bindgen]
@@ -230,6 +245,37 @@ impl App {
                 .entry(format!("element:{}", b.source))
                 .or_default() += 1;
         }
+        // Decals: sign silhouettes (image files) and sign texts (rendered by the host).
+        let mut text_textures: Vec<(String, &'static str, u32, u32)> = Vec::new();
+        for d in &scene.decals {
+            let texture = match &d.image {
+                DecalImage::Texture(path) => {
+                    if !renderer.has_decal_texture(path) {
+                        let Some(png) = files.get(path) else {
+                            continue; // no silhouette yet: the panel stays blank
+                        };
+                        if let Err(e) = renderer.set_decal_texture_png(path, png) {
+                            warn(&format!("{path}: {e:?}"));
+                            continue;
+                        }
+                    }
+                    path.clone()
+                }
+                DecalImage::Text {
+                    key,
+                    width_px,
+                    height_px,
+                } => {
+                    let id = text_texture_id(key);
+                    if !text_textures.iter().any(|(t, ..)| *t == id) {
+                        text_textures.push((id.clone(), *key, *width_px, *height_px));
+                    }
+                    id
+                }
+            };
+            renderer.add_decal(&texture, d.corners(), d.normal());
+        }
+
         if !player_skinned {
             *placeholders.entry(PLAYER_MODEL.to_owned()).or_default() += 1;
         }
@@ -314,6 +360,9 @@ impl App {
             autopilot: None,
             outbox: Vec::new(),
             time: 0.0,
+            decals: scene.decals,
+            text_textures,
+            text_dirty: true,
         })
     }
 
@@ -381,6 +430,9 @@ impl App {
     pub fn set_language(&mut self, id: &str) -> bool {
         match Language::from_id(id) {
             Some(l) => {
+                if self.game.settings.language != l {
+                    self.text_dirty = true;
+                }
                 self.game.settings.language = l;
                 true
             }
@@ -417,6 +469,116 @@ impl App {
         self.text_now(key)
     }
 
+    // ------------------------------------------------------------------ save (GAME-SAVE)
+
+    /// The full game state as JSON (versioned), incl. camera and animal facing. The host
+    /// stores it (`localStorage`) on `visibilitychange` / `pagehide` and when
+    /// [`App::take_save`] returns one.
+    pub fn save(&mut self) -> String {
+        let mut s = self.game.to_save();
+        s.camera = Some(zoo_core::save::CameraSave {
+            yaw_steps: self.camera.yaw_steps(),
+            distance_m: self.camera.target_distance(),
+        });
+        for a in &mut s.animals {
+            a.yaw = self.animals.iter().find(|v| v.id == a.id).map(|v| v.yaw);
+        }
+        self.game.mark_saved();
+        s.to_json()
+    }
+
+    /// A save when one is due (progress event, or 5 s of walking; GAME-SAVE §3), else empty.
+    pub fn take_save(&mut self) -> String {
+        if self.game.save_due() {
+            self.save()
+        } else {
+            String::new()
+        }
+    }
+
+    /// Restores a save before the first frame (GAME-SAVE §4). Returns false (and keeps the
+    /// new game) for an unknown version, another level or broken data (§5) — silently.
+    pub fn restore(&mut self, json: &str) -> bool {
+        let Ok(state) = zoo_core::save::SaveState::from_json(json) else {
+            return false;
+        };
+        let Ok(mut game) = Game::from_save(self.game.level.data.clone(), &state) else {
+            return false;
+        };
+        game.settings = self.game.settings;
+        self.game = game;
+        if let Some(c) = state.camera {
+            self.camera.set_state(c.yaw_steps, c.distance_m);
+        }
+        self.camera.snap(level_to_world(self.game.player.pos));
+        self.player_yaw = facing_to_yaw(self.game.player.facing);
+        for v in &mut self.animals {
+            let Some(a) = self.game.animal(v.id) else {
+                continue;
+            };
+            v.pos = a.pos;
+            v.queue.clear();
+            v.action = None;
+            v.wait_arrival = false;
+            v.drinking = a.state == AnimalState::Escaped;
+            if let Some(yaw) = state
+                .animals
+                .iter()
+                .find(|s| s.id == v.id)
+                .and_then(|s| s.yaw)
+                .filter(|y| y.is_finite())
+            {
+                v.yaw = yaw;
+            } else if a.state == AnimalState::Following {
+                v.yaw = facing_to_yaw(self.game.player.pos - a.pos);
+            }
+        }
+        self.autopilot = None;
+        self.outbox.clear();
+        true
+    }
+
+    // ------------------------------------------------------------------ text textures
+
+    /// Whether the host must (re-)render the text textures (start, language change).
+    pub fn text_textures_dirty(&self) -> bool {
+        self.text_dirty
+    }
+
+    /// Text textures to render as a JSON array `[{"id", "key", "text", "width", "height"}]`
+    /// (texts in the current language). Clears the dirty flag. The host draws each text into
+    /// a `width` × `height` RGBA image and hands it back with [`App::set_text_texture`].
+    pub fn text_textures(&mut self) -> String {
+        self.text_dirty = false;
+        let items: Vec<String> = self
+            .text_textures
+            .iter()
+            .map(|(id, key, w, h)| {
+                format!(
+                    "{{\"id\":{},\"key\":{},\"text\":{},\"width\":{w},\"height\":{h}}}",
+                    js(id),
+                    js(key),
+                    js(&self.text_now(key))
+                )
+            })
+            .collect();
+        format!("[{}]", items.join(","))
+    }
+
+    /// Uploads a rendered text texture (RGBA8, top row first). Returns false for unknown ids
+    /// or a wrong size.
+    pub fn set_text_texture(&mut self, id: &str, width: u32, height: u32, rgba: &[u8]) -> bool {
+        let known = self
+            .text_textures
+            .iter()
+            .any(|(t, _, w, h)| t == id && *w == width && *h == height);
+        known
+            && self
+                .renderer
+                .set_decal_texture_rgba(id, width, height, rgba)
+                .is_ok()
+    }
+
     // ------------------------------------------------------------------ interaction
 
     /// Kind of the available interactable (`info_board`, `food_box`, `animal`, `gate`) or
@@ -442,38 +604,37 @@ impl App {
         let Some(result) = self.game.interact() else {
             return String::new();
         };
-        let json = match &result {
-            Interaction::InfoBoard(b) => format!(
-                "{{\"kind\":\"info_board\",\"key\":{},\"animal\":{},\"text\":{},\"picture\":{},\"food\":{},\"food_text\":{},\"level\":{}}}",
-                js(&format!("info_board:{}", b.animal)),
-                js(b.animal),
-                js(&self.text_now(&b.riddle_key)),
-                b.picture.as_deref().map_or("null".to_owned(), js),
-                js(b.food_key.trim_start_matches("food-")),
-                js(&self.text_now(&b.food_key)),
-                js(self.game.settings.reading_level.id()),
-            ),
-            Interaction::FoodBox { food, label } => format!(
-                "{{\"kind\":\"food_box\",\"key\":{},\"food\":{},\"text\":{},\"picture\":{},\"take\":{}}}",
-                js(&format!("food_box:{}", food.id())),
-                js(food.id()),
-                js(&self.text_now(&label.word_key)),
-                label.picture,
-                js(&self.text_now("ui-take")),
-            ),
-            Interaction::ShowFood {
-                animal, accepted, ..
-            } => format!(
-                "{{\"kind\":\"show_food\",\"animal\":{},\"accepted\":{accepted}}}",
-                js(animal)
-            ),
-            Interaction::Gate { enclosure, entered } => format!(
-                "{{\"kind\":\"gate\",\"enclosure\":{},\"entered\":{entered}}}",
-                js(enclosure)
-            ),
-        };
+        let json = self.interaction_json(&result);
         self.handle_events();
         json
+    }
+
+    /// Closes the reading panel by hand (✖ / Esc / after taking food): it stays closed until
+    /// the player leaves and re-enters the range (GAME-PLAYER §4, PLAY-026).
+    pub fn close_panel(&mut self) {
+        self.game.close_panel();
+    }
+
+    /// Key of the target whose reading panel is open (e.g. `food_box:grass`) or empty.
+    pub fn panel_key(&self) -> String {
+        self.game
+            .panel
+            .open
+            .as_ref()
+            .map(target_key)
+            .unwrap_or_default()
+    }
+
+    /// Content of the open reading panel as JSON (same form as [`App::interact`]) in the
+    /// current language and reading level, or empty (host re-renders after settings changes).
+    pub fn panel_json(&self) -> String {
+        self.game
+            .panel
+            .open
+            .clone()
+            .and_then(|t| self.panel_interaction(&t))
+            .map(|i| self.interaction_json(&i))
+            .unwrap_or_default()
     }
 
     /// Takes the food of a box (GAME-FEED §6). Returns true when the player now carries it.
@@ -531,7 +692,8 @@ impl App {
         let want = (speed / (0.5 * walk_speed)).clamp(0.0, 1.0);
         self.walk_blend += (want - self.walk_blend) * (1.0 - (-10.0 * dt).exp());
         self.idle_time += dt;
-        self.walk_time += dt * (speed / walk_speed).max(0.4);
+        // walk clip playback = speed ÷ 1.4, clamped (GAME-PLAYER §6, ART-RIG §4.7)
+        self.walk_time += dt * walk_clip_rate(speed);
         let yaw = self.player_yaw;
 
         // Carried food box in front of the chest (socket_carry approximation).
@@ -627,6 +789,16 @@ impl App {
         self.game.player.pos.y
     }
 
+    /// Player facing in level coordinates (x east).
+    pub fn player_facing_x(&self) -> f32 {
+        self.game.player.facing.x
+    }
+
+    /// Player facing in level coordinates (z north).
+    pub fn player_facing_z(&self) -> f32 {
+        self.game.player.facing.y
+    }
+
     /// Speed moved in the last update (m/s).
     pub fn player_speed(&self) -> f32 {
         self.game.player.last_speed
@@ -684,6 +856,73 @@ impl App {
             .map(|(k, n)| format!("{k} ×{n}"))
             .collect::<Vec<_>>()
             .join("\n")
+    }
+
+    /// Decal ids of the level (e.g. `sign:enc_zebra`, `sign:food_storage`), one per line.
+    pub fn decal_ids(&self) -> String {
+        self.decals
+            .iter()
+            .map(|d| d.id.as_str())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Whether a decal is drawn (its texture exists), AENV-011/012.
+    pub fn decal_drawn(&self, id: &str) -> bool {
+        self.decals.iter().any(|d| {
+            d.id == id
+                && self.renderer.has_decal_texture(&match &d.image {
+                    DecalImage::Texture(p) => p.clone(),
+                    DecalImage::Text { key, .. } => text_texture_id(key),
+                })
+        })
+    }
+
+    /// Screen rectangle of a decal in CSS px `[min_x, min_y, max_x, max_y]` (y down) with the
+    /// current camera, or empty if unknown / behind the camera.
+    pub fn decal_screen_rect(&self, id: &str) -> Vec<f32> {
+        let Some(d) = self.decals.iter().find(|d| d.id == id) else {
+            return Vec::new();
+        };
+        let (w, h) = self.renderer.size();
+        let ratio = self.renderer.pixel_ratio();
+        let vp = self.camera.view_proj(self.renderer.aspect());
+        let mut r = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
+        for c in d.corners() {
+            let Some(ndc) = zoo_render::camera::project(vp, c) else {
+                return Vec::new();
+            };
+            let x = (ndc.x * 0.5 + 0.5) * w as f32 / ratio;
+            let y = (0.5 - ndc.y * 0.5) * h as f32 / ratio;
+            r = [r[0].min(x), r[1].min(y), r[2].max(x), r[3].max(y)];
+        }
+        r.to_vec()
+    }
+
+    /// Screen rectangle of the player (feet to 1.3 m, radius 0.3 m) in CSS px
+    /// `[min_x, min_y, max_x, max_y]` with the current camera (PLAY-025: panels never cover it).
+    pub fn player_screen_rect(&self) -> Vec<f32> {
+        let (w, h) = self.renderer.size();
+        let ratio = self.renderer.pixel_ratio();
+        let vp = self.camera.view_proj(self.renderer.aspect());
+        let p = level_to_world(self.game.player.pos);
+        let mut r = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
+        for dy in [0.0, 1.3] {
+            for (dx, dz) in [(-0.3, 0.0), (0.3, 0.0), (0.0, -0.3), (0.0, 0.3)] {
+                let Some(ndc) = zoo_render::camera::project(vp, p + Vec3::new(dx, dy, dz)) else {
+                    return Vec::new();
+                };
+                let x = (ndc.x * 0.5 + 0.5) * w as f32 / ratio;
+                let y = (0.5 - ndc.y * 0.5) * h as f32 / ratio;
+                r = [r[0].min(x), r[1].min(y), r[2].max(x), r[3].max(y)];
+            }
+        }
+        r.to_vec()
+    }
+
+    /// Decals drawn in the last frame.
+    pub fn decals_drawn(&self) -> u32 {
+        self.renderer.decals_drawn()
     }
 
     /// A Fluent message in the given language, if the i18n files were loaded.
@@ -792,6 +1031,57 @@ impl App {
         self.update_animals(dt);
     }
 
+    /// What the reading panel of a target shows.
+    fn panel_interaction(&self, t: &Target) -> Option<Interaction> {
+        match t {
+            Target::InfoBoard { animal } => {
+                self.game.info_board(animal).map(Interaction::InfoBoard)
+            }
+            Target::FoodBox { food } => Some(Interaction::FoodBox {
+                food: *food,
+                label: zoo_core::FoodBox { food: *food }.label(self.game.settings.reading_level),
+            }),
+            _ => None,
+        }
+    }
+
+    /// JSON for the host (text panel content) of an interaction result.
+    fn interaction_json(&self, result: &Interaction) -> String {
+        match result {
+            Interaction::InfoBoard(b) => format!(
+                "{{\"kind\":\"info_board\",\"key\":{},\"animal\":{},\"title\":{},\"more\":{},\"facts\":{},\"text\":{},\"picture\":{},\"food\":{},\"food_text\":{},\"level\":{}}}",
+                js(&format!("info_board:{}", b.animal)),
+                js(b.animal),
+                js(&self.text_now(&b.name_key)),
+                js(&self.text_now(&b.more_key)),
+                js(&self.text_now(&b.facts_key)),
+                js(&self.text_now(&b.riddle_key)),
+                b.picture.as_deref().map_or("null".to_owned(), js),
+                js(b.food_key.trim_start_matches("food-")),
+                js(&self.text_now(&b.food_key)),
+                js(self.game.settings.reading_level.id()),
+            ),
+            Interaction::FoodBox { food, label } => format!(
+                "{{\"kind\":\"food_box\",\"key\":{},\"food\":{},\"text\":{},\"picture\":{},\"take\":{}}}",
+                js(&format!("food_box:{}", food.id())),
+                js(food.id()),
+                js(&self.text_now(&label.word_key)),
+                label.picture,
+                js(&self.text_now("ui-take")),
+            ),
+            Interaction::ShowFood {
+                animal, accepted, ..
+            } => format!(
+                "{{\"kind\":\"show_food\",\"animal\":{},\"accepted\":{accepted}}}",
+                js(animal)
+            ),
+            Interaction::Gate { enclosure, entered } => format!(
+                "{{\"kind\":\"gate\",\"enclosure\":{},\"entered\":{entered}}}",
+                js(enclosure)
+            ),
+        }
+    }
+
     fn text_now(&self, key: &str) -> String {
         self.content
             .as_ref()
@@ -852,6 +1142,19 @@ impl App {
                         js(&text)
                     ));
                 }
+                GameEvent::PanelOpened { target } => {
+                    if let Some(i) = self.panel_interaction(&target) {
+                        let panel = self.interaction_json(&i);
+                        self.outbox
+                            .push(format!("{{\"type\":\"panel_open\",\"panel\":{panel}}}"));
+                    }
+                }
+                GameEvent::PanelClosed { target } => {
+                    self.outbox.push(format!(
+                        "{{\"type\":\"panel_close\",\"key\":{}}}",
+                        js(&target_key(&target))
+                    ));
+                }
                 GameEvent::FoodTaken { food, .. } => {
                     self.outbox.push(format!(
                         "{{\"type\":\"food_taken\",\"food\":{},\"text\":{}}}",
@@ -896,7 +1199,7 @@ impl App {
             let want = (speed / (0.5 * walk_speed)).clamp(0.0, 1.0);
             v.walk_blend += (want - v.walk_blend) * (1.0 - (-10.0 * dt).exp());
             v.idle_time += dt;
-            v.walk_time += dt * (speed / walk_speed).max(0.4);
+            v.walk_time += dt * walk_clip_rate(speed);
             let arrived = dist < 0.05;
             if v.wait_arrival && arrived {
                 v.wait_arrival = false;
@@ -972,6 +1275,11 @@ fn zebra_placeholder(
         BLACK,
     ); // mane
     push(Vec3::new(0.0, hy, 1.02), Vec3::new(0.25, 0.2, 0.08), BLACK); // muzzle
+}
+
+/// Texture id of a text decal (`text:<fluent key>`).
+fn text_texture_id(key: &str) -> String {
+    format!("text:{key}")
 }
 
 fn target_key(t: &Target) -> String {
@@ -1060,6 +1368,13 @@ mod tests {
         assert!(list.contains(&"models/props/food_box.glb".to_owned()));
         assert!(list.contains(&"models/characters/player_girl.glb".to_owned()));
         assert!(list.contains(&"models/animals/zebra.glb".to_owned()));
+        // AENV-011: the zebra sign silhouette is fetched (hippo/panda once they exist)
+        assert!(list.contains(&"textures/signs/silhouette_zebra.png".to_owned()));
+        assert!(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../assets/textures/signs/silhouette_zebra.png"
+        ))
+        .exists());
     }
 
     #[test]

@@ -115,6 +115,45 @@ void main() {
     .to_owned()
 }
 
+/// Decals (sign silhouettes, sign texts, ART-ENVIRONMENT 6/7): textured quads in world space,
+/// alpha-blended into the G-buffer over their model face. Same 2-tone light as the face (its
+/// normal), the normal buffer keeps the face normal and its edge mask (blend alpha: dst), so
+/// no outline is drawn inside the panel.
+pub fn decal_vs() -> String {
+    r#"#version 300 es
+layout(location = 0) in vec3 a_pos;
+layout(location = 1) in vec2 a_uv;
+uniform mat4 u_view_proj;
+out vec2 v_uv;
+void main() {
+    v_uv = a_uv;
+    gl_Position = u_view_proj * vec4(a_pos, 1.0);
+}
+"#
+    .to_owned()
+}
+
+pub fn decal_fs() -> String {
+    r#"#version 300 es
+precision highp float;
+uniform sampler2D u_tex;
+uniform vec3 u_normal;
+uniform vec3 u_sun_dir;
+uniform vec3 u_shadow_tint;
+in vec2 v_uv;
+layout(location = 0) out vec4 o_color;
+layout(location = 1) out vec4 o_normal;
+void main() {
+    vec4 t = texture(u_tex, v_uv);
+    if (t.a < 0.02) discard;
+    float lit = step(0.12, dot(u_normal, u_sun_dir));
+    o_color = vec4(t.rgb * mix(u_shadow_tint, vec3(1.0), lit), t.a);
+    o_normal = vec4(u_normal * 0.5 + 0.5, t.a);
+}
+"#
+    .to_owned()
+}
+
 pub fn post_vs() -> String {
     r#"#version 300 es
 out vec2 v_uv;

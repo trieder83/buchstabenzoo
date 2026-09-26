@@ -59,15 +59,11 @@ impl Language {
     }
 }
 
-/// Default language from a browser/device language tag such as `en-GB` (CONT-L10N §5):
-/// the device language if supported, else `de`.
-pub fn default_language(device_lang: &str) -> Language {
-    let primary = device_lang
-        .split(['-', '_'])
-        .next()
-        .unwrap_or("")
-        .to_ascii_lowercase();
-    Language::from_id(&primary).unwrap_or(Language::De)
+/// Default language when no choice is stored (CONT-L10N §5, user decision 2026-09-26): always
+/// `de`, whatever the browser/device language (`device_lang`, e.g. `en-GB`) is. English is
+/// chosen in the settings; a stored choice wins over this default (host `loadSettings`).
+pub fn default_language(_device_lang: &str) -> Language {
+    Language::De
 }
 
 /// Fluent key of a location riddle (CONT-MISSIONS §1: `mission-<animal>-riddle-<level>`).
@@ -76,6 +72,23 @@ pub fn default_language(device_lang: &str) -> Language {
 /// more places per animal need a key scheme with the place id (spec gap).
 pub fn riddle_key(animal: &str, _hiding_place: &str, level: ReadingLevel) -> String {
     format!("mission-{animal}-riddle-{}", level.id())
+}
+
+/// Fluent key of the facts about an animal on its info board (GAME-ANIMALS "Info board"
+/// item 4, CONT-MISSIONS: `mission-<animal>-facts-<level>`).
+pub fn facts_key(animal: &str, level: ReadingLevel) -> String {
+    format!("mission-{animal}-facts-{}", level.id())
+}
+
+/// Fluent key of an animal's name (info board heading, CONT-MISSIONS: `animal-<animal>`,
+/// level-independent as proposed in Q-038).
+pub fn animal_name_key(animal: &str) -> String {
+    format!("animal-{animal}")
+}
+
+/// Fluent key of the "more about the animal" heading above the facts (`animal-<animal>-more`).
+pub fn animal_more_key(animal: &str) -> String {
+    format!("animal-{animal}-more")
 }
 
 #[derive(Debug)]

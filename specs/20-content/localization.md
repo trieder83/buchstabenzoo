@@ -19,7 +19,8 @@ updated: 2026-09-26
 3. Key naming: `<area>-<item>-<reading_level>`, e.g. `food-bamboo-kiga`, `sign-zebra`
    (when the reading level suffix is required is open — Q-038).
 4. Language can be switched in settings at runtime without restart.
-5. Default language = device language if supported, else `de`.
+5. Default language is **always `de`** (user decision 2026-09-26: in-game text is German for
+   now), regardless of the device language; English can be chosen in the settings.
 6. UI texts (settings labels, take/close, feedback bubbles) live in `ui.ftl` (`ui-<item>`),
    mission texts in `missions.ftl`. The PoC settings menu (icon button) switches language
    (`de`/`en`) and reading level at runtime and stores both in the browser (`localStorage`);
@@ -33,7 +34,7 @@ updated: 2026-09-26
 | L10N-002 | Given every key in `en`, then it exists in `de` (no orphans). | unit |
 | L10N-003 | Given browser language `fr` while `fr` is disabled, then the game starts in `de`. | unit |
 | L10N-004 | Given the language is switched at runtime, then all visible text updates within one frame. | e2e |
-| L10N-005 | Given browser language `en`, then the game starts in `en`. | unit |
+| L10N-005 | Given browser language `en` and no stored choice, then the game starts in `de`; after choosing English in the settings it shows `en` and keeps it. | unit |
 
 ## Open questions
 

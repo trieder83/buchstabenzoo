@@ -25,6 +25,13 @@ updated: 2026-09-26
      capped so an animal's hiding place is not visible from its own enclosure (GAME-LEVEL-1).
    - Objects between camera and player (trees, roofs, hedges) fade to semi-transparent;
      roofs of interactable interiors (food storage, cave) cut away when the player is near.
+   - **Roofs disappear inside buildings** (user decision 2026-09-26): every building the
+     player can enter (food storage, zookeeper house, enclosure shelters such as the hippo
+     hut, the cave) has a walkable interior and a separate **roof part** (and, where it
+     blocks the view, the upper part of the camera-facing wall). While the player is inside
+     (or in the doorway), the roof fades out within 0.3 s so the child sees what happens
+     inside; it fades back in 0.3 s after she leaves. Animals inside a building are visible
+     the same way when the player is inside with them.
 3. **Movement and camera controls.**
    - **Desktop:** WASD / arrow keys walk; mouse drag or `Q`/`R` rotates the camera in 45°
      steps; mouse wheel (or `+`/`-`) zooms; `E`, Space or Enter interacts. (Fix 2026-09-26:
@@ -51,9 +58,24 @@ updated: 2026-09-26
      the continuous drag rotation (one step per 70 px). Desktop shows a key hint (`E`)
      instead of the touch button; it can also be clicked.
 4. **Interact.** When the player is near an interactable (animal, visitor, food box, sign,
-   door), a large icon button appears; tapping it (or `E`/Space/Enter) interacts. Reading
-   interactions (info board, food box label, sign) open a **close-up text panel** with
-   large text and read-aloud button (CONT-READING); closing it returns to the camera.
+   door), a large icon button appears; tapping it (or `E`/Space/Enter) interacts.
+   **Reading panels open and close automatically** (user decision 2026-09-26): when an
+   info board or a food box becomes *available* (§5) the **close-up text panel** opens by
+   itself after a short settle time of 0.25 s (so walking straight past without facing it
+   does not flash it); when it stops being available (walked away > 2.5 m, turned away, or
+   another interactable became nearer) the panel closes by itself after 0.3 s. The player
+   can keep walking while a panel is open — the panel never blocks movement input and never
+   covers the player (top of the screen in landscape, upper part in portrait). The manual
+   close button (✖/Esc) still works; a manually closed panel stays closed until the player
+   has left and re-entered the interactable's range. Actions stay explicit: taking a food
+   box needs the take button (✋) or interact; animals and gates still use the interact
+   button. The panel has a read-aloud button (CONT-READING).
+   *PoC implementation notes (M4b):* the open/close state machine lives in zoo-core
+   (`Game::update`, events `PanelOpened` / `PanelClosed`; `Game::close_panel` for ✖/Esc and
+   after taking food); the host only shows/hides the panel. The panel is anchored at the top
+   of the screen in both orientations (above HUD and gear while open), at most 38 % of the
+   screen height, two columns (facts | riddle + food) in landscape; longer texts scroll
+   inside it. Only the panel box takes pointer input.
 5. **Interaction range and facing:** an interactable is *available* when the player is
    within 2 m of its interaction point **and in front of it**: for boards and signs the
    player stands on the readable side (within ±60° of the panel's facing direction) and
@@ -69,8 +91,11 @@ updated: 2026-09-26
    the gate, GAME-RESCUE §7/§8). Enclosure signs are not interactable yet (no sign texts:
    Q-064). zoo-core decides availability and the result; the host only shows UI.
 6. **Ground speed.** The player can walk on paths and on grass; on grass the player is
-   slower (user decision 2026-09-26). Speed on grass = path speed × `grass_speed_factor`
-   (proposal: 0.7). Path walking speed: Q-024 (proposal 1.4 m/s). Cells covered by solid
+   slower (user decision 2026-09-26). **Path speed 1.93 m/s** — 1.75 m/s (+25 %) and then another
+   +10 % (user decisions 2026-09-26, playtests); **grass speed stays 0.98 m/s**, i.e.
+   `grass_speed_factor` ≈ 0.51. The walk clip (authored for 1.4 m/s) plays at speed ÷ 1.4
+   (≈ 1.38× on paths, within the ART-RIG playback clamp of 0.8–1.4). Following animals use the same
+   speeds. Cells covered by solid
    elements (fences, water, hedges, buildings) are not walkable (GAME-LAYOUT).
 7. **Collision with props:** every placed prop with a footprint (info boards, signs, map
    board, benches, food boxes, trees, rocks, bamboo, carts, cones, barriers, bridge rails,
@@ -111,6 +136,15 @@ updated: 2026-09-26
 | PLAY-020 | Given the player stands 1.5 m in front of an info board facing it, then the interactable is available and the interact button/hint is shown; standing behind it, beside it (> 60° off its facing) or facing away, it is not. | unit |
 | PLAY-021 | Given two interactables are available, then the nearest one is offered. | unit |
 | PLAY-022 | Given the player walks over grass tufts and flowers inside beds (non-solid ground decoration, §7), then she is not blocked. | unit |
+| PLAY-023 | Given the player walks up to an info board and faces it, then the text panel opens by itself within 0.25–0.5 s without pressing a button; walking away (> 2.5 m) or turning away closes it within 0.5 s. | e2e |
+| PLAY-024 | Given the player walks past a food box without facing it (passes by in < 0.25 s of availability), then no panel flashes open. | unit |
+| PLAY-025 | Given a panel is open, then joystick/keyboard movement still moves the player and the panel does not cover the player on screen (portrait and landscape). | e2e |
+| PLAY-026 | Given the player closed a panel manually, then it does not reopen while she stays in range; after leaving and returning, it opens again. | unit |
+| PLAY-027 | Given the auto-opened food box panel, then the food is only taken after pressing ✋/interact, never by just walking up. | unit |
+| PLAY-030 | Given a phone in portrait or landscape (412×892 / 892×412 CSS px, 1080×2340 device px) and any reading level and language, when an info board panel opens, then all its text including the food word is visible inside the panel without scrolling and the cap height is ≥ 3 % of the viewport height (proposal, Q-070; QA 2026-09-26). | e2e |
+| PLAY-031 | Given every walkable cell centre of level 1 not covered by a prop and 8 walking directions, when the player walks 3 s, then her circle never overlaps a solid cell or prop shape, she is never trapped (can move ≥ 0.15 m in some direction afterwards) and she does not jitter (< 2 cm back-and-forth) while pushing against walls, props and corners (QA 2026-09-26). | unit |
+| PLAY-028 | Given the player walks through the door into an enterable building, then its roof (and the blocking wall top) fades out within 0.3 s while she is inside and fades back in within 0.3 s after she leaves; other buildings keep their roofs. | e2e |
+| PLAY-029 | Given the player inside a building, then everything inside (floor, props, animals) is visible from the default camera at every 45° rotation. | e2e |
 
 ## Open questions
 

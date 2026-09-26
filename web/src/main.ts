@@ -3,6 +3,8 @@
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
 import { attachInput, type StickView } from './input';
+import { SaveSlot } from './save';
+import { updateTextTextures } from './text';
 import { loadSettings, Ui } from './ui';
 
 const LEVEL = 'levels/level-1.toml';
@@ -11,6 +13,7 @@ const LEVEL = 'levels/level-1.toml';
 export interface ZooDebug {
   app: App;
   ui: Ui;
+  slot: SaveSlot;
   frames: number;
   /** Average CPU time of `app.frame()` in ms (exponential moving average). */
   frameMs: number;
@@ -82,16 +85,29 @@ async function main(): Promise<void> {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   const app = new App(canvas, LEVEL, files);
   const store = storage();
+  // GAME-SAVE: continue where the child stopped (restored before the first frame)
+  const slot = new SaveSlot(app, store);
+  slot.restore();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') slot.flush();
+  });
+  window.addEventListener('pagehide', () => slot.flush());
   const settings = loadSettings(store, App.default_language(navigator.language || 'de'));
   app.set_language(settings.language);
   app.set_reading_level(settings.readingLevel);
+
+  updateTextTextures(app); // sign texts (re-rendered on language change, in the loop)
 
   const resize = () => app.resize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio || 1);
   resize();
   new ResizeObserver(resize).observe(canvas);
   window.addEventListener('orientationchange', resize);
 
-  const ui = new Ui(app, store);
+  const ui = new Ui(app, store, () => {
+    // new game (confirmed in the settings, GAME-SAVE §6): delete the save, restart the level
+    slot.reset();
+    window.location.reload();
+  });
   attachInput(app, {
     canvas,
     stickView: stickView(),
@@ -101,15 +117,17 @@ async function main(): Promise<void> {
   });
   canvas.focus();
 
-  const debug: ZooDebug = { app, ui, frames: 0, frameMs: 0, intervalMs: 0 };
+  const debug: ZooDebug = { app, ui, slot, frames: 0, frameMs: 0, intervalMs: 0 };
   window.__zoo = debug;
   let last = performance.now();
   const loop = (now: number) => {
     const dt = (now - last) / 1000;
     last = now;
     const t0 = performance.now();
+    updateTextTextures(app);
     app.frame(dt);
     ui.update();
+    slot.tick();
     const ms = performance.now() - t0;
     debug.frames += 1;
     debug.frameMs = debug.frames === 1 ? ms : debug.frameMs * 0.95 + ms * 0.05;

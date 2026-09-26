@@ -1,6 +1,6 @@
 # Brief — `loc_river`
 
-Spec: ART-ENVIRONMENT, CONT-MISSIONS §1, GAME-LEVEL-1. Status: **brief — images not generated yet**. Layout: `layout.md` in this
+Spec: ART-ENVIRONMENT, CONT-MISSIONS §1, GAME-LEVEL-1. Status: **in-review — first mockups generated 2026-09-26**. Layout: `layout.md` in this
 folder; level data `assets/levels/level-1.toml`.
 
 ## Purpose
@@ -125,3 +125,15 @@ Tools without a negative-prompt field: add "No text anywhere, no logos, not phot
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
 | | | | | | |
+| 2026-09-26 | player_view_v1.jpg | gemini-3-pro-image (2K, 9:16) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | **chosen** → player_view.png — zebras drinking, bridge, ducks; stray sign with horse silhouette on a side fence (ignore) |
+| 2026-09-26 | player_view_v2.jpg | gemini-3-pro-image (2K, 9:16) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | alternative — zebra sign on the river bank (misleading) |
+| 2026-09-26 | overview_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | alternative — river grates look like cage bars, a zebra enclosure sign by the river |
+| 2026-09-26 | overview_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | **chosen** → overview.png — flowing river with rapids, bridge, 3 zebras drinking, ducks, fallen tree, grates |
+
+**Mockup notes (2026-09-26):** generated with gemini-3-pro-image (2K), chosen image downscaled
+to ≤ 2048 px and saved as PNG, the alternative kept as `*_v*.jpg`. References: the style frame
+plus the approved kit/model sheets named in the log; `--extra`: "The first attached image is the approved style frame of this game: match its comic style, colours, line weight, outlines and high camera look exactly, but not its layout. The other attached image(s) are approved asset sheets of props that appear in this scene: draw those props exactly like on the sheets (shapes, colours, materials); do not copy the grey sheet background or the sheet layout. No text anywhere."
+These are concept mockups from text only (no greybox guide yet) — positions are approximate.
+**The level layout may still change:** the level designer is adding more hiding places
+(GAME-LEVEL-1 `[[hiding_place]]`), so the mockups must be re-checked against
+`specs/10-gameplay/levels/level-1.md` before approval.

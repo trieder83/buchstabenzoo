@@ -12,9 +12,16 @@ class MapStore implements KeyValue {
 }
 
 describe('settings persistence (CONT-L10N §6)', () => {
-  it('defaults to the device language and klasse1', () => {
-    expect(loadSettings(new MapStore(), 'en')).toEqual({ language: 'en', readingLevel: 'klasse1' });
+  it('defaults to the given default language (always de, CONT-L10N §5) and klasse1', () => {
+    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1' });
     expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1' });
+  });
+  it('L10N-005: browser en without stored choice starts in de; a chosen en is kept', () => {
+    const s = new MapStore();
+    // main.ts passes App.default_language(navigator.language), which is always 'de'
+    expect(loadSettings(s, 'de').language).toBe('de');
+    saveSettings(s, { language: 'en', readingLevel: 'klasse1' });
+    expect(loadSettings(s, 'de').language).toBe('en');
   });
   it('round-trips and ignores invalid values', () => {
     const s = new MapStore();

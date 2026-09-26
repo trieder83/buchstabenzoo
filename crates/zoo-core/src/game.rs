@@ -5,7 +5,9 @@
 use glam::{IVec2, Vec2};
 
 use crate::animals::{animal_info, AnimalInfo, AnimalState};
-use crate::content::{riddle_key, Language, ReadingLevel};
+use crate::content::{
+    animal_more_key, animal_name_key, facts_key, riddle_key, Language, ReadingLevel,
+};
 use crate::food::{Carry, Food, FoodBox, FoodLabel, FoodStorage};
 use crate::level::{
     cell_center, cell_of, facing_vec, CellKind, ElementType, Level, LevelData, Surface,
@@ -78,6 +80,41 @@ pub enum GameEvent {
     BarrierOpened {
         id: String,
     },
+    /// The reading panel of an info board / food box opened by itself (GAME-PLAYER §4).
+    PanelOpened {
+        target: Target,
+    },
+    /// The reading panel closed by itself (target no longer available).
+    PanelClosed {
+        target: Target,
+    },
+}
+
+/// Reading panels open this long after their target became available (GAME-PLAYER §4).
+pub const PANEL_SETTLE_S: f32 = 0.25;
+/// An open panel closes this long after its target stopped being available.
+pub const PANEL_CLOSE_S: f32 = 0.3;
+/// Range hysteresis: an open panel stays while the player is within this distance.
+pub const PANEL_KEEP_RANGE_M: f32 = 2.5;
+
+/// Automatic open/close of the reading panel (GAME-PLAYER §4, PLAY-023…027).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct ReadingPanel {
+    /// Target whose panel is open.
+    pub open: Option<Target>,
+    /// Reading target that is available but still settling, and for how long.
+    candidate: Option<(Target, f32)>,
+    /// How long the open target has not been available.
+    lost_s: f32,
+    /// Closed by hand: not reopened until the player left its range (> 2.5 m).
+    suppressed: Option<Target>,
+}
+
+impl ReadingPanel {
+    /// Target closed by hand and not yet left.
+    pub fn suppressed(&self) -> Option<&Target> {
+        self.suppressed.as_ref()
+    }
 }
 
 /// Readable side tolerance (GAME-PLAYER §5).
@@ -109,6 +146,11 @@ pub enum Target {
 }
 
 impl Target {
+    /// Targets with a reading panel (info boards, food boxes) open it by themselves.
+    pub fn is_reading(&self) -> bool {
+        matches!(self, Target::InfoBoard { .. } | Target::FoodBox { .. })
+    }
+
     /// Short id for the host UI (button icon).
     pub fn kind(&self) -> &'static str {
         match self {
@@ -165,8 +207,8 @@ pub struct Animal {
     pub waiting: bool,
     /// Stopped at a wrong enclosure's gate (RESC-007).
     pub refusing: bool,
-    path: Vec<IVec2>,
-    path_target: Option<IVec2>,
+    pub(crate) path: Vec<IVec2>,
+    pub(crate) path_target: Option<IVec2>,
 }
 
 impl Animal {
@@ -201,6 +243,13 @@ impl Default for Settings {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InfoBoard {
     pub animal: &'static str,
+    /// Heading: the animal's name (`animal-<animal>`).
+    pub name_key: String,
+    /// "More about the animal" heading above the facts (`animal-<animal>-more`).
+    pub more_key: String,
+    /// Facts about the animal (`mission-<animal>-facts-<level>`, ANIM-006); never names the
+    /// hiding place (ANIM-007). Shown after the riddle and the food word.
+    pub facts_key: String,
     pub riddle_key: String,
     /// `kiga`: a picture of the hiding place (its id) next to the one-word riddle.
     pub picture: Option<String>,
@@ -241,8 +290,45 @@ pub struct Game {
     pub follow_params: FollowParams,
     events: Vec<GameEvent>,
     /// Gate cell the player stood on in the last update (for once-per-entry events).
-    last_gate: Option<usize>,
-    all_home: bool,
+    pub(crate) last_gate: Option<usize>,
+    pub(crate) all_home: bool,
+    /// Automatic reading panel (GAME-PLAYER §4).
+    pub panel: ReadingPanel,
+    /// Seed of this playthrough and the RNG after the setup (GAME-SAVE).
+    pub(crate) seed: u64,
+    pub(crate) rng: Pcg32,
+    /// Play time in seconds (sum of `update` steps).
+    pub time_s: f64,
+    /// Autosave bookkeeping (GAME-SAVE §3).
+    pub(crate) autosave: Autosave,
+}
+
+/// Autosave rules (GAME-SAVE §3): after every progress event and every 5 s of moving.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Autosave {
+    /// A progress event happened since the last save.
+    pub(crate) progress: bool,
+    /// Seconds the player moved since the last save.
+    pub(crate) moving_s: f32,
+}
+
+/// Autosave interval while the player moves (GAME-SAVE §3).
+pub const AUTOSAVE_MOVING_S: f32 = 5.0;
+
+impl GameEvent {
+    /// Progress events trigger an autosave (GAME-SAVE §3).
+    pub fn is_progress(&self) -> bool {
+        matches!(
+            self,
+            GameEvent::MissionStarted { .. }
+                | GameEvent::FoodTaken { .. }
+                | GameEvent::StartedFollowing { .. }
+                | GameEvent::InEnclosure { .. }
+                | GameEvent::MissionComplete { .. }
+                | GameEvent::AllAnimalsHome
+                | GameEvent::BarrierOpened { .. }
+        )
+    }
 }
 
 impl Game {
@@ -303,11 +389,33 @@ impl Game {
             events: Vec::new(),
             last_gate: None,
             all_home: false,
+            panel: ReadingPanel::default(),
+            seed,
+            rng,
+            time_s: 0.0,
+            autosave: Autosave::default(),
         })
     }
 
+    /// Takes the events since the last call. Progress events among them make an autosave due
+    /// (GAME-SAVE §3; the host drains after every update / interaction).
     pub fn drain_events(&mut self) -> Vec<GameEvent> {
-        std::mem::take(&mut self.events)
+        let events = std::mem::take(&mut self.events);
+        if events.iter().any(GameEvent::is_progress) {
+            self.autosave.progress = true;
+        }
+        events
+    }
+
+    /// Whether an autosave is due: a progress event happened, or the player moved for
+    /// [`AUTOSAVE_MOVING_S`] since the last save (GAME-SAVE §3, SAVE-009).
+    pub fn save_due(&self) -> bool {
+        self.autosave.progress || self.autosave.moving_s >= AUTOSAVE_MOVING_S
+    }
+
+    /// Resets the autosave rules after the host stored a save.
+    pub fn mark_saved(&mut self) {
+        self.autosave = Autosave::default();
     }
 
     pub fn animal_index(&self, id: &str) -> Option<usize> {
@@ -347,6 +455,9 @@ impl Game {
         let level = self.settings.reading_level;
         Some(InfoBoard {
             animal: a.id(),
+            name_key: animal_name_key(a.id()),
+            more_key: animal_more_key(a.id()),
+            facts_key: facts_key(a.id(), level),
             riddle_key: riddle_key(a.id(), &a.hiding_place, level),
             picture: (level == ReadingLevel::Kiga).then(|| a.hiding_place.clone()),
             food_key: a.info.foods[0].label_key(),
@@ -530,10 +641,15 @@ impl Game {
     /// GAME-PLAYER §5: within 2 m of the interaction point, on the readable side (±60°) if
     /// the target has one, and facing it (±75°).
     pub fn is_available(&self, it: &Interactable) -> bool {
+        self.is_available_within(it, crate::player::INTERACTION_RANGE_M)
+    }
+
+    /// [`Game::is_available`] with another range (panel hysteresis, GAME-PLAYER §4).
+    pub fn is_available_within(&self, it: &Interactable, range: f32) -> bool {
         let p = self.player.pos;
         let to_player = p - it.point;
         let dist = to_player.length();
-        if !in_interaction_range(dist) {
+        if dist > range {
             return false;
         }
         if dist < 1e-3 {
@@ -560,7 +676,15 @@ impl Game {
     /// Interacts with the available target (GAME-PLAYER §4/§5). Reading targets return what
     /// the text panel shows; food boxes are only taken with [`Game::take_food`] (GAME-FEED §6).
     pub fn interact(&mut self) -> Option<Interaction> {
-        match self.available_target()? {
+        let target = self.available_target()?;
+        if target.is_reading() {
+            // opened by hand: the panel is open now (and closes by itself again)
+            self.panel.open = Some(target.clone());
+            self.panel.candidate = None;
+            self.panel.lost_s = 0.0;
+            self.panel.suppressed = None;
+        }
+        match target {
             Target::InfoBoard { animal } => self
                 .read_info_board(animal)
                 .ok()
@@ -630,6 +754,93 @@ impl Game {
         );
         self.check_gate();
         self.update_followers(dt);
+        self.update_panel(dt);
+        self.time_s += f64::from(dt);
+        if self.player.last_speed > 0.01 {
+            self.autosave.moving_s += dt;
+        }
+    }
+
+    /// Closes the reading panel by hand (✖/Esc, or after taking food): it stays closed until
+    /// the player has left the target's range and comes back (PLAY-026).
+    pub fn close_panel(&mut self) {
+        if let Some(t) = self.panel.open.take() {
+            self.panel.suppressed = Some(t);
+        }
+        self.panel.candidate = None;
+        self.panel.lost_s = 0.0;
+    }
+
+    /// Distance from the player to a target's interaction point.
+    fn target_distance(&self, t: &Target) -> Option<f32> {
+        self.interactables()
+            .into_iter()
+            .find(|it| &it.target == t)
+            .map(|it| it.point.distance(self.player.pos))
+    }
+
+    /// Automatic reading panel (GAME-PLAYER §4): opens after the target was available for
+    /// [`PANEL_SETTLE_S`], closes after it was not available for [`PANEL_CLOSE_S`] (range
+    /// hysteresis [`PANEL_KEEP_RANGE_M`]; another nearer interactable also closes it).
+    fn update_panel(&mut self, dt: f32) {
+        let available = self.available_target();
+        if let Some(s) = &self.panel.suppressed {
+            let left = self
+                .target_distance(s)
+                .is_none_or(|d| d > PANEL_KEEP_RANGE_M);
+            if left {
+                self.panel.suppressed = None;
+            }
+        }
+        if let Some(open) = self.panel.open.clone() {
+            let keep = match &available {
+                Some(t) => *t == open,
+                None => self
+                    .interactables()
+                    .iter()
+                    .find(|it| it.target == open)
+                    .is_some_and(|it| self.is_available_within(it, PANEL_KEEP_RANGE_M)),
+            };
+            if keep {
+                self.panel.lost_s = 0.0;
+            } else {
+                self.panel.lost_s += dt;
+                if self.panel.lost_s >= PANEL_CLOSE_S - 1e-4 {
+                    self.panel.open = None;
+                    self.panel.lost_s = 0.0;
+                    self.events.push(GameEvent::PanelClosed { target: open });
+                }
+            }
+            if self.panel.open.is_some() {
+                return;
+            }
+        }
+        let candidate =
+            available.filter(|t| t.is_reading() && self.panel.suppressed.as_ref() != Some(t));
+        let Some(t) = candidate else {
+            self.panel.candidate = None;
+            return;
+        };
+        let settled = match &mut self.panel.candidate {
+            Some((c, s)) if *c == t => {
+                *s += dt;
+                *s
+            }
+            _ => {
+                self.panel.candidate = Some((t.clone(), 0.0));
+                0.0
+            }
+        };
+        if settled >= PANEL_SETTLE_S - 1e-4 {
+            self.panel.candidate = None;
+            self.panel.lost_s = 0.0;
+            if let Target::InfoBoard { animal } = &t {
+                // reading the board starts the mission (RESC-012)
+                let _ = self.read_info_board(animal);
+            }
+            self.panel.open = Some(t.clone());
+            self.events.push(GameEvent::PanelOpened { target: t });
+        }
     }
 
     fn check_gate(&mut self) {

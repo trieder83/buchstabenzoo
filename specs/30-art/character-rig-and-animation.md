@@ -169,7 +169,8 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
    `hand_*` (weight 1 for those joints, 0 for all others), fading in/out over 0.15 s.
    `pick_up` and `give` override the layer while they play.
 7. **Locomotion speed matching:** `walk` and `run` play at rate
-   `actual_speed / authored_speed`, clamped to [0.8, 1.25]. Between the walk and run
+   `actual_speed / authored_speed`, clamped to [0.8, 1.4] (raised from 1.25 for the path speed
+   of 1.93 m/s, GAME-PLAYER §6). Between the walk and run
    speed ranges the game switches `walk` → `run` when the speed rises above 2.4 m/s and
    `run` → `walk` when it falls below 2.0 m/s (hysteresis). Below 0.1 m/s the character
    is in `idle`.
@@ -277,7 +278,7 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 | RIG-013 | Given `pick_up` requested once, then `pick_up_grab` fires once at 0.40 s and after 0.80 s the active clip is the current locomotion clip. | unit |
 | RIG-014 | Given `idle` active, when `walk` is requested, then at 0.075 s the sampled pose of each joint is the 50 % blend of both clips (± 0.5°), and at 0.15 s it equals `walk`. | unit |
 | RIG-015 | Given the carry layer active over `walk`, then masked arm joints equal the `carry` pose and all other joints equal the `walk` pose (± 0.1°). | unit |
-| RIG-016 | Given a player speed of 1.2 m/s, then `walk` playback rate is 0.857; at 2.0 m/s it is clamped to 1.25; at 2.5 m/s the active clip is `run`, decelerating to 2.2 m/s keeps `run`, and at 1.9 m/s it is `walk` again. | unit |
+| RIG-016 | Given a player speed of 1.2 m/s, then `walk` playback rate is 0.857; at 1.93 m/s it is 1.38; at 2.2 m/s it is clamped to 1.4; at 2.5 m/s the active clip is `run`, decelerating to 2.2 m/s keeps `run`, and at 1.9 m/s it is `walk` again. | unit |
 | RIG-017 | Given seed S and 60 s of `idle`, then the blink times are identical across runs, every interval is within 3–6 s and each blink lasts 0.12 s. | unit |
 | RIG-018 | Given each human character `.glb`, then it has one skinned mesh with primitives using materials `body` and `face`, the face UVs lie inside cell 0 of the 256 × 128 face atlas, the body texture is ≤ 256 × 256, triangle count ≤ 3 000 and file size ≤ 400 KB. | asset |
 | RIG-019 | Given the in-game character viewer, when each clip plays on each character, with cel shading and outline on, then no limb visibly passes through the body, elbows/knees/shoulders bend without gaps, collapsing or broken outlines, and expressions match §4.3 (review checklist). | manual |

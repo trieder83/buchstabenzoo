@@ -210,6 +210,25 @@ pub struct FrameStats {
     pub draw_calls: u32,
     pub instances: u32,
     pub triangles: u32,
+    pub decals: u32,
+}
+
+/// A decal quad on the GPU: texture name, face normal, index of its first vertex.
+struct DecalDraw {
+    texture: String,
+    normal: Vec3,
+    first_vertex: usize,
+}
+
+/// All decal quads in one buffer (4 vertices each: position + uv).
+#[derive(Default)]
+struct Decals {
+    draws: Vec<DecalDraw>,
+    vertices: Vec<f32>,
+    vao: Option<WebGlVertexArrayObject>,
+    vbo: Option<WebGlBuffer>,
+    ibo: Option<WebGlBuffer>,
+    uploaded: bool,
 }
 
 pub struct Renderer {
@@ -218,6 +237,9 @@ pub struct Renderer {
     static_prog: Program,
     skinned_prog: Program,
     post_prog: Program,
+    decal_prog: Program,
+    decal_textures: HashMap<String, WebGlTexture>,
+    decals: Decals,
     palette: WebGlTexture,
     batches: Vec<Batch>,
     batch_index: HashMap<String, usize>,
@@ -284,6 +306,20 @@ impl Renderer {
         )
         .map_err(err)?;
 
+        let decal_prog = Program::new(
+            &gl,
+            &shaders::decal_vs(),
+            &shaders::decal_fs(),
+            &[
+                "u_view_proj",
+                "u_tex",
+                "u_normal",
+                "u_sun_dir",
+                "u_shadow_tint",
+            ],
+        )
+        .map_err(err)?;
+
         let palette = create_texture(&gl, 1, 1, &[255, 255, 255, 255])?;
         let mut r = Self {
             gl,
@@ -291,6 +327,9 @@ impl Renderer {
             static_prog,
             skinned_prog,
             post_prog,
+            decal_prog,
+            decal_textures: HashMap::new(),
+            decals: Decals::default(),
             palette,
             batches: Vec::new(),
             batch_index: HashMap::new(),
@@ -332,6 +371,11 @@ impl Renderer {
         self.width = w;
         self.height = h;
         self.gbuf = self.create_gbuffer(w, h).ok();
+    }
+
+    /// Device pixels per CSS pixel of the drawing buffer.
+    pub fn pixel_ratio(&self) -> f32 {
+        self.pixel_ratio
     }
 
     pub fn size(&self) -> (i32, i32) {
@@ -405,6 +449,125 @@ impl Renderer {
             normal,
             depth,
         })
+    }
+
+    /// Creates or replaces a decal texture (RGBA8, straight alpha, top row first; LINEAR +
+    /// mipmaps so text and silhouettes stay smooth when small). Used for sign silhouettes and
+    /// for text textures rendered by the host (re-uploaded on language change).
+    pub fn set_decal_texture_rgba(
+        &mut self,
+        name: &str,
+        w: u32,
+        h: u32,
+        rgba: &[u8],
+    ) -> Result<(), JsValue> {
+        if w == 0 || h == 0 || rgba.len() != (w * h * 4) as usize {
+            return Err(JsValue::from_str(&format!(
+                "decal texture {name}: {w}×{h} does not match {} bytes",
+                rgba.len()
+            )));
+        }
+        let gl = &self.gl;
+        let t = match self.decal_textures.get(name) {
+            Some(t) => t.clone(),
+            None => gl.create_texture().ok_or("create_texture")?,
+        };
+        gl.bind_texture(Gl::TEXTURE_2D, Some(&t));
+        gl.pixel_storei(Gl::UNPACK_ALIGNMENT, 1);
+        gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_u8_array(
+            Gl::TEXTURE_2D,
+            0,
+            Gl::RGBA8 as i32,
+            w as i32,
+            h as i32,
+            0,
+            Gl::RGBA,
+            Gl::UNSIGNED_BYTE,
+            Some(rgba),
+        )?;
+        gl.generate_mipmap(Gl::TEXTURE_2D);
+        gl.tex_parameteri(
+            Gl::TEXTURE_2D,
+            Gl::TEXTURE_MIN_FILTER,
+            Gl::LINEAR_MIPMAP_LINEAR as i32,
+        );
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_MAG_FILTER, Gl::LINEAR as i32);
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_WRAP_S, Gl::CLAMP_TO_EDGE as i32);
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_WRAP_T, Gl::CLAMP_TO_EDGE as i32);
+        self.decal_textures.insert(name.to_owned(), t);
+        Ok(())
+    }
+
+    /// Decodes a PNG and stores it as a decal texture.
+    pub fn set_decal_texture_png(&mut self, name: &str, png_bytes: &[u8]) -> Result<(), JsValue> {
+        let (w, h, rgba) = decode_png(png_bytes).map_err(|e| JsValue::from_str(&e))?;
+        self.set_decal_texture_rgba(name, w, h, &rgba)
+    }
+
+    pub fn has_decal_texture(&self, name: &str) -> bool {
+        self.decal_textures.contains_key(name)
+    }
+
+    /// Adds a decal quad: corners top-left, top-right, bottom-right, bottom-left (world);
+    /// the image's top row maps to the top edge. Drawn only while its texture exists.
+    pub fn add_decal(&mut self, texture: &str, corners: [Vec3; 4], normal: Vec3) {
+        let first_vertex = self.decals.vertices.len() / 5;
+        for (c, uv) in corners
+            .iter()
+            .zip([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+        {
+            self.decals
+                .vertices
+                .extend_from_slice(&[c.x, c.y, c.z, uv[0], uv[1]]);
+        }
+        self.decals.draws.push(DecalDraw {
+            texture: texture.to_owned(),
+            normal: normal.normalize_or_zero(),
+            first_vertex,
+        });
+        self.decals.uploaded = false;
+    }
+
+    fn upload_decals(&mut self) -> Result<(), JsValue> {
+        if self.decals.uploaded || self.decals.draws.is_empty() {
+            return Ok(());
+        }
+        let gl = &self.gl;
+        if self.decals.vao.is_none() {
+            self.decals.vao = Some(gl.create_vertex_array().ok_or("create_vertex_array")?);
+            self.decals.vbo = Some(gl.create_buffer().ok_or("create_buffer")?);
+            self.decals.ibo = Some(gl.create_buffer().ok_or("create_buffer")?);
+        }
+        gl.bind_vertex_array(self.decals.vao.as_ref());
+        gl.bind_buffer(Gl::ARRAY_BUFFER, self.decals.vbo.as_ref());
+        gl.buffer_data_with_u8_array(
+            Gl::ARRAY_BUFFER,
+            bytemuck::cast_slice(&self.decals.vertices),
+            Gl::STATIC_DRAW,
+        );
+        attrib(gl, 0, 3, 20, 0);
+        attrib(gl, 1, 2, 20, 12);
+        let quads = self.decals.vertices.len() / 20;
+        let indices: Vec<u16> = (0..quads as u16)
+            .flat_map(|q| {
+                let b = q * 4;
+                [b, b + 1, b + 2, b, b + 2, b + 3]
+            })
+            .collect();
+        gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, self.decals.ibo.as_ref());
+        gl.buffer_data_with_u8_array(
+            Gl::ELEMENT_ARRAY_BUFFER,
+            bytemuck::cast_slice(&indices),
+            Gl::STATIC_DRAW,
+        );
+        gl.bind_vertex_array(None);
+        self.decals.uploaded = true;
+        Ok(())
+    }
+
+    /// Number of decals drawn in the last frame (their texture exists).
+    pub fn decals_drawn(&self) -> u32 {
+        self.stats.decals
     }
 
     pub fn has_model(&self, name: &str) -> bool {
@@ -704,6 +867,7 @@ impl Renderer {
             None => Vec4::ZERO,
         };
 
+        let _ = self.upload_decals();
         let gl = &self.gl;
         for b in &mut self.batches {
             Self::upload(gl, b);
@@ -797,6 +961,55 @@ impl Renderer {
                 stats.draw_calls += 1;
                 stats.triangles += part.index_count as u32 / 3;
             }
+        }
+
+        // Decals over their faces (sign silhouettes and texts, ART-ENVIRONMENT 6/7).
+        if self.decals.uploaded {
+            let gl = &self.gl;
+            let p = &self.decal_prog;
+            gl.use_program(Some(&p.program));
+            gl.uniform_matrix4fv_with_f32_array(
+                p.u("u_view_proj"),
+                false,
+                &view_proj.to_cols_array(),
+            );
+            let sun = SUN_DIR.normalize();
+            gl.uniform3f(p.u("u_sun_dir"), sun.x, sun.y, sun.z);
+            gl.uniform3f(
+                p.u("u_shadow_tint"),
+                SHADOW_TINT.x,
+                SHADOW_TINT.y,
+                SHADOW_TINT.z,
+            );
+            gl.uniform1i(p.u("u_tex"), 0);
+            gl.active_texture(Gl::TEXTURE0);
+            gl.enable(Gl::BLEND);
+            // colour and normal rgb blend by the decal alpha; the edge mask (dst alpha) stays
+            gl.blend_func_separate(Gl::SRC_ALPHA, Gl::ONE_MINUS_SRC_ALPHA, Gl::ZERO, Gl::ONE);
+            gl.depth_mask(false);
+            gl.disable(Gl::CULL_FACE);
+            gl.enable(Gl::POLYGON_OFFSET_FILL);
+            gl.polygon_offset(-1.0, -4.0);
+            gl.bind_vertex_array(self.decals.vao.as_ref());
+            for d in &self.decals.draws {
+                let Some(t) = self.decal_textures.get(&d.texture) else {
+                    continue;
+                };
+                gl.bind_texture(Gl::TEXTURE_2D, Some(t));
+                gl.uniform3f(p.u("u_normal"), d.normal.x, d.normal.y, d.normal.z);
+                gl.draw_elements_with_i32(
+                    Gl::TRIANGLES,
+                    6,
+                    Gl::UNSIGNED_SHORT,
+                    (d.first_vertex / 4 * 6 * 2) as i32,
+                );
+                stats.draw_calls += 1;
+                stats.triangles += 2;
+                stats.decals += 1;
+            }
+            gl.disable(Gl::POLYGON_OFFSET_FILL);
+            gl.depth_mask(true);
+            gl.disable(Gl::BLEND);
         }
 
         // Outline pass to the canvas.

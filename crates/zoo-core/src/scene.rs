@@ -16,7 +16,7 @@
 use crate::coords::{level_to_world, level_to_world_at, quarter_turns_cw_to_yaw};
 use crate::level::{band_run, cell_center, enclosure_fence, Element, Grid, Run, RunAxis};
 use crate::level::{ElementType, LevelData, Rect};
-use glam::{IVec2, Vec2, Vec3};
+use glam::{IVec2, Quat, Vec2, Vec3};
 
 /// Placeholder colours (sRGB, flat) per element kind.
 pub mod colors {
@@ -59,11 +59,77 @@ pub struct BoxPlacement {
     pub source: String,
 }
 
+/// What a decal shows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DecalImage {
+    /// An image file (path relative to `assets/`, e.g. an enclosure sign silhouette).
+    Texture(String),
+    /// A Fluent text rendered by the host into a `width` × `height` px texture (dark bold
+    /// lettering on a cream sign, ART-ENVIRONMENT behaviour 7); re-rendered when the
+    /// language changes.
+    Text {
+        key: &'static str,
+        width_px: u32,
+        height_px: u32,
+    },
+}
+
+/// A flat textured quad drawn on top of a model face (sign silhouettes, sign texts).
+/// `right` / `up` are half extents in world space; the image's top row is at `center + up`,
+/// its left column at `center - right`; the visible side faces `right × up`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Decal {
+    /// Stable id, e.g. `sign:enc_zebra` or `sign:food_storage`.
+    pub id: String,
+    pub image: DecalImage,
+    pub center: Vec3,
+    pub right: Vec3,
+    pub up: Vec3,
+}
+
+impl Decal {
+    /// Unit normal of the visible side.
+    pub fn normal(&self) -> Vec3 {
+        self.right.cross(self.up).normalize_or_zero()
+    }
+
+    /// Corners (top-left, top-right, bottom-right, bottom-left) in world space.
+    pub fn corners(&self) -> [Vec3; 4] {
+        let (c, r, u) = (self.center, self.right, self.up);
+        [c - r + u, c + r + u, c + r - u, c - r - u]
+    }
+}
+
+/// Fluent key of the food storage sign (ART-ENVIRONMENT behaviour 7).
+pub const FOOD_STORAGE_SIGN_KEY: &str = "sign-food-storage";
+
+/// Asset path of an enclosure sign silhouette (ART-ENVIRONMENT behaviour 6).
+pub fn silhouette_path(animal: &str) -> String {
+    format!("textures/signs/silhouette_{animal}.png")
+}
+
+/// `enclosure_sign` panel face at yaw 0 (`README_kits_3_6.md`, palette cell 128 `sign_panel`):
+/// centre, normal, size ~1.30 × 0.72 m, tilted back 40°.
+const SIGN_PANEL_CENTER: Vec3 = Vec3::new(0.29, 1.36, 0.05);
+const SIGN_PANEL_NORMAL: Vec3 = Vec3::new(0.0, 0.643, 0.766);
+/// Silhouette decal size on the panel (m): 3:2 like the image, inside the 1.30 × 0.72 face.
+const SILHOUETTE_SIZE: Vec2 = Vec2::new(1.02, 0.68);
+/// Decals float this far in front of their face (plus a polygon offset in the renderer).
+pub const DECAL_LIFT_M: f32 = 0.004;
+
+/// Food storage sign board (ART-ENVIRONMENT behaviour 7): wooden board on the south facade
+/// above the food boxes; the text decal covers its front minus a wooden frame.
+pub const STORAGE_SIGN_BOARD: Vec3 = Vec3::new(3.4, 1.2, 0.08);
+pub const STORAGE_SIGN_BOTTOM_M: f32 = 1.75;
+const STORAGE_SIGN_FRAME_M: f32 = 0.09;
+
 /// The assembled static scene of a level.
 #[derive(Debug, Clone, Default)]
 pub struct LevelScene {
     pub placements: Vec<Placement>,
     pub boxes: Vec<BoxPlacement>,
+    /// Silhouettes and sign texts drawn on top of models (ART-ENVIRONMENT 6, 7).
+    pub decals: Vec<Decal>,
 }
 
 /// Direction names in level space and their clockwise order.
@@ -372,6 +438,44 @@ impl LevelScene {
         s
     }
 
+    /// Wooden "Futter" board on the south facade of the food storage, centred above the row
+    /// of food boxes, with the `sign-food-storage` text decal (ART-ENVIRONMENT 7).
+    fn food_storage_sign(&mut self, e: &Element, wall_height: f32) {
+        let r = e.rect;
+        // south facade of the (inset) building box, level z = r.z + 0.05
+        let facade_z = r.z as f32 + 0.05;
+        let x = rect_center(r).x;
+        let board = STORAGE_SIGN_BOARD;
+        let bottom = STORAGE_SIGN_BOTTOM_M.min(wall_height - board.y - 0.15);
+        let center = Vec2::new(x, facade_z - board.z / 2.0);
+        self.boxes.push(BoxPlacement {
+            pos: level_to_world_at(center, bottom),
+            size: board,
+            yaw: 0.0,
+            color: colors::WOOD,
+            fadeable: false,
+            source: format!("{}:sign", e.id),
+        });
+        // text on the front (level south = world +Z), inside the frame
+        let front = level_to_world_at(
+            Vec2::new(x, facade_z - board.z - DECAL_LIFT_M),
+            bottom + board.y / 2.0,
+        );
+        let half = Vec2::new(board.x, board.y) / 2.0 - Vec2::splat(STORAGE_SIGN_FRAME_M);
+        let (w, h) = (512, (512.0 * half.y / half.x).round() as u32);
+        self.decals.push(Decal {
+            id: format!("sign:{}", e.id),
+            image: DecalImage::Text {
+                key: FOOD_STORAGE_SIGN_KEY,
+                width_px: w,
+                height_px: h,
+            },
+            center: front,
+            right: Vec3::X * half.x,
+            up: Vec3::Y * half.y,
+        });
+    }
+
     fn push_box(&mut self, source: &str, center: Vec2, y0: f32, size: Vec3, color: [f32; 3]) {
         self.boxes.push(BoxPlacement {
             pos: level_to_world_at(center, y0),
@@ -563,6 +667,9 @@ impl LevelScene {
             (ElementType::Building, _) => {
                 let height = h.unwrap_or(4.0);
                 self.rect_box(e, 0.0, height * 0.7, colors::BUILDING);
+                if kind == "food_storage" {
+                    self.food_storage_sign(e, height * 0.7);
+                }
                 let r = e.rect;
                 let roof = Vec3::new(r.w as f32 + 0.3, height * 0.3, r.d as f32 + 0.3);
                 self.push_box(&e.id, rect_center(r), height * 0.7, roof, colors::ROOF);
@@ -622,12 +729,33 @@ impl LevelScene {
             let mid = gate.start + dir * 1.0;
             let out = dir_away(e.rect, mid + (mid - rect_center(e.rect)).normalize() * 0.01);
             let pos = mid + out.offset().as_vec2() * 0.35;
+            let yaw = facing_yaw(out);
             self.placements.push(Placement {
                 model: "enclosure_sign",
                 pos: level_to_world(pos),
-                yaw: facing_yaw(out),
+                yaw,
             });
+            // Silhouette of the enclosure's animal on the sign panel (ART-ENVIRONMENT 6).
+            if let Some(animal) = &e.animal {
+                self.decals
+                    .push(sign_silhouette(&e.id, animal, level_to_world(pos), yaw));
+            }
         }
+    }
+}
+
+/// Silhouette decal on the `sign_panel` face of an `enclosure_sign` placed at `origin`
+/// (world) with `yaw` (front = local +Z, Q-061).
+pub fn sign_silhouette(enclosure: &str, animal: &str, origin: Vec3, yaw: f32) -> Decal {
+    let rot = Quat::from_rotation_y(yaw);
+    let n = SIGN_PANEL_NORMAL.normalize();
+    let up_dir = Vec3::new(0.0, n.z, -n.y); // in the panel plane, towards its top edge
+    Decal {
+        id: format!("sign:{enclosure}"),
+        image: DecalImage::Texture(silhouette_path(animal)),
+        center: origin + rot * (SIGN_PANEL_CENTER + n * DECAL_LIFT_M),
+        right: rot * (Vec3::X * SILHOUETTE_SIZE.x / 2.0),
+        up: rot * (up_dir * SILHOUETTE_SIZE.y / 2.0),
     }
 }
 
@@ -756,5 +884,102 @@ mod tests {
         assert!(count("fence_wood") > 20);
         assert!(count("hedge") > 20);
         assert!(count("zoo_wall") > 20);
+    }
+
+    // AENV-011 (scene part): the zebra enclosure sign carries the zebra silhouette on its
+    // panel, facing out of the enclosure towards the path and up to the camera.
+    #[test]
+    fn aenv_011_enclosure_signs_get_their_silhouette() {
+        let data = level1();
+        let s = LevelScene::build(&data);
+        let d = s.decals.iter().find(|d| d.id == "sign:enc_zebra").unwrap();
+        assert_eq!(
+            d.image,
+            DecalImage::Texture("textures/signs/silhouette_zebra.png".into())
+        );
+        let sign = s
+            .placements
+            .iter()
+            .filter(|p| p.model == "enclosure_sign")
+            .min_by(|a, b| {
+                a.pos
+                    .distance(d.center)
+                    .total_cmp(&b.pos.distance(d.center))
+            })
+            .unwrap();
+        assert!(sign.pos.distance(d.center) < 1.6, "decal far from its sign");
+        let n = d.normal();
+        // zebra sign faces east (+X world) and is tilted back 40°
+        assert!(n.x > 0.7 && n.y > 0.6 && n.z.abs() < 1e-4, "normal {n}");
+        // the decal lies on the panel plane (lifted 4 mm) and stays inside the panel
+        let front = Quat::from_rotation_y(sign.yaw) * SIGN_PANEL_NORMAL.normalize();
+        let panel = sign.pos + Quat::from_rotation_y(sign.yaw) * SIGN_PANEL_CENTER;
+        assert!(((d.center - panel).dot(front) - DECAL_LIFT_M).abs() < 1e-4);
+        assert!(d.right.length() * 2.0 <= 1.30 && d.up.length() * 2.0 <= 0.72);
+        // top of the image is the upper edge of the tilted panel
+        assert!(d.up.y > 0.0);
+        // one silhouette decal per enclosure with an animal
+        let enclosures = data
+            .elements
+            .iter()
+            .filter(|e| e.ty == ElementType::Enclosure && e.animal.is_some())
+            .count();
+        let signs = s
+            .decals
+            .iter()
+            .filter(|d| matches!(d.image, DecalImage::Texture(_)))
+            .count();
+        assert_eq!(signs, enclosures);
+    }
+
+    // AENV-012 (scene part): the "Futter" sign hangs on the south facade of the food storage
+    // above the row of food boxes and faces south (the path and the default camera).
+    #[test]
+    fn aenv_012_food_storage_sign_above_the_boxes() {
+        let data = level1();
+        let s = LevelScene::build(&data);
+        let d = s
+            .decals
+            .iter()
+            .find(|d| d.id == "sign:food_storage")
+            .unwrap();
+        assert!(matches!(
+            d.image,
+            DecalImage::Text {
+                key: FOOD_STORAGE_SIGN_KEY,
+                ..
+            }
+        ));
+        let n = d.normal();
+        assert!((n - Vec3::Z).length() < 1e-5, "faces south: {n}");
+        let [tl, _, br, _] = d.corners();
+        let boxes: Vec<Vec2> = data.food_boxes.iter().map(|b| b.pos()).collect();
+        let (min_x, max_x) = boxes
+            .iter()
+            .fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p.x), b.max(p.x)));
+        assert!(
+            tl.x >= min_x - 0.5 && br.x <= max_x + 0.5,
+            "over the box row"
+        );
+        assert!(br.y > 1.2, "above the food boxes: {br}");
+        assert!(tl.y < 3.15, "below the roof: {tl}");
+        // just in front of the facade (level z = 11.05 → world z = -11.05)
+        let board = s
+            .boxes
+            .iter()
+            .find(|b| b.source == "food_storage:sign")
+            .unwrap();
+        assert!((board.pos.z + board.size.z / 2.0 - (-11.05 + board.size.z)).abs() < 1e-4);
+        assert!((d.center.z - (board.pos.z + board.size.z / 2.0 + DECAL_LIFT_M)).abs() < 1e-4);
+        // texture aspect matches the quad
+        if let DecalImage::Text {
+            width_px,
+            height_px,
+            ..
+        } = d.image
+        {
+            let q = d.right.length() / d.up.length();
+            assert!((width_px as f32 / height_px as f32 - q).abs() < 0.02);
+        }
     }
 }

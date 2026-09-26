@@ -11,6 +11,7 @@ pub mod level;
 pub mod nav;
 pub mod player;
 pub mod rng;
+pub mod save;
 pub mod scene;
 
 pub use animals::{AnimalInfo, AnimalState, ANIMALS};

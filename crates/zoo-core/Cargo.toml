@@ -11,5 +11,6 @@ fluent-bundle = "0.16.0"
 fluent-syntax = "0.12.0"
 glam = "0.33.10"
 serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.151", features = ["float_roundtrip"] }
 toml = "1.1.6"
 unic-langid = "0.9.6"

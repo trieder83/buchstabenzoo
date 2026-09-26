@@ -1,6 +1,6 @@
 # Brief — `env_food_storage`
 
-Spec: ART-ENVIRONMENT, GAME-FEED, GAME-LEVEL-1. Status: **brief — images not generated yet**. Layout: `layout.md` in this
+Spec: ART-ENVIRONMENT, GAME-FEED, GAME-LEVEL-1. Status: **in-review — first mockups generated 2026-09-26**. Layout: `layout.md` in this
 folder; level data `assets/levels/level-1.toml`.
 
 ## Purpose
@@ -124,3 +124,15 @@ Tools without a negative-prompt field: add "No text anywhere, no logos, not phot
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
 | | | | | | |
+| 2026-09-26 | player_view_v1.jpg | gemini-3-pro-image (2K, 9:16) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v2.jpg, sheet_v5.jpg | **chosen** → player_view.png — interior with the roof removed (as GAME-PLAYER §2), crates with blank labels (labels on the lids, not the fronts) |
+| 2026-09-26 | player_view_v2.jpg | gemini-3-pro-image (2K, 9:16) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v2.jpg, sheet_v5.jpg | alternative — fewer crates |
+| 2026-09-26 | overview_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v2.jpg, sheet_v5.jpg | alternative — barn between hedges, extra fences |
+| 2026-09-26 | overview_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v2.jpg, sheet_v5.jpg | **chosen** → overview.png — barn with open double door between the two hedges, grove behind, flower beds |
+
+**Mockup notes (2026-09-26):** generated with gemini-3-pro-image (2K), chosen image downscaled
+to ≤ 2048 px and saved as PNG, the alternative kept as `*_v*.jpg`. References: the style frame
+plus the approved kit/model sheets named in the log; `--extra`: "The first attached image is the approved style frame of this game: match its comic style, colours, line weight, outlines and high camera look exactly, but not its layout. The other attached image(s) are approved asset sheets of props that appear in this scene: draw those props exactly like on the sheets (shapes, colours, materials); do not copy the grey sheet background or the sheet layout. No text anywhere."
+These are concept mockups from text only (no greybox guide yet) — positions are approximate.
+**The level layout may still change:** the level designer is adding more hiding places
+(GAME-LEVEL-1 `[[hiding_place]]`), so the mockups must be re-checked against
+`specs/10-gameplay/levels/level-1.md` before approval.

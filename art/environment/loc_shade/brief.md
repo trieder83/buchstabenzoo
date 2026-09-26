@@ -1,0 +1,102 @@
+# Brief — `loc_shade`
+
+Spec: ART-ENVIRONMENT, CONT-MISSIONS §2, GAME-LEVEL-1 ("Hiding places"). Status: **brief — images not generated yet**. Layout: `layout.md` in this
+folder; level data `assets/levels/level-1.toml` (`[[hiding_place]]` / `[[scenery]]`, proposal Q-080).
+
+## Purpose
+
+Hippo hiding place `loc_shade` (level 1, west, at the zoo wall). Where the hippo dozes when the riddle says *"Mir ist zu heiß. Ich liege unter Bäumen. Hinter mir ist eine Mauer."* (klasse1). Shown in the **found** state. One of three candidate hiding places of the hippo (discovery, user decision 2026-09-26); the approved image is also cropped for the `kiga` picture of this place.
+
+## Must be visible
+
+- **Shade under big trees:** a 2 m wide strip of lawn between the high zoo wall and a group of big trees whose crowns overhang it; the ground in flat dark-green cool shade (one hard shadow shape), sunny lawn beyond.
+- **Zoo wall:** the high stone wall directly behind the hippo.
+- **Dry grass:** the hippo lies on dry grass, dozing, eyes closed.
+
+## Must not appear
+
+- No water, no mud, no pond visible in the frame (the pond is south of it — keep it out of the player view).
+- Not dark or gloomy — friendly cool shade in bright daylight.
+
+## Props used
+
+Modular (ART-ENVIRONMENT list): `shade_decal`, `tree`, `zoo_wall`, `grass_tuft`, `hedge`.
+Hiding places shown: `loc_shade`.
+
+## Mood
+
+Calm, cool and sleepy: a quiet shady nook on a hot day.
+
+## Image settings
+
+| File | Aspect / size | Camera (level coordinates, see `layout.md`) |
+|---|---|---|
+| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw north (image top = north), pitch ≈ 62°, target (−20, 36), about 18 m from the target; frame covers the wall (left), the shaded strip, the tree group (right), the lawn south of the trees (bottom). |
+| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player on the grass at (−21.5, 31.5); camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player; the shaded strip with the hippo fills the upper half. |
+| `player_view_landscape.png` *(optional)* | 16:9, 1920 × 1080 | same as player view |
+
+Camera, aspect ratios and consistency tips: as in `art/environment/loc_pond/brief.md` (high-angle
+view like a cozy zoo park simulation game, Q-049; style frame as style reference; one fixed seed
+per area; guided workflow from the level-1 greybox, ART-PIPELINE §7).
+
+## Prompts
+
+**Style:** the first paragraph of every prompt is the STYLE block from `art/style/style.md`
+(verbatim, comic style — Q-010 answered); every negative prompt ends with its NEGATIVE
+suffix. Never edit those blocks here — change `art/style/style.md` and all briefs together.
+
+### `overview.png`
+
+```text
+Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown outlines around every object, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes on people and animals, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail, no noise. Bright warm midday sunlight from the upper left, crisp hard-edged shadows. Friendly saturated palette: fresh grass green, warm wood brown, light sand-beige paths, light stone grey, water blue, white. Clean, uncluttered, child-friendly, cheerful mobile game look, crisp focus across the whole image.
+
+Elevated three-quarter top-down view like a cozy zoo park simulation game: a high camera looking down at about 60 to 65 degrees, isometric-like perspective with a narrow field of view so vertical lines stay nearly parallel, horizontal widescreen composition, the whole area in frame and neatly laid out like a diorama, the ground fills the image, no horizon, no sky.
+
+A narrow strip of lawn in a small zoo seen from high above, running between a high light-grey stone zoo wall on the left and a group of big round-topped trees on the right whose crowns reach over the strip and cast one big cool dark-green shadow on the dry grass. In the shade a big grey hippo lies on the grass dozing with its eyes closed, right against the wall. Sunny bright lawn at the bottom of the image. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes walks up the strip from the bottom. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
+
+All signs and boards are blank: plain wooden or cream-coloured panels without any letters, words or numbers. The only markings allowed are a simple solid black animal silhouette on an enclosure sign and simple pictogram icons (shovel, padlock) on barrier signs. Enclosure signs and info boards are tilted back towards the camera so their faces are clearly visible from above.
+```
+
+### `player_view.png` (9:16 portrait)
+
+```text
+Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown outlines around every object, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes on people and animals, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail, no noise. Bright warm midday sunlight from the upper left, crisp hard-edged shadows. Friendly saturated palette: fresh grass green, warm wood brown, light sand-beige paths, light stone grey, water blue, white. Clean, uncluttered, child-friendly, cheerful mobile game look, crisp focus across the whole image.
+
+In-game view of a cozy zoo park simulation game, vertical phone-screen composition: a high follow camera looking down at about 55 degrees from about 14 m away, isometric-like perspective with a narrow field of view so vertical lines stay nearly parallel, no horizon, no sky. The small girl is seen from above near the centre of the image, her figure about one twelfth of the image height; the area around her, about 12 m across, is clearly laid out and readable: paths, fences and enclosures easy to tell apart.
+
+Seen from above: the player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes, stands on the sunny lawn in the centre of the image. Above her a narrow strip of lawn runs up between a high light-grey stone zoo wall on the left and big round-topped trees on the right whose crowns cast a big cool dark-green shadow; in the shade a big grey hippo lies on the dry grass, dozing with its eyes closed. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
+
+All signs and boards are blank: plain wooden or cream-coloured panels without any letters, words or numbers. The only markings allowed are a simple solid black animal silhouette on an enclosure sign and simple pictogram icons (shovel, padlock) on barrier signs. Enclosure signs and info boards are tilted back towards the camera so their faces are clearly visible from above.
+```
+
+### `player_view_landscape.png` (optional, 16:9)
+
+Same as `player_view.png`, but replace the camera paragraph with:
+
+```text
+In-game view of a cozy zoo park simulation game, horizontal widescreen composition: a high follow camera looking down at about 55 degrees from about 16 m away, isometric-like perspective with a narrow field of view so vertical lines stay nearly parallel, no horizon, no sky. The small girl is seen from above near the centre of the image, her figure about one twelfth of the image height; the area around her, about 20 m across, is clearly laid out and readable.
+```
+
+### Negative prompt (all images of this area)
+
+```text
+text, letters, words, numbers, writing, captions, writing on signs, watermark, signature, logo, brand names, UI, HUD, buttons, photorealistic, realistic photo, photograph, realistic fur, hyper-detailed textures, dark, gloomy, night, fog, horror, scary, angry or menacing animals, sharp teeth, blood, gore, injury, dead animals, weapons, cages, cage bars, prison, rubbish, litter, crowds, clutter, distorted anatomy, extra legs, extra heads, fisheye distortion, tilted horizon, blurry, low resolution, jpeg artefacts, cropped main subject, sky, horizon, clouds, low camera angle, eye-level view, close-up, strong perspective distortion, water, pond, mud, puddle, dark forest, gloomy, voxels, cubes, blocky Minecraft style, pixel art, pixelated textures, photorealistic, realistic photo, realistic fur, hyper-detailed textures, soft painterly gradients, glossy plastic, anime, watercolour, sketchy lines, inconsistent line thickness
+```
+
+Tools without a negative-prompt field: add "No text anywhere, no logos, not photorealistic, nothing scary." at the end of the prompt.
+
+## Review checklist (before `concept_approved = true` — user decides)
+
+- [ ] All riddle details readable from above: **shade** of **big trees**, the **zoo wall** right behind the hippo, **dry** grass.
+- [ ] Clearly different from `loc_pond` (no water) and `loc_mud` (not wet, not brown).
+- [ ] Style matches the approved style frame (Q-010).
+- [ ] Layout matches `layout.md` and the level-1 map (positions, sizes, what is left/right).
+- [ ] All signs, boards and labels blank — only animal silhouettes on enclosure signs; no text artefacts anywhere.
+- [ ] Bright, friendly, nothing scary; no cages.
+- [ ] High camera as specified (pitch, girl ≈ 1/12 of the image height near the centre, no sky); verticals nearly parallel.
+- [ ] Readable from the high camera at phone size (view the image at ~25 %): the key riddle details still clear.
+- [ ] Every prop visible is in the ART-ENVIRONMENT modular list or listed as a unique model in `layout.md`.
+
+## Generation log
+
+*(empty — no image generated yet)*

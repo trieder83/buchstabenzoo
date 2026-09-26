@@ -145,3 +145,5 @@ Front view of two children, full body from head to toe, standing side by side at
 | 2026-09-26 | side_fix_v2.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: side_before_fix.png | discarded (alternative) |
 | 2026-09-26 | back_fix_v1.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: back_before_fix.png | chosen → back.png (heels visible) |
 | 2026-09-26 | back_fix_v2.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: back_before_fix.png | discarded (soles towards camera) |
+| 2026-09-26 | expressions_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 5 + negative as 'Avoid' + extra text, ref: front.png | alternative — blink drawn as happy squint (^^) instead of closed eyes |
+| 2026-09-26 | expressions_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 5 + negative as 'Avoid' + extra text, ref: front.png | **chosen** → converted to expressions.png (source jpg deleted); all 8 expressions in order |

@@ -49,7 +49,9 @@ fn play_005_path_speed() {
     assert_eq!(level.grid().surface(cell_of(start)), Some(Surface::Path));
     walk(&level, &mut p, &params, Vec2::X, 1.0);
     let d = p.pos.distance(start);
-    assert!((d - 1.4).abs() <= 1.4 * 0.05, "moved {d} m");
+    // GAME-PLAYER §6 (user decision 2026-09-26): 1.75 m/s on paths
+    assert!((params.walk_speed - 1.75).abs() < 1e-6);
+    assert!((d - 1.75).abs() <= 1.75 * 0.05, "moved {d} m");
     assert_eq!(level.grid().surface(cell_of(p.pos)), Some(Surface::Path));
 }
 
@@ -61,8 +63,22 @@ fn play_006_grass_speed() {
     assert_eq!(level.grid().surface(cell_of(start)), Some(Surface::Grass));
     walk(&level, &mut p, &params, Vec2::X, 1.0);
     let d = p.pos.distance(start);
-    let expected = 1.4 * params.grass_speed_factor;
-    assert!((d - expected).abs() <= expected * 0.05, "moved {d} m");
+    // GAME-PLAYER §6: grass stays 0.98 m/s (factor 0.56)
+    let expected = params.walk_speed * params.grass_speed_factor;
+    assert!((expected - 0.98).abs() < 1e-4, "grass speed {expected}");
+    assert!((d - 0.98).abs() <= 0.98 * 0.05, "moved {d} m");
+}
+
+// GAME-PLAYER §6 / ART-RIG §4.7: walk clip playback = speed ÷ 1.4, clamped to [0.8, 1.25]
+#[test]
+fn play_005_006_walk_clip_rate_matches_speed() {
+    use zoo_core::player::walk_clip_rate;
+    let params = MoveParams::default();
+    assert!((walk_clip_rate(params.speed_on(Surface::Path)) - 1.25).abs() < 1e-5);
+    // grass 0.98 / 1.4 = 0.7 → clamped to 0.8
+    assert!((walk_clip_rate(params.speed_on(Surface::Grass)) - 0.8).abs() < 1e-5);
+    assert!((walk_clip_rate(1.2) - 1.2 / 1.4).abs() < 1e-5);
+    assert!((walk_clip_rate(2.0) - 1.25).abs() < 1e-5);
 }
 
 // PLAY-007
@@ -70,7 +86,7 @@ fn play_006_grass_speed() {
 fn play_007_speed_blends_within_0_2s() {
     let start = Vec2::new(-3.5, 3.5); // plaza; grass begins at x = -6
     let (level, mut p, params) = setup(start);
-    let grass = 1.4 * params.grass_speed_factor;
+    let grass = params.walk_speed * params.grass_speed_factor;
     let mut t = 0.0;
     let mut entered_grass_at = None;
     let mut prev_speed = p.surface_speed();
@@ -97,7 +113,10 @@ fn play_007_speed_blends_within_0_2s() {
         "speed {} after 0.2 s",
         p.surface_speed()
     );
-    assert!(max_jump < (1.4 - grass) * 0.5, "instant jump {max_jump}");
+    assert!(
+        max_jump < (params.walk_speed - grass) * 0.5,
+        "instant jump {max_jump}"
+    );
 }
 
 // GAME-PLAYER §6 / GAME-LAYOUT: solid cells are not walkable
@@ -343,7 +362,7 @@ fn play_022_ground_decoration_does_not_block() {
     let mut p = player_at(Vec2::new(-2.0, 3.0));
     let end = walk_checked(&level, &col, &mut p, Vec2::Y, 3.0);
     assert!(
-        (end.y - (3.0 + 3.0 * 1.4)).abs() < 0.1,
+        (end.y - (3.0 + 3.0 * MoveParams::default().walk_speed)).abs() < 0.1,
         "blocked by ground decoration: {end}"
     );
 }

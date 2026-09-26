@@ -701,6 +701,7 @@ dependencies = [
  "fluent-syntax",
  "glam",
  "serde",
+ "serde_json",
  "toml",
  "unic-langid",
 ]

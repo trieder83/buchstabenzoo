@@ -14,6 +14,9 @@ ui-lang-en = English
 ui-level-kiga = Kindergarten
 ui-level-klasse1 = Klasse 1
 ui-level-klasse2 = Klasse 2
+ui-new-game = Neues Spiel
+ui-yes = Ja
+ui-no = Nein
 ui-level-klasse3 = Klasse 3
 
 ## Feedback when showing food / leading animals (GAME-RESCUE §5, §7)
@@ -22,3 +25,7 @@ ui-not-interested = Hmm, das mag ich nicht.
 ui-no-food = Ich habe Hunger!
 ui-following = Juhu, Futter! Ich komme mit.
 ui-refuse = Hier wohne ich nicht!
+
+## Signs in the zoo (rendered as text textures, ART-ENVIRONMENT behaviour 7)
+
+sign-food-storage = Futter

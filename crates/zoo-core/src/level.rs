@@ -475,6 +475,11 @@ impl Level {
         &self.colliders
     }
 
+    /// Ids of the opened barriers (GAME-SAVE).
+    pub fn open_barrier_ids(&self) -> Vec<String> {
+        self.open_barriers.iter().cloned().collect()
+    }
+
     pub fn is_barrier_open(&self, id: &str) -> bool {
         self.open_barriers.contains(id)
     }

@@ -28,7 +28,7 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_entrance` | Zoo entrance / start | gate, map board, first visitors |
 | `env_enclosure_row` | Enclosure paths | paths, fences, enclosure signs, benches |
 | `env_hippo` | Hippo enclosure | square tiled pool (no lilies/frogs — must not look like `loc_pond`), stones, wooden hut (cf. `art/reference/ref-enclosure-buildings.jpg`) |
-| `env_panda` | Panda enclosure | bamboo, wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
+| `env_panda` | Panda enclosure | cut bamboo on a feeding rack (no growing bamboo clumps — proposal Q-081, must not look like `loc_bamboo`), wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
 | `env_zebra` | Zebra enclosure | bushes, grass, leaves, stone-arch shelter — no water (riddle points to the river) |
 | `env_koala` | Koala enclosure | eucalyptus trees |
 | `env_elephant` | Elephant enclosure | water, hay, logs, bridge (Q-005) |
@@ -44,19 +44,35 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `loc_river` | Zebra hiding place, level 1 | flowing river with rapids, wooden bridge, ducks, zebras drinking on the bank; fallen-tree barrier behind the bridge |
 | `loc_pond` | Hippo hiding place, level 1 | round still pond, water lilies, frogs, reeds, wooden jetty, hippo with only eyes/ears above water; no bridge, no ducks |
 | `loc_cave` | Panda hiding place, level 1 | grey rock hill, dark cool cave mouth facing north, sleeping panda inside; "path under repair" barrier with zookeeper cart |
+| `loc_meadow` | Zebra hiding place, level 1 (north-east, behind the bridge) | knee-high tall grass with red/yellow/white wildflowers and butterflies, big trees (`trees_ne`) behind, zebras grazing; the narrow trail and the river at the left edge |
+| `loc_sand` | Zebra hiding place, level 1 (north, behind the panda enclosure) | dry yellow sand patch without grass, a few small rocks at the rim, zebras rolling/standing in the dust; panda enclosure fence at the bottom, north hedge at the top |
+| `loc_mud` | Hippo hiding place, level 1 (north-west corner) | big brown mud puddle with glossy wet highlights, splashes and footprints, hippo half-sunk in the mud; trees behind, north hedge; must not look like water (no lilies, frogs, reeds, no blue) |
+| `loc_shade` | Hippo hiding place, level 1 (west, at the zoo wall) | 2 m wide strip between the high zoo wall and big trees whose crowns overhang it, flat dark-green shade on dry grass, hippo dozing; no water, no mud |
+| `loc_bamboo` | Panda hiding place, level 1 (south-west corner) | dense bamboo thicket (3 m) standing taller than the 2.5 m zoo wall behind it, panda sitting at its edge chewing bamboo; map board and plaza edge far right |
+| `loc_leaves` | Panda hiding place, level 1 (north-east corner) | big raked heap of red, yellow and brown leaves at the edge of the trees, a rake leaning on a trunk, panda lying on its back in the leaves; sunny and colourful, not dark |
 
 ## Hiding places (must appear in a mockup)
 
 Every hiding place of CONT-MISSIONS must be visible in at least one mockup, showing the
 details its location riddles mention. Which mockup covers which place is assigned by the
 `zoo-level-designer` (Q-044). Level 1: `loc_river`, `loc_pond` and `loc_cave` each have their
-own mockup (see table above); the others are assigned with their level.
+own mockup (see table above), and so do the six further level-1 candidates `loc_meadow`, `loc_sand`,
+`loc_mud`, `loc_shade`, `loc_bamboo`, `loc_leaves` (briefs in `art/environment/<id>/`); the others are
+assigned with their level. Every hiding place also needs a small **`kiga` picture** (the board
+shows the picture of the chosen place next to its one word; picture id = hiding place id) —
+cropped from the approved mockup.
 
 | Hiding place | Details the riddles rely on |
 |---|---|
 | `loc_river` | flowing water, bridge, ducks |
 | `loc_pond` | still water, water lilies, frogs |
 | `loc_cave` | dark, cool stone cave (echo) |
+| `loc_meadow` | tall grass, wildflowers, butterflies, big trees behind |
+| `loc_sand` | dry yellow sand, no grass |
+| `loc_mud` | brown wet mud, splashing (not water) |
+| `loc_shade` | shade of big trees right at the zoo wall, dry grass |
+| `loc_bamboo` | dense green bamboo taller than the zoo wall |
+| `loc_leaves` | raked pile of red/yellow/brown leaves, rake, sunny |
 | `loc_tallest_tree` | clearly the tallest tree, entrance gate visible from the top |
 | `loc_mud_pool` | brown mud, splashing |
 | `loc_fountain` | stone basin, water jet, coins |
@@ -75,6 +91,15 @@ mockups): `hedge` (tall, 3 m), `water_tile_flowing` (river, moving texture), `br
 `jetty_wood`, `lily_pad`, `reed`, `duck`, `frog`, `bamboo`, `map_board`, `gate_wood`,
 `road_block`, `repair_sign` (blank, shovel icon), `zookeeper_cart`, `traffic_cone`,
 `fallen_tree`, `flower_bed`.
+
+Added for the level-1 candidate hiding places (proposal, zoo-level-designer, 2026-09-26 —
+only where no existing prop fits): `wildflowers` (small tuft with coloured flower heads,
+≤ 80 tris, scattered in tall grass — `flower_bed` is a formal bed and does not fit a meadow),
+`butterfly` (≤ 20 tris, bobbing like the ducks), `mud_tile` (1 m ground tile of glossy brown
+mud with an edge variant, for `kit_ground`), `shade_decal` (flat dark-green ground decal for
+tree shade, or a renderer feature instead — Q-080), `leaf_pile` (lumpy heap of red/yellow/brown
+leaves, ≤ 300 tris) and `rake` (≤ 60 tris). Reused: `grass_tuft` scaled ×3 for tall grass,
+`sand_tile` (kit_ground) for the sand patch, `bamboo` for the thicket, `zoo_wall` (kit_fences), `rock`, `tree_round`.
 
 ### Built kits (scripted, `tools/blender/props/`)
 
@@ -97,6 +122,14 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 `stone_arch_shelter` (zebra), `hut_wood` and `pool_tiled` (hippo), `panda_platform` and
 `panda_shelter`, `rock_hill_cave`, `river_grate`.
 
+Concept sheets (2026-09-26, in review — `art/props/`): `kit_buildings` (`entrance_arch`,
+`zookeeper_house` closed + roof-removed cutaway), `food_storage_building` (closed + cutaway),
+`kit_enclosure_buildings` (`stone_arch_shelter`, `hut_wood` + cutaway, `pool_tiled`,
+`panda_shelter`, `panda_platform`, `bamboo_feeding_rack`), `rock_hill_cave` (closed +
+cutaway), `kit_furniture` (`bench`, `feeding_trough` for GAME-FAMILY care feeding — empty and
+filled). New ids proposed there, not yet placed in `level-1.toml`: `zookeeper_house`,
+`bamboo_feeding_rack`, `feeding_trough`.
+
 ## Behaviour
 
 1. Each mockup's `layout.md` lists which modular props it uses; new props are added to the
@@ -107,6 +140,28 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 4. Straight edge pieces (`fence_wood`, `hedge`, `zoo_wall`) exist as 2 m and 1 m variants
    of the same look; ground tiles are 1 m (one per cell). Models use the world axes of
    GAME-LAYOUT (north = −Z) and are never mirrored (Q-056, Q-057).
+6. **Enclosure signs show the animal** (user request 2026-09-26, answers Q-064 in part):
+   the big enclosure sign shows a large, solid dark animal **silhouette** of its animal on
+   the cream panel, clearly readable from outside the enclosure (from the path and from the
+   55° game camera at every zoom), at every reading level. The silhouette is a flat decal
+   (one image per animal, e.g. `assets/textures/signs/silhouette_<animal>.png`, drawn in the
+   comic style) applied by the renderer to the sign panel; no text on the sign for now.
+7. **"Futter" sign at the food storage** (user request 2026-09-26): a wooden sign board on
+   the storage wall directly above the row of food boxes shows the word from Fluent key
+   `sign-food-storage` (de **Futter**, en *Food*) in large bold comic lettering, readable
+   from the game camera. Text is rendered by the game (never baked into a model), so it
+   switches with the language.
+   *PoC implementation notes (M4b):* silhouettes are generated by
+   `tools/textures/sign_silhouettes.py` (source of truth; 384 × 256 PNG, zebra with stripe
+   cut-outs so it does not read as a horse) and drawn as a 1.02 × 0.68 m decal on the
+   `sign_panel` face (the other animals' silhouettes are derived from their concept side
+   views by the same script); an enclosure whose silhouette file is missing keeps a blank
+   panel. The "Futter" board is a 3.4 × 1.2 × 0.08 m wooden board (placeholder box)
+   on the south facade, bottom 1.75 m, centred over the box row; its text is a generic
+   **text texture**: zoo-core lists text decals (Fluent key + pixel size), the host draws the
+   current-language string into an offscreen 2D canvas (system bold rounded sans, dark on
+   cream with an outline) and hands the RGBA bytes to Rust, which uploads them; it is redrawn
+   on every language change. Later signs reuse the same path.
 5. **Living water** (user request 2026-09-26): all water is animated so the zoo feels
    lively — always in the comic style (flat colour bands, hard edges, bold shapes; no
    realistic reflections, refraction or noisy normal maps).
@@ -137,11 +192,13 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 | AENV-008 | Given the water shader, then the animation is a function of time only (same image for the same time regardless of frame rate) and loops seamlessly. | unit |
 | AENV-009 | Given the style frame and an in-game screenshot of river and pond, then reviewers confirm the water motion looks cartoon-like (flat bands, hard edges) and river vs. pond read as flowing vs. still. | manual |
 | AENV-010 | Given level 1 on a mid-range phone, then enabling water animation costs ≤ 1 ms GPU time per frame and no extra draw calls. | manual |
+| AENV-011 | Given the level with the zebra enclosure, then its enclosure sign panel shows the zebra silhouette decal, facing the path (visible in a screenshot from the default camera on the path in front of the gate). | e2e |
+| AENV-012 | Given the food storage, then a sign above the food boxes shows the `sign-food-storage` text of the current language ("Futter" in `de`), readable from the default camera (letter height ≥ 3 % of the viewport height). | e2e |
 
 ## Open questions
 
 - Q-006 One open world vs. separate areas.
 - Q-017 Is the pirate ship a playground in the zoo, or a separate location?
-- Q-033 Food storage locked? Q-044 Hiding places in layout and mockups.
+- Q-033 Food storage locked? Q-044 Hiding places in layout and mockups. Q-080 scenery data, Q-081 bamboo in the panda enclosure.
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2). Q-048 screen orientation. Q-052 FOV axis.
 - Q-056 answered: axes (model north = −Z, never mirrored). Q-057 answered: 1 m segment variants, fill rule. Q-059 band joins, Q-060 fence/band placement, Q-061 front direction of props (open).

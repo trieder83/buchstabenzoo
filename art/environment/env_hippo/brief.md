@@ -1,6 +1,6 @@
 # Brief — `env_hippo`
 
-Spec: ART-ENVIRONMENT, GAME-LEVEL-1. Status: **brief — images not generated yet**. Layout: `layout.md` in this
+Spec: ART-ENVIRONMENT, GAME-LEVEL-1. Status: **in-review — first mockups generated 2026-09-26**. Layout: `layout.md` in this
 folder; level data `assets/levels/level-1.toml`.
 
 ## Purpose
@@ -17,6 +17,12 @@ Start of the hippo mission: sign + info board (riddle → still pond with lilies
 ## Must not appear
 
 - **No water lilies, frogs or reeds** in the pool (must not look like `loc_pond`).
+- *Layout update 2026-09-26 (GAME-LEVEL-1 "Hippo enclosure pool"):* the pool `hippo_pool`
+  is bigger than in the kit concept — **8 × 7 m** (about half the enclosure), 2 m east of the
+  gate, with the shallow tiled **ramp on the west side facing the gate**, 1 m of grass to the
+  east and north fence, the hut south of the pool (x 15–18, z 11–14) and three small edge
+  stones (north-west corner, south rim). The existing mockups show a smaller pool; regenerate
+  them from the greybox before approval. `pool_tiled` must be scaled/modelled to 8 × 7 m.
 - No hippos (escaped). Optional `home.png` with hippos inside.
 
 ## Props used
@@ -122,3 +128,15 @@ Tools without a negative-prompt field: add "No text anywhere, no logos, not phot
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
 | | | | | | |
+| 2026-09-26 | overview_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_zebra_hippo_v3.jpg, sheet_v3.jpg | alternative — girl larger |
+| 2026-09-26 | overview_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_zebra_hippo_v3.jpg, sheet_v3.jpg | **chosen** → overview.png — tiled square pool, log hut, stones, hippo silhouette sign, river behind; mud patches added by the generator (not specified) |
+| 2026-09-26 | player_view_v1.jpg | gemini-3-pro-image (2K, 9:16) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_zebra_hippo_v3.jpg, sheet_v3.jpg | alternative — girl larger, no hedges at the gate |
+| 2026-09-26 | player_view_v2.jpg | gemini-3-pro-image (2K, 9:16) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_zebra_hippo_v3.jpg, sheet_v3.jpg | **chosen** → player_view.png — hedges framing the gate, girl ≈ 1/12 of the height |
+
+**Mockup notes (2026-09-26):** generated with gemini-3-pro-image (2K), chosen image downscaled
+to ≤ 2048 px and saved as PNG, the alternative kept as `*_v*.jpg`. References: the style frame
+plus the approved kit/model sheets named in the log; `--extra`: "The first attached image is the approved style frame of this game: match its comic style, colours, line weight, outlines and high camera look exactly, but not its layout. The other attached image(s) are approved asset sheets of props that appear in this scene: draw those props exactly like on the sheets (shapes, colours, materials); do not copy the grey sheet background or the sheet layout. No text anywhere."
+These are concept mockups from text only (no greybox guide yet) — positions are approximate.
+**The level layout may still change:** the level designer is adding more hiding places
+(GAME-LEVEL-1 `[[hiding_place]]`), so the mockups must be re-checked against
+`specs/10-gameplay/levels/level-1.md` before approval.

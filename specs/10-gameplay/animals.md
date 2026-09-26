@@ -27,7 +27,7 @@ Proposal of 10 animals pending Q-002. Each hiding place needs a location riddle 
 | `panda` | Bambus | `loc_cave` | bamboo |
 | `koala` | Eukalyptus | `loc_tallest_tree` | eucalyptus tree |
 | `elephant` | Heu | `loc_mud_pool` | water, logs, bridge? (Q-005) |
-| `goldfish` | Fischfutter | `loc_fountain` | water plants |
+| `goldfish` | Fischfutter | river/stream places of its level (bowl needed, GAME-RESCUE) | aquarium/pond, water plants |
 | `monkey` | Bananen | `loc_pirate_ship` | climbing frame |
 | `giraffe` | Blätter | `loc_playground` | tall feeding rack |
 | `lion` | Fleisch | `loc_sun_rocks` | rocks |
@@ -44,8 +44,20 @@ escaped ──(shown correct food)──▶ following ──(enters own enclosur
 ```
 
 - `escaped`: at its hiding place, plays `idle`/`eat`/`drink`, reacts to the player by looking.
+  **Wandering** (user decision 2026-09-26): from time to time (pause 6–15 s, random, seeded)
+  the animal walks slowly (≈ 0.5 m/s, `walk` clip) to a new spot **within its hiding area**
+  (radius ≤ 3 m around the hiding-place spot, walkable cells only, never onto paths the
+  player needs to pass, never through props), then idles/eats/drinks again. It never
+  leaves the hiding area, so the riddle always stays true. When the player comes within
+  3 m, it stops and looks at her (so it is easy to reach and show the food).
 - `following`: follows the player (GAME-RESCUE §6).
-- `in_enclosure`: inside, plays idle/happy animations. Final state.
+- `in_enclosure`: inside, plays idle/happy animations and **wanders slowly inside its
+  enclosure** the same way (pause 6–15 s, ≈ 0.5 m/s, stays inside the fence, avoids the
+  gate cells) — the zoo looks alive. Final state. *Where* it may walk is level data: the
+  enclosure's `home_wander_on` surfaces (`grass`, `water` = its pool) and its
+  `[[enclosure_feature]]` pool with the entry ramp (GAME-LAYOUT "Enclosure features and
+  wandering at home", proposal Q-085). The hippo wanders in and out of `hippo_pool` over the
+  ramp and spends most of its time in the water (GAME-LEVEL-1 "Hippo enclosure pool").
 
 ## Info board
 
@@ -53,7 +65,16 @@ Every enclosure has an **info board** (*Infotafel*) next to its sign. Its text (
 level and language, CONT-READING, CONT-L10N) contains:
 1. the animal's name,
 2. the **location riddle** for the hiding place chosen in this playthrough (GAME-RESCUE §2),
-3. its **food**, using exactly the word printed on the matching food box label.
+3. its **food**, using exactly the word printed on the matching food box label,
+4. **more about the animal** (*Steckbrief*, user request 2026-09-26): 2–4 short, true,
+   child-friendly facts per reading level (e.g. what it looks like, where it comes from,
+   something surprising), shown in the info board panel **after** the riddle and the food
+   word (the riddle is the core of the game and must always be visible first — QA finding
+   F2, 2026-09-26; panel fit on phones: Q-070). Facts must
+   never reveal the current hiding place (same rule as RESC-011: no place word). Length per
+   reading level: `kiga` 1 fact (one word + picture), `klasse1` 3 sentences of ≤ 5 words,
+   `klasse2` 3–4 sentences, `klasse3` 4–6 sentences. Texts per animal in CONT-MISSIONS,
+   keys `mission-<animal>-facts-<reading_level>`.
 
 On `kiga` the board shows pictures (habitat, food) plus one word each; read-aloud on tap (Q-007).
 
@@ -66,9 +87,16 @@ On `kiga` the board shows pictures (habitat, food) plus one word each; read-alou
 | ANIM-003 | Given every info board text (all levels, all languages), then the food word equals the label text of a food box with that food. | unit |
 | ANIM-004 | Given every hiding place in the data, then it references an existing location in the layout data (GAME-LAYOUT). | unit |
 | ANIM-005 | Given seed S picks hiding place H for the zebras, then the zebra info board shows the location riddle for H (at the current reading level and language). | unit |
+| ANIM-006 | Given the zebra info board at every reading level and language, then the panel shows facts text (`mission-zebra-facts-<level>`) in addition to riddle and food word. | unit |
+| ANIM-007 | Given every facts text, then it contains no place word of the animal's hiding places (as RESC-011) and `klasse1` sentences have ≤ 5 words. | unit |
+| ANIM-008 | Given an escaped animal over 120 s of simulated time, then it moved at least twice, never farther than 3 m from its hiding-place spot, never onto a non-walkable cell or into a prop, and its speed never exceeded 0.6 m/s. | unit |
+| ANIM-009 | Given the player within 3 m of an escaped animal, then it stops wandering and faces the player. | unit |
+| ANIM-010 | Given an animal in its enclosure over 120 s, then it wandered inside the enclosure only and never stood on a gate cell. | unit |
+| ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (proposal Q-085). | unit |
+| ANIM-011 | Given the same seed and inputs, then wandering is identical (deterministic); after save/restore it continues identically (GAME-SAVE). | unit |
 
 ## Open questions
 
 - Q-002 final list, Q-004 hippos, Q-005 elephant, Q-030 herd size, Q-036 goldfish transport.
 - Q-043 Animation set per animal (hiding-place idles, reactions, koala/goldfish locomotion).
-- Q-044 How hiding places are represented in the layout data.
+- Q-044 How hiding places are represented in the layout data. Q-085 `home_wander_on` and enclosure pools (data shape).

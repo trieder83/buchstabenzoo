@@ -22,6 +22,19 @@ impl Pcg32 {
         rng
     }
 
+    /// Internal state `(state, increment)` (GAME-SAVE: the RNG state is saved).
+    pub fn to_parts(&self) -> (u64, u64) {
+        (self.state, self.inc)
+    }
+
+    /// Generator from a saved [`Pcg32::to_parts`].
+    pub fn from_parts(state: u64, inc: u64) -> Self {
+        Self {
+            state,
+            inc: inc | 1,
+        }
+    }
+
     /// Next uniformly distributed `u32`.
     pub fn next_u32(&mut self) -> u32 {
         let old = self.state;

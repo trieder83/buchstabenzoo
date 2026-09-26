@@ -6,8 +6,22 @@
 #
 # PROPOSALS (not yet decided, see specs/open-questions.md):
 #   - type "hiding_place" and its fields (Q-044)
+#   - [[hiding_place]] list (all candidate hiding places, discovery decision 2026-09-26) and
+#     [[scenery]] list (non-solid ground dressing) at the end of this file (Q-080)
 #   - blocks_view / height_m fields for the "not visible from own enclosure" test (Q-044)
 #   - barrier unlock conditions (Q-022)
+#   - tree-area data: `density` + explicit `trees` list for sparse woods (GAME-LAYOUT "Forests",
+#     user decision 2026-09-26; data shape proposal Q-085)
+#   - [[enclosure_feature]] list (hippo pool) and `home_wander_on` on enclosures (Q-085)
+#
+# DECIDED (user 2026-09-26): tree areas are `dense` (solid as a whole) or `sparse` (walkable
+# between the trees; only trunks/bushes are solid — GAME-LAYOUT "Forests"); the hippo
+# enclosure has a pool covering about half of it (GAME-LEVEL-1 "Hippo enclosure pool").
+#
+# MIGRATION NOTE (GAME-LEVEL-1 "Hiding places"): the three `[[element]] type = "hiding_place"`
+# entries (loc_pond, loc_river, loc_cave) are LEGACY mirrors of their [[hiding_place]] entries,
+# kept only so the current zoo-core (which reads hiding places from [[element]]) keeps working.
+# When zoo-core reads [[hiding_place]], delete them here and in the GAME-LEVEL-1 element table.
 #
 # DECIDED (Q-046, user 2026-09-26): cells not covered by a solid element are walkable.
 # Surface: cells of `path` elements (incl. bridge, jetty, cave floor) = "path" (full speed);
@@ -152,6 +166,15 @@ kind = "plaza"
 rect = [-5, 0, 10, 8]
 
 [[element]]
+id = "bamboo_sw"
+type = "decoration"
+kind = "bamboo"
+rect = [-22, 0, 4, 3]
+blocks_view = true
+height_m = 3.0
+notes = "Dense bamboo thicket in the south-west corner, taller than the zoo wall (loc_bamboo). The only growing bamboo outside the panda enclosure."
+
+[[element]]
 id = "map_board"
 type = "landmark"
 kind = "map_board"
@@ -221,9 +244,11 @@ id = "grove_center"
 type = "decoration"
 kind = "tree_grove"
 rect = [-5, 17, 10, 10]
+density = "dense"             # GAME-LAYOUT "Forests": solid as a whole, never entered (LAYOUT-016)
+edge = "bushes"               # proposal (Q-085): visible bush border on every walkable side, so the solid edge is not an invisible wall
 blocks_view = true
 height_m = 6.0
-notes = "Dense grove of tall trees with a hedge border. Main sight blocker between opposite sides of the ring."
+notes = "Dense grove of tall trees with a bush border. Main sight blocker between opposite sides of the ring. Proposal (F11): no tree canopy within 1.5 m of the north edge (z 27) so the grove does not hide the player at board_panda."
 
 # ---------------------------------------------------------------- zebra
 [[element]]
@@ -232,6 +257,7 @@ type = "enclosure"
 animal = "zebra"
 rect = [-20, 7, 11, 12]
 gate = [-10, 12, 1, 2]       # on the east fence, faces path_ring_w
+home_wander_on = ["grass"]   # proposal Q-085: surfaces the animal wanders on when home (GAME-ANIMALS in_enclosure)
 blocks_view = false          # wooden fence, see-through
 notes = "Grass, bushes, stone-arch shelter in the north-west corner. Enclosure sign above the gate."
 
@@ -266,7 +292,7 @@ rect = [-11, 26, 2, 1]
 
 [[element]]
 id = "loc_pond"
-type = "hiding_place"        # proposal Q-044
+type = "hiding_place"        # proposal Q-044 — LEGACY mirror of [[hiding_place]] loc_pond
 animal = "hippo"
 rect = [-19, 19, 11, 10]
 animal_spot = [-13, 22]      # in the water, 2 m from the jetty tip
@@ -279,8 +305,9 @@ type = "enclosure"
 animal = "panda"
 rect = [-6, 32, 12, 10]
 gate = [-1, 32, 2, 1]        # on the south fence, faces path_ring_n
+home_wander_on = ["grass"]
 blocks_view = false
-notes = "Bamboo clumps, wooden climbing platform, wooden shelter. No stone cave (must not look like loc_cave)."
+notes = "Cut bamboo on a feeding rack (proposal Q-081: no growing bamboo clumps — growing bamboo only at loc_bamboo), wooden climbing platform, wooden shelter. No stone cave (must not look like loc_cave)."
 
 [[element]]
 id = "board_panda"
@@ -301,8 +328,25 @@ id = "trees_nw"
 type = "decoration"
 kind = "trees"
 rect = [-20, 32, 8, 10]
-blocks_view = true
-height_m = 6.0
+density = "sparse"            # GAME-LAYOUT "Forests": walkable between the trees; only trunks and bushes are solid
+blocks_view = false           # canopies only; the occluder fade applies (GAME-PLAYER §2)
+height_m = 5.0
+# Explicit positions (level x, z of the trunk centre). Clear gap between any two colliders
+# >= 1.8 m with trunk r 0.45, bush r 0.70 (proposed footprints, GAME-LEVEL-1 "Collision
+# footprints"); every collider lies fully inside `rect`.
+trees = [
+  { pos = [-18.9, 33.2], model = "tree_round" },
+  { pos = [-15.9, 33.0], model = "tree_round" },
+  { pos = [-12.9, 33.3], model = "tree_round" },
+  { pos = [-17.4, 36.2], model = "tree_round" },
+  { pos = [-14.3, 36.2], model = "tree_round" },
+  { pos = [-19.0, 38.7], model = "tree_round" },
+  { pos = [-15.9, 38.7], model = "tree_round" },
+  { pos = [-12.5, 38.7], model = "tree_round" },
+  { pos = [-17.45, 41.3], model = "bush" },
+  { pos = [-14.1, 41.3], model = "bush" },
+]
+notes = "Open wood of big round trees west of path_north; the child can walk in. The west row (x -18.9/-19.0) overhangs the shade corridor shade_w (loc_shade)."
 
 # ---------------------------------------------------------------- river (zebra hiding place)
 [[element]]
@@ -353,14 +397,32 @@ id = "trees_ne"
 type = "decoration"
 kind = "trees"
 rect = [15, 34, 6, 9]
-blocks_view = true
-height_m = 6.0
+density = "sparse"            # GAME-LAYOUT "Forests": walkable between the trees
+blocks_view = false
+height_m = 5.0
+trees = [
+  { pos = [16.0, 35.2], model = "tree_round" },
+  { pos = [19.4, 35.2], model = "tree_round" },
+  { pos = [17.7, 38.2], model = "tree_round" },
+  { pos = [20.5, 38.2], model = "tree_round" },
+  { pos = [16.0, 41.3], model = "tree_round" },   # rake of leaf_pile_ne leans on this tree
+  { pos = [19.3, 41.3], model = "tree_round" },
+  { pos = [20.3, 34.9], model = "bush" },          # hugs the trunk at (19.4, 35.2): one obstacle
+]
+notes = "Open wood east of the river between loc_meadow (south) and loc_leaves (north); the child can walk through it from the meadow to the leaf pile."
+
+[[element]]
+id = "path_ne_trail"
+type = "path"
+kind = "side"
+rect = [13, 31, 2, 12]
+notes = "Narrow trail (2 m, stepping-stone look) from path_ne north between the river and trees_ne to the leaf pile (loc_leaves); keeps loc_leaves within 10 s of loc_meadow and the bridge."
 
 [[element]]
 id = "loc_river"
-type = "hiding_place"        # proposal Q-044
+type = "hiding_place"        # proposal Q-044 — LEGACY mirror of [[hiding_place]] loc_river
 animal = "zebra"
-rect = [6, 31, 4, 4]
+rect = [6, 30, 4, 6]         # = bounding box of its wander area (GAME-LEVEL-1 "Hiding places")
 animal_spot = [8, 32]        # west bank, next to the bridge, drinking
 features = ["flowing_water", "bridge", "ducks"]
 
@@ -371,8 +433,9 @@ type = "enclosure"
 animal = "hippo"
 rect = [9, 11, 11, 12]
 gate = [9, 15, 1, 2]         # on the west fence, faces path_ring_e
+home_wander_on = ["grass", "water"]   # wanders in and out of hippo_pool when home (GAME-LEVEL-1 "Hippo enclosure pool")
 blocks_view = false
-notes = "Pool (square, tiled edge — not a natural pond), wooden hut, big stones."
+notes = "Tiled pool hippo_pool (see [[enclosure_feature]]; square, tiled rim — not a natural pond), wooden hut (area reserved south of the pool, x 15-18, z 11-14), a few edge stones."
 
 [[element]]
 id = "hedge_hippo_nw"
@@ -440,7 +503,7 @@ notes = "Service path along the rock hill to barrier_east_repair."
 
 [[element]]
 id = "loc_cave"
-type = "hiding_place"        # proposal Q-044
+type = "hiding_place"        # proposal Q-044 — LEGACY mirror of [[hiding_place]] loc_cave
 animal = "panda"
 rect = [10, 5, 3, 3]
 animal_spot = [10, 5]        # asleep in the back corner on the west side of the cave (back-right as seen from the mouth)
@@ -500,3 +563,196 @@ facing = "-z"
 food = "eucalyptus"
 pos = [3.6, 10.66]
 facing = "-z"
+
+# ================================================================ enclosure features
+# Proposal Q-085 (data shape): things inside an enclosure that change how its animal moves at
+# home. Like food boxes and scenery they are NOT [[element]]s — the enclosure cells stay solid
+# for the player (LAYOUT-003 unaffected). Fields:
+#   id / enclosure / kind   `pool` = still water the animal may wander in (surface "water"
+#                           of `home_wander_on`, GAME-ANIMALS "in_enclosure")
+#   rect        cells covered by the pool incl. its tiled rim [x, z, w, d]
+#   water       "still" (pond look, TECH-WATER; NO lilies, frogs, reeds or ducks — riddle guard)
+#   ramp        cells of the shallow tiled entry ramp (part of rect, walkable for the animal)
+#   ramp_side   side of the pool the ramp is on
+#   edge_stones decoration rocks (model `rock`, scale 0.5) on the grass just outside the rim,
+#               level (x, z) centres; solid for the animal's wander path
+#   model       modelled asset (approved concept art/props/kit_enclosure_buildings, `pool_tiled`)
+
+[[enclosure_feature]]
+id = "hippo_pool"
+enclosure = "enc_hippo"
+kind = "pool"
+rect = [11, 15, 8, 7]         # x 11-18, z 15-21: 56 of 130 inner cells (43 %), 2 cells from the gate
+water = "still"
+ramp = [11, 16, 1, 3]         # west side, facing the gate and the path in front of it
+ramp_side = "-x"
+edge_stones = [[10.4, 21.6], [11.4, 14.4], [13.6, 14.3]]   # NW corner and south rim; never in the 1 m strips east (x 19) and north (z 22) of the pool
+model = "pool_tiled"
+notes = "Square tiled pool (light blue/white tiles, 0.4 m rim), clear still water, no plants. Seen from the path in front of the gate (8, 15-16) 3-10 m to the east. The hippo spends most of its home time in it with only eyes, ears and back showing."
+
+# ================================================================ hiding places (candidates)
+# Discovery (user decision 2026-09-26, GAME-RESCUE §1): every animal has >= 3 candidate hiding
+# places; one per animal is picked per playthrough with the seeded RNG (RESC-014).
+# Proposal Q-080 — source of truth for hiding places (the [[element]] loc_* entries above are
+# legacy mirrors). Fields:
+#   id              `loc_*`, unique; also the riddle key part:
+#                   mission-<animal>-riddle-<id>-<reading_level> (CONT-MISSIONS)
+#   animal          animal id (GAME-ANIMALS)
+#   rect            overlay area [x, z, w, d], NOT solid; contains the spot, every wander cell
+#                   and the scenery of the place; rects of different animals never overlap
+#   animal_spot     cell where the animal starts, returns to and is found (level x, z)
+#   wander_radius_m escaped animals wander only to cells whose centre is within this distance
+#                   of the spot centre (GAME-ANIMALS "Animal states": <= 3 m); the wander area
+#                   is also clipped to `rect` (proposal Q-085) so it never spreads into the
+#                   now walkable sparse woods trees_nw / trees_ne next to loc_shade, loc_mud,
+#                   loc_meadow and loc_leaves
+#   wander_on       surface the animal wanders on: "grass" (walkable non-path cell),
+#                   "water" (cells of the pond landmark), "cave" (path cells of kind "cave")
+#   features        riddle details the place must show (CONT-MISSIONS, LAYOUT-L1-007)
+#   scenery         ids of [[scenery]] / [[element]] entries that provide the features
+#   pose            clip played at the spot when not walking (proposal, Q-043)
+
+[[hiding_place]]
+id = "loc_river"
+animal = "zebra"
+rect = [6, 30, 4, 6]
+animal_spot = [8, 32]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["flowing_water", "bridge", "ducks"]
+scenery = ["river_n", "bridge_river"]
+pose = "drink"
+
+[[hiding_place]]
+id = "loc_meadow"
+animal = "zebra"
+rect = [15, 31, 7, 3]
+animal_spot = [17, 32]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["tall_grass", "wildflowers", "butterflies", "big_trees_behind"]
+scenery = ["tall_grass_ne", "trees_ne"]
+pose = "eat"
+
+[[hiding_place]]
+id = "loc_sand"
+animal = "zebra"
+rect = [-1, 42, 7, 4]
+animal_spot = [2, 44]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["sand", "dry", "yellow_ground", "no_grass"]
+scenery = ["sand_n"]
+pose = "idle"                # proposal: `roll` (dust bath) if Q-043 adds it
+
+[[hiding_place]]
+id = "loc_pond"
+animal = "hippo"
+rect = [-19, 19, 11, 10]
+animal_spot = [-13, 22]
+wander_radius_m = 3.0
+wander_on = "water"
+features = ["still_water", "water_lilies", "frogs"]
+scenery = ["pond_water", "jetty_pond"]
+pose = "swim"
+
+[[hiding_place]]
+id = "loc_mud"
+animal = "hippo"
+rect = [-20, 42, 7, 4]
+animal_spot = [-17, 44]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["mud", "brown_ground", "wet", "splashing"]
+scenery = ["mud_nw"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_shade"
+animal = "hippo"
+rect = [-22, 33, 2, 7]
+animal_spot = [-22, 36]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["shade", "big_trees", "zoo_wall", "dry_grass"]
+scenery = ["shade_w", "trees_nw", "wall_west"]
+pose = "sleep"
+
+[[hiding_place]]
+id = "loc_cave"
+animal = "panda"
+rect = [10, 5, 3, 3]
+animal_spot = [10, 5]
+wander_radius_m = 3.0
+wander_on = "cave"
+features = ["dark", "cool", "stone", "echo"]
+scenery = ["path_cave_floor", "rock_hill_back"]
+pose = "sleep"
+
+[[hiding_place]]
+id = "loc_bamboo"
+animal = "panda"
+rect = [-22, 0, 8, 6]
+animal_spot = [-18, 2]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["bamboo_thicket", "green_stalks", "taller_than_wall", "rattling"]
+scenery = ["bamboo_sw", "wall_west", "wall_south_w"]
+pose = "eat"
+
+[[hiding_place]]
+id = "loc_leaves"
+animal = "panda"
+rect = [14, 43, 7, 3]
+animal_spot = [17, 44]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["leaf_pile", "red_yellow_leaves", "rake", "under_trees"]
+scenery = ["leaf_pile_ne", "trees_ne"]
+pose = "idle"                # proposal: lying on its back in the leaves (Q-043)
+
+# ================================================================ scenery (non-solid)
+# Proposal Q-080: ground dressing that provides riddle features but does not change the grid —
+# its cells stay walkable with surface "grass" (GAME-LAYOUT Q-046); like food boxes it is not
+# an [[element]]. Never overlaps a solid element or a path; each kind exists only once in
+# level 1 (riddle guard, LAYOUT-L1-008). props = modular props of ART-ENVIRONMENT.
+
+[[scenery]]
+id = "tall_grass_ne"
+kind = "tall_grass"
+rect = [15, 31, 7, 3]
+hiding_place = "loc_meadow"
+props = ["grass_tuft (x3 scale, dense)", "wildflowers", "butterfly"]
+notes = "Knee-high (zebra belly-high) grass with red/yellow/white wildflowers and 3-4 fluttering butterflies. The only tall grass and the only butterflies in level 1."
+
+[[scenery]]
+id = "sand_n"
+kind = "sand_patch"
+rect = [-1, 42, 7, 4]
+hiding_place = "loc_sand"
+props = ["sand_tile", "rock"]
+notes = "Dry yellow sand patch (dust bath) north of the panda enclosure; no grass tufts on it, a few small rocks at the rim. The only sand in level 1."
+
+[[scenery]]
+id = "mud_nw"
+kind = "mud_puddle"
+rect = [-20, 42, 7, 4]
+hiding_place = "loc_mud"
+props = ["mud_tile", "grass_tuft"]
+notes = "Big brown mud puddle (after rain), glossy wet highlights, splashes and footprints at the rim. Not water: no lilies, no frogs, no reeds, brown not blue. The only mud in level 1."
+
+[[scenery]]
+id = "shade_w"
+kind = "tree_shade"
+rect = [-22, 33, 2, 7]
+hiding_place = "loc_shade"
+props = ["shade_decal", "grass_tuft"]
+notes = "Corridor between the west zoo wall and trees_nw; the tree crowns overhang it; flat dark-green shade decal on the ground (cool, dry grass). The only place where big trees stand right at the zoo wall."
+
+[[scenery]]
+id = "leaf_pile_ne"
+kind = "leaf_pile"
+rect = [15, 43, 4, 2]
+hiding_place = "loc_leaves"
+props = ["leaf_pile", "rake"]
+notes = "Big raked heap of red, yellow and brown leaves at the north edge of trees_ne, a rake leaning on a tree. Sunlit (not dark — must not look like loc_cave). The only leaf pile in level 1."

@@ -56,3 +56,8 @@ language for player-facing text.
 | `water_field` | Wasserfeld | water field | Per-level texture baked by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
 
 † German term is a proposal until confirmed (Q-045).
+| `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night after all day animals are home (GAME-NIGHT). |
+| `night_zoo` | Nachtzoo | night zoo | New area with nocturnal animals, reached through the moon door (GAME-NIGHT). |
+| `moon_door` | Mondtor | moon door | Gate of the day zoo that opens at nightfall and leads to the night zoo. |
+| `lantern` | Laterne | lantern | Light the player carries at night; makes the animals' eyes shine. |
+| `nocturnal_animal` | nachtaktives Tier | nocturnal animal | Animal that is active at night (hedgehog, bat, owl, …). |

@@ -31,7 +31,14 @@ occupied again.
 ## Behaviour
 
 1. At game start every enclosure is empty and every animal is at one of its **hiding places**
-   (GAME-ANIMALS). Hiding place is picked per playthrough with the seeded RNG.
+   (GAME-ANIMALS). **Discovery** (user decision 2026-09-26): every animal has **at least 3
+   candidate hiding places spread over the reachable map of its level**, and one is picked
+   per playthrough with the seeded RNG, so the animal is not always in the same place.
+   Rules for the pick: no two animals share a hiding place; each chosen place is far from
+   its own enclosure (not visible from its info board — LAYOUT-L1-006); the picks are spread
+   over the map (the chosen places of a level's animals are ≥ 12 m apart). The chosen place
+   is saved (GAME-SAVE) and does not change on reload. Every candidate place has its own
+   location riddle per reading level and language (CONT-MISSIONS).
 2. **Reading comprehension is the core.** The info board holds a **location riddle** for the
    animal's actual hiding place. The riddle describes the place indirectly (what the animal
    does there, what is there) — it never names the place directly on `klasse1`+.
@@ -60,6 +67,34 @@ occupied again.
     `mission-<animal>-home`. Interacting at an enclosure gate while leading animals is the
     same as walking into it (GAME-PLAYER §5).
 
+
+## Animals that cannot walk behind the player — the goldfish bowl
+
+User decision 2026-09-26 (answers Q-036): a goldfish cannot follow the player over land, so
+its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bowl`):
+
+1. **Find the bowl:** a big empty glass bowl stands somewhere in the goldfish's level (a
+   findable place, e.g. the zookeeper house; the info board gives a hint that a bowl is
+   needed). Interact → the player carries it with both hands (`socket_carry`).
+2. **Fill it with water:** at any water source of the level (tap/pump, pond, river edge)
+   interact → the bowl is filled (visible water in the glass). An empty bowl never works.
+3. **Food:** the goldfish's food (`Fischfutter`, read from the food box label as usual).
+   While carrying the bowl the player can also hold one food (the food goes into the
+   **pocket**, shown in the HUD — proposal, Q-084), so bowl + food can be carried together.
+4. **Find the goldfish:** it is **in a river** (its hiding places are river/stream spots of
+   its level — riddles as usual; the old fountain place is replaced, CONT-MISSIONS).
+5. **Feed it:** interact at the riverbank with fish food → the goldfish swims to the bank
+   and, **if the bowl is filled**, **jumps into the bowl** (splash, `happy`). Feedback
+   without bowl: it swims happily but cannot come along ("Ich brauche ein Glas mit Wasser!");
+   with an empty bowl: "Im Glas ist ja kein Wasser!".
+6. **Carry it home:** the player walks back carrying the bowl with the fish (walking speed
+   × 0.9, careful — proposal, Q-084) and puts it at the goldfish's home (aquarium/pond
+   enclosure): interact → the fish jumps in, `happy`, mission complete.
+7. The bowl, its water and the fish in it are part of the save (GAME-SAVE). Putting the bowl
+   down anywhere (interact on free ground) is allowed; the fish stays safe in it.
+8. The mechanic is generic (`carry container` + `fill` + `animal enters container`) so later
+   swimming animals can reuse it; data per animal says which container it needs.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -77,6 +112,16 @@ occupied again.
 | RESC-011 | Given reading level `klasse1`+, then no location riddle contains the name of its hiding place, i.e. the place word shown on `kiga` for that hiding place (CONT-MISSIONS), in the same language (matching rule: Q-039). | unit |
 | RESC-012 | Given mission `zebra` not started, when the player reads the zebra info board for the first time, then mission `zebra` is started. | unit |
 | RESC-013 | Given the zebra info board has not been read, when the player shows grass to the zebras, then the zebras become `following`. | unit |
+| RESC-017 | Given level 1 as built, then every info board and animal that is interactable has its texts (location riddle for every reading level, home message) in `de` and `en` — no panel, bubble or celebration shows a raw Fluent key (proposal, Q-069; QA 2026-09-26). | unit |
+| RESC-014 | Given 1 000 different seeds, then every animal of level 1 is placed at each of its ≥ 3 candidate hiding places at least once, no two animals ever share a place, and chosen places of one playthrough are ≥ 12 m apart. | unit |
+| RESC-015 | Given any seed and reading level, then the info board shows the riddle of the hiding place actually chosen for that playthrough. | unit |
+| RESC-016 | Given a saved game, when it is restored, then every animal is still at (or wandering around) the same chosen hiding place. | unit |
+| RESC-018 | Given the goldfish mission, when the player has no bowl and feeds the fish, then it stays in the river with the "needs a bowl" feedback. | unit |
+| RESC-019 | Given the player carries an empty bowl and feeds the fish, then it stays with the "no water" feedback; after filling at a water source and feeding again, it jumps into the bowl. | unit |
+| RESC-020 | Given the player carries the bowl, then she can additionally hold one food (pocket) and the HUD shows both. | unit |
+| RESC-021 | Given the fish is in the bowl, when the player puts the bowl at the goldfish home, then the fish is in its enclosure and the mission completes. | unit |
+| RESC-022 | Given a save with a carried filled bowl and the fish in it, when restored, then bowl, water and fish are unchanged. | unit |
+| RESC-023 | Given the player carries the bowl with the fish, then her speed is 0.9 × the surface speed. | unit |
 
 ## Open questions
 

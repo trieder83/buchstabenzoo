@@ -28,12 +28,13 @@ German and English. Scope is deliberately small; everything else is out.
 | Rendering | WebGL2, 2-tone cel shading, outline pass, flat-colour textures | ART-DIRECTION, TECH-ARCH §7 |
 | Mission | Zebra: info board riddle (panel) → food storage → pick `Gras` box → zebra at `loc_river` → show food → follows → enclosure → `happy` | GAME-RESCUE, GAME-FEED, CONT-MISSIONS §1 |
 | Reading | Text panel with the zebra riddle and food labels, reading level selectable (`kiga`–`klasse3`), `de` + `en` via Fluent | CONT-READING, CONT-L10N |
+| Saving | Progress and positions survive a reload (local save) | GAME-SAVE |
 | Assets | Kits 1–6 (only props used by level 1), zebra, girl; buildings as simple block-outs | ART-PIPELINE |
 
 ## Out of scope (PoC)
 
 Hippo and panda missions (their enclosures and hiding places exist as scenery only), boy,
-map (GAME-MAP), math tasks, visitors/quests, audio/read-aloud, saving, mobile packaging
+map (GAME-MAP), math tasks, visitors/quests, audio/read-aloud, mobile packaging
 (Capacitor), final building models, level transitions.
 
 ## Placeholders

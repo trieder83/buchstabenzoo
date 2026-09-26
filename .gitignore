@@ -48,3 +48,6 @@ node_modules/
 web/dist/
 web/test-results/
 web/playwright-report/
+
+# dev server pid/log (scripts/start.sh)
+.run/

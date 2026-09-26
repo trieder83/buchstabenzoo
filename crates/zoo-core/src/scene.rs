@@ -231,7 +231,20 @@ pub struct LevelScene {
     /// Boxes (index ranges) of the roof and upper walls of an enterable building, hidden
     /// while the player is inside (GAME-PLAYER §2, PLAY-028).
     pub roof_boxes: Vec<(String, std::ops::Range<usize>)>,
+    /// Water tiles, still basins, river centrelines and foam obstacles (TECH-WATER); the
+    /// renderer bakes the water field from it, the ambient animals swim in it.
+    pub water: crate::water::WaterScene,
 }
+
+/// Bridge piles standing in the water (`kit_water.py` `bridge_wood`, Q-068): offsets from
+/// the bridge centre (level x, z) and radius.
+pub const BRIDGE_PILES: [(f32, f32); 4] =
+    [(-0.55, -1.18), (0.55, -1.18), (-0.55, 1.18), (0.55, 1.18)];
+pub const BRIDGE_PILE_R: f32 = 0.075;
+/// Jetty posts in the water (`jetty_wood`, water end −X): offsets from the jetty centre.
+pub const JETTY_POSTS: [(f32, f32); 2] = [(-2.22, -0.82), (-2.22, 0.82)];
+/// Height of the fountain basin's water surface (m).
+pub const FOUNTAIN_WATER_Y: f32 = 0.61;
 
 /// Direction names in level space and their clockwise order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -344,6 +357,24 @@ pub fn water_tile(
         _ => (names[0], i32::from(flow_x)),
     }
 }
+
+/// Stones of the small rapids in `river_n` (offset from its rect corner, yaw in degrees).
+pub const RIVER_ROCKS: [(f32, f32, f32); 3] =
+    [(0.9, 12.4, 20.0), (2.0, 13.3, 140.0), (1.3, 14.8, 260.0)];
+/// Scale of the rapids stones (`rock` is 1.48 m wide).
+pub const RIVER_ROCK_SCALE: f32 = 0.3;
+/// Foam radius of a rapids stone (m).
+pub const RIVER_ROCK_FOAM_R: f32 = 0.2;
+/// Lily pads of the pond (offset from the pond rect corner, yaw in degrees); the last two are
+/// the frogs' start pads (near the jetty and the south bank, so the child can get close).
+pub const POND_LILY_PADS: [(f32, f32, f32); 6] = [
+    (2.2, 2.5, 0.0),
+    (5.4, 3.1, 70.0),
+    (3.6, 5.6, 150.0),
+    (6.0, 6.2, 220.0),
+    (6.8, 1.5, 0.0),
+    (3.0, 1.0, 30.0),
+];
 
 /// Deterministic pseudo-random value in [0, 1) from two integers (placement jitter).
 fn hash01(a: i32, b: i32) -> f32 {
@@ -612,6 +643,9 @@ impl LevelScene {
                 }
             }
         }
+        // Rivers (flow order, Q-066) and foam obstacles standing in the water (Q-068).
+        s.water.rivers = crate::water::river_paths(data).unwrap_or_default();
+        s.water_obstacles(data);
         for w in &data.water_sources {
             if let (Some(pos), "tap") = (w.pos, w.kind.as_str()) {
                 let first = s.placements.len();
@@ -683,6 +717,7 @@ impl LevelScene {
                 let (model, k) = water_tile(body == 1, &conn, &dry_diag, flow_x[i]);
                 s.placements
                     .push(Placement::new(model, pos, quarter_turns_cw_to_yaw(k)));
+                s.push_water_cell(model, c, k);
                 return;
             }
             if plaza[i] {
@@ -718,6 +753,7 @@ impl LevelScene {
                 let (model, k) = water_tile(false, &conn, &[], false);
                 s.placements
                     .push(Placement::new(model, pos, quarter_turns_cw_to_yaw(k)));
+                s.push_water_cell(model, c, k);
             } else {
                 let sand = data
                     .scenery
@@ -727,6 +763,64 @@ impl LevelScene {
                 s.placements.push(Placement::new(tile, pos, 0.0));
             }
         }
+    }
+
+    fn push_water_cell(&mut self, model: &str, cell: IVec2, turns: i32) {
+        if let Some((shape, river)) = crate::water::TileShape::of_model(model) {
+            self.water.cells.push(crate::water::WaterCell {
+                cell,
+                river,
+                shape,
+                turns,
+            });
+        }
+    }
+
+    /// Foam obstacles (Q-068): bridge piles, the rapids stones, jetty posts in the pond, the
+    /// water wheel of the mill and the fountain jet.
+    fn water_obstacles(&mut self, data: &LevelData) {
+        for e in &data.elements {
+            let c = rect_center(e.rect);
+            match (e.ty, e.kind.as_deref()) {
+                (ElementType::Path, Some("bridge")) => {
+                    for (dx, dz) in BRIDGE_PILES {
+                        let p = c + Vec2::new(dx, dz);
+                        if self.water.is_water(p) {
+                            self.obstacle(p, BRIDGE_PILE_R);
+                        }
+                    }
+                }
+                (ElementType::Path, Some("jetty")) => {
+                    for (dx, dz) in JETTY_POSTS {
+                        let p = c + Vec2::new(dx, dz);
+                        if self.water.is_water(p) {
+                            self.obstacle(p, 0.08);
+                        }
+                    }
+                }
+                (ElementType::Landmark, Some("river")) if e.id == "river_n" => {
+                    let o = Vec2::new(e.rect.x as f32, e.rect.z as f32);
+                    for (dx, dz, _) in RIVER_ROCKS {
+                        self.obstacle(o + Vec2::new(dx, dz), RIVER_ROCK_FOAM_R);
+                    }
+                }
+                (_, Some("mill_hut")) => {
+                    let p = Vec2::new(e.rect.x as f32 - 1.5, c.y);
+                    if self.water.is_water(p) {
+                        self.obstacle(p, 0.3);
+                    }
+                }
+                (ElementType::Landmark, Some("fountain")) => self.obstacle(c, 0.13),
+                _ => {}
+            }
+        }
+    }
+
+    fn obstacle(&mut self, pos: Vec2, radius: f32) {
+        let river = self.water.is_river_water(pos);
+        self.water
+            .obstacles
+            .push(crate::water::Obstacle { pos, radius, river });
     }
 
     /// Wooden "Futter" board on the south facade of the food storage, centred above the row
@@ -987,10 +1081,16 @@ impl LevelScene {
                 for (a, b) in north {
                     rim_box(Vec2::new(a, z1 - rim / 2.0), Vec2::new(b, z1 - rim / 2.0));
                 }
-                for (a, b) in west {
+                // west / east segments run between the south and north rims (no overlapping
+                // corner blocks: coplanar tops and sides would z-fight, RENDER-001)
+                let inner = |(a, b): (f32, f32)| {
+                    let (a, b) = (a.max(z0 + rim), b.min(z1 - rim));
+                    (b > a + 1e-3).then_some((a, b))
+                };
+                for (a, b) in west.into_iter().filter_map(inner) {
                     rim_box(Vec2::new(x0 + rim / 2.0, a), Vec2::new(x0 + rim / 2.0, b));
                 }
-                for (a, b) in east {
+                for (a, b) in east.into_iter().filter_map(inner) {
                     rim_box(Vec2::new(x1 - rim / 2.0, a), Vec2::new(x1 - rim / 2.0, b));
                 }
                 if let Some(rp) = ramp {
@@ -1116,7 +1216,9 @@ impl LevelScene {
                         let p = cell_center(c)
                             + Vec2::new(hash01(c.x + k, c.y) - 0.5, hash01(c.y, c.x - k) - 0.5)
                                 * 0.8;
-                        self.flat(id, p, Vec3::new(0.25, 0.08, 0.2), 0.0, colors::BLOSSOM);
+                        // tops 5 mm apart so overlapping petals never share a plane (RENDER-001)
+                        let hgt = 0.06 + 0.005 * ((c.x + c.y * 3 + k) as f32).rem_euclid(5.0);
+                        self.flat(id, p, Vec3::new(0.25, hgt, 0.2), 0.0, colors::BLOSSOM);
                     }
                 }
             }
@@ -1294,22 +1396,22 @@ impl LevelScene {
         }
     }
 
-    /// Ducks near the bridge (riddle detail of `loc_river`, GAME-LEVEL-1).
+    /// Small rapids with stones in the upper river (`river_n` notes); the ducks near the
+    /// bridge (riddle detail of `loc_river`) are ambient animals (GAME-AMBIENT), not props.
     fn river_dressing(&mut self, e: &Element) {
         if e.id != "river_n" {
             return;
         }
         let r = e.rect;
-        for (k, (dx, dz, yaw)) in [(0.8, 1.3, 20.0), (1.9, 2.1, -30.0), (1.2, 3.4, 160.0f32)]
-            .into_iter()
-            .enumerate()
-        {
-            let _ = k;
-            self.model_at(
-                "duck",
+        for (dx, dz, yaw) in RIVER_ROCKS {
+            let first = self.placements.len();
+            self.model_scaled(
+                "rock",
                 Vec2::new(r.x as f32 + dx, r.z as f32 + dz),
                 yaw.to_radians(),
+                RIVER_ROCK_SCALE,
             );
+            self.placements[first].pos.y = -0.07;
         }
     }
 
@@ -1317,16 +1419,9 @@ impl LevelScene {
     fn pond_dressing(&mut self, e: &Element) {
         let r = e.rect;
         let o = Vec2::new(r.x as f32, r.z as f32);
-        for (dx, dz, yaw) in [
-            (2.2, 2.5, 0.0),
-            (5.4, 3.1, 70.0),
-            (3.6, 5.6, 150.0),
-            (6.0, 6.2, 220.0f32),
-        ] {
+        // the frogs are ambient animals sitting on these pads (GAME-AMBIENT 7)
+        for (dx, dz, yaw) in POND_LILY_PADS {
             self.model_at("lily_pad", o + Vec2::new(dx, dz), yaw.to_radians());
-        }
-        for (dx, dz, yaw) in [(4.6, 2.0, 0.0), (2.4, 4.6, 30.0f32)] {
-            self.model_at("frog", o + Vec2::new(dx, dz), yaw.to_radians());
         }
         for (dx, dz) in [(0.6, 7.3), (1.4, 7.5), (7.3, 7.3), (0.5, 0.8)] {
             self.model_at(
@@ -1384,7 +1479,8 @@ impl LevelScene {
             Some("giraffe") => {
                 // tall feeding rack with leafy branches (4 m), no tower (riddle guard)
                 let p = at(0.7, 0.7);
-                self.push_box(id, p, 0.0, Vec3::new(0.2, 4.2, 0.2), colors::WOOD);
+                // the pole ends inside the leafy top (no shared top face, RENDER-001)
+                self.push_box(id, p, 0.0, Vec3::new(0.2, 4.1, 0.2), colors::WOOD);
                 self.push_box(id, p, 3.4, Vec3::new(1.4, 0.8, 0.8), colors::TREE_CROWN);
                 self.push_box(
                     id,
@@ -1535,16 +1631,19 @@ impl LevelScene {
             }
             (ElementType::Enclosure, _) => self.enclosure(e),
             (ElementType::Building, "entrance") => {
-                // Arch: two pillars and a beam, so the player is visible through it.
+                // Arch: two pillars and a beam, so the player is visible through it. The
+                // pillars end under the beam: no coplanar faces (RENDER-001 — they used to
+                // share the top at `height` and flickered red/blue).
                 let r = e.rect;
                 let c = rect_center(r);
                 let height = h.unwrap_or(5.0);
-                let pillar = Vec3::new(1.2, height, r.d as f32 - 0.2);
+                let beam_h = 0.7;
+                let pillar = Vec3::new(1.2, height - beam_h, r.d as f32 - 0.2);
                 let dx = r.w as f32 / 2.0 - 0.6;
                 self.push_box(&e.id, c - Vec2::X * dx, 0.0, pillar, colors::STONE);
                 self.push_box(&e.id, c + Vec2::X * dx, 0.0, pillar, colors::STONE);
-                let beam = Vec3::new(r.w as f32, 0.7, 0.8);
-                self.push_box(&e.id, c, height - 0.7, beam, colors::ROOF);
+                let beam = Vec3::new(r.w as f32, beam_h, 0.8);
+                self.push_box(&e.id, c, height - beam_h, beam, colors::ROOF);
                 // closed turnstiles in the arch on the plaza side (QA F8: no invisible wall)
                 let row = Vec2::new(c.x, r.z as f32 + r.d as f32 - 0.5);
                 let open_w = r.w as f32 - 2.4;
@@ -1566,11 +1665,13 @@ impl LevelScene {
                         [0.70, 0.72, 0.76],
                     );
                 }
+                // top rail slightly deeper than the 0.12 m posts so their faces never
+                // share a plane (RENDER-001)
                 self.push_box(
                     &e.id,
                     row,
                     0.95,
-                    Vec3::new(open_w, 0.1, 0.12),
+                    Vec3::new(open_w, 0.1, 0.16),
                     [0.70, 0.72, 0.76],
                 );
             }
@@ -1646,7 +1747,20 @@ impl LevelScene {
         match kind {
             "fountain" => {
                 self.part_box(id, c, 0.0, Vec3::new(w - 0.2, 0.6, d - 0.2), colors::STONE);
-                self.part_box(id, c, 0.0, Vec3::new(w - 0.7, 0.62, d - 0.7), colors::WATER);
+                // basin water: still-water tiles drawn by the water shader (TECH-WATER), 2 × 2
+                // full pond tiles scaled to the inner basin
+                let (iw, id_) = (w - 0.7, d - 0.7);
+                let scale = iw.max(id_) / 2.0;
+                for (sx, sz) in [(-1.0, -1.0), (1.0, -1.0), (-1.0, 1.0), (1.0, 1.0f32)] {
+                    let p = c + Vec2::new(sx * iw / 4.0, sz * id_ / 4.0);
+                    let first = self.placements.len();
+                    self.model_scaled("water_pond", p, 0.0, scale);
+                    self.placements[first].pos.y = FOUNTAIN_WATER_Y;
+                }
+                self.water.stills.push(crate::water::StillWater {
+                    min: c - Vec2::new(iw, id_) / 2.0,
+                    max: c + Vec2::new(iw, id_) / 2.0,
+                });
                 self.part_box(id, c, 0.62, Vec3::new(0.18, 1.8, 0.18), colors::WATER_LIGHT);
                 self.part_box(id, c, 2.3, Vec3::new(0.7, 0.2, 0.7), colors::WATER_LIGHT);
                 for k in 0..5 {
@@ -1687,7 +1801,8 @@ impl LevelScene {
                         fall_x - 1.2 + hash01(k, 1) * 2.4,
                         r.z as f32 - 0.4 - hash01(2, k) * 1.4,
                     );
-                    self.part_box(id, p, 0.0, Vec3::new(0.5, 0.12, 0.4), colors::FOAM);
+                    let hgt = 0.1 + 0.006 * k as f32; // distinct tops (RENDER-001)
+                    self.part_box(id, p, 0.0, Vec3::new(0.5, hgt, 0.4), colors::FOAM);
                 }
             }
             "stream" => {
@@ -1708,11 +1823,13 @@ impl LevelScene {
                 // water wheel over the stream west of the hut (not solid): hub, spokes, paddles
                 let wheel = Vec2::new(r.x as f32 - 1.5, c.y);
                 let axle = 1.3;
+                // hub thicker than the spokes, crossing spokes of different section, so no
+                // two faces share a plane (RENDER-001)
                 self.part_box(
                     id,
                     wheel,
-                    axle - 0.15,
-                    Vec3::new(1.8, 0.3, 0.3),
+                    axle - 0.17,
+                    Vec3::new(1.8, 0.34, 0.34),
                     colors::WOOD,
                 );
                 self.part_box(
@@ -1725,8 +1842,8 @@ impl LevelScene {
                 self.part_box(
                     id,
                     wheel,
-                    axle - 0.15,
-                    Vec3::new(0.25, 0.3, 2.5),
+                    axle - 0.13,
+                    Vec3::new(0.21, 0.26, 2.5),
                     colors::WOOD_LIGHT,
                 );
                 for k in 0..8 {
@@ -1807,11 +1924,13 @@ impl LevelScene {
                 let n = (r.w as f32 / 1.2).floor().max(1.0) as i32;
                 for k in 0..n {
                     let x = x0 + 0.6 + k as f32 * (x1 - x0 - 1.0) / n as f32;
+                    // neighbouring sheets overlap: alternate depth and length (RENDER-001)
+                    let odd = (k % 2) as f32;
                     self.part_box(
                         id,
-                        Vec2::new(x, c.y),
-                        0.8,
-                        Vec3::new(0.95, 1.1, 0.04),
+                        Vec2::new(x, c.y + 0.05 * odd),
+                        0.8 + 0.04 * odd,
+                        Vec3::new(0.95, 1.08 - 0.06 * odd, 0.04),
                         colors::WHITE,
                     );
                 }
@@ -1825,14 +1944,17 @@ impl LevelScene {
             }
             "treehouse" | "giant_tree" | "blossom_tree" => self.perch_tree(e, data),
             "log_pile" => {
+                // stacked rows (each shorter than the one below, logs 1 cm apart) so no two
+                // log faces share a plane (RENDER-001)
+                let lz = ((d - 0.6) / 4.0).min(0.43);
                 for (row, n) in [(0, 4), (1, 3), (2, 2)] {
                     for k in 0..n {
-                        let z = r.z as f32 + 0.45 + (k as f32 + row as f32 * 0.5) * 0.45;
+                        let z = r.z as f32 + 0.3 + lz / 2.0 + (k as f32 + row as f32 * 0.5) * lz;
                         self.part_box(
                             id,
-                            Vec2::new(c.x, z.min((r.z + r.d) as f32 - 0.3)),
-                            row as f32 * 0.4,
-                            Vec3::new(w - 0.3, 0.42, 0.42),
+                            Vec2::new(c.x, z),
+                            row as f32 * (lz - 0.01),
+                            Vec3::new(w - 0.3 - 0.12 * row as f32, lz - 0.01, lz - 0.01),
                             colors::TREE_TRUNK,
                         );
                     }
@@ -1842,7 +1964,8 @@ impl LevelScene {
                         r.x as f32 + hash01(k, 5) * w,
                         r.z as f32 - 0.5 + hash01(5, k) * 0.3,
                     );
-                    self.part_box(id, p, 0.0, Vec3::new(0.5, 0.08, 0.4), colors::SAWDUST);
+                    let hgt = 0.06 + 0.005 * k as f32;
+                    self.part_box(id, p, 0.0, Vec3::new(0.5, hgt, 0.4), colors::SAWDUST);
                 }
             }
             "play_ball" => {
@@ -2178,7 +2301,7 @@ impl LevelScene {
         };
         let q = rect_center(target.rect);
         let mid = (p + q) / 2.0;
-        let len = p.distance(q) + 0.4;
+        let len = p.distance(q) + 0.37;
         let along_x = (q - p).x.abs() >= (q - p).y.abs();
         let size = if along_x {
             Vec3::new(len, 0.18, 0.5)
@@ -2190,7 +2313,8 @@ impl LevelScene {
         } else {
             colors::TREE_TRUNK
         };
-        self.push_box(&format!("{}:perch", h.id), mid, height - 0.18, size, color);
+        // 2 cm proud of the floor / deck it may lie on (no coplanar tops, RENDER-001)
+        self.push_box(&format!("{}:perch", h.id), mid, height - 0.16, size, color);
     }
 
     /// Pirate ship climbing frame (Q-017 proposal): hull, deck, mast with the crow's nest at

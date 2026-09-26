@@ -53,9 +53,7 @@ language for player-facing text.
 | `map` | Karte | map | Full-screen zoo map opened from the HUD; shows only explored areas (GAME-MAP). |
 | `explored` | erkundet | explored | A map cell the player has been close to; shown on the map, never hidden again. |
 | `fog` | Nebel | fog | How unexplored cells are drawn on the map. |
-| `water_field` | Wasserfeld | water field | Per-level texture baked by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
-
-† German term is a proposal until confirmed (Q-045).
+| `water_field` | Wasserfeld | water field | Texture baked at level load by the zoo-core level assembly (`zoo_core::water`, one for the joined zoo), uploaded by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
 | `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night after all day animals are home (GAME-NIGHT). |
 | `night_zoo` | Nachtzoo | night zoo | New area with nocturnal animals, reached through the moon door (GAME-NIGHT). |
 | `moon_door` | Mondtor | moon door | Gate of the day zoo that opens at nightfall and leads to the night zoo. |
@@ -72,3 +70,8 @@ language for player-facing text.
 | `view_mode` (`zoo`, `look_around`, `first_person`) | Ansicht (Zoo-Ansicht, Umschauen, Ich-Ansicht) † | camera view (zoo view, look-around, first person) | The camera view: the high-angle zoo view (default, GAME-PLAYER §2), the look-around view while the eye button is held, and the first-person view (toggle) — GAME-CAMERA-VIEWS. |
 | `fog_end` (`FOG_END_M`) | Sichtweite † | visibility distance | Distance from the eye beyond which the comic haze hides everything in the close views (16 m, proposal Q-109); hiding places must lie beyond it from their own board (CAMV-008). |
 | `golf_cart` | Golfwagen | golf cart | Small zoo vehicle the player can drive; animals do not follow it (GAME-CART). |
+| `flow` (data key) | Fließrichtung † | flow | Direction a `river` / `stream` element flows in level coordinates (`N`/`E`/`S`/`W`); bridges inherit it; the river pieces chain along it (GAME-LAYOUT "Flowing water"). Not player-facing. |
+| `scenery` (data `[[scenery]]`) | Kulisse † | scenery | Non-solid ground dressing a riddle relies on (tall grass, sand, mud, tree shade, leaf pile); `props` may list ambient animals such as `butterfly` (GAME-LAYOUT). |
+| `ambient_animal` (`duck`, `duckling`, `frog`, `butterfly`) | Umgebungstier † | ambient animal | Small decorative animal with behaviour but no mission, food or collision; never saved (GAME-AMBIENT). Not an `animal` in the sense above. |
+
+† German term is a proposal until confirmed (Q-045).

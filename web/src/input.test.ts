@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import {
   DEAD_ZONE,
   isInteractKey,
+  LookButton,
+  MouseGestures,
   pinchFactor,
   STICK_RADIUS,
   stickVector,
@@ -19,14 +21,29 @@ class Sink implements InputSink {
   stick: [number, number] = [0, 0];
   rotations: number[] = [];
   zooms: number[] = [];
+  holds: boolean[] = [];
+  looks: [number, number][] = [];
+  drags: number[] = [];
+  ends = 0;
   key(): boolean {
     return false;
+  }
+  look_hold(on: boolean): boolean {
+    this.holds.push(on);
+    return on;
+  }
+  look_drag(dx: number, dy: number): void {
+    this.looks.push([dx, dy]);
   }
   set_stick(x: number, y: number): void {
     this.stick = [x, y];
   }
-  drag(): void {}
-  drag_end(): void {}
+  drag(dx: number): void {
+    this.drags.push(dx);
+  }
+  drag_end(): void {
+    this.ends += 1;
+  }
   rotate(steps: number): void {
     this.rotations.push(steps);
   }
@@ -143,6 +160,67 @@ describe('TouchGestures', () => {
     g.reset();
     expect(sink.stick).toEqual([0, 0]);
     expect(g.active).toBe(0);
+  });
+});
+
+describe('camera views (GAME-CAMERA-VIEWS)', () => {
+  it('CAMV-010: a right-thumb drag also sends continuous look drags; the stick is unaffected', () => {
+    const sink = new Sink();
+    const g = new TouchGestures(sink, new View());
+    g.down(1, 100, 500, 800); // left thumb: stick
+    g.move(1, 100, 470);
+    expect(sink.looks).toEqual([]);
+    g.down(2, 500, 300, 800);
+    g.move(2, 510, 296);
+    g.move(2, 530, 290);
+    expect(sink.looks).toEqual([
+      [10, -4],
+      [20, -6],
+    ]);
+    expect(sink.stick[1]).toBeCloseTo(0.5);
+    // a pinch sends no look drags
+    g.down(3, 600, 300, 800);
+    g.move(3, 700, 300);
+    expect(sink.looks.length).toBe(2);
+  });
+  it('CAMV-010: right mouse button holds look-around and turns; left drags step/turn', () => {
+    const sink = new Sink();
+    const m = new MouseGestures(sink);
+    m.down(1, 2, 100, 100);
+    expect(sink.holds).toEqual([true]);
+    m.move(1, 130, 90);
+    expect(sink.looks).toEqual([[30, -10]]);
+    expect(sink.drags).toEqual([30]); // ignored by the game in close views
+    m.up(1);
+    expect(sink.holds).toEqual([true, false]);
+    expect(sink.ends).toBe(1);
+    m.down(2, 0, 0, 0);
+    m.move(2, 5, 0);
+    m.up(2);
+    expect(sink.holds).toEqual([true, false]); // left button never holds look-around
+    expect(sink.drags).toEqual([30, 5]);
+  });
+  it('CAMV-010: reset releases a held right button', () => {
+    const sink = new Sink();
+    const m = new MouseGestures(sink);
+    m.down(4, 2, 0, 0);
+    m.reset();
+    expect(sink.holds).toEqual([true, false]);
+  });
+  it('CAMV-010: the eye button holds look-around while pressed and turns when slid', () => {
+    const sink = new Sink();
+    const b = new LookButton(sink);
+    b.down(7, 300, 700);
+    expect(b.held).toBe(true);
+    b.down(8, 0, 0); // a second finger does not re-trigger
+    b.move(8, 50, 0);
+    b.move(7, 280, 690);
+    b.up(8);
+    expect(sink.holds).toEqual([true]);
+    expect(sink.looks).toEqual([[-20, -10]]);
+    b.up(7);
+    expect(sink.holds).toEqual([true, false]);
+    expect(b.held).toBe(false);
   });
 });
 

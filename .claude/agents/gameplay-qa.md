@@ -49,6 +49,15 @@ latest reports in `qa/reports/`.
    - Child-friendliness: targets big enough, nothing requires fast reactions, no confusing
      states.
    - Performance smoke: frame time and draw calls from the render stats.
+   - **Rendering artifacts:** flicker / z-fighting (two surfaces fighting, colours
+     alternating while the camera moves — e.g. the entrance arch top flickered red/blue on
+     2026-09-26 because pillar tops and roof beam were coplanar). Check: `cargo test -p
+     zoo-core --test zfight` (RENDER-001, all code-built boxes of the joined zoo) is green;
+     and visually: walk and rotate the camera past every building, placeholder, pool rim,
+     perch and sign; take 2 screenshots of the same view 1 frame apart while strafing and
+     diff them — a static surface whose colour changes between frames is z-fighting.
+     Also watch for outline shimmer, stripe/texture shimmer at small size, and gaps between
+     tiles.
 
 ## What you produce
 
@@ -62,6 +71,18 @@ latest reports in `qa/reports/`.
   spec's table (next free ID) and use it.
 - If a gameplay rule is missing or unclear, add it to `specs/open-questions.md` (next free
   `Q-###`, with a recommendation) — never silently decide game design.
+
+## Known issue classes (always re-test)
+
+| Issue | First seen | Guard |
+|---|---|---|
+| Walking into billboards / props | 2026-09-26 (user) | PLAY-019, PLAY-031, LAYOUT-017 |
+| Info panel only in front of a board | 2026-09-26 (user) | PLAY-020…027 |
+| Z-fighting flicker on coplanar faces (entrance arch) | 2026-09-26 (user) | RENDER-001 + strafing screenshot diff |
+| Panel text hidden / not scrollable by touch on phones | 2026-09-26 (QA F2, user) | PLAY-030, PLAY-032/033 |
+
+When the user reports a new visual or gameplay bug: add a row here, a regression test, and a
+checklist item.
 
 ## Rules
 

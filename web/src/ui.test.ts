@@ -13,8 +13,8 @@ class MapStore implements KeyValue {
 
 describe('settings persistence (CONT-L10N §6)', () => {
   it('defaults to the given default language (always de, CONT-L10N §5) and klasse1', () => {
-    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1' });
-    expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1' });
+    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo' });
+    expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo' });
   });
   it('L10N-005: browser en without stored choice starts in de; a chosen en is kept', () => {
     const s = new MapStore();
@@ -26,10 +26,10 @@ describe('settings persistence (CONT-L10N §6)', () => {
   it('round-trips and ignores invalid values', () => {
     const s = new MapStore();
     saveSettings(s, { language: 'en', readingLevel: 'kiga' });
-    expect(loadSettings(s, 'de')).toEqual({ language: 'en', readingLevel: 'kiga' });
+    expect(loadSettings(s, 'de')).toEqual({ language: 'en', readingLevel: 'kiga', view: 'zoo' });
     s.setItem('zoo.language', 'fr');
     s.setItem('zoo.readingLevel', 'klasse9');
-    expect(loadSettings(s, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1' });
+    expect(loadSettings(s, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo' });
   });
   it('survives a throwing storage', () => {
     const bad: KeyValue = {
@@ -42,6 +42,23 @@ describe('settings persistence (CONT-L10N §6)', () => {
     };
     expect(loadSettings(bad, 'de').language).toBe('de');
     expect(() => saveSettings(bad, { language: 'de', readingLevel: 'kiga' })).not.toThrow();
+  });
+});
+
+describe('camera view setting (GAME-CAMERA-VIEWS 9)', () => {
+  it('CAMV-011: first_person is stored and restored; look_around never; invalid → zoo', () => {
+    const s = new MapStore();
+    expect(loadSettings(s, 'de').view).toBe('zoo');
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', view: 'first_person' });
+    expect(loadSettings(s, 'de').view).toBe('first_person');
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', view: 'look_around' });
+    expect(loadSettings(s, 'de').view).toBe('first_person'); // not overwritten by look-around
+    s.setItem('zoo.view', 'look_around');
+    expect(loadSettings(s, 'de').view).toBe('zoo');
+    s.setItem('zoo.view', 'drone');
+    expect(loadSettings(s, 'de').view).toBe('zoo');
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', view: 'zoo' });
+    expect(loadSettings(s, 'de').view).toBe('zoo');
   });
 });
 

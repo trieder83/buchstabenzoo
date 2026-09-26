@@ -35,7 +35,9 @@ The reference images below are for content and layout ideas, not for the style.
    art, no realistic textures, no painterly gradients.
 2. Outlines and cel shading are produced by the renderer (outline pass + 2-tone shader),
    not baked into textures or modelled (TECH-ARCH §7; outline technique Q-050).
-3. Bright daylight, crisp shadows. The game camera shows ground only (no sky) — GAME-PLAYER.
+3. Bright daylight, crisp shadows. The default zoo camera shows ground only (no sky) — GAME-PLAYER;
+   only the close look-around / first-person views show a comic sky with flat rounded clouds and
+   a pastel distance haze (GAME-CAMERA-VIEWS 5, 7).
 4. **Signs and labels are gameplay.** From the high camera, signs are tilted towards the
    camera and show large names/silhouettes; longer texts (info boards, food box labels,
    riddles) are read in a close-up text panel that opens on interaction (GAME-PLAYER §4).

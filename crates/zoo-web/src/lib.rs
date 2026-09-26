@@ -13,14 +13,16 @@ use glam::{Quat, Vec2, Vec3};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 use zoo_assets::Model;
+use zoo_core::ambient::{Ambient, AmbientPose, ButterflyPose, Ripple};
 use zoo_core::animals::{swim_sink_m, AnimTable};
 use zoo_core::coords::level_to_world;
 use zoo_core::game::{Interaction, Target};
 use zoo_core::level::ElementType;
 use zoo_core::nav::Autopilot;
 use zoo_core::player::walk_clip_rate;
+use zoo_core::view::{self as views, ViewMode};
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
-use zoo_render::renderer::{cylinder_mesh, CAPSULE};
+use zoo_render::renderer::{butterfly_mesh, cylinder_mesh, CAPSULE};
 use zoo_render::scene::{model_placeholder, Decal, DecalImage};
 use zoo_render::{CameraParams, CharacterDraw, FollowCamera, Instance, LevelScene, Renderer};
 
@@ -48,6 +50,12 @@ const BOWL_WATER_COLOR: [f32; 4] = [0.36, 0.66, 0.90, 0.5];
 const DESCEND_SPEED: f32 = 1.8;
 /// Duration of the goldfish's leap into / out of the bowl (s).
 const LEAP_S: f32 = 0.9;
+/// Ambient animal models (GAME-AMBIENT), drawn as instanced skinned crowds.
+pub const AMBIENT_MODELS: [&str; 3] = ["duck", "duckling", "frog"];
+/// Seed of the ambient animals (not saved; restart naturally, GAME-AMBIENT 9).
+const AMBIENT_SEED: u64 = 7;
+/// Built-in butterfly mesh (dynamic instances, one draw call).
+const BUTTERFLY: &str = "__butterfly";
 
 /// Asset path of an animal model.
 pub fn animal_model_path(animal: &str) -> String {
@@ -97,6 +105,7 @@ pub fn required_assets(level_tomls: Vec<String>) -> Result<Vec<String>, JsError>
     }
     out.push(format!("models/characters/{PLAYER_MODEL}.glb"));
     out.extend(level_animals(&data).iter().map(|a| animal_model_path(a)));
+    out.extend(AMBIENT_MODELS.iter().map(|a| animal_model_path(a)));
     out.push(ANIMAL_ANIMS.to_owned());
     Ok(out)
 }
@@ -107,6 +116,9 @@ struct Keys {
     down: bool,
     left: bool,
     right: bool,
+    /// Arrow keys ← → (walk sideways in the zoo view, turn in first person).
+    arrow_left: bool,
+    arrow_right: bool,
 }
 
 /// Presentation state of one animal (GAME-RESCUE §11): smoothed position, facing, clips.
@@ -220,6 +232,19 @@ pub struct App {
     bowl_water: [Instance; 1],
     /// Building the player is inside (roof hidden), if any.
     inside: Option<String>,
+    /// Ambient ducks, ducklings and frogs (GAME-AMBIENT) and their per-frame buffers.
+    ambient: Ambient,
+    ambient_poses: Vec<AmbientPose>,
+    ripples: Vec<Ripple>,
+    crowd: Vec<(&'static str, CharacterDraw)>,
+    butterfly_poses: Vec<ButterflyPose>,
+    butterflies: Vec<Instance>,
+    /// Debug/e2e: the clock stands still (frames render, `debug_step` advances time).
+    paused: bool,
+    /// Debug/e2e: the camera looks at this level point instead of the player.
+    look_at: Option<Vec2>,
+    /// Debug/e2e: ambient animals simulated and drawn (AMB-007 A/B measurement).
+    ambient_on: bool,
 }
 
 #[wasm_bindgen]
@@ -248,6 +273,7 @@ impl App {
         }
         let data = join_levels(&tomls).map_err(|e| JsError::new(&e))?;
         let scene = LevelScene::build(&data);
+        let ambient = Ambient::new(&data, &scene, AMBIENT_SEED);
         let game = Game::new(data, 1).map_err(|e| JsError::new(&e.to_string()))?;
 
         let mut renderer = Renderer::new(canvas).map_err(|e| JsError::new(&format!("{e:?}")))?;
@@ -261,6 +287,9 @@ impl App {
             .add_mesh(BOWL, &cylinder_mesh(12, false, true), 1.0)
             .map_err(|e| JsError::new(&format!("{e:?}")))?;
         renderer
+            .add_mesh(BUTTERFLY, &butterfly_mesh(), 1.0)
+            .map_err(|e| JsError::new(&format!("{e:?}")))?;
+        renderer
             .add_mesh(BOWL_WATER, &cylinder_mesh(12, true, false), 1.0)
             .map_err(|e| JsError::new(&format!("{e:?}")))?;
         if let Some(png) = files.get("textures/palette.png") {
@@ -268,6 +297,24 @@ impl App {
                 .set_palette_png(png)
                 .map_err(|e| JsError::new(&format!("{e:?}")))?;
         }
+        // Living water (TECH-WATER): the baked field and the foam obstacles (Q-068).
+        renderer
+            .set_water_field(&zoo_core::water::WaterField::bake(&scene.water))
+            .map_err(|e| JsError::new(&format!("{e:?}")))?;
+        let obstacles: Vec<(Vec2, f32, f32, f32, bool)> = scene
+            .water
+            .obstacles
+            .iter()
+            .map(|o| {
+                let (s, c) = scene
+                    .water
+                    .river_of(zoo_core::level::cell_of(o.pos))
+                    .map_or((0.0, 0.0), |r| scene.water.rivers[r].coords(o.pos));
+                let w = level_to_world(o.pos);
+                (Vec2::new(w.x, w.z), o.radius, s, c, o.river)
+            })
+            .collect();
+        renderer.set_water_obstacles(&obstacles);
 
         // Static props: one instanced batch per model. Ground tiles get no normal edges.
         let mut has_carry_model = false;
@@ -323,6 +370,9 @@ impl App {
                 None => add_skinned(id, &animal_model_path(id)),
             };
             animals.push(AnimalView::new(id, skinned));
+        }
+        for m in AMBIENT_MODELS {
+            add_skinned(m, &animal_model_path(m));
         }
         let anims = files
             .get(ANIMAL_ANIMS)
@@ -531,6 +581,15 @@ impl App {
             bowl_glass: [Instance::model(Vec3::ZERO, 0.0, false)],
             bowl_water: [Instance::model(Vec3::ZERO, 0.0, false)],
             inside: None,
+            ambient,
+            ambient_poses: Vec::with_capacity(16),
+            ripples: Vec::with_capacity(16),
+            crowd: Vec::with_capacity(16),
+            butterfly_poses: Vec::with_capacity(8),
+            butterflies: Vec::with_capacity(8),
+            paused: false,
+            look_at: None,
+            ambient_on: true,
         };
         app.reset_views();
         Ok(app)
@@ -588,8 +647,18 @@ impl App {
         match code {
             "KeyW" | "ArrowUp" => self.keys.up = down,
             "KeyS" | "ArrowDown" => self.keys.down = down,
-            "KeyA" | "ArrowLeft" => self.keys.left = down,
-            "KeyD" | "ArrowRight" => self.keys.right = down,
+            "KeyA" => self.keys.left = down,
+            "KeyD" => self.keys.right = down,
+            "ArrowLeft" => self.keys.arrow_left = down,
+            "ArrowRight" => self.keys.arrow_right = down,
+            // GAME-CAMERA-VIEWS 2/3: hold V to look around, F toggles first person
+            "KeyV" => {
+                self.look_hold(down);
+            }
+            "KeyF" if down => {
+                self.toggle_first_person();
+            }
+            "KeyF" => {}
             // FIX-024: E interacts, so rotation is Q (left) / R (right).
             "KeyQ" if down => self.camera.rotate_steps(-1),
             "KeyR" if down => self.camera.rotate_steps(1),
@@ -609,6 +678,9 @@ impl App {
     /// Horizontal mouse drag in CSS pixels; every `DRAG_STEP_PX` rotates the camera one 45°
     /// step (eased, GAME-PLAYER §2).
     pub fn drag(&mut self, dx: f32) {
+        if self.camera.mode().is_close() {
+            return; // close views turn smoothly with `look_drag` (GAME-CAMERA-VIEWS 2/3)
+        }
         self.drag_acc += dx;
         while self.drag_acc >= DRAG_STEP_PX {
             self.camera.rotate_steps(1);
@@ -626,7 +698,66 @@ impl App {
 
     /// Rotates the camera by whole 45° steps (touch swipe, GAME-PLAYER §3).
     pub fn rotate(&mut self, steps: i32) {
-        self.camera.rotate_steps(steps);
+        if !self.camera.mode().is_close() {
+            self.camera.rotate_steps(steps);
+        }
+    }
+
+    // ------------------------------------------------------------------ camera views
+
+    /// Look-around held (`true`) or released (GAME-CAMERA-VIEWS 2): eye button, `V`, right
+    /// mouse button. Only from the zoo view; returns whether look-around is now active.
+    pub fn look_hold(&mut self, on: bool) -> bool {
+        let facing = views::level_to_yaw(self.game.player.facing);
+        match (on, self.camera.mode()) {
+            (true, ViewMode::Zoo) => {
+                self.camera.set_view(ViewMode::LookAround, facing);
+            }
+            (false, ViewMode::LookAround) => {
+                self.camera.set_view(ViewMode::Zoo, facing);
+            }
+            _ => {}
+        }
+        self.camera.mode() == ViewMode::LookAround
+    }
+
+    /// Toggles first person (GAME-CAMERA-VIEWS 3; `F`, HUD button). Returns the new view id.
+    pub fn toggle_first_person(&mut self) -> String {
+        let next = if self.camera.mode() == ViewMode::FirstPerson {
+            ViewMode::Zoo
+        } else {
+            ViewMode::FirstPerson
+        };
+        self.set_view(next);
+        self.view_mode()
+    }
+
+    /// Sets the view by id (`zoo`, `first_person`; restored from the settings at start, no
+    /// glide). Returns `false` for an unknown id.
+    pub fn set_view_mode(&mut self, id: &str) -> bool {
+        let Some(mode) = ViewMode::from_id(id) else {
+            return false;
+        };
+        self.set_view(mode.saved());
+        self.camera.snap(level_to_world(self.game.player.pos));
+        true
+    }
+
+    /// The requested view id (`zoo`, `look_around`, `first_person`).
+    pub fn view_mode(&self) -> String {
+        self.camera.mode().id().to_owned()
+    }
+
+    /// The view to store in the settings (look-around is never stored, behaviour 9).
+    pub fn saved_view_mode(&self) -> String {
+        self.camera.mode().saved().id().to_owned()
+    }
+
+    /// Continuous turn of a close view by a drag in CSS px (mouse, right thumb, eye button;
+    /// `dx` right = turn right, `dy` up (negative) = look up). Ignored in the zoo view.
+    pub fn look_drag(&mut self, dx: f32, dy: f32) {
+        let k = views::TURN_DEG_PER_PX.to_radians();
+        self.camera.turn(-dx * k, -dy * k);
     }
 
     /// Zoom: factor < 1 moves the camera closer (wheel, pinch), clamped to 10–20 m.
@@ -883,16 +1014,22 @@ impl App {
 
     /// Advances the game by `dt` seconds and renders one frame.
     pub fn frame(&mut self, dt: f32) {
-        let dt = dt.clamp(0.0, 0.1);
+        let dt = if self.paused { 0.0 } else { dt.clamp(0.0, 0.1) };
         self.time += dt as f64;
         self.simulate(dt);
 
         let player = level_to_world(self.game.player.pos);
         self.camera.update(dt, player);
+        if let Some(p) = self.look_at {
+            self.camera.snap(level_to_world(p));
+        }
 
         // Character presentation: turn smoothly, blend idle↔walk by speed.
         let target = facing_to_yaw(self.game.player.facing);
         self.player_yaw += angle_diff(target, self.player_yaw) * (1.0 - (-14.0 * dt).exp());
+        if self.camera.mode() == ViewMode::FirstPerson {
+            self.player_yaw = target; // carried items stay in front of the eye
+        }
         let speed = self.game.player.last_speed;
         let walk_speed = self.game.move_params.walk_speed;
         let want = (speed / (0.5 * walk_speed)).clamp(0.0, 1.0);
@@ -992,6 +1129,7 @@ impl App {
                         action: action.map(|n| (n, t)),
                         action_blend: if action.is_some() { 1.0 } else { 0.0 },
                         under_water: a.under_water,
+                        tilt: Quat::IDENTITY,
                     },
                 ));
             } else {
@@ -1001,7 +1139,11 @@ impl App {
         self.renderer
             .set_dynamic_instances(DYN_BOX, &self.dyn_boxes);
 
-        if self.player_skinned {
+        let hide_player = self.camera.hides_player(); // first person (GAME-CAMERA-VIEWS 3)
+        if hide_player {
+            self.renderer.set_dynamic_instances(CAPSULE, &[]);
+            self.renderer.set_dynamic_instances(MARKER, &[]);
+        } else if self.player_skinned {
             self.draws.push((
                 PLAYER_MODEL,
                 CharacterDraw::locomotion(
@@ -1027,7 +1169,70 @@ impl App {
             self.renderer.set_dynamic_instances(CAPSULE, &self.dynamic);
             self.renderer.set_dynamic_instances(MARKER, &self.marker);
         }
-        self.renderer.render(&self.camera, player, &self.draws);
+        // Ambient animals (GAME-AMBIENT): instanced skinned crowds + their water ripples.
+        self.ambient.poses(&mut self.ambient_poses);
+        if !self.ambient_on {
+            self.ambient_poses.clear();
+        }
+        self.crowd.clear();
+        for p in &self.ambient_poses {
+            if !self.renderer.has_skinned(p.model) {
+                continue;
+            }
+            self.crowd.push((
+                p.model,
+                CharacterDraw {
+                    pos: p.pos,
+                    yaw: p.yaw,
+                    idle_time: p.idle_time,
+                    walk_time: p.walk_time,
+                    walk_blend: p.walk_blend,
+                    idle_clip: p.idle_clip,
+                    walk_clip: p.walk_clip,
+                    action: p.action,
+                    action_blend: p.action_blend,
+                    under_water: false,
+                    tilt: p.tilt,
+                },
+            ));
+        }
+        self.ambient.butterfly_poses(&mut self.butterfly_poses);
+        self.butterflies.clear();
+        if self.ambient_on {
+            for b in &self.butterfly_poses {
+                self.butterflies.push(Instance::flat(
+                    b.pos,
+                    b.yaw,
+                    Vec3::new(b.open, 1.0, 1.0),
+                    b.color,
+                    false,
+                ));
+            }
+        }
+        self.renderer
+            .set_dynamic_instances(BUTTERFLY, &self.butterflies);
+        self.ambient.ripples(&mut self.ripples);
+        if !self.ambient_on {
+            self.ripples.clear();
+        }
+        let pl = self.game.player.pos;
+        self.ripples.sort_unstable_by(|a, b| {
+            a.pos
+                .distance_squared(pl)
+                .total_cmp(&b.pos.distance_squared(pl))
+        });
+        self.renderer
+            .set_water_ripples(self.ripples.iter().map(|r| {
+                (
+                    Vec2::new(r.pos.x, -r.pos.y),
+                    Vec2::new(r.heading.x, -r.heading.y),
+                    r.wake,
+                    r.ring,
+                )
+            }));
+        self.renderer.set_time(self.time);
+        self.renderer
+            .render(&self.camera, player, &self.draws, &self.crowd);
     }
 
     // ------------------------------------------------------------------ debug getters
@@ -1060,6 +1265,37 @@ impl App {
     /// Current surface speed at full deflection (m/s).
     pub fn surface_speed(&self) -> f32 {
         self.game.player.surface_speed()
+    }
+
+    /// Debug/e2e: world position of the camera eye `[x, y, z]` (y up; level z = −world z).
+    pub fn camera_eye(&self) -> Vec<f32> {
+        self.camera.eye().to_array().to_vec()
+    }
+
+    /// Debug/e2e: pitch of the drawn view in degrees (negative = down).
+    pub fn camera_pitch_deg(&self) -> f32 {
+        self.camera.pose().pitch.to_degrees()
+    }
+
+    /// Debug/e2e: yaw of the drawn view in degrees (zoo, close or the glide between).
+    pub fn camera_view_yaw_deg(&self) -> f32 {
+        self.camera.view_yaw().to_degrees()
+    }
+
+    /// Debug/e2e: glide progress 0 (zoo view) … 1 (close view).
+    pub fn camera_blend(&self) -> f32 {
+        self.camera.blend()
+    }
+
+    /// Debug/e2e: fog end distance of this frame (m) and fog amount.
+    pub fn camera_fog(&self) -> Vec<f32> {
+        let f = self.camera.fog();
+        vec![f.start, f.end, f.amount]
+    }
+
+    /// Debug/e2e: the player's body is drawn (not in first person).
+    pub fn player_drawn(&self) -> bool {
+        !self.camera.hides_player()
     }
 
     pub fn camera_distance(&self) -> f32 {
@@ -1325,6 +1561,87 @@ impl App {
         self.time
     }
 
+    // ------------------------------------------------------------------ living water, ambient
+
+    /// Debug/e2e: stops the clock (frames still render; `debug_step` advances time), so
+    /// screenshots at fixed times are reproducible (WATER-006/007, the GIF).
+    pub fn debug_pause(&mut self, paused: bool) {
+        self.paused = paused;
+    }
+
+    /// Debug/e2e: sets the game clock (water animation time) in seconds.
+    pub fn debug_set_time(&mut self, t: f64) {
+        self.time = t;
+    }
+
+    /// Debug/e2e: water animation on/off (off = flat water tiles, no bobbing; WATER-008).
+    pub fn set_water_animation(&mut self, on: bool) {
+        self.renderer.water_animation = on;
+    }
+
+    /// Debug/e2e: ambient animals on/off (AMB-007 A/B measurement).
+    pub fn set_ambient(&mut self, on: bool) {
+        self.ambient_on = on;
+    }
+
+    /// Water clock of the last frame (s in [0, 16)).
+    pub fn water_clock(&self) -> f32 {
+        self.renderer.water_clock()
+    }
+
+    /// Draw calls of the ambient animals in the last frame (AMB-007).
+    pub fn ambient_draw_calls(&self) -> u32 {
+        self.renderer.stats.crowd_draw_calls + u32::from(!self.butterflies.is_empty())
+    }
+
+    /// Ambient animals as JSON `[{kind, x, z, clip, water}]` (level coordinates).
+    pub fn ambient_json(&self) -> String {
+        let items: Vec<String> = self
+            .ambient
+            .animals
+            .iter()
+            .map(|a| {
+                format!(
+                    r#"{{"kind":"{}","x":{:.3},"z":{:.3},"clip":"{}","water":{}}}"#,
+                    a.kind.model(),
+                    a.pos.x,
+                    a.pos.y,
+                    a.action.map_or("", |x| x.clip),
+                    a.in_water
+                )
+            })
+            .collect();
+        format!("[{}]", items.join(","))
+    }
+
+    /// Screen position (CSS px, y down) of a level point at a height, or empty if behind the
+    /// camera.
+    pub fn screen_point(&self, x: f32, z: f32, y: f32) -> Vec<f32> {
+        let (w, h) = self.renderer.size();
+        let ratio = self.renderer.pixel_ratio();
+        let vp = self.camera.view_proj(self.renderer.aspect());
+        let p = level_to_world(Vec2::new(x, z)) + Vec3::Y * y;
+        match zoo_render::camera::project(vp, p) {
+            Some(ndc) => vec![
+                (ndc.x * 0.5 + 0.5) * w as f32 / ratio,
+                (0.5 - ndc.y * 0.5) * h as f32 / ratio,
+            ],
+            None => Vec::new(),
+        }
+    }
+
+    /// Debug/e2e: places the camera target (look at a level point) without moving the
+    /// player, e.g. to frame the river and the pond for screenshots.
+    pub fn debug_look_at(&mut self, x: f32, z: f32) {
+        self.look_at = Some(Vec2::new(x, z));
+        self.camera.snap(level_to_world(Vec2::new(x, z)));
+    }
+
+    /// Debug/e2e: the camera follows the player again.
+    pub fn debug_look_at_player(&mut self) {
+        self.look_at = None;
+    }
+
     // ------------------------------------------------------------------ M5b: levels, bowl
 
     /// Whether a level (`level_1` …) is unlocked (its entry barrier is open).
@@ -1450,14 +1767,39 @@ impl App {
 }
 
 impl App {
+    /// Switches the camera view; leaving first person unlocks the facing (GAME-CAMERA-VIEWS).
+    fn set_view(&mut self, mode: ViewMode) {
+        let facing = views::level_to_yaw(self.game.player.facing);
+        self.camera.set_view(mode, facing);
+        if mode != ViewMode::FirstPerson {
+            self.game.player.lock_facing(None);
+        }
+    }
+
     /// Input → game update → events → animal presentation.
     fn simulate(&mut self, dt: f32) {
         let mut stick = self.stick;
         let k = self.keys;
+        let first_person = self.camera.mode() == ViewMode::FirstPerson;
+        // arrow keys ← → turn in first person (GAME-CAMERA-VIEWS 3), else walk sideways
+        let arrows = f32::from(u8::from(k.arrow_right)) - f32::from(u8::from(k.arrow_left));
+        let (side, turn) = if first_person {
+            (0.0, arrows)
+        } else {
+            (arrows, 0.0)
+        };
+        if turn != 0.0 {
+            let a = views::KEY_TURN_DEG_S.to_radians() * dt * turn;
+            self.camera.turn(-a, 0.0);
+        }
         let kv = Vec2::new(
-            f32::from(u8::from(k.right)) - f32::from(u8::from(k.left)),
+            (f32::from(u8::from(k.right)) - f32::from(u8::from(k.left)) + side).clamp(-1.0, 1.0),
             f32::from(u8::from(k.up)) - f32::from(u8::from(k.down)),
         );
+        // first person: the facing is the view direction (CAMV-006)
+        self.game
+            .player
+            .lock_facing(first_person.then(|| self.camera.look_level()));
         if kv != Vec2::ZERO {
             stick = kv.normalize();
         }
@@ -1475,6 +1817,9 @@ impl App {
         self.game.update(dt, dir);
         self.handle_events();
         self.update_animals(dt);
+        if self.ambient_on {
+            self.ambient.update(dt, self.game.player.pos);
+        }
     }
 
     /// What the reading panel of a target shows.

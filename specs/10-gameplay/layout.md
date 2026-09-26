@@ -89,6 +89,17 @@ one straight line of pieces, measured in whole metres along x or z.
 | `decoration` | trees, benches, bushes, tall hedges, info boards | no (collision) — except `sparse` tree areas: walkable between the trunks (see "Forests") |
 | `hiding_place` *(data decided, Q-080 answered: a `[[hiding_place]]` list entry, no longer an `[[element]]`)* | `loc_*` of CONT-MISSIONS: an overlay rectangle with `animal`, `animal_spot` (cell where the animal starts and is found), `wander_radius_m` (≤ 3 m), `wander_on` (`grass` / `water` / `cave`; for `water` optionally `water_kinds`, e.g. `["stream"]`), optional `perch_height_m` (animal sits up in a tree / on a ship, proposal Q-094), `features` (riddle details it must show), `scenery` (ids providing the features) and `pose`; listed in a level's `[[hiding_place]]` list (≥ 3 candidates per animal, see "Hiding places" below); may overlap a landmark, path or building | not solid itself — the cells keep the walkability of what lies underneath |
 
+**Flowing water** *(decided, Q-066 answered 2026-09-26)*: every `landmark` of kind `river` or
+`stream` has `flow = "N" | "E" | "S" | "W"` (level coordinates, direction the water flows);
+other elements have no `flow`. The pieces of one river — its river / stream elements and the
+`bridge` path elements aligned with them (a bridge inherits the flow of the river piece it
+continues) — must chain along the flow: the cells just beyond a piece's downstream edge are
+covered by exactly one next piece of the same width, either straight on (same direction,
+same centre line) or a 90° bend whose square is the first `width` cells of the next piece;
+flow never reverses, two rivers never merge, and every river has exactly one source
+(upstream end). The water field of TECH-WATER is baked from this chain (`zoo_core::water::
+river_paths`); broken data is rejected (LAYOUT-026).
+
 **Scenery** *(decided, Q-080 answered)*: non-solid ground dressing that a riddle relies on (tall
 grass, sand, mud, tree shade, leaf pile) is listed in a level's `[[scenery]]` list with `id`,
 `kind`, `rect`, `hiding_place`, `props`. Like food boxes it is not an element: its cells stay
@@ -337,6 +348,7 @@ assembly. Proposed fixes *(Q-087)*:
 | LAYOUT-023 | Given a `building` with `interior` and `door` (Q-092), then its interior and door cells are walkable with surface `path`, its other cells are solid, and the door cell is edge-adjacent to a walkable cell outside the building. | unit |
 | LAYOUT-024 | Given all levels joined, then every `[[scenery]]` kind and every element kind named as riddle scenery of a hiding place (e.g. `fountain`, `waterfall`, `treehouse`, `pirate_ship`) occurs only at that one hiding place in the joined map (zoo-wide riddle uniqueness, Q-083). | unit |
 | LAYOUT-025 | Given the joined zoo with level N locked, then the animals of level N are hidden and not simulated (positions unchanged after 120 s), its info boards, animals and gates are not interactable, and the missions in scope are exactly the union of the unlocked levels' missions (Q-088 proposal, RESC-025). | unit |
+| LAYOUT-026 | Given all level files, then every `river` / `stream` element has a `flow` of N/E/S/W and no other element has one; the river pieces (incl. aligned bridges) chain along the flow with constant width and 90° bends at the upstream end of the next piece (level 1: `river_n` → `bridge_river` → `river_mid` → `river_e`, one left bend; level 3: `stream_l3`); a missing or invalid `flow`, a reversed flow or a bend at the wrong end is rejected. (Q-066) | unit |
 
 ## Open questions
 

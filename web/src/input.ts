@@ -5,6 +5,11 @@
 // - left half: floating joystick under the thumb (dead zone 10 %, deflection = speed),
 // - right half: one horizontal swipe ≥ 40 px = one 45° camera step, two fingers pinch-zoom,
 // - both at the same time (each pointer id is tracked on its own, PLAY-017).
+//
+// Camera views (GAME-CAMERA-VIEWS): right-half drags and mouse drags are also forwarded as
+// continuous `look_drag`s; the game turns a close view with them and ignores them in the zoo
+// view (and ignores the 45° swipe steps in the close views). Look-around is held with the
+// eye button, `V` (via `key`) or the right mouse button; `F` (via `key`) toggles first person.
 
 /** The subset of the WASM `App` used for input. */
 export interface InputSink {
@@ -14,6 +19,10 @@ export interface InputSink {
   drag_end(): void;
   rotate(steps: number): void;
   zoom(factor: number): void;
+  /** Look-around held / released (GAME-CAMERA-VIEWS 2). */
+  look_hold(on: boolean): boolean;
+  /** Continuous turn of a close view (CSS px, y down). */
+  look_drag(dx: number, dy: number): void;
 }
 
 /** Joystick radius in CSS px (full deflection). */
@@ -125,6 +134,7 @@ export class TouchGestures {
     }
     const s = this.right.get(id);
     if (!s) return;
+    if (this.right.size === 1) this.sink.look_drag(x - s.x, y - s.y); // close views
     s.x = x;
     s.y = y;
     if (this.right.size >= 2) {
@@ -166,6 +176,98 @@ export class TouchGestures {
   }
 }
 
+/**
+ * Mouse on the canvas: any button drags (zoo view: 45° steps via `drag`; close views:
+ * continuous `look_drag`), the right button also holds look-around (CAMV-010).
+ */
+export class MouseGestures {
+  private pointers = new Map<number, { x: number; y: number; right: boolean }>();
+
+  constructor(private readonly sink: InputSink) {}
+
+  down(id: number, button: number, x: number, y: number): void {
+    const right = button === 2;
+    this.pointers.set(id, { x, y, right });
+    if (right) this.sink.look_hold(true);
+  }
+
+  move(id: number, x: number, y: number): void {
+    const p = this.pointers.get(id);
+    if (!p) return;
+    this.sink.drag(x - p.x);
+    this.sink.look_drag(x - p.x, y - p.y);
+    p.x = x;
+    p.y = y;
+  }
+
+  up(id: number): void {
+    const p = this.pointers.get(id);
+    if (!p) return;
+    this.pointers.delete(id);
+    if (p.right) this.sink.look_hold(false);
+    if (this.pointers.size === 0) this.sink.drag_end();
+  }
+
+  reset(): void {
+    for (const id of [...this.pointers.keys()]) this.up(id);
+  }
+}
+
+/**
+ * The touch eye button (GAME-CAMERA-VIEWS 2): look-around while pressed; sliding the same
+ * thumb from the button turns the view.
+ */
+export class LookButton {
+  private id: number | null = null;
+  private last = { x: 0, y: 0 };
+
+  constructor(private readonly sink: InputSink) {}
+
+  get held(): boolean {
+    return this.id !== null;
+  }
+
+  down(id: number, x: number, y: number): void {
+    if (this.id !== null) return;
+    this.id = id;
+    this.last = { x, y };
+    this.sink.look_hold(true);
+  }
+
+  move(id: number, x: number, y: number): void {
+    if (id !== this.id) return;
+    this.sink.look_drag(x - this.last.x, y - this.last.y);
+    this.last = { x, y };
+  }
+
+  up(id: number): void {
+    if (id !== this.id) return;
+    this.id = null;
+    this.sink.look_hold(false);
+  }
+}
+
+/** Wires the eye button's pointer events to a {@link LookButton}. */
+export function attachLookButton(button: HTMLElement, sink: InputSink): LookButton {
+  const look = new LookButton(sink);
+  button.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      button.setPointerCapture(e.pointerId);
+    } catch {
+      // synthetic pointers cannot be captured
+    }
+    look.down(e.pointerId, e.clientX, e.clientY);
+  });
+  button.addEventListener('pointermove', (e) => look.move(e.pointerId, e.clientX, e.clientY));
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
+    button.addEventListener(ev, (e) => look.up(e.pointerId));
+  }
+  button.addEventListener('contextmenu', (e) => e.preventDefault());
+  return look;
+}
+
 export interface InputOptions {
   canvas: HTMLElement;
   stickView: StickView;
@@ -205,11 +307,13 @@ export function attachInput(sink: InputSink, opts: InputOptions): TouchGestures 
   });
 
   const gestures = new TouchGestures(sink, opts.stickView);
+  const mice = new MouseGestures(sink);
   let touchSeen = false;
   const releaseAll = () => {
     for (const code of held) sink.key(code, false);
     held.clear();
     gestures.reset();
+    mice.reset();
     sink.set_stick(0, 0);
   };
   window.addEventListener('blur', releaseAll);
@@ -227,8 +331,7 @@ export function attachInput(sink: InputSink, opts: InputOptions): TouchGestures 
     { capture: true },
   );
 
-  // Mouse: drag rotates, wheel zooms. Touch: gestures.
-  const mouse = new Map<number, number>();
+  // Mouse: drag rotates (right button: look-around), wheel zooms. Touch: gestures.
   canvas.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     if (e.pointerType === 'touch') {
@@ -240,7 +343,7 @@ export function attachInput(sink: InputSink, opts: InputOptions): TouchGestures 
     } catch {
       // synthetic pointers cannot be captured
     }
-    mouse.set(e.pointerId, e.clientX);
+    mice.down(e.pointerId, e.button, e.clientX, e.clientY);
     canvas.focus();
   });
   canvas.addEventListener('pointermove', (e) => {
@@ -248,18 +351,14 @@ export function attachInput(sink: InputSink, opts: InputOptions): TouchGestures 
       gestures.move(e.pointerId, e.clientX, e.clientY);
       return;
     }
-    const x = mouse.get(e.pointerId);
-    if (x === undefined) return;
-    sink.drag(e.clientX - x);
-    mouse.set(e.pointerId, e.clientX);
+    mice.move(e.pointerId, e.clientX, e.clientY);
   });
   const end = (e: PointerEvent) => {
     if (e.pointerType === 'touch') {
       gestures.up(e.pointerId);
       return;
     }
-    mouse.delete(e.pointerId);
-    if (mouse.size === 0) sink.drag_end();
+    mice.up(e.pointerId);
   };
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointercancel', end);

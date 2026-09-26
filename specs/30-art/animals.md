@@ -170,6 +170,22 @@ firing §4.8, loop seams, sampling) are the same as ART-RIG.
   | `lion` | 2 308 | 23 | 20 | golden body, big scalloped orange-brown mane ball, cream muzzle/bib/paws, tail tuft |
   | `snow_fox` | 1 924 | 24 | 12 | snow-white, big pointed ears (pink inside), huge plume tail (`tail_3`), pale blue-grey lower legs |
 
+## Ambient animals (GAME-AMBIENT, M6)
+
+Decorative animals with behaviour but no mission (glossary `ambient_animal`); not part of the
+mission-animal list above (they have no `eat` / `happy`; which AANI tests apply to them: Q-122). Look from the approved
+`kit_water` sheet (`art/props/kit_water/sheet_v1.jpg`, kit 5 duck / frog); models by script,
+origin at the water surface; they replace the static `duck` / `frog` props of `kit_water`.
+
+| Asset id | Script | Rig | Clips (`animal_anims.toml`) | Size | Status |
+|---|---|---|---|---|---|
+| `duck` | `tools/blender/animals/duck.py` | `bird` (16 joints, `bird_rig.py`) | `swim`, `idle`, `dip`, `flap`, `preen` | ≈ 0.45 m | model v1 |
+| `duckling` | `tools/blender/animals/duckling.py` | `bird` (same joints and clips as `duck`) | `swim`, `idle`, `dip`, `flap`, `preen` | ≈ 0.2 m | model v1 |
+| `frog` | `tools/blender/animals/frog.py` | `frog` (11 joints) | `idle`, `croak`, `hop`, `swim` | ≈ 0.2 m | model v1 |
+| `butterfly` | built-in renderer mesh (12 triangles, no `.glb`) | — | wing beat as instance scale | ≈ 0.34 m wingspan | implemented |
+
+Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -189,3 +205,5 @@ firing §4.8, loop seams, sampling) are the same as ART-RIG.
 - Q-002 Final animal list.
 - Q-043 Animation set (hiding-place idles such as `drink`/`sleep`, reactions `not_interested`/`refuse`, locomotion for koala and goldfish while following). The zebra v1 follows the recommendation (`drink`, `refuse`) provisionally.
 - Q-040 Monkey baby needed?
+- Q-108 Game scale of the ambient animals (duckling, frog).
+- Q-122 Ambient models: manifest entries, concept gate, which AANI tests apply.

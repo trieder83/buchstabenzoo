@@ -127,8 +127,9 @@ cropped from the approved mockup.
 `bush`, `grass_tuft`, `rock`, `water_tile`, `key`, `info_board`.
 
 Added for level 1 (proposal, zoo-level-designer — review together with the level-1
-mockups): `hedge` (tall, 3 m), `water_tile_flowing` (river, moving texture), `bridge_wood`,
-`jetty_wood`, `lily_pad`, `reed`, `duck`, `frog`, `bamboo`, `map_board`, `gate_wood`,
+mockups): `hedge` (tall, 3 m), `water_river_*` tiles of `kit_water` (river; the flow is drawn by the water shader, TECH-WATER —
+formerly `water_tile_flowing`), `bridge_wood`, `jetty_wood`, `lily_pad`, `reed`, `duck`, `frog`
+(M6: animated ambient animals, ART-ANIMALS "Ambient animals" — no longer static props), `bamboo`, `map_board`, `gate_wood`,
 `road_block`, `repair_sign` (blank, shovel icon), `zookeeper_cart`, `traffic_cone`,
 `fallen_tree`, `flower_bed`.
 
@@ -165,8 +166,8 @@ prop fits): `petal_decal` (pink petals on grass), `flat_rock_slab` (flush grey s
 `water_tap` (tap with a small basin, on a wall), `fish_bowl` (big glass bowl, empty / filled /
 with fish — carried with `socket_carry`), `washing_line` (two posts, line, sheets swaying),
 `bee` (≤ 20 tris, like `butterfly`), `construction_fence` (striped panel, 2 m and 1 m) and
-`digger` (small toy-like digger) for `barrier_l2_construction`, `stream` tiles (reuse
-`water_tile_flowing`, 3 m wide). Reused: `pool_tiled` (elephant pool), `food_storage_building`
+`digger` (small toy-like digger) for `barrier_l2_construction`, `stream` tiles (reuse the
+`water_river_*` tiles, 3 m wide). Reused: `pool_tiled` (elephant pool), `food_storage_building`
 (food storages 2 and 3), `map_board`, `hedge`, `zoo_wall`, `tree_round`, `bush`, `rock`, `bench`.
 
 Unique (non-modular) models needed for levels 2 and 3: `treehouse_oak`, `tree_giant` (12 m),

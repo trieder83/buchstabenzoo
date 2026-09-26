@@ -9,8 +9,10 @@
 pub mod camera;
 pub mod renderer;
 pub mod shaders;
+pub mod sky;
 
 pub use camera::{CameraParams, FollowCamera};
 pub use renderer::{CharacterDraw, FrameStats, Instance, Renderer};
 pub use zoo_core::scene;
 pub use zoo_core::scene::{BoxPlacement, LevelScene, Placement};
+pub use zoo_core::view::ViewMode;

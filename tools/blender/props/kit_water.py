@@ -23,14 +23,19 @@ the water surface (y = 0, the tile origin height). Canonical orientation (connec
                                                (radius 0.78 m, quarter circle)
   water_river_inner               N E S W but the NE diagonal cell is dry: small
                                   rounded grass notch in the NE corner (inside of a bend)
-River tiles are lively light blue with lighter FLOW STREAKS (palette cell
-water_river_light) running along the canonical flow axis N-S (curve: around the SE
-corner). Rotate so the streaks follow the river; direction of flow is not encoded in the
-mesh (the renderer may scroll the streak faces). Pond tiles are darker, plain and still.
+River tiles are plain lively light blue (palette cell water_river only), pond tiles darker
+(water_pond) — Q-067: streaks, foam and ripples are drawn by the renderer's water shader
+(TECH-WATER), so no geometry floats on the water surface.
+
+SHAPE CONSTANTS (M, SLOPE, R below) are mirrored by zoo-core `water::{BANK_M, BANK_SLOPE,
+CORNER_R}`: the visible waterline (foot of the bank slope) lies M + SLOPE = 0.34 m inside a
+bank edge, R - SLOPE = 0.66 m from the centre of a rounded outer corner and M + SLOPE from
+the dry corner of an inner notch. The asset test WATER-003 fails if they drift apart.
 
 Other props (origin rules):
 - bridge_wood: arched footbridge, deck runs along X from x = -1.7 to +1.7 (3 m river +
-  0.2 m landing on each bank), 2.5 m wide (Y). Origin = centre of the 3 x 3 bridge rect on
+  0.2 m landing on each bank), 2.5 m wide (Y); four piles (r 0.075) stand in the water at
+  x = +-0.55, y = +-1.18. Origin = centre of the 3 x 3 bridge rect on
   the ground. Deck top height (walk surface) y(x) = 0.07 + 0.43 * (1 - (x / 1.7)^2).
   For level 1 (bridge_river, path runs W-E over a N-S river) use yaw 0.
 - jetty_wood: 3 m (X) x 1.6 m (Y) deck + 0.8 m overhang past the -X end over the water;
@@ -53,7 +58,7 @@ from props_parts import zb  # noqa: E402
 
 KIT = "kit_water"
 GROUND_TOP = 0.05      # = kit_ground SLAB_TOP
-WATER_Y = 0.0          # water surface (tile origin height; streaks float 4 mm above)
+WATER_Y = 0.0          # water surface (tile origin height)
 M = 0.22               # bank grass strip width
 SLOPE = 0.12           # horizontal width of the bank slope into the water
 R = 1.0 - M            # radius of the rounded outer corner
@@ -105,38 +110,12 @@ def on_border(f):
     return max(abs(c.x), abs(c.y)) > E - 1e-4
 
 
-def streak(x, y, L, w, color="water_river_light"):
-    pts = [(x, y - L / 2), (x + w / 2, y - L / 4), (x + w / 2, y + L / 4), (x, y + L / 2),
-           (x - w / 2, y + L / 4), (x - w / 2, y - L / 4)]
-    return pp.flat([(px, py, WATER_Y + 0.004) for px, py in pts], color)
-
-
-def arc_streak(cx, cy, r, a0, a1, w, n=5, color="water_river_light"):
-    outer, inner = [], []
-    for i in range(n + 1):
-        t = i / n
-        a = math.radians(a0 + (a1 - a0) * t)
-        hw = w / 2 * math.sin(math.pi * t) + 0.004
-        outer.append((cx + (r + hw) * math.cos(a), cy + (r + hw) * math.sin(a), WATER_Y + 0.004))
-        inner.append((cx + (r - hw) * math.cos(a), cy + (r - hw) * math.sin(a), WATER_Y + 0.004))
-    p = pp.flat(outer + list(reversed(inner)), color)
-    p.bm.normal_update()
-    if p.bm.faces[:][0].normal.z < 0:
-        import bmesh
-        bmesh.ops.reverse_faces(p.bm, faces=list(p.bm.faces))
-    return p
-
-
 def up(p):
     import bmesh
     p.bm.normal_update()
     if list(p.bm.faces)[0].normal.z < 0:
         bmesh.ops.reverse_faces(p.bm, faces=list(p.bm.faces))
     return p
-
-
-STRAIGHT_STREAKS = [(-0.28, 0.22, 0.42, 0.05), (0.12, -0.12, 0.5, 0.06), (0.33, 0.3, 0.3, 0.04),
-                    (-0.1, -0.36, 0.22, 0.035), (0.36, -0.3, 0.26, 0.04), (-0.34, -0.2, 0.28, 0.04)]
 
 
 def water_tile(kind, body):
@@ -148,26 +127,6 @@ def water_tile(kind, body):
         g.delete_faces(lambda f: abs(f.normal.z) < 0.3 and not on_border(f))
         parts.append(g)
         parts.append(bank_slope(line))
-    if body == "river":
-        if kind == "corner":
-            for r, a0, a1, w in ((0.32, 100, 160, 0.05), (0.52, 95, 150, 0.06), (0.52, 160, 176, 0.03),
-                                 (0.66, 115, 170, 0.045)):
-                parts.append(arc_streak(E, -E, r, a0, a1, w))
-            parts.append(pp.disc((0.3, -0.05, WATER_Y + 0.005), 0.025, "water_foam", sides=5))
-        else:
-            xmin = -E + M + SLOPE + 0.04 if kind == "bank" else -E
-            for x, y, L, w in STRAIGHT_STREAKS:
-                if x - w / 2 < xmin:
-                    continue
-                if kind == "inner" and math.hypot(x - E, y - E) < M + SLOPE + 0.2:
-                    continue
-                parts.append(streak(x, y, L, w))
-            if kind != "inner":
-                parts.append(pp.disc((0.0, 0.3, WATER_Y + 0.005), 0.025, "water_foam", sides=5))
-                parts.append(pp.disc((0.05, 0.36, WATER_Y + 0.005), 0.015, "water_foam", sides=5))
-    else:
-        # still pond: only a bank reed tuft now and then, no streaks
-        pass
     if land and kind != "inner":
         parts.append(zb.tuft((-E + 0.1, 0.25, GROUND_TOP), 0.1, seed=3))
     return parts
@@ -212,6 +171,11 @@ def bridge_wood():
         for x in (-BR_L + 0.08, -0.55, 0.55, BR_L - 0.08):
             parts.append(zb.box((0.11, 0.11, deck_y(x) + 0.82), (x, s * BR_W, (deck_y(x) + 0.82) / 2),
                                 color="wood"))
+        # piles in the water under the stringers (foam obstacles, TECH-WATER / Q-068);
+        # zoo-core scene::BRIDGE_PILES mirrors their positions
+        for x in (-0.55, 0.55):
+            parts.append(pp.cyl(0.075, 0.0, deck_y(x) - 0.2, sides=6, center=(x, s * (BR_W - 0.07)),
+                                color="wood_dark"))
     return parts
 
 

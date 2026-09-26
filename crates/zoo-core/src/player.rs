@@ -72,6 +72,9 @@ pub struct Player {
     surface_speed: f32,
     /// Speed actually moved in the last update, m/s.
     pub last_speed: f32,
+    /// First person (GAME-CAMERA-VIEWS 3): the facing is the view direction and walking
+    /// (also sideways) does not turn the player. `None` = facing follows the walk direction.
+    pub facing_lock: Option<Vec2>,
 }
 
 impl Player {
@@ -81,6 +84,16 @@ impl Player {
             facing,
             surface_speed: params.walk_speed,
             last_speed: 0.0,
+            facing_lock: None,
+        }
+    }
+
+    /// Locks the facing to a view direction (first person, CAMV-006) or unlocks it (`None`).
+    /// A locked facing is applied at once.
+    pub fn lock_facing(&mut self, dir: Option<Vec2>) {
+        self.facing_lock = dir.and_then(|d| d.try_normalize());
+        if let Some(d) = self.facing_lock {
+            self.facing = d;
         }
     }
 
@@ -134,7 +147,7 @@ impl Player {
             self.last_speed = 0.0;
             return;
         }
-        self.facing = input.normalize();
+        self.facing = self.facing_lock.unwrap_or_else(|| input.normalize());
         let total = input * self.surface_speed * dt;
         let steps = (total.length() / MAX_SUBSTEP_M).ceil().max(1.0) as usize;
         let delta = total / steps as f32;

@@ -16,6 +16,9 @@ ui-new-game = New game
 ui-yes = Yes
 ui-no = No
 ui-level-klasse3 = Grade 3
+# Camera views (GAME-CAMERA-VIEWS): eye button (hold) and first-person toggle
+ui-look-around = Look around
+ui-first-person = Through my eyes
 
 ## Feedback when showing food / leading animals (GAME-RESCUE §5, §7)
 

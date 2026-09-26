@@ -153,6 +153,9 @@ pub struct Element {
     /// female model exists).
     #[serde(default)]
     pub pair: bool,
+    /// Rivers and streams: flow direction `N` / `E` / `S` / `W` (level coordinates;
+    /// GAME-LAYOUT "Water", Q-066). Required on every `river` / `stream` element.
+    pub flow: Option<String>,
     /// Index of the level part the element comes from ([`LevelData::parts`]).
     #[serde(skip)]
     pub part: usize,
@@ -496,6 +499,23 @@ impl LevelData {
             }
             if e.rect.w <= 0 || e.rect.d <= 0 {
                 return Err(LevelError::Invalid(format!("empty rect for {}", e.id)));
+            }
+            let flowing = e.ty == ElementType::Landmark
+                && matches!(e.kind.as_deref(), Some("river" | "stream"));
+            match (flowing, e.flow.as_deref()) {
+                (true, Some("N" | "E" | "S" | "W")) | (false, None) => {}
+                (true, _) => {
+                    return Err(LevelError::Invalid(format!(
+                        "{}: rivers and streams need flow = \"N\"|\"E\"|\"S\"|\"W\"",
+                        e.id
+                    )))
+                }
+                (false, Some(_)) => {
+                    return Err(LevelError::Invalid(format!(
+                        "{}: only rivers and streams have a flow",
+                        e.id
+                    )))
+                }
             }
         }
         let mut place_ids = BTreeSet::new();

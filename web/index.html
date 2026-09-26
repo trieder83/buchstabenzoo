@@ -150,6 +150,31 @@
         font-size: 0.8em;
         font-style: italic;
       }
+      /* Camera views (GAME-CAMERA-VIEWS): first-person toggle left of the gear; the touch
+         eye button (look-around while held) left of the interact button. */
+      #view-btn {
+        position: fixed;
+        right: calc(96px + env(safe-area-inset-right));
+        top: calc(16px + env(safe-area-inset-top));
+        width: 68px;
+        height: 68px;
+        font-size: 34px;
+      }
+      #view-btn.on {
+        background: #ffd65c;
+      }
+      #look-btn {
+        position: fixed;
+        right: calc(136px + env(safe-area-inset-right));
+        bottom: calc(40px + env(safe-area-inset-bottom));
+        width: 76px;
+        height: 76px;
+        font-size: 38px;
+        display: none;
+      }
+      body.touch #look-btn {
+        display: flex;
+      }
       #settings-btn {
         position: fixed;
         right: calc(16px + env(safe-area-inset-right));
@@ -436,6 +461,8 @@
     <div id="stick"><div id="knob"></div></div>
     <div id="hud-carry" hidden></div>
     <button id="settings-btn" class="round" type="button">⚙️</button>
+    <button id="view-btn" class="round" type="button" aria-pressed="false">👓</button>
+    <button id="look-btn" class="round" type="button">👁️</button>
     <div id="settings" hidden></div>
     <button id="hint" type="button" hidden><span class="key">E</span><span class="icon"></span></button>
     <button id="act" class="round" type="button" hidden></button>

@@ -2,7 +2,7 @@
 // asset files, forwards input and shows the HTML overlays. All game logic, what is
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
-import { attachInput, type StickView } from './input';
+import { attachInput, attachLookButton, type StickView } from './input';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
 import { loadSettings, Ui } from './ui';
@@ -101,6 +101,7 @@ async function main(): Promise<void> {
   const settings = loadSettings(store, App.default_language(navigator.language || 'de'));
   app.set_language(settings.language);
   app.set_reading_level(settings.readingLevel);
+  app.set_view_mode(settings.view ?? 'zoo'); // GAME-CAMERA-VIEWS 9
 
   updateTextTextures(app); // sign texts (re-rendered on language change, in the loop)
 
@@ -121,6 +122,7 @@ async function main(): Promise<void> {
     onInteract: () => ui.interact(),
     onEscape: () => ui.escape(),
   });
+  attachLookButton(document.getElementById('look-btn')!, app);
   canvas.focus();
 
   const debug: ZooDebug = { app, ui, slot, frames: 0, frameMs: 0, intervalMs: 0 };

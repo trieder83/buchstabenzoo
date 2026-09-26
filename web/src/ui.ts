@@ -24,6 +24,10 @@ export interface UiApp {
   set_reading_level(id: string): boolean;
   language(): string;
   reading_level(): string;
+  /** Camera views (GAME-CAMERA-VIEWS): the view to store, the first-person toggle. */
+  saved_view_mode?(): string;
+  view_mode?(): string;
+  toggle_first_person?(): string;
 }
 
 export const LANGUAGES = ['de', 'en'] as const;
@@ -122,10 +126,16 @@ export interface KeyValue {
 export interface Settings {
   language: string;
   readingLevel: string;
+  /** Camera view (GAME-CAMERA-VIEWS 9): `zoo` (default) or `first_person`. */
+  view?: string;
 }
+
+/** Views that are stored (look-around is only held, never stored). */
+export const SAVED_VIEWS = ['zoo', 'first_person'] as const;
 
 const KEY_LANG = 'zoo.language';
 const KEY_LEVEL = 'zoo.readingLevel';
+const KEY_VIEW = 'zoo.view';
 
 /**
  * Stored settings, falling back to `defaultLanguage` (always `de`, CONT-L10N §5 — the stored
@@ -134,15 +144,18 @@ const KEY_LEVEL = 'zoo.readingLevel';
 export function loadSettings(store: KeyValue | null, defaultLanguage: string): Settings {
   let lang: string | null = null;
   let level: string | null = null;
+  let view: string | null = null;
   try {
     lang = store?.getItem(KEY_LANG) ?? null;
     level = store?.getItem(KEY_LEVEL) ?? null;
+    view = store?.getItem(KEY_VIEW) ?? null;
   } catch {
     // storage blocked (private mode): defaults
   }
   return {
     language: (LANGUAGES as readonly string[]).includes(lang ?? '') ? lang! : defaultLanguage,
     readingLevel: (READING_LEVELS as readonly string[]).includes(level ?? '') ? level! : 'klasse1',
+    view: (SAVED_VIEWS as readonly string[]).includes(view ?? '') ? view! : 'zoo',
   };
 }
 
@@ -150,6 +163,7 @@ export function saveSettings(store: KeyValue | null, s: Settings): void {
   try {
     store?.setItem(KEY_LANG, s.language);
     store?.setItem(KEY_LEVEL, s.readingLevel);
+    if (s.view && (SAVED_VIEWS as readonly string[]).includes(s.view)) store?.setItem(KEY_VIEW, s.view);
   } catch {
     // storage blocked: settings live for this session only
   }
@@ -220,6 +234,7 @@ export class Ui {
   private lastTarget = '\u0000';
   private bubbleTimer = 0;
   private touch = false;
+  private lastView = '';
 
   readonly act = document.getElementById('act') as HTMLButtonElement;
   readonly hint = document.getElementById('hint') as HTMLButtonElement;
@@ -229,6 +244,9 @@ export class Ui {
   readonly settings = document.getElementById('settings') as HTMLDivElement;
   readonly bubble = document.getElementById('bubble') as HTMLDivElement;
   readonly celebrate = document.getElementById('celebrate') as HTMLDivElement;
+  /** First-person toggle (GAME-CAMERA-VIEWS 3) and the touch eye button (look-around, 2). */
+  readonly viewBtn = document.getElementById('view-btn') as HTMLButtonElement | null;
+  readonly lookBtn = document.getElementById('look-btn') as HTMLButtonElement | null;
 
   constructor(
     private readonly app: UiApp,
@@ -243,6 +261,10 @@ export class Ui {
       });
     }
     this.gear.addEventListener('click', () => this.toggleSettings());
+    this.viewBtn?.addEventListener('click', () => {
+      this.app.toggle_first_person?.();
+      this.update();
+    });
     this.buildSettings();
     this.applyLabels();
   }
@@ -282,12 +304,38 @@ export class Ui {
       (this.hint.querySelector('.icon') as HTMLElement).textContent = icon;
       // reading panels open/close by themselves: decided in Rust (panel_open/panel_close)
     }
+    this.updateView();
     const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
       this.renderCarry();
     }
     this.pollEvents();
+  }
+
+  /**
+   * View buttons follow the game's view (also switched with `F`), and the chosen view is
+   * stored with the settings (GAME-CAMERA-VIEWS 9).
+   */
+  private updateView(): void {
+    const view = this.app.saved_view_mode?.() ?? 'zoo';
+    if (view === this.lastView) return;
+    const first = this.lastView === '';
+    this.lastView = view;
+    const fp = view === 'first_person';
+    document.body.dataset.view = view;
+    if (this.viewBtn) {
+      this.viewBtn.classList.toggle('on', fp);
+      this.viewBtn.setAttribute('aria-pressed', String(fp));
+    }
+    if (this.lookBtn) this.lookBtn.hidden = fp; // look-around only from the zoo view
+    if (!first) {
+      saveSettings(this.store, {
+        language: this.app.language(),
+        readingLevel: this.app.reading_level(),
+        view,
+      });
+    }
   }
 
   /** HUD: the carried food and — carried with both hands — the fish bowl (RESC-020). */
@@ -510,7 +558,11 @@ export class Ui {
   private change(part: Partial<Settings>): void {
     if (part.language) this.app.set_language(part.language);
     if (part.readingLevel) this.app.set_reading_level(part.readingLevel);
-    saveSettings(this.store, { language: this.app.language(), readingLevel: this.app.reading_level() });
+    saveSettings(this.store, {
+      language: this.app.language(),
+      readingLevel: this.app.reading_level(),
+      view: this.app.saved_view_mode?.() ?? 'zoo',
+    });
     // All visible texts follow at once (L10N-004): labels, HUD, an open panel.
     const panel = this.panelKey ? this.app.panel_json() : '';
     if (panel) this.openPanel(JSON.parse(panel) as PanelData);
@@ -531,6 +583,8 @@ export class Ui {
   private applyLabels(): void {
     document.documentElement.lang = this.app.language();
     this.gear.setAttribute('aria-label', this.app.t('ui-settings'));
+    this.viewBtn?.setAttribute('aria-label', this.app.t('ui-first-person'));
+    this.lookBtn?.setAttribute('aria-label', this.app.t('ui-look-around'));
     this.act.setAttribute('aria-label', this.app.t('ui-interact'));
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));

@@ -1089,3 +1089,47 @@ fn layout_l1_021_pool_visible_from_the_gate() {
         );
     }
 }
+
+// LAYOUT-026 (Q-066): every river / stream element has a flow, the pieces of each river
+// (incl. the bridges over it) chain along the flow with consistent 90° bends, and broken
+// data is rejected.
+#[test]
+fn layout_026_rivers_have_a_flow_and_consistent_bends() {
+    let zoo = common::zoo();
+    for e in &zoo.elements {
+        let flowing =
+            e.ty == ElementType::Landmark && matches!(e.kind.as_deref(), Some("river" | "stream"));
+        assert_eq!(flowing, e.flow.is_some(), "{}: flow key", e.id);
+    }
+    let paths = zoo_core::water::river_paths(&zoo).expect("rivers chain");
+    let ids: Vec<Vec<String>> = paths.iter().map(|p| p.ids.clone()).collect();
+    assert_eq!(
+        ids,
+        vec![
+            vec!["river_n", "bridge_river", "river_mid", "river_e"],
+            vec!["stream_l3"]
+        ]
+    );
+    // level 1: straight south, one left bend of radius 1.5 m, straight east
+    let arcs = paths[0]
+        .pieces
+        .iter()
+        .filter(|p| matches!(p, zoo_core::water::PathPiece::Arc { .. }))
+        .count();
+    assert_eq!(arcs, 1);
+    assert_eq!(paths[0].half_width, 1.5);
+
+    let text = common::read("assets/levels/level-1.toml");
+    let missing = text.replacen("flow = \"E\"\n", "", 1);
+    assert!(
+        zoo_core::LevelData::from_toml_str(&missing).is_err(),
+        "missing flow"
+    );
+    let bad_value = text.replacen("flow = \"E\"", "flow = \"east\"", 1);
+    assert!(zoo_core::LevelData::from_toml_str(&bad_value).is_err());
+    for (flow, why) in [("N", "reversed"), ("W", "bend at the wrong end")] {
+        let t = text.replacen("flow = \"E\"", &format!("flow = \"{flow}\""), 1);
+        let d = zoo_core::LevelData::from_toml_str(&t).unwrap();
+        assert!(zoo_core::water::river_paths(&d).is_err(), "{why}");
+    }
+}

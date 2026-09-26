@@ -46,14 +46,14 @@ straps/padlock, and the faces of the duck and frog point to level south (world +
 | `bamboo` | 385 | 1.45 · 3.00 · 1.68 | centre of the clump |
 | `reed` | 175 | 0.93 · 1.23 · 0.84 | centre (cattails) |
 | `grass_tuft` | 34 | 0.21 · 0.34 · 0.22 | centre |
-| `water_river_straight` | 32 | 1 · 0.004 · 1 | cell centre (tile) |
-| `water_river_bank` | 43 | 1 · 0.15 · 1 | cell centre (tile) |
-| `water_river_curve` | 94 | 1 · 0.15 · 1 | cell centre (tile) |
-| `water_river_inner` | 42 | 1 · 0.05 · 1 | cell centre (tile) |
+| `water_river_straight` | 2 | 1 · 0 · 1 | cell centre (tile) |
+| `water_river_bank` | 21 | 1 · 0.15 · 1 | cell centre (tile) |
+| `water_river_curve` | 51 | 1 · 0.15 · 1 | cell centre (tile) |
+| `water_river_inner` | 22 | 1 · 0.05 · 1 | cell centre (tile) |
 | `water_pond` | 2 | 1 · 0 · 1 | cell centre (tile) |
 | `water_pond_edge` | 21 | 1 · 0.15 · 1 | cell centre (tile) |
 | `water_pond_corner` | 51 | 1 · 0.15 · 1 | cell centre (tile) |
-| `bridge_wood` | 340 | 3.40 · 1.27 · 2.61 | centre of the 3 × 3 bridge rect; deck along X |
+| `bridge_wood` | 404 | 3.40 · 1.27 · 2.61 | centre of the 3 × 3 bridge rect; deck along X; 4 piles in the water at x ±0.55, y ±1.18 (foam obstacles, Q-068) |
 | `jetty_wood` | 236 | 3.80 · 0.70 · 1.80 | centre of the 3 × 2 jetty rect; water end = −X (0.8 m overhang) |
 | `lily_pad` | 205 | 0.88 · 0.12 · 0.71 | waterline (place at y = 0) |
 | `duck` | 254 | 0.31 · 0.34 · 0.52 | waterline, looks south |
@@ -102,11 +102,11 @@ and flush with the neighbouring water tile.
 
 Rotation: clockwise quarter turns k → yaw −90°·k. Count as water for the mask: bridge cells
 over the river (water continues under `bridge_wood`) and cells beyond the level edge where
-the river enters/leaves (under the north and east hedges). River streaks (cell
-`water_river_light`, index 177) run along the canonical N–S axis (curve: around the SE
-corner): rotate `river_n` tiles with k = 0/2, `river_e` tiles with k = 1/3 so streaks
-follow the flow. The river is light blue with streaks and foam dots; the pond is dark,
-plain and still (riddle contrast zebra vs. hippo).
+the river enters/leaves (under the north and east hedges). River and pond tiles differ only in the water cell (`water_river` 176, light blue, vs.
+`water_pond` 179, dark): streaks, foam, rings and shimmer are drawn by the water shader
+from a baked water field (TECH-WATER, Q-067), so tile rotation does not matter for the
+look. The shape constants `M`, `SLOPE`, `R` are mirrored in `zoo_core::water` (visible
+waterline 0.34 m inside a bank edge); WATER-003 checks them against the exported tiles.
 
 ## Level-1 mapping (`assets/levels/level-1.toml`)
 

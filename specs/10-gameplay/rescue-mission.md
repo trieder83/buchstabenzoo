@@ -134,6 +134,28 @@ the fish is fed out of reach of water). The fish in the bowl travels at the bowl
 The bowl is a placeholder glass mesh built by the renderer (light-blue screen-door glass
 with outlines; water as a smaller glass cylinder) until a model exists.
 
+
+## Welcome board at the entrance (user request 2026-09-26)
+
+The board next to the start gate (the map board by the entrance plaza, `map_board` in
+GAME-LEVEL-1) explains the game when the child stands in front of it: its reading panel
+opens automatically like every board (GAME-PLAYER §4) and shows the **game description** for
+the current reading level and language. The map itself (GAME-MAP rule 9) is opened from the
+same panel with a map button once the map exists. Keys: `welcome-<reading_level>` (de/en),
+plus pictures for `kiga` (empty enclosure → magnifier → food box → animal home).
+
+| Level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 empty enclosure → 🔍 → 🥕 → 🏠 · **Tiere weg!** | same pictures · **Animals gone!** |
+| klasse1 | Die Tiere sind weg. Finde alle Tiere. Bring sie nach Hause. | The animals are gone. Find all animals. Bring them back home. |
+| klasse2 | Oh nein, die Tiere sind ausgebrochen! Lies die Rätsel auf den Infotafeln, finde die Tiere und bring sie mit dem richtigen Futter zurück in ihr Gehege. | Oh no, the animals have escaped! Read the riddles on the info boards, find the animals and bring them back to their enclosures with the right food. |
+| klasse3 | Heute Nacht sind alle Tiere aus ihren Gehegen ausgebrochen – jetzt sind die Gehege leer! Auf jeder Infotafel steht ein Rätsel, das verrät, wo sich das Tier versteckt. Hol im Futterlager das richtige Futter und zeig es dem Tier – dann folgt es dir. Führe es durch das Tor zurück in sein Gehege. Schaffst du es, alle Tiere zu retten? | Last night all the animals escaped from their enclosures – now the enclosures are empty! Every info board has a riddle that tells you where the animal is hiding. Get the right food from the food storage and show it to the animal – then it will follow you. Lead it through the gate back into its enclosure. Can you rescue all the animals? |
+
+Rules: `klasse1` sentences ≤ 5 words (READ-002); the word for an animal's home is
+*Gehege* / *enclosure*, never *Käfig* / *cage* (glossary). The welcome panel is also shown
+once automatically at the very first start of a new game (after the character choice), so
+children who walk off in another direction still know the goal.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -165,6 +187,7 @@ with outlines; water as a smaller glass cylinder) until a model exists.
 | RESC-025 | Given a level whose `[level] missions` lists only some of its enclosures' animals, then only the info boards, animals and gates of the listed missions are interactable; without the field every animal is in scope (§1, Q-069 answered, GAME-LAYOUT). | unit |
 | RESC-026 | Given an animal whose picked hiding place has `perch_height_m` (koala, monkey), then it sits at that height beside its spot, does not wander and faces the player; the player shows the right food from the ground within 2 m; when it follows it first comes down (`climb` at its `climb_speed`, else `walk` at 1.8 m/s) (§12, Q-094). | unit, e2e |
 | RESC-027 | Given the player carries the bowl with the fish, when she interacts at another enclosure's gate, then `ui-refuse` and the fish stays in the bowl; when she puts the bowl down (nothing else in range), then the fish stays safe in the bowl and can be picked up again (goldfish bowl implementation note). | unit |
+| RESC-028 | Given the player stands in front of the map board at the entrance, then the reading panel opens with `welcome-<reading_level>` in the current language (kiga: pictures + "Tiere weg!"); at the first start of a new game it is shown once automatically. | e2e |
 
 ## Open questions
 

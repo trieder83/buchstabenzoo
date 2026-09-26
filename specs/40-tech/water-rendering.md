@@ -3,8 +3,8 @@ id: TECH-WATER
 title: Animated cartoon water (rendering)
 aspect: tech
 module: water-rendering
-status: draft
-depends_on: [ART-ENVIRONMENT, TECH-ARCH]
+status: implemented
+depends_on: [ART-ENVIRONMENT, TECH-ARCH, GAME-LAYOUT]
 test_prefix: WATER
 updated: 2026-09-26
 ---
@@ -75,7 +75,8 @@ Parts that are not alternatives but are needed in any case:
 ## 3. Decision (recommended combination)
 
 1. **Water field texture** baked once per level on the CPU (level assembly): RGBA16F,
-   4 texels per metre, covering the level bounds, LINEAR filtered, CLAMP_TO_EDGE.
+   4 texels per metre, covering the bounding box of all water + 2 m (behaviour 2), LINEAR
+   filtered, CLAMP_TO_EDGE.
    `R = s` (m along the flow), `G = c` (m, signed offset from the river centreline, + =
    inside of the next bend), `B = shore` (m from the waterline into the water; negative on
    land), `A = flow` (1 = river, 0 = pond / still water; values between allowed later,
@@ -105,11 +106,19 @@ Parts that are not alternatives but are needed in any case:
    `u_time` — never tile-local coordinates or instance yaw — so it is seamless across tile
    seams and independent of tile rotation.
 2. The field is baked from level data: river cells get `s`/`c` from the river centreline
-   (straight pieces along each river element's flow direction, 90° arcs of radius = half
-   the river width around the inner corner of every bend, `s` continuous along the whole
-   river); pond cells get `s = c = 0`, `flow = 0`; `shore` is the exact distance to the
-   waterline of the tile shapes (kit constants); land texels copy `s`/`c` from the nearest
-   water texel (dilation) so bilinear filtering stays correct at the banks.
+   (straight pieces along each river element's `flow` (GAME-LAYOUT "Flowing water",
+   Q-066), 90° arcs of radius = half the river width around the inner corner of every
+   bend, `s` continuous along the whole river; `c` = offset to the **left of the flow** in
+   level coordinates, which is the inside of a left bend); pond, pool and fountain texels
+   get `s = c = 0`, `flow = 0`; `shore` is the exact distance to the **visible waterline**
+   — the foot of the bank slope, 0.34 m (`M + SLOPE`) inside a bank edge, 0.66 m
+   (`R − SLOPE`) from the centre of a rounded outer corner, 0.34 m from the dry corner of an
+   inner notch — found among the tiles of the 5 × 5 cells around the texel (clamped to
+   −1…3 m); the fountain basin is a still-water rectangle (distance to its rim). Land
+   texels take `s`/`c`/`flow` of the nearest water cell's body (the centreline functions
+   are defined everywhere, no dilation pass needed), so bilinear filtering stays correct at
+   the banks. The field covers the bounding box of all water + 2 m (joined zoo: one
+   texture).
 3. River streaks (layer "streak"): lane width 0.24 m; lane offset
    `c' = c + 0.045·sin(2.1·s + 1.7·c)`; per lane speed `V = mix(0.85, 0.5, cn²)` m/s with
    `cn = |lane centre| / (half river width − 0.34)`; dash period `P = 2 s · V`; dash length
@@ -121,11 +130,18 @@ Parts that are not alternatives but are needed in any case:
    `wob = 0.5 + 0.35·sin(2π(s/1.4 − t/2)) + 0.3·sin(2π(s/0.7 − t))`, plus a dashed line
    0.028 m wide at `shore = band + 0.07`, dashes `fract((s − 0.7t)/0.7) > 0.55`. Colour
    `water_foam`. The band travels with the flow (0.7 m/s).
-6. Obstacle foam: for each obstacle (up to 4 per frame, nearest to the camera target;
-   uniform `u_obstacles[4] = (x, z, radius, s)` + `u_obstacles_c[4]`): ring
-   `|p − o| < r + 0.06 + 0.03·sin(3·angle − 2πt)`; V-wake: two dashed lines at
-   `|c − c_o| = 0.8r + 0.22·(s − s_o)` for `0 < s − s_o < 1.6`, width 0.022 m, dashes
-   `fract((s − s_o − 0.7t)/0.35) > 0.45`.
+6. Obstacle foam (Q-068 answered: bridge posts, stones in the water, the water wheel, the
+   jetty posts — plus the fountain jet): for each obstacle (up to 4 per frame, nearest to
+   the camera target; uniform `u_obstacles[4] = (x, z, radius, s)` + `u_obstacles_b[4] =
+   (c, river flag, –, –)`): ring `|p − o| < r + 0.06 + 0.03·sin(3·angle − 2πt)` (river and
+   still water); in rivers only a V-wake: two dashed lines at `|c − c_o| = 0.8r +
+   0.22·(s − s_o)` for `0 < s − s_o < 1.1`, tapering from 0.02 m to 0.006 m, dashes
+   `fract((s − s_o − 0.7t)/0.35) > 0.5` (shorter and thinner than the prototype: four piles
+   side by side read as rain streaks with the long version). Obstacles of level 1–3: the
+   four `bridge_wood` piles (r 0.075, standing in the water under the deck edges; added to
+   the kit for this), three stones of the `river_n` rapids (`rock` × 0.3, r 0.2), the two
+   jetty posts in the pond (r 0.08, ring only), the mill's water wheel in the level-3 stream
+   (r 0.3) and the fountain jet (r 0.13, ring only = the small spray ring).
 7. Pond: shimmer lanes rotated 30°, lane 0.42 m, dash period 1.1 m, length 40 %, half
    width `0.045·max(0, sin(2π(t/4 + h)))` (twinkle, 45 % present); rings: one source per
    2.5 m world cell (jitter ±0.35 m, 75 % of cells), cycle 4 s, radius `0.95·age`, second
@@ -134,10 +150,15 @@ Parts that are not alternatives but are needed in any case:
    with an 8 s period; lapping line `shore < 0.04 + 0.025·sin(2πt/4 + 1.3(x − z))`. All in
    `water_pond_light`.
 8. Bobbing (static VS, per batch `u_bob = (amp_y m, tilt rad, drift radius m, 0)`, phase
-   `hash(floor(origin.xz·10))·2π`): vertical `amp_y·sin(2πt/2 + φ)`, roll
-   `tilt·sin(2πt/4 + φ + 1.3)`, drift on a circle with period 16 s. Values: `duck`
-   (0.03, 0.07, 0.12), `lily_pad` (0.012, 0.04, 0.03), `frog` (0.012, 0.04, 0.03); every
-   other batch (0, 0, 0) — unchanged.
+   `bob_hash(floor(origin.xz·10))·2π` — an **integer** hash, identical in GLSL and Rust
+   (`zoo_core::water::bob_hash`), so CPU-placed animals move exactly with their pad):
+   vertical `amp_y·sin(2πt/2 + φ)`, roll about the model's local X
+   `tilt·sin(2πt/4 + φ + 1.3)`, drift on a circle with period 16 s. Values: `duck` and
+   `duckling` (0.03, 0.07, 0.12), `lily_pad` (0.012, 0.04, 0.03), `frog` (0.012, 0.04, 0.03); every
+   other batch (0, 0, 0) — unchanged. Ducks, ducklings and frogs are animated ambient
+   animals (GAME-AMBIENT), not static props: their bob is computed on the CPU with the same
+   function (swimmers without drift — they swim themselves; a frog on a pad gets the pad's
+   full transform: `bob_transform`).
 9. Time: `u_time = (elapsed_s mod 16.0)` computed in Rust from `f64`; all periods (2, 4,
    8, 16 s; spatial patterns hash `cell mod 8` along `s`) divide 16 s, so the animation
    loops seamlessly and depends on time only, not on frame rate.
@@ -148,8 +169,21 @@ Parts that are not alternatives but are needed in any case:
     discards, never displaces vertices → the outline pass sees a static flat surface; no
     outline appears inside the water except at props and the waterline.
 12. Colours come from the palette table only (`water_river`, `water_river_light`,
-    `water_foam`, `water_pond`, `water_pond_light`), passed as uniforms (or read from the
-    palette texture by cell index); no new colours.
+    `water_foam`, `water_pond`, `water_pond_light`), read from the palette texture by cell
+    index (`textureLod`, no derivatives in divergent code); no new colours.
+13. Ripples of the ambient animals (GAME-AMBIENT 5): up to 8 per frame (nearest to the
+    player; uniforms `u_ripples[8] = (x, z, heading x, heading z)`, `u_ripples_b[8] =
+    (wake 0…1 = speed / 0.6 m/s, dip ring age 0…1 or −1)`, `u_ripple_count`): a dashed V
+    behind a swimming duck or frog (arms `0.1 + 0.4·back` m for `back` 0.08…1.3 m, dashes
+    travelling backwards) and a double ring growing to ≈ 1 m while a duck dips (2.6 s). In
+    rivers the wake is `water_foam`, in still water `water_pond_light`.
+14. Still basins without ground tiles (the level-2 fountain) are drawn with `water_pond`
+    tiles scaled to the basin (2 × 2, y = 0.61 m) and get a still-water rectangle in the
+    field, so they look like the pond (shimmer, rings, lapping line at the rim) with the
+    jet's spray ring. Pools (hippo, elephant, goldfish) use the pond tiles as before.
+15. Water hides what is below its surface: the water surface is opaque and depth-tested
+    (y = 0), so duck feet, a dipping head and the submerged body of a swimming frog are
+    hidden; the intersection line gets the comic outline from the normal/depth edge.
 
 ## 4. Shader specification
 
@@ -162,7 +196,8 @@ Parts that are not alternatives but are needed in any case:
 | `u_field` | sampler2D (RGBA16F) | water field of the level |
 | `u_field_xf` | vec4 | `xy` = world XZ of the field origin, `zw` = 1 / field size (m) |
 | `u_water_cols` | vec3[5] | river, river_light, foam, pond, pond_light (palette) |
-| `u_obstacles` / `u_obstacles_c` | vec4[4] / float[4] | obstacle foam (behaviour 6); radius 0 = unused |
+| `u_obstacles` / `u_obstacles_b` | vec4[4] / vec4[4] | obstacle foam (behaviour 6); radius 0 = unused; `b = (c, river flag)` |
+| `u_ripples` / `u_ripples_b` / `u_ripple_count` | vec4[8] / vec4[8] / int | duck and frog wakes, dip rings (behaviour 13) |
 
 Vertex shader = `static_vs` plus `out vec3 v_world`. (Bobbing lives in `static_vs`:
 `uniform float u_time; uniform vec4 u_bob;`.)
@@ -220,7 +255,7 @@ rivers of other widths exist (Q-066).
 | Loop | 16 s; river cells loop every 2 s | AENV-008 |
 | Pond ring cycle | 4 s, max radius 0.95 m | calm |
 | Twinkle / glint | 4 s / 8 s | calm, no direction |
-| Field resolution | 4 texels/m, RGBA16F | 0.25 m is enough for smooth bends and exact straight banks; level 1 (48 × 50 m) = 192 × 200 texels ≈ 300 KB |
+| Field resolution | 4 texels/m, RGBA16F | 0.25 m is enough for smooth bends and exact straight banks; measured (M6): level 1 188 × 148 texels ≈ 220 KB, joined zoo 368 × 308 texels ≈ 0.9 MB |
 | `s` precision | half float: ≤ 3 cm up to 64 m, 6 cm up to 128 m | static error, invisible |
 
 ## 5. Implementation plan (after M4)
@@ -233,7 +268,8 @@ rivers of other widths exist (Q-066).
      river centreline from river elements (+ bridge cells) in flow order, pieces =
      straight / 90° arc; per texel: nearest piece → `(s, c)`; `shore` from the cell's tile
      kind + quarter turns (kit constants `M = 0.22`, `SLOPE = 0.12`, `R = 0.78`, waterline
-     inset `0.34`); dilation into land texels.
+     inset `0.34`); land texels take the nearest water body's values (behaviour 2 — no
+     separate dilation pass).
    - `pub const WATER_LOOP_S: f64 = 16.0; pub fn water_time(elapsed_s: f64) -> f32`.
    - Rust mirror of the streak / ring masks (`river_streak_mask(s, c, t)`,
      `pond_ring_mask(p, t)`) and of the bobbing offset, used only by unit tests (loop and
@@ -294,7 +330,9 @@ rivers of other widths exist (Q-066).
 ### Cost estimate
 
 - Draw calls: +0 (water tiles are existing batches; one extra program switch).
-- Memory: one RGBA16F texture per level (level 1 ≈ 300 KB); bake < 5 ms at level load.
+- Memory: one RGBA16F texture for the joined zoo (≈ 0.9 MB measured); bake estimated < 5 ms,
+  measured 17 ms (level 1) / 34 ms (joined zoo, native release) — once at load (see
+  Implementation).
 - Per water fragment: 1 bilinear RGBA16F fetch (+ the palette fetch already there),
   ≈ 70 ALU (river: streaks ≈ 30, flecks ≈ 20, shore ≈ 15, obstacles ≈ 4 × 8) or ≈ 60 ALU
   (pond). With water covering up to ~25 % of a 1080 × 2340 frame (≈ 0.6 M fragments):
@@ -313,24 +351,61 @@ rivers of other widths exist (Q-066).
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| WATER-001 | Given the baked water field of level 1, then in every river texel the gradient of `s` points along the river element's flow (south in `river_n`, east in `river_e`, rotating monotonically through the bend) and `s` is continuous: neighbouring river texels differ by ≤ 1.6 × texel size (incl. the bend and the bridge cells). (AENV-007 direction) | unit |
+| WATER-001 | Given the baked water field of level 1, then in every river texel the gradient of `s` points along the river element's flow (south in `river_n`, east in `river_e`, rotating monotonically through the bend) and `s` is continuous: neighbouring river texels differ by ≤ 1.6 × texel size × max(1, r/ρ) (incl. the bend and the bridge cells; inside a bend `s` is the arc length at the centreline, so at radius ρ from the arc centre one metre across the flow is r/ρ metres of `s` — the inner side flows slower). The centreline round-trips (`coords(point(s, 0)) = (s, 0)`). (AENV-007 direction) | unit |
 | WATER-002 | Given the field, then `c` is continuous across the whole river (same bound as WATER-001), `|c|` ≤ half the river width, and pond texels have `flow = 0`, river texels `flow = 1`. | unit |
-| WATER-003 | Given the exported `water_*` tile `.glb` files, then the analytic shore distance used by the bake is 0 (± 1 cm) at every waterline vertex of the water polygon, for all four quarter turns, and positive inside the water. | asset |
+| WATER-003 | Given the exported `water_*` tile `.glb` files, then the analytic shore distance used by the bake is 0 (± 1 cm) at every visible-waterline vertex (foot of the soil bank slope), for all four quarter turns; points the bake calls open water lie over water faces and not under the bank, points it calls land lie under bank faces. | asset |
 | WATER-004 | Given the Rust mirror of the river streak and pond ring masks, then `mask(p, water_time(t)) == mask(p, water_time(t + 16))` for sampled `p`, `t`, and the image at time `t` is identical whether reached in 60 Hz or 23 Hz steps (time-only function). (AENV-008) | unit |
 | WATER-005 | Given the water parameter table (speeds, periods, cycles), then every period divides 16 s and every river lane dash period satisfies `P = 2 s · V`. (AENV-008 loop) | unit |
-| WATER-006 | Given level 1 with the time override at t and t + 0.5 s, when screenshots of the river and the pond are compared, then both water areas change; block matching on the river crop gives a dominant motion vector within 30° of the river direction; the pond crop has no dominant vector (mean vector < 20 % of the river's). (AENV-007) | e2e |
+| WATER-006 | Given level 1 with the time override at t and t + 0.5 s, when screenshots of the river and the pond are compared, then both water areas change; block matching (32 px blocks, the dominant vector = mean of the blocks' best displacements) on the river crop gives a dominant motion vector within 30° of the river direction; the pond crop has no dominant vector (mean vector < 20 % of the river's). (AENV-007) | e2e |
 | WATER-007 | Given two screenshots 0.25 s apart, then the number of outline-coloured pixels inside the water areas (excluding a 3 px band at the waterline and prop silhouettes) is 0 in both (no outline flicker on animated water). | e2e |
-| WATER-008 | Given level 1 rendered with water animation on and off, then `RenderStats.draw_calls` is equal. (AENV-010 draw calls) | wasm |
+| WATER-008 | Given level 1 rendered with water animation on and off, then `RenderStats.draw_calls` is equal. (AENV-010 draw calls) | e2e |
 | WATER-009 | Given the bobbing function, then the offset of `duck`/`lily_pad`/`frog` stays within `u_bob` amplitudes, two instances at different positions have different phases, a frog and a pad at the same origin have the same phase, other batches get zero offset, and the motion is periodic in 16 s. | unit |
 | WATER-010 | Given the kit water tiles, then no face of a `water_river_*` tile uses the cells `water_river_light` (177) or `water_foam` (178) (streaks and foam come from the renderer). | asset |
 | WATER-011 | Given in-game screenshots and the GIF of river and pond at zoom 10, 14 and 20 m, then reviewers confirm the comic look (flat bands, hard edges) and "flowing vs. still". (AENV-009) | manual |
 | WATER-012 | Given level 1 on the reference mid-range phone, then the GPU time difference between water animation on and off is ≤ 1 ms per frame (timer query where available, otherwise frame-time A/B). (AENV-010) | manual |
+| WATER-013 | Given ducks swimming and one duck dipping near the player, then the ripple list for the water shader holds at most 8 entries (the nearest to the player), a swimmer's entry has its position, heading and `wake = speed / 0.6 m/s` clamped to 0…1, a dipping duck's entry has a dip ring age in 0…1 (−1 otherwise), and a duck that stands still with no dip has no wake. (Behaviour 13, GAME-AMBIENT 5) | unit |
+| WATER-014 | Given the joined zoo, then the level-2 fountain is drawn with `water_pond` tiles scaled to its 2 × 2 basin at y = 0.61 m, and its field texels are still water (`flow = 0`, `s = c = 0`) with `shore` = distance to the basin rim. (Behaviour 14) | unit |
+| WATER-015 | Given close-up review shots of a dipping duck and a swimming frog, then nothing below y = 0 (feet, head, submerged body) is visible through the water and the intersection line carries the comic outline. (Behaviour 15) | manual |
+| WATER-016 | Given the level-1 scene, then the water obstacles are exactly the four `bridge_wood` piles (r 0.075, river), the three `river_n` rapids stones (r 0.2, river) and the two jetty posts (r 0.08, still water, ring only); in the joined zoo additionally the water wheel (r 0.3) and the fountain jet (r 0.13, ring only); per frame at most 4 obstacles — the nearest to the camera target — are passed to the shader. (Behaviour 6, Q-068) | unit |
 
 Mapping: AENV-007 → WATER-001, 002, 006; AENV-008 → WATER-004, 005, 009;
 AENV-009 → WATER-011; AENV-010 → WATER-008, 012.
+Behaviours 6, 13, 14, 15 → WATER-016, 013, 014, 015 (added by the spec manager, FIX-040;
+the code tests should carry these IDs — part of 14 is already asserted in
+`water_002_zoo_stream_pools_and_fountain`).
+
+## Implementation (M6, 2026-09-26)
+
+- `zoo_core::water`: kit shape constants, `TileShape` (analytic waterline), `river_paths`
+  (centreline chain from `flow`, LAYOUT-026), `WaterScene` (tiles, still basins, rivers,
+  obstacles — built by `LevelScene::build`), `WaterField::bake` (level 1: 188 × 148
+  texels, 17 ms; joined zoo 368 × 308 texels, 34 ms native release — above the 5 ms
+  estimate but only once at load; 1.8 MB f32 upload, 0.9 MB RGBA16F on the GPU),
+  `water_time`, pattern / bob mirrors for the tests.
+- `zoo-render`: `water_vs` / `water_fs` (the prototype's functions + ripples),
+  bobbing in `static_vs`, `Renderer::{set_time, set_water_field, set_water_obstacles,
+  set_water_ripples, water_animation}`; water tile batches are drawn after the other
+  static batches with one program switch. Instanced skinning for the ambient animals
+  (`crowd_vs`: one joint-texture row per instance).
+- Kit (Q-067): river tiles lost their streak / foam polygons (straight 32 → 2, bank
+  43 → 21, curve 94 → 51, inner 42 → 22 triangles); `bridge_wood` got 4 piles (340 → 404).
+- Debug API (e2e, GIF): `debug_pause`, `debug_set_time`, `debug_look_at`,
+  `set_water_animation`, `water_clock`, `screen_point`.
+- Measured (1280 × 720, headless swiftshader, level 1, standing at the bridge, 20 m):
+  water animation on vs. off in the same build: **draw calls equal** (WATER-008); ambient
+  animals add **4 draw calls** (duck, duckling, frog crowds + butterflies; the removed
+  static `duck` / `frog` batches were 2) and **≈ 0 ms CPU** in the A/B of `frame()`
+  (0.2 vs. 0.3 ms median, below the noise; AMB-007). Before/after builds (HEAD 50a5d41 vs.
+  M6): CPU of `frame()` 0.56–0.74 ms → 1.4–3 ms and CPU + software GPU 160–213 ms →
+  460–860 ms per frame, **but** measured on a machine with load average ≈ 33 (other jobs
+  running) and with further renderer/camera changes of the same round in the working tree —
+  not a clean attribution; swiftshader rasterises on the CPU, so the per-fragment water ALU
+  dominates there. The reference-phone GPU time (WATER-012, ≤ 1 ms) is still to be
+  measured manually.
 
 ## Open questions
 
-- Q-066 River flow direction and centreline in level data (`flow` key on river elements).
-- Q-067 Remove the baked streak/foam geometry from the river tiles.
-- Q-068 Source of obstacle foam (rocks / rapids in the river).
+- Q-066 answered: `flow` key on river elements (GAME-LAYOUT "Flowing water").
+- Q-067 answered: baked streak / foam geometry removed from the river tiles.
+- Q-068 answered: foam at bridge posts (piles), stones in the water, the water wheel and the
+  jetty posts (behaviour 6).

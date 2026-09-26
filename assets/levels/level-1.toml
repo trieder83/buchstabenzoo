@@ -360,6 +360,7 @@ id = "river_n"
 type = "landmark"
 kind = "river"
 rect = [10, 31, 3, 17]
+flow = "S"
 blocks_view = false
 notes = "Flows south from under the north hedge; small rapids with stones; ducks."
 
@@ -368,6 +369,7 @@ id = "river_mid"
 type = "landmark"
 kind = "river"
 rect = [10, 27, 3, 1]
+flow = "S"
 blocks_view = false
 
 [[element]]
@@ -375,6 +377,7 @@ id = "river_e"
 type = "landmark"
 kind = "river"
 rect = [10, 24, 14, 3]
+flow = "E"
 blocks_view = false
 notes = "Bends east and leaves the level through a grate under the east hedge."
 

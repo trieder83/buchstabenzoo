@@ -208,7 +208,7 @@ Solid = every type except `path` and `hiding_place`.
 | `grove_center` | decoration (tree_grove) | -5, 17, 10, 10 | Dense grove of tall trees inside the ring (main sight blocker). `density = "dense"`: solid, never entered (LAYOUT-016); bush border on all four walkable sides (`edge = "bushes"`, proposal Q-085); no canopy within 1.5 m of the north edge so it does not hide the player at `board_panda` (QA F11). |
 | `enc_zebra` | enclosure | -20, 7, 11, 12 | Zebra enclosure; gate (-10, 12, 1, 2) on the east fence; stone-arch shelter, bushes, grass, **no water**. |
 | `board_zebra` | decoration (info_board) | -9, 14, 1, 1 | Info board of `enc_zebra`, next to the gate. |
-| `pond_water` | landmark (pond) | -19, 20, 8, 8 | Still pond: water lilies, frogs, reeds. |
+| `pond_water` | landmark (pond) | -19, 20, 8, 8 | Still pond: water lilies, frogs, reeds. Six `lily_pad` groups; the two frogs (animated ambient animals, GAME-AMBIENT) start on the pads at (−12.2, 21.5) — within 2 m of the jetty end — and (−16.0, 21.0) near the south bank. |
 | `jetty_pond` | path (jetty) | -11, 22, 3, 2 | Wooden jetty from the ring path to the pond edge. |
 | `bench_pond` | decoration (bench) | -11, 26, 2, 1 | Bench on the pond shore. |
 | `enc_panda` | enclosure | -6, 32, 12, 10 | Panda enclosure; gate (-1, 32, 2, 1) on the south fence; cut bamboo on a feeding rack (proposal Q-081 — no growing bamboo clumps), wooden platform and shelter, **no stone/cave**. |
@@ -216,10 +216,10 @@ Solid = every type except `path` and `hiding_place`.
 | `path_north` | path | -9, 30, 3, 16 | Side path to `barrier_north_gate`. |
 | `trees_nw` | decoration (trees) | -20, 32, 8, 10 | Open wood, `density = "sparse"`: walkable between 8 `tree_round` and 2 bushes (positions in "Woods"); its west row overhangs `shade_w` (`loc_shade`). Not solid as an element. |
 | `path_bridge_w` | path | 8, 28, 2, 3 | Short path from the ring to the bridge. |
-| `bridge_river` | path (bridge) | 10, 28, 3, 3 | Wooden bridge over the river. |
-| `river_n` | landmark (river) | 10, 31, 3, 17 | River, flowing south from under the north hedge; rapids, ducks. |
-| `river_mid` | landmark (river) | 10, 27, 3, 1 | River under the bridge (south side). |
-| `river_e` | landmark (river) | 10, 24, 14, 3 | River bend flowing east, leaves through a grate under the east hedge. |
+| `bridge_river` | path (bridge) | 10, 28, 3, 3 | Wooden bridge over the river (inherits the flow of `river_n`); four piles stand in the water (`bridge_wood`, foam obstacles, Q-068). |
+| `river_n` | landmark (river) | 10, 31, 3, 17 | River, `flow = "S"` (Q-066), from under the north hedge; small rapids with three stones (`rock` × 0.3 at (10.9, 43.4), (12.0, 44.3), (11.3, 45.8), foam obstacles, Q-068); ducks (animated ambient animals living near the bridge, GAME-AMBIENT). |
+| `river_mid` | landmark (river) | 10, 27, 3, 1 | River under the bridge (south side), `flow = "S"`. |
+| `river_e` | landmark (river) | 10, 24, 14, 3 | River bend, `flow = "E"`: the first 3 × 3 cells are the 90° bend (left turn around the inner corner (13, 27), TECH-WATER); leaves through a grate under the east hedge. |
 | `path_ne` | path | 13, 28, 9, 3 | Path behind the bridge to `barrier_ne_tree`. |
 | `trees_ne` | decoration (trees) | 15, 34, 6, 9 | Open wood east of the river, `density = "sparse"`: walkable between 6 `tree_round` and 1 bush (positions in "Woods"); `loc_meadow` lies south of it, `loc_leaves` north of it (rake leans on the tree at (16.0, 41.3)). Not solid as an element. |
 | `path_ne_trail` | path (side) | 13, 31, 2, 12 | Narrow trail from `path_ne` north between the river and `trees_ne` to the leaf pile (`loc_leaves`). |

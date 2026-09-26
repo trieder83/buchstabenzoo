@@ -8,15 +8,16 @@
 use std::collections::HashMap;
 
 use bytemuck::{Pod, Zeroable};
-use glam::{Mat4, Vec2, Vec3, Vec4};
+use glam::{IVec2, Mat4, Quat, Vec2, Vec3, Vec4};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     HtmlCanvasElement, WebGl2RenderingContext as Gl, WebGlBuffer, WebGlFramebuffer, WebGlProgram,
     WebGlShader, WebGlTexture, WebGlUniformLocation, WebGlVertexArrayObject,
 };
 use zoo_assets::{MeshData, Model, Pose, Skeleton};
+use zoo_core::water::{bob_params, water_time, TileShape, WaterField};
 
-use crate::camera::{project, FollowCamera, FAR_M, NEAR_M};
+use crate::camera::{project, FollowCamera};
 use crate::shaders;
 
 /// Sun direction (towards the sun): high, from the west and slightly behind the default
@@ -36,6 +37,12 @@ const CLEAR: [f32; 4] = [0.37, 0.55, 0.24, 1.0];
 /// Render resolution cap (device pixels per CSS pixel) for mobile fill rate.
 pub const MAX_PIXEL_RATIO: f64 = 2.0;
 const MAX_JOINTS: usize = 128;
+/// Instances per model drawn with one instanced skinned draw call (ambient animals).
+pub const MAX_CROWD: usize = 32;
+/// Obstacles with foam per frame (nearest to the camera target, TECH-WATER behaviour 6).
+pub const MAX_WATER_OBSTACLES: usize = 4;
+/// Duck / frog ripples per frame (GAME-AMBIENT 5).
+pub const MAX_WATER_RIPPLES: usize = 8;
 
 /// Per-instance data of a static batch (48 bytes).
 #[repr(C)]
@@ -123,6 +130,10 @@ struct MeshInfo {
     height: f32,
     /// Horizontal/vertical extent from the origin (m), for region bounds.
     radius: f32,
+    /// A water tile (drawn by the water program, TECH-WATER).
+    water: bool,
+    /// Bobbing on the water (`u_bob`, TECH-WATER behaviour 8).
+    bob: [f32; 4],
 }
 
 /// A render region (chunk): a level part, a barrier or a building roof. Its batches are
@@ -162,7 +173,16 @@ struct Batch {
     height: f32,
     /// Re-uploaded every frame with `buffer_sub_data` (characters, placeholders that move).
     dynamic: bool,
+    water: bool,
+    bob: [f32; 4],
+    /// Bounds of the instances per [`CHUNK_M`] ground chunk (static regions only): a batch is
+    /// drawn only when one of its chunks is in view, so the short far plane of the close
+    /// views culls every mesh that has no instance nearby (GAME-CAMERA-VIEWS 6).
+    chunks: Vec<(IVec2, Vec3, Vec3)>,
 }
+
+/// Ground chunk size for per-batch culling (m).
+pub const CHUNK_M: f32 = 8.0;
 
 /// One material range of a skinned mesh.
 struct Part {
@@ -187,6 +207,9 @@ struct SkinnedModel {
     joints: Vec<Mat4>,
     joint_data: Vec<f32>,
     joint_tex: WebGlTexture,
+    /// Instanced drawing (ambient animals): one row of model × joint matrices per instance.
+    crowd_data: Vec<f32>,
+    crowd_tex: WebGlTexture,
 }
 
 /// A skinned character to draw this frame.
@@ -212,6 +235,8 @@ pub struct CharacterDraw {
     /// Under a water surface (the goldfish): drawn through the water with a water tint
     /// (depth pulled towards the camera by [`UNDER_WATER_DEPTH_BIAS_M`]).
     pub under_water: bool,
+    /// Extra rotation before the yaw (bobbing roll of ducks and frogs).
+    pub tilt: Quat,
 }
 
 /// How far an under-water character is pulled towards the camera for the depth test, so it
@@ -240,7 +265,14 @@ impl CharacterDraw {
             action: None,
             action_blend: 0.0,
             under_water: false,
+            tilt: Quat::IDENTITY,
         }
+    }
+
+    fn model(&self) -> Mat4 {
+        Mat4::from_translation(self.pos)
+            * Mat4::from_quat(self.tilt)
+            * Mat4::from_rotation_y(self.yaw)
     }
 }
 
@@ -260,6 +292,8 @@ pub struct FrameStats {
     pub decals: u32,
     /// Static batches skipped by region culling (hidden or outside the frustum).
     pub culled_batches: u32,
+    /// Draw calls of the instanced crowds (ambient animals, AMB-007).
+    pub crowd_draw_calls: u32,
 }
 
 /// A decal quad on the GPU: texture name, face normal, index of its first vertex.
@@ -267,6 +301,22 @@ struct DecalDraw {
     texture: String,
     normal: Vec3,
     first_vertex: usize,
+    /// Bounds of the quad (frustum culling, GAME-CAMERA-VIEWS 6).
+    min: Vec3,
+    max: Vec3,
+}
+
+/// Generous bounds of a skinned character around its origin (giraffe 4.5 m, elephant).
+const CHARACTER_HALF_M: f32 = 2.5;
+const CHARACTER_HEIGHT_M: f32 = 5.5;
+
+fn character_visible(planes: &[Vec4; 6], pos: Vec3) -> bool {
+    let h = Vec3::new(CHARACTER_HALF_M, 0.0, CHARACTER_HALF_M);
+    aabb_visible(
+        planes,
+        pos - h - Vec3::Y * 0.5,
+        pos + h + Vec3::Y * CHARACTER_HEIGHT_M,
+    )
 }
 
 /// All decal quads in one buffer (4 vertices each: position + uv).
@@ -284,6 +334,8 @@ pub struct Renderer {
     gl: Gl,
     canvas: HtmlCanvasElement,
     static_prog: Program,
+    water_prog: Program,
+    crowd_prog: Program,
     skinned_prog: Program,
     post_prog: Program,
     decal_prog: Program,
@@ -300,6 +352,22 @@ pub struct Renderer {
     height: i32,
     pixel_ratio: f32,
     pub stats: FrameStats,
+    /// Water clock (`water_time`, s in [0, 16)).
+    time: f32,
+    /// Baked water field on the GPU and its transform (`u_field_xf`).
+    field_tex: Option<WebGlTexture>,
+    field_xf: [f32; 4],
+    /// Water animation on (off = water tiles drawn flat by the static program; WATER-008).
+    pub water_animation: bool,
+    /// All foam obstacles: world x, z, radius, s, c, river flag.
+    obstacles: Vec<[f32; 6]>,
+    /// Per-frame uniform scratch (no allocation in the render loop).
+    obstacle_u: [f32; 16],
+    obstacle_b: [f32; 16],
+    ripple_u: [f32; 32],
+    ripple_b: [f32; 32],
+    ripple_count: i32,
+    crowd_names: Vec<&'static str>,
 }
 
 /// Name of the built-in unit box batch (placeholders).
@@ -331,13 +399,44 @@ impl Renderer {
             "u_dither",
             "u_tint",
         ];
-        let static_prog = Program::new(&gl, &shaders::static_vs(), &shaders::static_fs(), &common)
-            .map_err(err)?;
+        let mut static_names = common.to_vec();
+        static_names.extend(["u_time", "u_bob"]);
+        let static_prog = Program::new(
+            &gl,
+            &shaders::static_vs(),
+            &shaders::static_fs(),
+            &static_names,
+        )
+        .map_err(err)?;
+        let mut water_names = static_names.clone();
+        water_names.extend([
+            "u_field",
+            "u_field_xf",
+            "u_obstacles",
+            "u_obstacles_b",
+            "u_ripples",
+            "u_ripples_b",
+            "u_ripple_count",
+        ]);
+        let water_prog = Program::new(
+            &gl,
+            &shaders::water_vs(),
+            &shaders::water_fs(),
+            &water_names,
+        )
+        .map_err(err)?;
         let mut skinned_names = common.to_vec();
         skinned_names.extend(["u_model", "u_joint_tex", "u_color", "u_eye", "u_depth_bias"]);
         let skinned_prog = Program::new(
             &gl,
             &shaders::skinned_vs(),
+            &shaders::static_fs(),
+            &skinned_names,
+        )
+        .map_err(err)?;
+        let crowd_prog = Program::new(
+            &gl,
+            &shaders::crowd_vs(),
             &shaders::static_fs(),
             &skinned_names,
         )
@@ -354,6 +453,9 @@ impl Renderer {
                 "u_px",
                 "u_near_far",
                 "u_line_color",
+                "u_inv_view_proj",
+                "u_eye",
+                "u_fog",
             ],
         )
         .map_err(err)?;
@@ -377,6 +479,8 @@ impl Renderer {
             gl,
             canvas,
             static_prog,
+            water_prog,
+            crowd_prog,
             skinned_prog,
             post_prog,
             decal_prog,
@@ -393,6 +497,17 @@ impl Renderer {
             height: 0,
             pixel_ratio: 1.0,
             stats: FrameStats::default(),
+            time: 0.0,
+            field_tex: None,
+            field_xf: [0.0; 4],
+            water_animation: true,
+            obstacles: Vec::new(),
+            obstacle_u: [0.0; 16],
+            obstacle_b: [0.0; 16],
+            ripple_u: [0.0; 32],
+            ripple_b: [0.0; 32],
+            ripple_count: 0,
+            crowd_names: Vec::with_capacity(4),
         };
         r.add_mesh(BOX, &box_mesh(), 1.0)?;
         r.add_mesh(CAPSULE, &capsule_mesh(0.3, 1.2), 1.0)?;
@@ -575,10 +690,14 @@ impl Renderer {
                 .vertices
                 .extend_from_slice(&[c.x, c.y, c.z, uv[0], uv[1]]);
         }
+        let min = corners.iter().fold(Vec3::splat(f32::MAX), |m, c| m.min(*c));
+        let max = corners.iter().fold(Vec3::splat(f32::MIN), |m, c| m.max(*c));
         self.decals.draws.push(DecalDraw {
             texture: texture.to_owned(),
             normal: normal.normalize_or_zero(),
             first_vertex,
+            min: min - Vec3::splat(0.05),
+            max: max + Vec3::splat(0.05),
         });
         self.decals.uploaded = false;
     }
@@ -678,6 +797,9 @@ impl Renderer {
             edge_mask: m.edge_mask,
             height: m.height,
             dynamic: false,
+            water: m.water,
+            bob: m.bob,
+            chunks: Vec::new(),
         };
         self.batch_index
             .insert((name.to_owned(), region), self.batches.len());
@@ -692,6 +814,26 @@ impl Renderer {
         if let Some(r) = self.regions.get_mut(region as usize) {
             r.min = r.min.min(pos - Vec3::new(radius, 0.1, radius));
             r.max = r.max.max(pos + Vec3::new(radius, height.max(0.1), radius));
+        }
+    }
+
+    /// Grows the bounds of a static batch (per-batch culling, GAME-CAMERA-VIEWS 6).
+    fn grow_batch(&mut self, i: usize, pos: Vec3, radius: f32, height: f32) {
+        let b = &mut self.batches[i];
+        let key = IVec2::new(
+            (pos.x / CHUNK_M).floor() as i32,
+            (pos.z / CHUNK_M).floor() as i32,
+        );
+        let (lo, hi) = (
+            pos - Vec3::new(radius, 0.1, radius),
+            pos + Vec3::new(radius, height.max(0.1), radius),
+        );
+        match b.chunks.iter_mut().find(|c| c.0 == key) {
+            Some(c) => {
+                c.1 = c.1.min(lo);
+                c.2 = c.2.max(hi);
+            }
+            None => b.chunks.push((key, lo, hi)),
         }
     }
 
@@ -767,6 +909,8 @@ impl Renderer {
                 edge_mask,
                 height: hi.y,
                 radius,
+                water: TileShape::of_model(name).is_some(),
+                bob: bob_params(name).uniform(),
             },
         );
         self.batch_for(name, REGION_ALWAYS)
@@ -812,6 +956,7 @@ impl Renderer {
         b.instances.push(inst);
         b.uploaded = usize::MAX;
         self.grow_region(region, pos, radius * scale, height * scale);
+        self.grow_batch(i, pos, radius * scale, height * scale);
         true
     }
 
@@ -839,6 +984,7 @@ impl Renderer {
         b.uploaded = usize::MAX;
         let radius = (size.x * size.x + size.z * size.z).sqrt() * 0.5;
         self.grow_region(region, pos, radius, size.y);
+        self.grow_batch(i, pos, radius, size.y);
     }
 
     /// Replaces the instances of a dynamic batch (e.g. the player capsule) for this frame.
@@ -937,6 +1083,17 @@ impl Renderer {
         gl.tex_storage_2d(Gl::TEXTURE_2D, 1, Gl::RGBA32F, (joint_count * 4) as i32, 1);
         set_nearest(gl);
 
+        let crowd_tex = gl.create_texture().ok_or("create_texture")?;
+        gl.bind_texture(Gl::TEXTURE_2D, Some(&crowd_tex));
+        gl.tex_storage_2d(
+            Gl::TEXTURE_2D,
+            1,
+            Gl::RGBA32F,
+            (joint_count * 4) as i32,
+            MAX_CROWD as i32,
+        );
+        set_nearest(gl);
+
         let find = |n: &str| model.clips.iter().position(|c| c.name == n);
         let rest = skeleton.rest_pose();
         let nodes = skeleton.node_count();
@@ -953,10 +1110,97 @@ impl Renderer {
             joints: vec![Mat4::IDENTITY; joint_count],
             joint_data: vec![0.0; joint_count * 16],
             joint_tex,
+            crowd_data: vec![0.0; joint_count * 16 * MAX_CROWD],
+            crowd_tex,
             skeleton,
         };
         self.skinned.insert(name.to_owned(), sm);
         Ok(())
+    }
+
+    /// Sets the water clock from the elapsed game time (TECH-WATER behaviour 9).
+    pub fn set_time(&mut self, elapsed_s: f64) {
+        self.time = water_time(elapsed_s);
+    }
+
+    /// Current water clock (s in [0, 16)).
+    pub fn water_clock(&self) -> f32 {
+        self.time
+    }
+
+    /// Uploads the baked water field (RGBA16F, LINEAR, CLAMP_TO_EDGE; TECH-WATER §3).
+    pub fn set_water_field(&mut self, field: &WaterField) -> Result<(), JsValue> {
+        let gl = &self.gl;
+        let t = match &self.field_tex {
+            Some(t) => t.clone(),
+            None => gl.create_texture().ok_or("create_texture")?,
+        };
+        gl.bind_texture(Gl::TEXTURE_2D, Some(&t));
+        let flat: Vec<f32> = field.data.iter().flatten().copied().collect();
+        // SAFETY: the view is consumed by the GL call before any allocation.
+        unsafe {
+            let view = js_sys::Float32Array::view(&flat);
+            gl.tex_image_2d_with_i32_and_i32_and_i32_and_format_and_type_and_opt_array_buffer_view(
+                Gl::TEXTURE_2D,
+                0,
+                Gl::RGBA16F as i32,
+                field.width as i32,
+                field.height as i32,
+                0,
+                Gl::RGBA,
+                Gl::FLOAT,
+                Some(&view),
+            )?;
+        }
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_MIN_FILTER, Gl::LINEAR as i32);
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_MAG_FILTER, Gl::LINEAR as i32);
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_WRAP_S, Gl::CLAMP_TO_EDGE as i32);
+        gl.tex_parameteri(Gl::TEXTURE_2D, Gl::TEXTURE_WRAP_T, Gl::CLAMP_TO_EDGE as i32);
+        let size = field.size_m();
+        self.field_xf = [field.origin.x, field.origin.y, 1.0 / size.x, 1.0 / size.y];
+        self.field_tex = Some(t);
+        Ok(())
+    }
+
+    /// All foam obstacles: world XZ, radius, river coordinates `(s, c)` and whether they
+    /// stand in flowing water (TECH-WATER behaviour 6, Q-068).
+    pub fn set_water_obstacles(&mut self, obstacles: &[(Vec2, f32, f32, f32, bool)]) {
+        self.obstacles = obstacles
+            .iter()
+            .map(|&(p, r, s, c, river)| [p.x, p.y, r, s, c, f32::from(u8::from(river))])
+            .collect();
+    }
+
+    /// Ripples of this frame (world XZ, unit heading, wake strength, dip ring age or < 0).
+    pub fn set_water_ripples(&mut self, ripples: impl Iterator<Item = (Vec2, Vec2, f32, f32)>) {
+        self.ripple_count = 0;
+        for (k, (p, h, wake, ring)) in ripples.take(MAX_WATER_RIPPLES).enumerate() {
+            self.ripple_u[k * 4..k * 4 + 4].copy_from_slice(&[p.x, p.y, h.x, h.y]);
+            self.ripple_b[k * 4..k * 4 + 4].copy_from_slice(&[wake, ring, 0.0, 0.0]);
+            self.ripple_count = k as i32 + 1;
+        }
+    }
+
+    /// Picks the obstacles nearest to `center` (world XZ) into the uniform scratch.
+    fn pick_obstacles(&mut self, center: Vec2) {
+        self.obstacle_u = [0.0; 16];
+        self.obstacle_b = [0.0; 16];
+        let mut best: [(f32, usize); MAX_WATER_OBSTACLES] = [(f32::MAX, 0); MAX_WATER_OBSTACLES];
+        for (i, o) in self.obstacles.iter().enumerate() {
+            let d = Vec2::new(o[0], o[1]).distance_squared(center);
+            if let Some(k) = best.iter().position(|b| d < b.0) {
+                best[k..].rotate_right(1);
+                best[k] = (d, i);
+            }
+        }
+        for (k, (d, i)) in best.iter().enumerate() {
+            if *d == f32::MAX {
+                continue;
+            }
+            let o = self.obstacles[*i];
+            self.obstacle_u[k * 4..k * 4 + 4].copy_from_slice(&o[..4]);
+            self.obstacle_b[k * 4..k * 4 + 2].copy_from_slice(&o[4..6]);
+        }
     }
 
     fn upload(gl: &Gl, b: &mut Batch) {
@@ -1012,6 +1256,7 @@ impl Renderer {
         camera: &FollowCamera,
         player: Vec3,
         characters: &[(&str, CharacterDraw)],
+        crowd: &[(&'static str, CharacterDraw)],
     ) {
         let (w, h) = (self.width, self.height);
         if w <= 0 || h <= 0 {
@@ -1023,16 +1268,15 @@ impl Renderer {
 
         // Occluder fade (GAME-PLAYER §2): screen circle around the player's chest.
         let chest = player + Vec3::Y * 0.7;
-        let fade = match project(view_proj, chest) {
+        // (not in first person, GAME-CAMERA-VIEWS 8)
+        let fade = match project(view_proj, chest).filter(|_| camera.occluder_fade()) {
             Some(ndc) => {
                 let px = Vec2::new(
                     (ndc.x * 0.5 + 0.5) * w as f32,
                     (ndc.y * 0.5 + 0.5) * h as f32,
                 );
                 let px_per_m = h as f32
-                    / (2.0
-                        * camera.distance()
-                        * (camera.params.vertical_fov_deg.to_radians() * 0.5).tan());
+                    / (2.0 * camera.fade_distance() * (camera.fov_deg().to_radians() * 0.5).tan());
                 let depth = -(view * chest.extend(1.0)).z;
                 Vec4::new(px.x, px.y, 1.1 * px_per_m, depth)
             }
@@ -1040,6 +1284,8 @@ impl Renderer {
         };
 
         let _ = self.upload_decals();
+        let target = camera.target;
+        self.pick_obstacles(Vec2::new(target.x, target.z));
         let gl = &self.gl;
         for b in &mut self.batches {
             Self::upload(gl, b);
@@ -1058,9 +1304,10 @@ impl Renderer {
         gl.clear_bufferfv_with_f32_array(Gl::COLOR, 1, &[0.5, 1.0, 0.5, 0.0]);
         gl.clear_bufferfi(Gl::DEPTH_STENCIL, 0, 1.0, 0);
 
-        // Static batches.
+        // Static batches (water tiles last, with the water program; TECH-WATER).
         self.set_common(&self.static_prog, &view, &view_proj, fade);
         let gl = &self.gl;
+        gl.uniform1f(self.static_prog.u("u_time"), self.time);
         gl.active_texture(Gl::TEXTURE0);
         gl.bind_texture(Gl::TEXTURE_2D, Some(&self.palette));
         let planes = frustum_planes(&view_proj);
@@ -1078,26 +1325,64 @@ impl Renderer {
                         }))
             })
             .collect();
-        for b in &self.batches {
-            if b.instances.is_empty() {
-                continue;
+        let water_prog = self.water_animation && self.field_tex.is_some();
+        for pass in [false, true] {
+            if pass && water_prog {
+                self.set_common(&self.water_prog, &view, &view_proj, fade);
+                let gl = &self.gl;
+                let p = &self.water_prog;
+                gl.uniform1f(p.u("u_time"), self.time);
+                gl.uniform4f(p.u("u_bob"), 0.0, 0.0, 0.0, 0.0);
+                gl.active_texture(Gl::TEXTURE2);
+                gl.bind_texture(Gl::TEXTURE_2D, self.field_tex.as_ref());
+                gl.uniform1i(p.u("u_field"), 2);
+                gl.active_texture(Gl::TEXTURE0);
+                let xf = self.field_xf;
+                gl.uniform4f(p.u("u_field_xf"), xf[0], xf[1], xf[2], xf[3]);
+                gl.uniform4fv_with_f32_array(p.u("u_obstacles"), &self.obstacle_u);
+                gl.uniform4fv_with_f32_array(p.u("u_obstacles_b"), &self.obstacle_b);
+                gl.uniform4fv_with_f32_array(p.u("u_ripples"), &self.ripple_u);
+                gl.uniform4fv_with_f32_array(p.u("u_ripples_b"), &self.ripple_b);
+                gl.uniform1i(p.u("u_ripple_count"), self.ripple_count);
             }
-            if !visible.get(b.region as usize).copied().unwrap_or(true) {
-                stats.culled_batches += 1;
-                continue;
+            let prog = if pass && water_prog {
+                &self.water_prog
+            } else {
+                &self.static_prog
+            };
+            let gl = &self.gl;
+            for b in &self.batches {
+                if b.instances.is_empty() || b.water != pass {
+                    continue;
+                }
+                if !visible.get(b.region as usize).copied().unwrap_or(true)
+                    || (b.region != REGION_ALWAYS
+                        && !b.chunks.iter().any(|c| aabb_visible(&planes, c.1, c.2)))
+                {
+                    stats.culled_batches += 1;
+                    continue;
+                }
+                gl.uniform1f(prog.u("u_edge_mask"), b.edge_mask);
+                if !pass {
+                    let bob = if self.water_animation {
+                        b.bob
+                    } else {
+                        [0.0; 4]
+                    };
+                    gl.uniform4f(prog.u("u_bob"), bob[0], bob[1], bob[2], bob[3]);
+                }
+                gl.bind_vertex_array(Some(&b.vao));
+                gl.draw_elements_instanced_with_i32(
+                    Gl::TRIANGLES,
+                    b.index_count,
+                    Gl::UNSIGNED_INT,
+                    0,
+                    b.instances.len() as i32,
+                );
+                stats.draw_calls += 1;
+                stats.instances += b.instances.len() as u32;
+                stats.triangles += (b.index_count as u32 / 3) * b.instances.len() as u32;
             }
-            gl.uniform1f(self.static_prog.u("u_edge_mask"), b.edge_mask);
-            gl.bind_vertex_array(Some(&b.vao));
-            gl.draw_elements_instanced_with_i32(
-                Gl::TRIANGLES,
-                b.index_count,
-                Gl::UNSIGNED_INT,
-                0,
-                b.instances.len() as i32,
-            );
-            stats.draw_calls += 1;
-            stats.instances += b.instances.len() as u32;
-            stats.triangles += (b.index_count as u32 / 3) * b.instances.len() as u32;
         }
 
         // Skinned characters.
@@ -1105,6 +1390,9 @@ impl Renderer {
             self.set_common(&self.skinned_prog, &view, &view_proj, fade);
         }
         for (name, draw) in characters {
+            if !character_visible(&planes, draw.pos) {
+                continue; // beyond the close views' far plane or off screen
+            }
             let Some(sm) = self.skinned.get_mut(*name) else {
                 continue;
             };
@@ -1141,7 +1429,7 @@ impl Renderer {
                 gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
                 gl.uniform1f(p.u("u_depth_bias"), 0.0);
             }
-            let model = Mat4::from_translation(draw.pos) * Mat4::from_rotation_y(draw.yaw);
+            let model = draw.model();
             gl.uniform_matrix4fv_with_f32_array(p.u("u_model"), false, &model.to_cols_array());
             gl.bind_vertex_array(Some(&sm.vao));
             gl.active_texture(Gl::TEXTURE0);
@@ -1161,6 +1449,93 @@ impl Renderer {
                 );
                 stats.draw_calls += 1;
                 stats.triangles += part.index_count as u32 / 3;
+            }
+        }
+
+        // Instanced skinned crowds (ambient animals): one draw call per model and material.
+        self.crowd_names.clear();
+        for (name, _) in crowd {
+            if !self.crowd_names.contains(name) && self.skinned.contains_key(*name) {
+                self.crowd_names.push(name);
+            }
+        }
+        if !self.crowd_names.is_empty() {
+            self.set_common(&self.crowd_prog, &view, &view_proj, fade);
+            let gl = &self.gl;
+            let p = &self.crowd_prog;
+            gl.uniform1f(p.u("u_edge_mask"), 1.0);
+            gl.uniform1f(p.u("u_depth_bias"), 0.0);
+            gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
+            gl.uniform_matrix4fv_with_f32_array(
+                p.u("u_model"),
+                false,
+                &Mat4::IDENTITY.to_cols_array(),
+            );
+            gl.uniform1i(p.u("u_joint_tex"), 1);
+        }
+        for k in 0..self.crowd_names.len() {
+            let name = self.crowd_names[k];
+            let Some(sm) = self.skinned.get_mut(name) else {
+                continue;
+            };
+            let n_joints = sm.joints.len();
+            let mut n = 0usize;
+            for (_, draw) in crowd
+                .iter()
+                .filter(|(m, d)| *m == name && character_visible(&planes, d.pos))
+                .take(MAX_CROWD)
+            {
+                pose_character(sm, draw);
+                let model = draw.model();
+                for (j, m) in sm.joints.iter().enumerate() {
+                    let o = (n * n_joints + j) * 16;
+                    sm.crowd_data[o..o + 16].copy_from_slice(&(model * *m).to_cols_array());
+                }
+                n += 1;
+            }
+            if n == 0 {
+                continue;
+            }
+            let gl = &self.gl;
+            let p = &self.crowd_prog;
+            gl.active_texture(Gl::TEXTURE1);
+            gl.bind_texture(Gl::TEXTURE_2D, Some(&sm.crowd_tex));
+            // SAFETY: the view is consumed by the GL call before any allocation.
+            unsafe {
+                let view = js_sys::Float32Array::view(&sm.crowd_data[..n * n_joints * 16]);
+                let _ = gl
+                    .tex_sub_image_2d_with_i32_and_i32_and_u32_and_type_and_opt_array_buffer_view(
+                        Gl::TEXTURE_2D,
+                        0,
+                        0,
+                        0,
+                        (n_joints * 4) as i32,
+                        n as i32,
+                        Gl::RGBA,
+                        Gl::FLOAT,
+                        Some(&view),
+                    );
+            }
+            gl.bind_vertex_array(Some(&sm.vao));
+            gl.active_texture(Gl::TEXTURE0);
+            for part in &sm.parts {
+                gl.bind_texture(Gl::TEXTURE_2D, Some(&part.texture));
+                let c = if part.textured {
+                    [1.0, 1.0, 1.0, 0.0]
+                } else {
+                    [part.color[0], part.color[1], part.color[2], 1.0]
+                };
+                gl.uniform4f(p.u("u_color"), c[0], c[1], c[2], c[3]);
+                gl.draw_elements_instanced_with_i32(
+                    Gl::TRIANGLES,
+                    part.index_count,
+                    Gl::UNSIGNED_INT,
+                    part.first_index * 4,
+                    n as i32,
+                );
+                stats.draw_calls += 1;
+                stats.crowd_draw_calls += 1;
+                stats.triangles += part.index_count as u32 / 3 * n as u32;
             }
         }
 
@@ -1193,6 +1568,9 @@ impl Renderer {
             gl.polygon_offset(-1.0, -4.0);
             gl.bind_vertex_array(self.decals.vao.as_ref());
             for d in &self.decals.draws {
+                if !aabb_visible(&planes, d.min, d.max) {
+                    continue;
+                }
                 let Some(t) = self.decal_textures.get(&d.texture) else {
                     continue;
                 };
@@ -1234,7 +1612,20 @@ impl Renderer {
         gl.active_texture(Gl::TEXTURE0);
         gl.uniform2f(p.u("u_texel"), 1.0 / w as f32, 1.0 / h as f32);
         gl.uniform1f(p.u("u_px"), self.outline_px());
-        gl.uniform2f(p.u("u_near_far"), NEAR_M, FAR_M);
+        gl.uniform2f(p.u("u_near_far"), camera.near(), camera.far());
+        // sky + distance haze of the close views (GAME-CAMERA-VIEWS 5, 7; sky.rs)
+        let inv = view_proj.inverse();
+        gl.uniform_matrix4fv_with_f32_array(p.u("u_inv_view_proj"), false, &inv.to_cols_array());
+        let eye = camera.eye();
+        gl.uniform3f(p.u("u_eye"), eye.x, eye.y, eye.z);
+        let fog = camera.fog();
+        gl.uniform4f(
+            p.u("u_fog"),
+            fog.start,
+            fog.end,
+            fog.amount,
+            camera.sky_amount(),
+        );
         gl.uniform3f(p.u("u_line_color"), OUTLINE.x, OUTLINE.y, OUTLINE.z);
         gl.draw_arrays(Gl::TRIANGLES, 0, 3);
         stats.draw_calls += 1;
@@ -1454,6 +1845,34 @@ pub fn cylinder_mesh(segments: u32, top: bool, inner: bool) -> MeshData {
     m
 }
 
+/// Butterfly (GAME-AMBIENT 8): two flat wings (a little oversized, comic style) in the XZ plane, facing up, body along +Z;
+/// the wing beat is an instance scale on X (0 = folded, 1 = open).
+pub fn butterfly_mesh() -> MeshData {
+    let mut m = MeshData::default();
+    for side in [-1.0f32, 1.0] {
+        let base = m.positions.len() as u32;
+        // comic-sized (≈ 0.34 m wingspan) so it reads from the high camera
+        for (x, z) in [
+            (0.0, 0.035),
+            (0.085, 0.06),
+            (0.095, -0.005),
+            (0.06, -0.055),
+            (0.0, -0.03),
+        ] {
+            m.positions.push([side * x * 1.8, 0.0, z * 1.8]);
+            m.normals.push([0.0, 1.0, 0.0]);
+            m.uvs.push([0.0, 0.0]);
+        }
+        let fan = [[0, 1, 2], [0, 2, 3], [0, 3, 4]];
+        for t in fan {
+            // counter-clockwise seen from above (+Y)
+            let t = if side < 0.0 { [t[0], t[2], t[1]] } else { t };
+            m.indices.extend(t.iter().map(|k| base + k));
+        }
+    }
+    m
+}
+
 pub fn box_mesh() -> MeshData {
     let mut m = MeshData::default();
     let faces: [(Vec3, Vec3, Vec3); 5] = [
@@ -1517,6 +1936,15 @@ mod tests {
         let (lo, hi) = box_mesh().bounds();
         assert!(lo.abs_diff_eq(Vec3::new(-0.5, 0.0, -0.5), 1e-6));
         assert!(hi.abs_diff_eq(Vec3::new(0.5, 1.0, 0.5), 1e-6));
+    }
+
+    #[test]
+    fn butterfly_wings_face_up() {
+        let m = butterfly_mesh();
+        for t in m.indices.chunks(3) {
+            let [a, b, c] = [0, 1, 2].map(|k| Vec3::from(m.positions[t[k] as usize]));
+            assert!((b - a).cross(c - a).y > 0.0, "wing triangle faces down");
+        }
     }
 
     #[test]

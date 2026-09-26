@@ -19,7 +19,9 @@ updated: 2026-09-26
 2. **High-angle follow camera** (user decision 2026-09-26, Q-049), like zoo-park
    simulation games: looks down at ≈ 55°, ≈ 14 m from the player (portrait), narrow **vertical**
    FOV of 35° in every screen orientation (Q-052, user decision 2026-09-26; isometric-like),
-   no sky. The player stays near the screen centre.
+   no sky. The player stays near the screen centre. (The close **look-around** and
+   **first-person** views, with sky and distance fog, are specified in GAME-CAMERA-VIEWS;
+   this zoo view stays the default.)
    - Rotation by dragging (touch) or mouse, in 45° steps with smooth easing.
    - Limited zoom (pinch / mouse wheel) between ≈ 10 m and ≈ 20 m distance; zoom-out is
      capped so an animal's hiding place is not visible from its own enclosure (GAME-LEVEL-1).

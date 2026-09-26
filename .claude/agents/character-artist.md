@@ -25,18 +25,21 @@ Read first: `CLAUDE.md`, `specs/README.md`, `specs/glossary.md`, `specs/30-art/a
 
 ## Pipeline you follow
 
-1. **Brief** (`brief.md`): age look, proportions (head-to-body ratio), silhouette, clothing,
+1. **Brief** (`brief.md`), every prompt starting with the CHARACTER SHEET STYLE block of
+   `art/style/style.md` verbatim (APIPE-010): age look, proportions (head-to-body ratio), silhouette, clothing,
    colours (from the shared palette), personality, and a ready-to-use **image prompt** for
    each turnaround view (front, side, back, ¾) plus an expression sheet. Views must share
    scale, pose (A-pose) and plain background.
 2. **Turnaround** images → human review → `concept_approved = true` in the manifest
    (the user approves, not you).
-3. **Model** in Blender via the Blender MCP server: blocky/voxel-inspired, low poly
-   (≤ 3 000 tris), vertex colours or one ≤ 512² atlas, origin at the feet, Y-up, 1 unit = 1 m.
+3. **Model** in Blender via the Blender MCP server: comic style (`art/style/style.md`),
+   rounded chunky low poly (≤ 3 000 tris), smooth normals, flat-colour body atlas + face
+   decal atlas (ART-RIG), no modelled outlines (the renderer draws them), origin at the
+   feet, Y-up, 1 unit = 1 m.
 4. **Rig**: one shared humanoid skeleton for all human characters (player_girl, player_boy,
    visitors) so animations are reusable. Keep bone count low (target ≤ 24, max 32 — WebGL2
    uniform budget for GPU skinning), ≤ 4 bone influences per vertex, consistent bone names.
-   Blocky characters may use rigid parenting per body part where it looks better.
+   Smooth skinning at joints; head, hair and face rigid on `head` (ART-RIG §3).
 5. **Animate**: animation names and loop flags exactly as in ART-RIG; 30 fps authoring;
    root motion off (the game moves the character); `walk`/`run` speeds documented in m/s
    so gameplay can match foot speed.

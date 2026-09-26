@@ -29,19 +29,31 @@ one looks like. Skeleton, clips, sockets, expressions and export rules are in AR
 
 1. All human characters use the shared `human` skeleton of ART-RIG §2. `player_girl` and
    `player_boy` additionally share the exact rest pose, so their clips are identical.
-2. Player characters look ~6–8 years old, blocky/voxel-inspired as in
-   `art/reference/ref-player-style.jpg`: large cube head (head-to-body ≈ 1 : 3.5), box torso, box
-   limbs, pixel-art face, flat colour areas. Height 1.20 m to the top of the skull.
+2. Player characters look ~6–8 years old in the **comic style** of `art/style/style.md`
+   (Q-010 answered): rounded chunky shapes, large round head (head-to-body ≈ 1 : 3.5),
+   big expressive hand-drawn eyes, flat colours with one hard shadow tone (cel shading),
+   bold dark-brown outlines drawn by the renderer (ART-RIG §3.5). Height 1.20 m to the top
+   of the skull. The girl's design (hair, clothes, colours) is taken from
+   `art/reference/ref-player-style.jpg`, translated from blocky to comic.
 3. `player_girl` and `player_boy` are clearly distinguishable **at a glance and from
    behind** (hair length and outfit colour), because the child chooses by tapping a
    preview without reading (GAME-PLAYER §1).
-4. Player characters wear **no hat or headwear**, so they never look like a visitor that a
+4. **Readable from the high game camera** (≈ 55° from above, Q-049), where a character is
+   small on screen: the top of the head (hair shape and colour) and the shoulders/shirt
+   are the main identifiers, so hair and shirt use large, strongly contrasting colour
+   areas (no fine patterns that turn to noise at small size — stripes are few and
+   broad), and the silhouette from above differs (girl: long hair covering the upper
+   back; boy: short hair with tuft, bare knees, yellow shirt). Both must stand out
+   against grass green, sand paths and wood brown.
+5. Player characters wear **no hat or headwear**, so they never look like a visitor that a
    hint describes ("the lady with the red hat").
-5. Visitors differ clearly by silhouette and colour (hat, glasses, stroller, balloon…) so a
+6. Visitors differ clearly by silhouette and colour (hat, glasses, stroller, balloon…) so a
    child can be told "ask the lady with the red hat".
-6. The concept folder of each character contains `brief.md` and the full turnaround (see
-   ART-PIPELINE §3), plus `expressions.png` with the 8 expression cells of ART-RIG §6.
-7. All colours come from the shared palette (`art/palette.png`, ADIR-002). The
+7. The concept folder of each character contains `brief.md` and the full turnaround (see
+   ART-PIPELINE §3), plus `expressions.png` with the 8 hand-drawn comic expressions of ART-RIG §6. Every
+   prompt in a `brief.md` contains the CHARACTER SHEET STYLE block and its negative prompt
+   the NEGATIVE suffix of `art/style/style.md` verbatim (APIPE-010).
+8. All colours come from the shared palette (`art/palette.png`, ADIR-002). The
    hex values below are proposals until that palette exists.
 
 ## Character details
@@ -52,9 +64,9 @@ Kept close to the girl in `art/reference/ref-player-style.jpg`.
 
 | Part | Design |
 |---|---|
-| Hair | Long, straight, dark brown, falls behind the shoulders to the upper back; blocky straight fringe, slightly side-parted; one block-step "curl" at the ends. Rigid on `head`. |
-| Face | Pixel-art: 2 × 2 px dark brown eyes with a white highlight, short brows in hair colour, small rose mouth, light peach skin. |
-| Top | White short-sleeve T-shirt with 4 horizontal blue stripes (body and sleeves), sleeves end at mid upper arm. |
+| Hair | Long, straight, dark brown, falls behind the shoulders to the upper back as one chunky rounded mass; soft straight fringe, slightly side-parted; ends flick slightly outwards. Rigid on `head` (ends above the shoulder blades so it does not need to bend). |
+| Face | Comic face decal: big round dark-brown eyes with a white highlight, short brows in hair colour, small rose smile, light rosy cheeks, light peach skin; small rounded nose modelled. |
+| Top | White short-sleeve T-shirt with 3 broad horizontal blue stripes (body; one on each sleeve), sleeves end at mid upper arm. |
 | Belt | Brown belt at the hips. |
 | Legs | Blue denim trousers to the ankles, slightly darker cuff. |
 | Feet | White socks visible at the ankle, dark brown shoes with a white strap/sole. |
@@ -67,13 +79,13 @@ Colours (proposal): skin `#F2C29B` / shade `#D9A27E`, hair `#4A2A17` / highlight
 
 ### `player_boy`
 
-Matching counterpart: same body, same proportions, same pixel-face style; differs in
+Matching counterpart: same body, same proportions, same comic face style; differs in
 hair, outfit colours and trouser length.
 
 | Part | Design |
 |---|---|
-| Hair | Short chestnut-brown hair with a blocky tuft sticking up at the front and short sides; ears visible. Rigid on `head`. |
-| Face | Same eye/brow/mouth style as `player_girl`, eyes `#2B1B12`, brows in hair colour, light peach skin. |
+| Hair | Short chestnut-brown hair with a big rounded tuft sticking up at the front and short sides; ears visible. Rigid on `head`. |
+| Face | Same comic face style as `player_girl` (big round eyes, highlight, brows in hair colour, small grin, rosy cheeks), light peach skin. |
 | Top | Mustard-yellow short-sleeve T-shirt with one broad green horizontal band across the chest (and sleeve edges), untucked. |
 | Legs | Navy knee-length shorts; knees visible (skin). |
 | Feet | White socks to mid-calf with a green stripe, green sneakers with white soles. |
@@ -96,14 +108,18 @@ zookeeper", both get a zoo vest over the same base design.
 | ACHAR-004 | Given the asset list above and `assets/manifest.toml`, then the `animations` of every character entry are equal. | asset |
 | ACHAR-005 | Given the character choice screen, when five children aged 4–6 are asked "which one is the girl / the boy", then each child picks correctly from the front and from the back view. | manual |
 | ACHAR-006 | Given the player turnarounds, then neither player character wears headwear. | manual |
+| ACHAR-007 | Given both player models rendered in-game from the high camera (≈ 55°, default zoom) at ≤ 80 px character height on a 1080×2340 screen over grass, path and wood backgrounds, then reviewers identify girl vs. boy correctly in every shot and the stripes/band do not flicker or turn to noise. | manual |
+| ACHAR-008 | *Retired — duplicate of APIPE-010 (covers every `brief.md` incl. `art/characters/`).* | — |
 
 ## Open questions
 
 - Q-001 Player role/story (influences clothing: visitor vs. zookeeper uniform).
 - Q-009 Who creates the turnaround images.
-- Q-010 Voxel vs. smooth style.
+- Q-010 Art style — answered: comic (`art/style/style.md`).
+- Q-049 answered: high-angle game camera (readability from above, §4).
 - Q-015 Is the pirate an NPC, or is the pirate ship empty?
 - Q-016 How many visitor types are needed?
 - Q-026 Texture approach for body and faces.
 - Q-027 Visitor proportions and whether visitors walk.
 - Q-028 Choice of skin tone / hair beyond girl and boy.
+- Q-051 Close-up for dialogue so faces/expressions are visible.

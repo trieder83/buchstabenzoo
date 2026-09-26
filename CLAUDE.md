@@ -8,7 +8,8 @@ reading its label → find the animal where the riddle points → show the food 
 lead it home. Goal: every animal back in its enclosure. Understanding the riddle must be
 faster than guessing.
 
-- Visual style: voxel graphics — see `art/reference/`; review page `art/index.html`.
+- Visual style: **comic** (cel-shaded, bold outlines) — defined only in `art/style/style.md`;
+  high-angle zoo-park camera (~55°). Review page `art/index.html`.
 - Primary language: **German (de)**. Also **English (en)**. French (fr) planned later.
 - Targets: web browsers (desktop + mobile), later packaged for Android/iOS.
 
@@ -17,7 +18,7 @@ faster than guessing.
 - **Rendering:** raw **WebGL2** — no three.js, Babylon.js, or any other 3D engine/library.
 - **Main language: Rust.** Everything that can be Rust is Rust.
 - **Game core:** **Rust → WebAssembly** (`wasm32-unknown-unknown`) via `wasm-bindgen` /
-  `web-sys`. All game logic, simulation, voxel meshing, and rendering calls live in Rust.
+  `web-sys`. All game logic, simulation, and rendering calls live in Rust.
 - **Host shell:** minimal **TypeScript** + **Vite** — loads the WASM module, owns the
   `<canvas>`, forwards input (touch, mouse, keyboard), handles audio and asset loading.
   Keep JS thin; if logic can live in Rust, it goes in Rust.
@@ -115,14 +116,19 @@ npm --prefix web run lint && npm --prefix web test
 ## 3D asset pipeline (Blender + MCP)
 
 - **Concept first:** no modelling before the concept is approved. Concept images live in
-  `art/` and are reviewed via `art/index.html`; add every new image to `art/catalog.js`. Characters and animals
-  need a **turnaround sheet** (front, side, back, ¾); environment areas need **mockups**
+  `art/` and are reviewed via `art/index.html`; add every new image to `art/catalog.js`.
+- Order for environments: approved **style frame** → level layout → **greybox** in Blender
+  (throwaway, `art/greybox/`, never exported) → mockups generated from greybox renders +
+  style frame → approval → real modelling.
+- Characters and animals need a **turnaround sheet** (front, side, back, ¾); environment areas need **mockups**
   (overview + player view + layout). A human sets `concept_approved = true` in
   `assets/manifest.toml`. Details: `specs/30-art/asset-pipeline.md`.
 - Create and edit models in Blender through the Blender MCP tools; save the source
   `.blend` in `assets/blender/` and export the `.glb` to `assets/models/` — commit both.
-- Keep the voxel look from `art/reference/`: blocky geometry, flat shading, small palette
-  textures or vertex colours, low poly counts (mobile).
+- **One style for all prompts:** every image prompt copies the blocks from
+  `art/style/style.md` verbatim (APIPE-010). Comic look: bold outlines, flat colours, one
+  hard shadow tone, rounded chunky shapes. Outlines + cel shading come from the renderer,
+  not from textures. Low poly counts (mobile).
 - Conventions: 1 unit = 1 metre, Y-up on export, origin at the model's feet, apply
   transforms before export, name animations (`idle`, `walk`, `eat`, …) consistently.
 - Each asset is listed in a spec (e.g. `specs/30-art/animals.md`) with its required
@@ -139,7 +145,7 @@ npm --prefix web run lint && npm --prefix web test
   (GAME-LAYOUT).
 - **Child-friendly UX:** large touch targets, no reading required to navigate menus
   (icons + audio), no time pressure unless a spec says so, no ads/external links.
-- **Performance:** target 60 fps on mid-range phones — batch voxel meshes, minimise
+- **Performance:** target 60 fps on mid-range phones — batch static meshes, minimise
   draw calls, avoid per-frame allocations in the render loop.
 - **Code/identifiers/comments in English;** game content in German/English via i18n.
 - Deterministic game logic: seedable RNG so tests are reproducible.

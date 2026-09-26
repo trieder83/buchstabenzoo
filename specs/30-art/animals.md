@@ -37,7 +37,7 @@ Q-002. Animations per animal are provisional until Q-043.
 
 1. Every animal follows the common animation set `idle`, `walk` (or `swim`/`climb`),
    `eat`, `happy` — the game reacts identically to all animals.
-2. Animals are stylised and friendly (big eyes, no teeth shown), same blocky style as the
+2. Animals are stylised and friendly (big eyes, no teeth shown), same comic style (`art/style/style.md`) as the
    player character.
 3. Turnaround for quadrupeds: front, left side, back, ¾ — standing pose, all four feet on
    the ground.

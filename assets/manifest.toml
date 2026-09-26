@@ -14,3 +14,143 @@ kind = "characters"
 spec = "ART-CHARACTERS"
 concept_approved = false
 animations = ["idle", "walk", "run", "pick_up", "give", "talk", "cheer", "wave", "carry"]
+
+[[asset]]
+id = "zebra"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "hippo"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "swim", "happy"]
+
+[[asset]]
+id = "panda"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "koala"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "climb", "eat", "happy"]
+
+[[asset]]
+id = "elephant"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy"]
+
+[[asset]]
+id = "goldfish"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["swim", "eat"]
+
+[[asset]]
+id = "monkey"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "climb", "eat", "happy"]
+
+[[asset]]
+id = "giraffe"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "lion"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "snow_fox"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "style_frame"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_level1_overview"
+kind = "environment"
+spec = "GAME-LEVEL-1"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_entrance"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_food_storage"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_zebra"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_hippo"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_panda"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_river"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_pond"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_cave"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []

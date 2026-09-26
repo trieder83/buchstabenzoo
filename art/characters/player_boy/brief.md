@@ -2,42 +2,50 @@
 
 Spec: ART-CHARACTERS (look), ART-RIG (skeleton, rest pose, expressions), ART-PIPELINE §3
 (turnaround files). Status: **concept — not approved** (`assets/manifest.toml`).
-Style reference: `art/reference/ref-player-style.jpg`; designed as the matching
+Style: **comic** — `art/style/style.md` (Q-010 answered). Designed as the matching
 counterpart of `player_girl` (same body, same face style, different hair and outfit).
 
 ## Character
 
 - **Who:** the boy the child can play as; ~6–8 years old; energetic, cheerful, friendly.
-- **Style:** blocky / voxel-inspired (Minecraft-like), pixel-art face, flat colour areas,
-  no outlines, soft daylight.
+- **Style:** comic 3D cartoon, cel-shaded — rounded chunky shapes, bold dark-brown
+  outlines (drawn by the renderer in-game, ART-RIG §3.5), flat colours with one hard
+  shadow tone, big expressive hand-drawn eyes.
 - **Proportions:** identical to `player_girl` (ART-RIG §2.4 — both share the rest pose):
-  - height 1.20 m to top of skull (hair tuft ≤ 4 cm more); head block 0.34 m high, 0.34
-    wide, 0.32 deep → head-to-body ≈ 1 : 3.5
-  - torso block 0.30 wide × 0.34 high × 0.18 deep (hips at 0.50 m, shoulders at 0.84 m)
-  - arms 0.10 × 0.10 blocks, shoulder to wrist 0.34 m, cube hands
-  - legs 0.12 × 0.12 blocks, hip to ankle 0.41 m, feet/shoes 0.08 high
+  - height 1.20 m to top of skull (hair tuft ≤ 4 cm more); large round head 0.34 m high,
+    ≈ 0.34 wide → head-to-body ≈ 1 : 3.5
+  - short rounded torso (hips at 0.50 m, shoulders at 0.84 m), chunky soft limbs,
+    shoulder to wrist 0.34 m, round mitten-like hands with a thumb
+  - hip to ankle 0.41 m, slightly oversized sneakers
 - **Pose for all views:** A-pose — standing straight, legs straight at hip width, arms
   straight and 45° down from horizontal, palms down, head straight, neutral face.
-- **Silhouette key:** short hair with a tuft on top (back of the neck visible), bare knees
-  (shorts), warm yellow shirt — reads differently from the girl from every side.
+- **Readability from the high game camera** (≈ 55° from above, Q-049): seen mostly from
+  above and small on screen, so the **short chestnut hair with its big tuft** and the
+  **mustard-yellow shirt with one green band** must read as big, clean colour areas; the
+  yellow stands out against grass green, sand paths and wood brown. From above the boy
+  differs from the girl by short hair (neck visible), yellow shoulders and bare knees.
 
 ## Clothing and details
 
-- Hair: short chestnut brown, a blocky tuft sticking up at the front, short sides, ears
-  visible. **No hat.**
-- Face: same style as the girl — 2 × 2 px dark brown eyes with a white highlight pixel,
-  short chestnut brows, small rose mouth.
+- Hair: short chestnut brown, a big rounded tuft sticking up at the front, short sides,
+  ears visible. **No hat.**
+- Face (hand-drawn decal): same style as the girl — big round dark-brown eyes with a white
+  highlight, short chestnut brows, small cheeky grin, light rosy cheeks; small rounded
+  nose.
 - T-shirt: mustard yellow, short sleeves to mid upper arm, one broad green horizontal band
   across the chest and a green edge on each sleeve, untucked.
 - Navy knee-length shorts; skin-coloured knees.
-- White socks to mid-calf with one green stripe; green sneakers with white soles.
+- White socks to mid-calf with one green stripe; chunky green sneakers with white soles.
 
 ## Colours (proposal — map to the shared palette once it exists, ADIR-002)
+
+Outline colour is the global dark brown from `art/style/style.md` (renderer).
 
 | Part | Hex |
 |---|---|
 | Skin / shade | `#F2C29B` / `#D9A27E` |
-| Hair / highlight | `#8A4B22` / `#A8612F` |
+| Cheeks | `#F0A08A` |
+| Hair / shade | `#8A4B22` / `#6A3717` |
 | Eyes | `#2B1B12` (+ white `#FFFFFF` highlight) |
 | Mouth | `#C8645A` |
 | Shirt / band | `#F2B632` / `#3F8F3A` |
@@ -47,57 +55,87 @@ counterpart of `player_girl` (same body, same face style, different hair and out
 
 ## Image-generation prompts
 
-Use the **same tool, settings and framing as `player_girl`** so both sheets line up:
-portrait **1024 × 1536**, character centred, feet on the same baseline at ~92 % of the
+Use the **same tool, seed, settings and framing as `player_girl`** so both sheets line
+up: portrait **1024 × 1536**, character centred, feet on the same baseline at ~92 % of the
 image height, top of the head at ~12 %. Save as `front.png`, `side.png`, `back.png`,
 `three_quarter.png`, `expressions.png` in this folder, plus `palette.png` (or keep the
 colour table above).
 
-**Shared style block** (append to every prompt — identical to `player_girl`):
+Every prompt below = the CHARACTER SHEET STYLE block of `art/style/style.md` (verbatim,
+first paragraph) + the view paragraph. Every prompt uses the negative prompt below.
 
-> blocky voxel-style 3D character, Minecraft-inspired, cube head, box-shaped torso and
-> limbs, pixel-art face, flat colours, no outlines, soft even studio light, orthographic
-> camera, full body visible, A-pose with arms straight and 45 degrees down from
-> horizontal, legs straight at hip width, neutral expression, plain light grey background
-> (#E6E6E6), no shadow on the background, no props, no text, character turnaround
-> reference sheet style
+**Negative prompt** (all views):
 
-**Negative prompt:**
+```text
+T-pose, dynamic pose, holding objects, hat, cap, headband, backpack, jewellery, text, logo, watermark, scenery, gradient background, cropped feet, extra fingers, adult proportions, thin stripes, voxels, cubes, blocky Minecraft style, pixel art, pixelated textures, photorealistic, realistic photo, realistic fur, hyper-detailed textures, soft painterly gradients, glossy plastic, anime, watercolour, sketchy lines, inconsistent line thickness
+```
 
-> realistic, smooth skin, anime, outlines, dynamic pose, T-pose, holding objects, hat,
-> cap, backpack, jewellery, text, logo, watermark, gradient background, scenery,
-> perspective distortion, cropped feet, extra fingers, adult proportions
+### `front.png`
 
-**Character block** (insert before the style block):
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
 
-> a 7-year-old boy, head about one third of his body height, short chestnut brown hair
-> with a blocky tuft sticking up at the front and short sides, ears visible, light peach
-> skin, small dark brown pixel eyes with a white highlight, small rose mouth, mustard
-> yellow short-sleeved T-shirt with one broad green horizontal band across the chest and
-> green sleeve edges, untucked, navy blue knee-length shorts, bare knees, white socks to
-> mid-calf with a green stripe, green sneakers with white soles
+Front view, full body from head to toe, facing the camera directly. A 7-year-old boy with a large round head (about one third of his body height), short chestnut brown hair with a big rounded tuft sticking up at the front and short sides, ears visible, light peach skin with rosy cheeks, big round dark brown eyes with a white highlight, small cheeky grin, mustard yellow short-sleeved T-shirt with one broad green horizontal band across the chest and green sleeve edges, untucked, navy blue knee-length shorts, bare knees, white socks to mid-calf with a green stripe, chunky green sneakers with white soles. A-pose: arms straight and 45 degrees down from horizontal, legs straight at hip width, neutral friendly expression.
+```
 
-| File | Prompt |
-|---|---|
-| `front.png` | "Front view, facing the camera directly, " + character block + style block |
-| `side.png` | "Exact left side profile view, character facing to the left of the image, " + character block + style block + ", the hair tuft visible above the forehead" |
-| `back.png` | "Back view, character facing away from the camera, " + character block + style block + ", short hair with the back of the neck visible, no face visible" |
-| `three_quarter.png` | "Three-quarter front view, character turned 45 degrees to the left, " + character block + style block |
-| `expressions.png` | "Expression sheet of the same blocky voxel boy's cube head only, 8 heads in a 4 by 2 grid, all the same size and facing the camera, pixel-art faces: 1 neutral, 2 eyes closed blink, 3 happy smile, 4 laughing with open mouth, 5 talking with small open mouth, 6 surprised with round eyes and round mouth, 7 thinking with eyes looking up and mouth to one side, 8 slightly sad with lowered brows (gentle, not crying), " + character block + ", flat colours, plain light grey background (#E6E6E6), no text" |
+### `side.png`
 
-**Tip for consistency:** if the tool drifts between separate generations, generate one
-wide sheet (2048 × 1024) with the prompt "Character turnaround sheet with four views side
-by side in one row, same scale and baseline: front, left side, back, three-quarter, " +
-character block + style block, then crop it into the four files. For a direct
-comparison, also generate "the blocky voxel girl and boy standing side by side in
-A-pose, front view, same height" (girl character block + "and" + boy character block +
-style block) — useful for the choice-screen check (ACHAR-005).
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
+
+Exact left side profile view, full body from head to toe, the character faces the left edge of the image. A 7-year-old boy with a large round head (about one third of his body height), short chestnut brown hair with a big rounded tuft sticking up above the forehead and short sides, ear visible, light peach skin with rosy cheeks, big round dark brown eye with a white highlight, small rounded nose, mustard yellow short-sleeved T-shirt with one broad green horizontal band across the chest and green sleeve edges, untucked, navy blue knee-length shorts, bare knees, white socks to mid-calf with a green stripe, chunky green sneakers with white soles. A-pose: arms straight and 45 degrees down from horizontal, legs straight at hip width, neutral friendly expression.
+```
+
+### `back.png`
+
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
+
+Back view, full body from head to toe, the character faces away from the camera, no face visible. A 7-year-old boy with a large round head (about one third of his body height), short chestnut brown hair with the tip of a rounded tuft showing on top, short at the back so the neck is visible, ears visible, mustard yellow short-sleeved T-shirt with one broad green horizontal band around the chest and green sleeve edges, untucked, navy blue knee-length shorts, bare knees, white socks to mid-calf with a green stripe, chunky green sneakers with white soles. A-pose: arms straight and 45 degrees down from horizontal, legs straight at hip width.
+```
+
+### `three_quarter.png`
+
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
+
+Three-quarter front view, full body from head to toe, the character is turned 45 degrees to the left. A 7-year-old boy with a large round head (about one third of his body height), short chestnut brown hair with a big rounded tuft sticking up at the front and short sides, ears visible, light peach skin with rosy cheeks, big round dark brown eyes with a white highlight, small cheeky grin, mustard yellow short-sleeved T-shirt with one broad green horizontal band across the chest and green sleeve edges, untucked, navy blue knee-length shorts, bare knees, white socks to mid-calf with a green stripe, chunky green sneakers with white soles. A-pose: arms straight and 45 degrees down from horizontal, legs straight at hip width, neutral friendly expression.
+```
+
+### `expressions.png`
+
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
+
+Expression sheet of the same boy: this sheet shows only his head and shoulders, 8 portraits in a 4 by 2 grid, all the same size, all facing the camera. Large round head, short chestnut brown hair with a big rounded tuft at the front, ears visible, light peach skin with rosy cheeks, big round dark brown eyes with a white highlight, mustard yellow T-shirt collar with a green band. Expressions in this order: 1 neutral friendly, 2 eyes closed (blink), 3 happy smile, 4 laughing with open mouth, 5 talking with a small open mouth, 6 surprised with wide round eyes and round mouth, 7 thinking with eyes looking up and mouth pulled to one side, 8 slightly sad with lowered brows (gentle, not crying).
+```
+
+### Optional: `sheet.png` (all four views in one image)
+
+If the tool drifts between separate generations, generate this wide sheet
+(2048 × 1024) and crop it into `front.png`, `side.png`, `back.png`, `three_quarter.png`.
+
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
+
+Turnaround with four views side by side in one row, same scale and same baseline: front, left side profile, back, three-quarter front. A 7-year-old boy with a large round head (about one third of his body height), short chestnut brown hair with a big rounded tuft sticking up at the front and short sides, ears visible, light peach skin with rosy cheeks, big round dark brown eyes with a white highlight, small cheeky grin, mustard yellow short-sleeved T-shirt with one broad green horizontal band across the chest and green sleeve edges, untucked, navy blue knee-length shorts, bare knees, white socks to mid-calf with a green stripe, chunky green sneakers with white soles. A-pose in every view: arms straight and 45 degrees down from horizontal, legs straight at hip width, neutral friendly expression.
+```
+
+### Optional: `pair_front.png` (girl and boy side by side — for ACHAR-005)
+
+```text
+Comic-style 3D cartoon character sheet with a cel-shaded look: bold clean dark-brown outlines, flat colour areas with one hard-edged shadow tone, simple rounded chunky shapes with friendly exaggerated proportions, big expressive eyes, like a colourful children's comic book brought into 3D. No gradients, no fine texture detail. Even soft studio light, orthographic view, plain light grey background (#E6E6E6), same scale in every view.
+
+Front view of two children, full body from head to toe, standing side by side at the same height and scale, both in A-pose with arms straight and 45 degrees down from horizontal and legs straight at hip width, neutral friendly expressions. Left: a 7-year-old girl with a large round head, long straight dark brown hair as one chunky rounded mass falling behind her shoulders with a soft straight fringe, light peach skin with rosy cheeks, big round dark brown eyes, white short-sleeved T-shirt with three broad horizontal blue stripes, brown belt, blue denim trousers with darker cuffs, white socks, chunky dark brown shoes with white straps. Right: a 7-year-old boy with a large round head, short chestnut brown hair with a big rounded tuft at the front, ears visible, light peach skin with rosy cheeks, big round dark brown eyes, mustard yellow short-sleeved T-shirt with one broad green band across the chest, navy knee-length shorts, bare knees, white socks with a green stripe, chunky green sneakers.
+```
 
 ## Review checklist (before `concept_approved = true` — user decides)
 
 - [ ] Clearly a matching pair with `player_girl` (same body, same face style, same height).
+- [ ] Every prompt contains the CHARACTER SHEET STYLE block and the NEGATIVE suffix
+      verbatim (APIPE-010, ACHAR-008).
 - [ ] Same scale, baseline and A-pose in all four views; plain background.
 - [ ] Head-to-body ≈ 1 : 3.5; no headwear.
-- [ ] Distinguishable from `player_girl` from the front and from behind.
-- [ ] Expression sheet has all 8 expressions in the order of ART-RIG §6.2.
-- [ ] Rigid-skinning exceptions: _none planned_.
+- [ ] Distinguishable from `player_girl` from the front, from behind and from above.
+- [ ] Expression sheet has all 8 expressions in the order of ART-RIG §6.2; eyes and mouth
+      are clean shapes that work as a 64 × 64 px face decal.

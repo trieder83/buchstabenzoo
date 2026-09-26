@@ -29,7 +29,7 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
 1. 1 unit = 1 m, Y-up, the character faces **+Z** in glTF (Blender: faces −Y before
    export). The character's right side is at **−X**. Suffix `_l`/`_r` always means the
    character's own left/right.
-2. The origin is on the ground between the feet (ART-PIPELINE §6). All transforms are
+2. The origin is on the ground between the feet (ART-PIPELINE §9). All transforms are
    applied on the mesh before skinning; the armature object has identity transform.
 
 ### 2. Skeleton (`human` rig)
@@ -43,7 +43,7 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
       ├─ spine                  lower torso
       │  └─ chest               upper torso, carries arms and neck
       │     ├─ neck
-      │     │  └─ head          whole head block incl. hair and face
+      │     │  └─ head          whole head incl. hair and face decal
       │     ├─ shoulder_l
       │     │  └─ upper_arm_l
       │     │     └─ lower_arm_l
@@ -76,8 +76,8 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
    | `hips` | 0 | 0.50 | 0 | top of the legs |
    | `spine` | 0 | 0.56 | 0 | |
    | `chest` | 0 | 0.70 | 0 | |
-   | `neck` | 0 | 0.84 | 0 | top of torso block |
-   | `head` | 0 | 0.86 | 0 | bottom of head block; head block 0.34 m high → top of skull 1.20 m |
+   | `neck` | 0 | 0.84 | 0 | top of torso |
+   | `head` | 0 | 0.86 | 0 | base of the head; head 0.34 m high → top of skull 1.20 m |
    | `shoulder_l` | 0.10 | 0.80 | 0 | |
    | `upper_arm_l` | 0.19 | 0.80 | 0 | shoulder joint |
    | `lower_arm_l` | 0.19 + 0.17·cos45° | 0.80 − 0.17·sin45° | 0 | elbow (upper arm 0.17 m) |
@@ -87,7 +87,8 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
    | `foot_l` | 0.075 | 0.07 | 0 | ankle |
 
    Character height (top of skull) is 1.20 m; hair may add ≤ 0.04 m. Head-to-body ratio
-   ≈ 1 : 3.5 (see ART-CHARACTERS for the look).
+   ≈ 1 : 3.5 (see ART-CHARACTERS for the look). The art style is comic (Q-010 answered,
+   `art/style/style.md`); the joint layout does not depend on it.
 5. **Bone orientation:** all characters are built from one template armature
    (`assets/blender/characters/_rig_human.blend`), so every joint has the same local axes
    (bone roll) in every character. Only joint *positions* may differ between characters of
@@ -111,12 +112,19 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
    game attaches at runtime (those are separate assets).
 2. **≤ 4 influences per vertex** (`JOINTS_0`/`WEIGHTS_0` only, no `JOINTS_1`). Weights
    are normalised (sum 1 ± 0.001). `JOINTS_0` is stored as `UNSIGNED_BYTE`.
-3. **Blocky parts are rigid:** every vertex of a body block (head, torso, upper/lower arm,
-   hand, upper/lower leg, foot) is weighted 1.0 to a single joint. Gaps at elbows and knees
-   are hidden by overlapping blocks, not by smooth weights. Smooth (2–4 joint) weights are
-   allowed only where a rigid seam looks clearly wrong in review (e.g. a skirt or long
-   hair over the shoulders) and must be listed in the character's `brief.md`.
+3. **Smooth skinning** for the rounded comic body: elbows, knees, shoulders, hips, spine
+   and neck blend over 2–3 joints so they bend without gaps or collapsing volume. Rigid
+   (single joint, weight 1.0) parts: every vertex of the head, hair and `face` primitive
+   is weighted to `head` only (the face decal must never stretch); hands to `hand_*`;
+   shoes to `foot_*`.
 4. No morph targets (blend shapes). No scale in the bind pose.
+5. **Outlines are not modelled.** The comic ink outline is drawn by the renderer
+   (inverted hull or screen-space edge pass — TECH decides, Q-050). The mesh therefore has
+   **smooth (averaged) normals** without hard splits, so cel shading bands and a
+   normal-extruded hull stay continuous, and no open edges except where the outline
+   should show (e.g. sleeve and trouser openings are closed or doubled). No outline
+   geometry, no back-face "shell" meshes, no drawn lines in the textures except the face
+   decal.
 
 ### 4. Animation clips
 
@@ -173,26 +181,35 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
 ### 5. Clip ownership and budgets
 
 1. Per character `.glb`: ≤ 10 clips, only the clips listed for it (ART-CHARACTERS and
-   `assets/manifest.toml` must match this spec). Triangles ≤ 3 000 (target ≤ 1 500 for the
-   blocky look); `.glb` file size ≤ 400 KB.
+   `assets/manifest.toml` must match this spec). Triangles ≤ 3 000 (target ≤ 2 500 — the
+   rounded comic shapes need more than boxes, but the character is small on screen under
+   the high camera, Q-049); textures: body flat-colour atlas ≤ 256 × 256 plus face decal
+   atlas ≤ 256 × 128; `.glb` file size ≤ 400 KB including textures.
 2. Player clips are authored once on `player_girl` and copied unchanged to `player_boy`
    (identical rest pose, §2.4).
 
 ### 6. Facial expressions
 
-1. Faces are **pixel-art texture cells, not bones**. The `face` primitive is a set of quads
-   on the front of the head block whose UVs point to cell 0 (`neutral`) of the
-   character's atlas. The renderer selects an expression by adding a per-draw UV offset.
-2. Face atlas region: 8 cells of 32 × 32 px in a 4 × 2 grid, sampled with nearest
-   filtering, in this order: `neutral`, `blink`, `happy`, `laugh`, `talk`, `surprised`,
-   `thinking`, `sad`. Texture approach (face-only atlas vs. whole-body pixel atlas) is
-   Q-026.
-3. Each clip has a default expression (§4.3); gameplay may override it (e.g. `surprised`
+1. Faces are **hand-drawn comic face decals (texture swap), not bones**. The `face`
+   primitive is a thin patch that follows the curved front of the head, slightly offset
+   from it (≈ 2 mm, no z-fighting), whose UVs point to cell 0 (`neutral`) of the face
+   atlas. It contains eyes, brows and mouth drawn with ink lines; skin, cheeks and nose
+   shape belong to the body mesh. The renderer selects an expression by adding a per-draw
+   UV offset and draws the patch with alpha test (cut-out) after the head.
+2. Face decal atlas: 8 cells of 64 × 64 px in a 4 × 2 grid (256 × 128 px), linear
+   filtering with mipmaps, ≥ 4 px transparent padding around each drawing so mip levels
+   do not bleed, in this order: `neutral`, `blink`, `happy`, `laugh`, `talk`, `surprised`,
+   `thinking`, `sad`. Big comic eyes, bold readable shapes; drawn in the style of
+   `art/style/style.md`. Texture approach for the body: Q-026.
+3. Under the high game camera (Q-049) the face is only a few pixels large; expressions
+   matter in close-ups (character choice screen, dialogue, Q-051) and must stay readable
+   there. Gameplay readability comes from silhouette, pose and colour (ART-CHARACTERS).
+4. Each clip has a default expression (§4.3); gameplay may override it (e.g. `surprised`
    when a hint is found, `sad` never for the player on wrong food — only gentle
    `thinking`, cf. Q-014).
-4. **Blink:** while the expression is `neutral` or `happy`, the game shows `blink` for
+5. **Blink:** while the expression is `neutral` or `happy`, the game shows `blink` for
    0.12 s at random intervals of 3–6 s from the seeded RNG.
-5. `talk` ↔ `neutral` alternation during `talk` clips switches every 0.15 s.
+6. `talk` ↔ `neutral` alternation during `talk` clips switches every 0.15 s.
 
 ### 7. Export settings (Blender glTF exporter)
 
@@ -201,8 +218,8 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
 | Format | glTF Binary (`.glb`) |
 | Include | the character's armature, mesh and socket empties only |
 | Transform | +Y up |
-| Mesh | apply modifiers; UVs; normals (flat: split per face); vertex colours `COLOR_0` only if used; no tangents |
-| Materials | export; exactly `body` and `face` (may share the atlas image, PNG embedded) |
+| Mesh | apply modifiers; UVs; smooth (averaged) normals, no auto-smooth splits; no vertex colours; no tangents |
+| Materials | export; exactly `body` (flat-colour atlas) and `face` (face decal atlas, alpha), PNG embedded; unlit/flat base colour only — cel shading and outline come from the renderer |
 | Compression | none (no Draco, no meshopt) |
 | Skinning | on, "only deform bones", ≤ 4 influences, no rest-pose bake of animations |
 | Shape keys | off |
@@ -220,7 +237,9 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 - `human_anims.toml` matches the tables in this spec, and all events fire at the listed
   frames in `zoo-core` tests.
 - Walking and running show no visible foot sliding at the authored speeds.
-- Expression cells switch without visible filtering seams.
+- Expression cells switch without visible filtering seams or bleeding from neighbour cells.
+- With the renderer's cel shading and outline, elbows and knees bend without gaps or
+  broken outlines.
 
 ## Test cases
 
@@ -228,7 +247,7 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 |---|---|---|
 | RIG-001 | Given each human character `.glb`, then its skin has exactly the 20 joint names of §2.1 with the listed parent of each joint. | asset |
 | RIG-002 | Given each human character `.glb`, then its joint count is ≤ 24 (hard fail > 32). | asset |
-| RIG-003 | Given each human character `.glb`, then every vertex has ≤ 4 non-zero weights, weights sum to 1 ± 0.001, every joint index is < joint count, no `JOINTS_1`/morph targets exist, and — unless the character's `brief.md` lists an exception — every vertex has exactly one non-zero weight (rigid blocks). | asset |
+| RIG-003 | Given each human character `.glb`, then every vertex has ≤ 4 non-zero weights, weights sum to 1 ± 0.001, every joint index is < joint count, no `JOINTS_1`/morph targets exist, and every vertex of the `face` primitive is weighted 1.0 to `head`. | asset |
 | RIG-004 | Given `player_girl.glb` and `player_boy.glb`, then every joint's rest local translation and rotation are equal within 0.001 m / 0.1°, and match the table in §2.4 within 0.005 m. | asset |
 | RIG-005 | Given each human character `.glb`, then its bind pose is the A-pose: `upper_arm_l`→`hand_l` direction is 45° ± 3° below horizontal, mirrored for `_r`; legs vertical ± 2°. | asset |
 | RIG-006 | Given each clip, then `root` has no animation channel, only `hips` has translation channels, and no clip has scale channels. | asset |
@@ -243,18 +262,22 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 | RIG-015 | Given the carry layer active over `walk`, then masked arm joints equal the `carry` pose and all other joints equal the `walk` pose (± 0.1°). | unit |
 | RIG-016 | Given a player speed of 1.2 m/s, then `walk` playback rate is 0.857; at 2.0 m/s it is clamped to 1.25; at 2.5 m/s the active clip is `run`, decelerating to 2.2 m/s keeps `run`, and at 1.9 m/s it is `walk` again. | unit |
 | RIG-017 | Given seed S and 60 s of `idle`, then the blink times are identical across runs, every interval is within 3–6 s and each blink lasts 0.12 s. | unit |
-| RIG-018 | Given each human character `.glb`, then it has one skinned mesh with primitives using materials `body` and `face`, the face UVs lie inside cell 0 of the atlas, and triangle count ≤ 3 000 and file size ≤ 400 KB. | asset |
-| RIG-019 | Given the in-game character viewer, when each clip plays on each character, then no limb visibly passes through the body, seams at elbows/knees stay hidden, and expressions match §4.3 (review checklist). | manual |
+| RIG-018 | Given each human character `.glb`, then it has one skinned mesh with primitives using materials `body` and `face`, the face UVs lie inside cell 0 of the 256 × 128 face atlas, the body texture is ≤ 256 × 256, triangle count ≤ 3 000 and file size ≤ 400 KB. | asset |
+| RIG-019 | Given the in-game character viewer, when each clip plays on each character, with cel shading and outline on, then no limb visibly passes through the body, elbows/knees/shoulders bend without gaps, collapsing or broken outlines, and expressions match §4.3 (review checklist). | manual |
 | RIG-020 | Given the turnaround sheets and the exported `.glb` rendered from front and side in rest pose, then the silhouettes match (proportions within ~5 %). | manual |
 | RIG-021 | Given each human character `.glb` in rest pose, then the centroid of the `face` primitive has z > 0 and y > 0.86 (character faces +Z), `upper_arm_r` has x < 0, and the armature node has identity transform. | asset |
+| RIG-022 | Given each human character `.glb`, then the `body` primitive has no duplicated positions with differing normals (smooth normals, §3.5) and no outline/shell mesh exists. | asset |
 
 ## Open questions
 
 - Q-009 Who creates the turnaround images (affects when modelling can start).
-- Q-010 Voxel vs. smooth style (affects blocky rigid skinning, §3.3).
+- Q-010 Art style — answered 2026-09-26: comic style (`art/style/style.md`); smooth skinning (§3.3), outlines by renderer (§3.5).
 - Q-024 Walking and running speed of the player (blocking — clips are authored to it).
 - Q-025 How the player carries food and the monkey baby (blocking — `carry` clip, sockets).
 - Q-026 Texture approach for body and faces (blocking — renderer needs to know).
 - Q-027 Visitor proportions and whether visitors walk.
 - Q-029 Is the player clip set complete?
+- Q-049 High-angle game camera (characters small on screen).
+- Q-050 Outline technique for characters (inverted hull vs. screen-space).
+- Q-051 Close-up for dialogue so faces/expressions are visible.
 - Q-042 `give` releases the item, but showing food must not consume it (GAME-FEED §4).

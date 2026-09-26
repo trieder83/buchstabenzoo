@@ -52,9 +52,22 @@ Other species stay single until decided (Q-073).
 
 ## Implementation status (M5a, 2026-09-26)
 
-The pair logic is **not implemented yet**: there is no female zebra model (only
-`zebra.glb`), so level 1 has one zebra (one animal group, as before). FAM-001…006 stay
-open until the female and baby models exist (ART-ANIMALS, Q-074).
+No pair logic yet; there is no female zebra model (only `zebra.glb`), so level 1 has one
+zebra (one animal group, as before). Superseded for rules 1–2 by M5b below; FAM-003…006
+stay open until the female and baby models exist (ART-ANIMALS, Q-074).
+
+## Implementation status (M5b, 2026-09-26)
+
+- Rules 1 and 2 are implemented in `zoo-core` behind level data: an enclosure element with
+  `pair = true` gets two animals of its species (member 0 and 1, same model) that start at
+  the same picked hiding place (the second one on a neighbouring wander cell), follow together when
+  either is shown the right food, and complete the mission only when both are home (a
+  waiting one must be fetched). Saves keep both (`member`, GAME-SAVE v2).
+- The flag is **off** in the level data (`enc_koala` of level 2 and `enc_zebra` have no
+  `pair`): `assets/models/animals/koala_female.glb` does not exist yet (family variants not
+  approved), so the game has one koala. FAM-001 and FAM-002 are unit-tested with the flag
+  switched on in the test data (two koalas of the same model, LAYOUT-L2-015).
+- Rules 3–8 (look, care feeding, babies) remain open (FAM-003…007).
 
 ## Test cases
 
@@ -72,4 +85,5 @@ open until the female and baby models exist (ART-ANIMALS, Q-074).
 
 - Q-073 Which other species come as pairs?
 - Q-074 How male and female differ visually.
+- Q-106 One koala/zebra in the game (pair flag off) while the riddles speak of two.
 - Q-075 What exactly triggers the baby (number of feedings, sessions vs. real days) and how many babies.

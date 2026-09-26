@@ -116,3 +116,26 @@ describe('save slot (GAME-SAVE)', () => {
     expect(newGameSeed('', () => 0.5)).toBe(Math.floor(0.5 * 0xffffffff));
   });
 });
+
+describe('save slot migration (M5b: one save for the joined zoo)', () => {
+  it('reads the level-1 slot of M4b/M5a once and continues in the zoo slot', async () => {
+    const { LEGACY_SAVE_KEY } = await import('./save');
+    const store = new MapStore();
+    store.setItem(LEGACY_SAVE_KEY, '{"version":1,"level_id":"level_1"}');
+    const { app, restored } = fakeApp();
+    expect(new SaveSlot(app, store).restore()).toBe(true);
+    expect(restored).toEqual(['{"version":1,"level_id":"level_1"}']);
+    expect(store.getItem(SAVE_KEY)).not.toBeNull();
+    expect(store.getItem(LEGACY_SAVE_KEY)).toBeNull();
+  });
+
+  it('a new game avoids the picks of the legacy key and stores them in the new one', async () => {
+    const { LEGACY_PICKS_KEY } = await import('./save');
+    const store = new MapStore();
+    store.setItem(LEGACY_PICKS_KEY, '{"zebra":"loc_river"}');
+    const { app, games } = fakeApp();
+    new SaveSlot(app, store).start(5);
+    expect(games).toEqual([[5, '{"zebra":"loc_river"}']]);
+    expect(store.getItem(PICKS_KEY)).toContain('zebra');
+  });
+});

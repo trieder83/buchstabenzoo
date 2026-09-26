@@ -15,7 +15,12 @@ use crate::level::{cell_center, cell_of, LevelData};
 use crate::rng::Pcg32;
 
 /// Save format version (GAME-SAVE §2). Unknown versions start a new game (§5).
-pub const SAVE_VERSION: u32 = 1;
+/// Version 2 (M5b): one save for the joined zoo (`level_id = "zoo"`), the fish bowl, the
+/// second animal of a pair. Version-1 saves (level 1 only, M4b/M5a) are migrated: their
+/// level-1 state is kept, the later levels start fresh (GAME-SAVE §5).
+pub const SAVE_VERSION: u32 = 2;
+/// Oldest version that is migrated.
+pub const MIN_SAVE_VERSION: u32 = 1;
 /// Upper size limit of a save (GAME-SAVE §2).
 pub const MAX_SAVE_BYTES: usize = 64 * 1024;
 
@@ -36,6 +41,20 @@ pub struct SaveState {
     pub open_barriers: Vec<String>,
     pub last_gate: Option<usize>,
     pub all_home: bool,
+    /// The fish bowl (v2).
+    #[serde(default)]
+    pub bowl: Option<BowlSave>,
+}
+
+/// The fish bowl (GAME-RESCUE "goldfish bowl" 7, RESC-022).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BowlSave {
+    pub id: String,
+    pub pos: [f32; 2],
+    pub lift_m: f32,
+    pub carried: bool,
+    pub water: bool,
+    pub fish: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -56,6 +75,9 @@ pub struct CameraSave {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct AnimalSave {
     pub id: String,
+    /// Second animal of a pair = 1 (v2, GAME-FAMILY).
+    #[serde(default)]
+    pub member: u8,
     /// `escaped`, `following`, `in_enclosure`.
     pub state: String,
     pub pos: [f32; 2],
@@ -118,6 +140,7 @@ fn state_id(s: AnimalState) -> &'static str {
         AnimalState::Escaped => "escaped",
         AnimalState::Following => "following",
         AnimalState::InEnclosure => "in_enclosure",
+        AnimalState::InBowl => "in_bowl",
     }
 }
 
@@ -126,6 +149,7 @@ fn state_from_id(s: &str) -> Option<AnimalState> {
         "escaped" => Some(AnimalState::Escaped),
         "following" => Some(AnimalState::Following),
         "in_enclosure" => Some(AnimalState::InEnclosure),
+        "in_bowl" => Some(AnimalState::InBowl),
         _ => None,
     }
 }
@@ -154,7 +178,7 @@ impl SaveState {
             version: u32,
         }
         let h: Header = serde_json::from_str(json).map_err(|e| SaveError::Json(e.to_string()))?;
-        if h.version != SAVE_VERSION {
+        if !(MIN_SAVE_VERSION..=SAVE_VERSION).contains(&h.version) {
             return Err(SaveError::Version(h.version));
         }
         serde_json::from_str(json).map_err(|e| SaveError::Json(e.to_string()))
@@ -183,6 +207,7 @@ impl Game {
                 .iter()
                 .map(|a| AnimalSave {
                     id: a.id().to_owned(),
+                    member: a.member,
                     state: state_id(a.state).to_owned(),
                     pos: a.pos.to_array(),
                     hiding_place: a.hiding_place.clone(),
@@ -210,6 +235,14 @@ impl Game {
             open_barriers: self.level.open_barrier_ids(),
             last_gate: self.last_gate,
             all_home: self.all_home,
+            bowl: self.bowl.as_ref().map(|b| BowlSave {
+                id: b.id.clone(),
+                pos: b.pos.to_array(),
+                lift_m: b.lift_m,
+                carried: b.carried,
+                water: b.water,
+                fish: b.fish,
+            }),
         }
     }
 
@@ -219,10 +252,14 @@ impl Game {
     /// stand where they were stand behind the player; animals at home stay in their
     /// enclosure. Restoring produces no events (the celebration is not replayed).
     pub fn from_save(data: LevelData, s: &SaveState) -> Result<Game, SaveError> {
-        if s.version != SAVE_VERSION {
+        if !(MIN_SAVE_VERSION..=SAVE_VERSION).contains(&s.version) {
             return Err(SaveError::Version(s.version));
         }
-        if s.level_id != data.level.id {
+        // v1 saves hold level 1 only: accepted by the joined zoo that contains level 1
+        // (migration, GAME-SAVE §5); otherwise the ids must match
+        let migrates =
+            s.version < SAVE_VERSION && data.parts.first().is_some_and(|p| p.id == s.level_id);
+        if s.level_id != data.level.id && !migrates {
             return Err(SaveError::OtherLevel(s.level_id.clone()));
         }
         let mut g = Game::new(data, s.seed).map_err(SaveError::Game)?;
@@ -245,6 +282,8 @@ impl Game {
                 g.missions[i].complete = m.complete;
             }
         }
+        // (a v1 save's `all_home` meant level 1 only)
+        g.all_home = s.all_home && g.missions.iter().all(|m| m.complete);
         let leading = s.animals.iter().any(|a| a.state == "following");
 
         // player
@@ -265,9 +304,26 @@ impl Game {
             g.carry.take(&FoodBox { food });
         }
 
-        // animals (by id)
+        if let (Some(bs), Some(b)) = (&s.bowl, &mut g.bowl) {
+            if bs.id == b.id {
+                b.pos = v2(bs.pos)?;
+                b.lift_m = if bs.lift_m.is_finite() {
+                    bs.lift_m
+                } else {
+                    0.0
+                };
+                b.carried = bs.carried;
+                b.water = bs.water;
+                b.fish = bs.fish;
+            }
+        }
+        // animals (by id and pair member)
         for a in &s.animals {
-            let Some(i) = g.animal_index(&a.id) else {
+            let Some(i) = g
+                .animals
+                .iter()
+                .position(|x| x.id() == a.id && x.member == a.member)
+            else {
                 continue;
             };
             let state = state_from_id(&a.state)
@@ -298,6 +354,7 @@ impl Game {
                     }
                 }
                 AnimalState::Escaped => pos,
+                AnimalState::InBowl => g.player.pos,
             };
             let an = &mut g.animals[i];
             an.state = state;

@@ -400,6 +400,31 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
 | LAYOUT-L2-016 | Given `enc_elephant`, then `elephant_pool` covers 35–60 % of its cells, is fully inside the enclosure and not adjacent to the gate cells, and the elephant's home wander area includes pool cells. | unit |
 | LAYOUT-L2-017 | Given the approved mockups of the 12 level-2 places, then a reviewer can name each place's riddle details without text, the lion enclosure shows no flat rocks, the elephant pool no jet or coins, the giant tree is clearly twice as tall as all other trees. | manual |
 
+## Implementation status (M5b, 2026-09-26)
+
+- Playable in the joined zoo (GAME-LAYOUT "Joining levels"): the four missions follow the
+  core loop; the koala is **one** animal (`pair` off until `koala_female.glb` exists —
+  GAME-FAMILY; FAM-001/002 and LAYOUT-L2-015 are unit-tested with the flag on). Koalas sit
+  at their `perch_height_m` (Q-094) and climb down when shown eucalyptus.
+- **Barrier timing (temporary, Q-091):** `barrier_l2_construction` (and the level-1
+  `barrier_north_gate`, Q-090) open right after the celebration of the last level-2
+  mission; LAYOUT-L2-010 is tested with this rule until nightfall exists.
+- Unit tests: LAYOUT-L2-001…011, 013, 014, 015 (FAM), 016 in
+  `crates/zoo-core/tests/levels23.rs` / `zoo_game.rs`; the walking and sight tables are
+  reproduced within 0.5 s / exactly. e2e: the giraffe mission (seed 4, `m5b.spec.ts`);
+  LAYOUT-L2-012 (spawn view) is covered only by the entry screenshot.
+- **Placeholders** (coloured boxes with the element's height inside its solid cells — the
+  cells are the collider, wander areas and paths stay free): `fountain_sw` (basin, water,
+  jet, coins), `treehouse_sw` (oak, porch at 3.5 m, house, ladder), `tree_giant_e` (12 m trunk,
+  two crown blocks leaving the 9 m branch free), `tree_blossom_ne` (pink crown, bees),
+  `log_pile_nw`, `ball_n`, `tower_sw`, `train_se`, `playground_se_slide`,
+  `playground_se_swings`, `stage_ne`, `deckchairs_ne`, `barrier_l2_construction` (striped
+  panels, digger, sign), the giraffe rack and house, the lion sun deck and log, the
+  elephant hay rack; scenery `flat_rocks_nw` and `petals_ne` as flat tiles; the
+  `elephant_pool` rim via the `pool_tiled` fallback. Real kit props used: hedges, zoo
+  walls, fences, gates, signs (with silhouettes), info/map boards, food boxes, groves,
+  `tree_eucalyptus` (koala enclosure), `rock`, `bush`.
+
 ## Open questions
 
 - Q-022 / Q-091 barrier unlock timing; Q-088 joining levels; Q-089 own food

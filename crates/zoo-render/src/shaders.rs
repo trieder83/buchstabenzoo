@@ -10,6 +10,7 @@ uniform vec3 u_shadow_tint;   // multiplier of the shadow tone
 uniform float u_edge_mask;    // 1 = normal edges allowed (props), 0 = ground tiles
 uniform vec4 u_fade;          // xy = player on screen (px), z = radius (px), w = player view depth
 uniform float u_dither;       // screen-door cell size in px (half the outline sample offset)
+uniform vec4 u_tint;          // rgb + amount: water tint of under-water characters
 in vec3 v_normal;
 in vec2 v_uv;
 in vec4 v_color;
@@ -28,9 +29,15 @@ void main() {
             if (p.x == p.y) discard;
         }
     }
+    // glass (instance colour alpha 0.5, e.g. the fish bowl): screen-door half transparency
+    if (v_color.a > 0.25 && v_color.a < 0.75) {
+        ivec2 p = ivec2(gl_FragCoord.xy / u_dither) & 1;
+        if (p.x == p.y) discard;
+    }
     vec4 tex = texture(u_palette, v_uv);
-    if (v_color.a < 0.5 && tex.a < 0.5) discard; // alpha-tested decals (faces, ART-RIG §6)
-    vec3 albedo = v_color.a > 0.5 ? v_color.rgb : tex.rgb;
+    if (v_color.a < 0.25 && tex.a < 0.5) discard; // alpha-tested decals (faces, ART-RIG §6)
+    vec3 albedo = v_color.a > 0.25 ? v_color.rgb : tex.rgb;
+    albedo = mix(albedo, u_tint.rgb, u_tint.a);
     vec3 n = normalize(v_normal);
     float lit = step(0.12, dot(n, u_sun_dir));
     vec3 c = albedo * mix(u_shadow_tint, vec3(1.0), lit);
@@ -87,6 +94,8 @@ uniform mat4 u_view_proj;
 uniform mat4 u_model;
 uniform highp sampler2D u_joint_tex;   // 4 RGBA32F texels (matrix columns) per joint
 uniform vec4 u_color;
+uniform vec3 u_eye;
+uniform float u_depth_bias;   // m towards the camera for the depth test (under water)
 out vec3 v_normal;
 out vec2 v_uv;
 out vec4 v_color;
@@ -109,7 +118,12 @@ void main() {
     v_color = u_color;
     v_fadeable = 0.0;
     v_view_depth = -(u_view * w).z;
-    gl_Position = u_view_proj * w;
+    vec4 p = u_view_proj * w;
+    if (u_depth_bias > 0.0) {
+        vec4 q = u_view_proj * vec4(w.xyz + normalize(u_eye - w.xyz) * u_depth_bias, 1.0);
+        p.z = q.z / q.w * p.w;
+    }
+    gl_Position = p;
 }
 "#
     .to_owned()

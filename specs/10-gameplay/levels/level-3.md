@@ -359,6 +359,30 @@ storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes abou
 | LAYOUT-L3-015 | Given `enc_goldfish`, then `goldfish_pond` lies fully inside it, is not adjacent to the gate cells and the goldfish's home wander area contains only pond cells. | unit |
 | LAYOUT-L3-016 | Given the approved mockups of the 9 level-3 places, then a reviewer can name the riddle details without text; the stream shows no bridge or ducks; the sprinkler does not look like a fountain; the pirate ship has no slide and no skull. | manual |
 
+## Implementation status (M5b, 2026-09-26)
+
+- Playable in the joined zoo; entered from level 2 through the construction fence **and**
+  from the level-1 ring through `barrier_north_gate` (both open with the temporary Q-091
+  rule, Q-090 as proposed). No exit barrier.
+- Goldfish: the bowl flow of GAME-RESCUE (tap `tap_l3`, every bank of `stream_l3` and of the
+  other unlocked water bodies fills it; fish food in the pocket; 0.9 × speed; stone step =
+  `enc_goldfish` gate) — LAYOUT-L3-014 e2e (seed 4, willow). The monkey sits in the crow's
+  nest at 4 m (Q-094) and climbs down at 0.72 m/s (`climb`).
+- `zookeeper_house_3` is enterable (Q-092): floor cells walkable, roof + upper walls hidden
+  inside (PLAY-028/029); a table (`table_wood` placeholder with a collider), shelves and a
+  bed (boxes) inside.
+- Unit tests: LAYOUT-L3-001…013, 015 in `levels23.rs`; RESC-018…023 in `zoo_game.rs`.
+- **Placeholders:** `waterfall_rocks` (ledge, rocks = kit `rock`, falling water and foam),
+  `mill_hut` + water wheel (static, over the stream, not solid), `tree_willow` (trunk, crown,
+  hanging branches), `pirate_ship` (hull, deck, mast, crow's nest at the perch point, sail,
+  black flag with a white paw, treasure chest, rope ladder), `carousel_sw`,
+  `ice_cream_kiosk` (small building, striped awning, cone icon, freezer with mist),
+  `laundry_line`, the monkey climbing frame and house, the snow-fox den; scenery
+  `bark_mulch_se`, `trampoline_w`, `sprinkler_lawn` (wet lawn, sprinkler, drops, rainbow)
+  as flat boxes; `goldfish_pond` rim (fallback of `pond_stone_rim`), `water_tap`,
+  `table_wood`, the fish bowl (renderer mesh). The stream uses the river water tiles
+  (flow streaks north–south) with kit reeds on its banks.
+
 ## Open questions
 
 - Q-088 joining levels; Q-090 second entry through the level-1 north gate;

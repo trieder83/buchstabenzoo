@@ -631,6 +631,7 @@ window.ART_CATALOG = {
             { file: "props/kit_water/sheet_v1.jpg", label: "sheet_v1 (chosen)", required: true },
             { file: "props/kit_water/sheet_v2.jpg", label: "sheet_v2 (alternative)" },
             { file: "props/kit_water/model_preview.png", label: "3D model preview" },
+            { file: "props/kit_water/ambient_preview.png", label: "animated ducks & frog" },
           ],
         },
         {
@@ -712,6 +713,19 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_furniture/sheet_v1.jpg", label: "sheet_v1 (chosen)", required: true },
             { file: "props/kit_furniture/sheet_v2.jpg", label: "sheet_v2 (alternative)" },
+          ],
+        },
+        {
+          id: "kit_garden",
+          title: "Vegetable garden kit",
+          status: "in-review",
+          description: "garden_bed (1 \u00d7 3 m soil bed, wooden edge), carrot_plant and potato_plant in 3 growth stages each (clearly different from above), harvested carrot and potatoes, basket with treats, low white picket garden_fence + garden_gate, wheelbarrow, watering_can, blank garden_sign (GAME-GARDEN \u00a7 Assets).",
+          spec: "GAME-GARDEN",
+          brief: "props/kit_garden/brief.md",
+          notes: "Two sheets: plants + items (prompt 1), garden furniture (prompt 2). NOT YET GENERATED \u2014 Gemini project hit its monthly spending cap (HTTP 429) on 2026-09-26; image slots are placeholders until the sheets are generated.",
+          images: [
+            { file: "props/kit_garden/sheet_plants_v1.jpg", label: "sheet_plants_v1 (to generate)", required: true },
+            { file: "props/kit_garden/sheet_furniture_v1.jpg", label: "sheet_furniture_v1 (to generate)", required: true },
           ],
         },
       ],

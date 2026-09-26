@@ -71,6 +71,9 @@ pub const ANIMALS: [AnimalInfo; 10] = [
 pub fn swim_sink_m(animal: &str) -> f32 {
     match animal {
         "hippo" => 0.9,
+        // wades in its pool (no `swim` clip: walks / stands in the water, GAME-LEVEL-2)
+        "elephant" => 0.8,
+        // the goldfish's origin is the water surface (ART-ANIMALS, fish rig): no sinking
         _ => 0.0,
     }
 }
@@ -80,6 +83,7 @@ pub fn swim_sink_m(animal: &str) -> f32 {
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct AnimTable {
     clips: std::collections::BTreeMap<(String, String), ClipInfo>,
+    climb: std::collections::BTreeMap<String, f32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -95,6 +99,7 @@ impl AnimTable {
     pub fn from_toml_str(s: &str) -> Result<Self, String> {
         let v: toml::Table = toml::from_str(s).map_err(|e| e.to_string())?;
         let mut clips = std::collections::BTreeMap::new();
+        let mut climb = std::collections::BTreeMap::new();
         for (animal, t) in &v {
             let Some(t) = t.as_table() else { continue };
             for (clip, c) in t {
@@ -104,6 +109,9 @@ impl AnimTable {
                 let speed = c
                     .get("speed")
                     .and_then(|f| f.as_float().or_else(|| f.as_integer().map(|i| i as f64)));
+                if let Some(cs) = c.get("climb_speed").and_then(|f| f.as_float()) {
+                    climb.insert(animal.clone(), cs as f32);
+                }
                 clips.insert(
                     (animal.clone(), clip.clone()),
                     ClipInfo {
@@ -114,13 +122,18 @@ impl AnimTable {
                 );
             }
         }
-        Ok(Self { clips })
+        Ok(Self { clips, climb })
     }
 
     pub fn clip(&self, animal: &str, clip: &str) -> Option<ClipInfo> {
         self.clips
             .get(&(animal.to_owned(), clip.to_owned()))
             .copied()
+    }
+
+    /// Authored climbing speed (`climb_speed`, m/s) of an animal's `climb` clip.
+    pub fn climb_speed(&self, animal: &str) -> Option<f32> {
+        self.climb.get(animal).copied()
     }
 
     /// Authored speed of an animal's `walk` (default 1.4 m/s, ART-ANIMALS §6).
@@ -151,4 +164,6 @@ pub enum AnimalState {
     Following,
     /// Home. Final state (ANIM-002).
     InEnclosure,
+    /// In a carried container (the goldfish in the fish bowl, GAME-RESCUE "goldfish bowl").
+    InBowl,
 }

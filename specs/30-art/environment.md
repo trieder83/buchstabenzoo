@@ -53,6 +53,7 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_level2_overview` | Whole level 2 (GAME-LEVEL-2) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-2 ASCII map (also the GAME-MAP art) |
 | `env_level3_overview` | Whole level 3 (GAME-LEVEL-3) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-3 ASCII map |
 | `env_zookeeper_house` | Zookeeper house of level 3 (`zookeeper_house_3`) | closed house + roof cut-away with the big empty glass fish bowl on the table, bed, shelves; water tap with a small basin next to the door; food storage 3 next door |
+| `env_garden` | Vegetable garden `garden_veg`, level 1 (north, between the panda enclosure and the river — GAME-LEVEL-1, GAME-GARDEN) | low picket fence with a small open gate, 2 m path, two carrot beds and two potato beds (clearly different from above), a picture stake sign per bed, empty wheelbarrow and watering can at the hedge, the girl pulling a carrot — dry soil (not `loc_mud`), no rake, butterflies, wildflowers or water spray (riddle guards) |
 | `loc_treehouse` | Koala hiding place, level 2 (south-west) | old oak with a wooden tree house (roof, round window) at 3.5 m and a rope ladder; the koala pair on the porch |
 | `loc_tallest_tree` | Koala hiding place, level 2 (east) | a 12 m giant tree, twice as tall as all other trees, thick trunk; the koala pair at the very top |
 | `loc_blossom_tree` | Koala hiding place, level 2 (north-east corner) | tree covered in pink blossoms, petals drifting onto the grass, bees; the koala pair in the crown |
@@ -176,6 +177,8 @@ Unique (non-modular) models needed for levels 2 and 3: `treehouse_oak`, `tree_gi
 `carousel` (turning), `ice_cream_kiosk` + `freezer_chest`, `zookeeper_house` (closed + cut-away,
 concept in `kit_buildings`), `pond_stone_rim`, `monkey_climbing_frame`, `snow_fox_den`, `eucalyptus_tree`, `hay_rack`,
 `monkey_house`, `pine_tree`.
+
+Added for the vegetable garden (proposal, zoo-level-designer, 2026-09-26 — GAME-GARDEN §9, one concept sheet first): `garden_fence` (low picket fence 0.8 m, 2 m + 1 m pieces), `garden_gate` (1 m leaf, used as a pair), `garden_bed` (raised wooden frame 0.8 × 2.9 m with dry soil, modular 1 × 3 m), `carrot_plant` and `potato_plant` (3 growth stages + empty soil), `garden_sign` (small stake sign, picture of the vegetable; word rendered by the game), `wheelbarrow`, `watering_can`. Reused: `path_tile`, `hedge`.
 
 Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_building`,
 `stone_arch_shelter` (zebra), `hut_wood` and `pool_tiled` (hippo), `panda_platform` and

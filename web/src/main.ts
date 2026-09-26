@@ -7,7 +7,8 @@ import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
 import { loadSettings, Ui } from './ui';
 
-const LEVEL = 'levels/level-1.toml';
+/** The day levels, joined into one zoo (GAME-LAYOUT "Joining levels", proposal Q-088). */
+const LEVELS = ['levels/level-1.toml', 'levels/level-2.toml', 'levels/level-3.toml'];
 
 /** Debug handle for e2e tests. */
 export interface ZooDebug {
@@ -66,13 +67,17 @@ async function main(): Promise<void> {
   const index: string[] = await (await fetch('assets/index.json')).json();
   const available = new Set(index);
 
-  const level = await fetchBytes(LEVEL);
-  if (!level) throw new Error(`missing ${LEVEL}`);
+  const files = new Map<string, Uint8Array>();
+  const levels = LEVELS.filter((p) => available.has(p));
+  for (const p of levels) {
+    const bytes = await fetchBytes(p);
+    if (!bytes) throw new Error(`missing ${p}`);
+    files.set(p, bytes);
+  }
   const wanted = new Set<string>([
-    ...required_assets(new TextDecoder().decode(level)),
+    ...required_assets(levels.map((p) => new TextDecoder().decode(files.get(p)!))),
     ...index.filter((p) => p.startsWith('i18n/') && p.endsWith('.ftl')),
   ]);
-  const files = new Map<string, Uint8Array>([[LEVEL, level]]);
   await Promise.all(
     [...wanted]
       .filter((p) => available.has(p))
@@ -83,7 +88,7 @@ async function main(): Promise<void> {
   );
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
-  const app = new App(canvas, LEVEL, files);
+  const app = new App(canvas, levels, files);
   const store = storage();
   // GAME-SAVE: continue where the child stopped (restored before the first frame); else a
   // new game with a random seed (`?seed=N` for tests) that avoids the last hiding places

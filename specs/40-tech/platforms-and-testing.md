@@ -41,4 +41,4 @@ updated: 2026-09-26
 
 ## Open questions
 
-- Q-011 saving, Q-012 offline, Q-013 min devices.
+- Q-011 saving, Q-012 offline, Q-013 min devices, Q-104 draw-call budget for the joined zoo.

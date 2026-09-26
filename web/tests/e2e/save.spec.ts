@@ -113,7 +113,7 @@ test('SAVE-008: "new game" in the settings deletes the save and restarts the lev
   const errors = await start(page);
   await takeGrass(page);
   await page.evaluate(() => window.__zoo!.slot.flush());
-  expect(await page.evaluate(() => localStorage.getItem('zoo.save.level-1'))).toContain('"carry":"grass"');
+  expect(await page.evaluate(() => localStorage.getItem('zoo.save'))).toContain('"carry":"grass"');
   await page.locator('#settings-btn').click();
   await page.locator('#new-game').click();
   await expect(page.locator('#new-game-confirm')).toBeVisible();

@@ -96,6 +96,17 @@ walkable with surface `grass`, it never overlaps a solid element or a path, and 
 riddle relies on exists only once per level. Solid dressing (e.g. a bamboo thicket) is a
 normal `decoration` element.
 
+**Gardens** *(proposal, level design — Q-102; first used by `garden_veg`, GAME-LEVEL-1,
+GAME-GARDEN)*: a fenced vegetable garden is listed in `[[garden]]` (`id`, `rect`, `gate`,
+`gate_side`, `fence_runs` on cell-edge lines with `fence_inset_m`, `edges_closed_by`,
+`animals_enter`, `props`) with its beds in `[[garden_bed]]` (`rect`, `plant`, sign position,
+facing and Fluent key) and its harvestable plants in `[[plant_spot]]` (`id`, `bed`, `kind`,
+`pos`, `start_stage`, `stand`). Like scenery it is **not an element**: its cells stay walkable
+(its inner path is a normal `path` element, kind `garden`); the fence, beds, signs and tools
+are prop colliders that lie inside the garden `rect`, and each fence run also blocks the
+cell-edge crossings on its line for grid navigation and flood fills. The gate opens by itself
+when the player comes near; animals never path into a garden.
+
 **Hiding places** *(user decision 2026-09-26, GAME-RESCUE §1; data decided, Q-080 answered)*: every
 animal of a level has ≥ 3 candidate hiding places spread over the level; one per animal is
 picked per playthrough with the seeded RNG. Level-design rules for every candidate: its
@@ -147,6 +158,36 @@ The zoo is **one continuous map** split into levels:
   `barrier_l2_construction` (and `barrier_north_gate`). The area east of level 1 south of
   level 2 (behind `barrier_east_repair`) is free for a later level (Q-023).
 
+**Implementation (M5b, 2026-09-26 — proposals Q-088…Q-094 implemented data-driven, still
+open for confirmation):**
+- `LevelData::join` joins `level-1.toml`, `level-2.toml`, `level-3.toml` into one grid (id
+  `zoo`); cells of the joined bounding box that belong to no level are out of bounds. All
+  three levels are always loaded; a locked level is sealed by its closed entry barriers,
+  its animals are hidden and not simulated (asleep), its boards and animals are not
+  interactable. **Missions in scope** = the union of the unlocked levels' missions (`[level]
+  missions`, else every enclosure animal of the level). A level is unlocked when one of its
+  `[[entry]]` barriers is open.
+- **Barrier opening — temporary rule (Q-091 open, nightfall not implemented yet):** when the
+  last mission of a level completes (right after its celebration), the level's exit
+  barriers (`transition = "<level>-><next>"`) open **and every entry barrier of the next
+  level** — for level 3 also the level-1 `barrier_north_gate` (proposal Q-090). With the
+  night (GAME-NIGHT) this becomes "the next morning". Opened barriers never close; their
+  models disappear.
+- **Discovery per level:** one pick per animal with the rule of GAME-RESCUE §1 (spread
+  ≥ 12 m within the level); level 1 uses the main seeded RNG (unchanged from M5a), later
+  levels a seeded RNG of their own (`seed ^ k·φ`).
+- **Rendering (QA F12):** static batches are split into render regions — one per level, one
+  per barrier (hidden when open), one per enterable-building roof — culled against the view
+  frustum and the visible ground area. Measured (1280×720, max zoom): level-1 spawn 58 draw
+  calls / 3.1 k instances (M5a-like), inside level 2 or 3 ≈ 55–60 / 2.8 k, at a level border
+  2 levels (≈ 91 / 6.4 k), worst case the level-3 spawn where all three levels meet
+  (≈ 119 / 9.2 k).
+- Enterable buildings (Q-092): `interior` + `door` cells are walkable floor (surface
+  `path`); the roof and the walls above 1 m are hidden while the player stands on an
+  interior or door cell (PLAY-028).
+- LAYOUT-024 treats background kinds (water bodies shared by one animal's places, the
+  level-1 tree areas, walls, hedges and the three-part level-1 rock hill) as non-details.
+
 ## Levels
 
 One file per level in `specs/10-gameplay/levels/level-<N>.md` (spec id `GAME-LEVEL-<N>`, level id
@@ -156,7 +197,7 @@ condition, spawn point, and a top-down ASCII or SVG map.
 
 | Level id | Area | Status |
 |---|---|---|
-| `level_1` | [levels/level-1.md](levels/level-1.md) (GAME-LEVEL-1): entrance, food storage, zebra, hippo and panda enclosures and their 9 candidate hiding places (`loc_river`, `loc_meadow`, `loc_sand`; `loc_pond`, `loc_mud`, `loc_shade`; `loc_cave`, `loc_bamboo`, `loc_leaves`); hippo pool `hippo_pool`; dense central grove, sparse woods `trees_nw` / `trees_ne` | draft — proposal pending Q-023 |
+| `level_1` | [levels/level-1.md](levels/level-1.md) (GAME-LEVEL-1): entrance, food storage, zebra, hippo and panda enclosures and their 9 candidate hiding places (`loc_river`, `loc_meadow`, `loc_sand`; `loc_pond`, `loc_mud`, `loc_shade`; `loc_cave`, `loc_bamboo`, `loc_leaves`); hippo pool `hippo_pool`; dense central grove, sparse woods `trees_nw` / `trees_ne`; vegetable garden `garden_veg` in the back (GAME-GARDEN, Q-102) | draft — proposal pending Q-023 |
 | `level_2` | [levels/level-2.md](levels/level-2.md) (GAME-LEVEL-2): behind `barrier_ne_tree` (east); food storage 2, koala (pair), elephant, giraffe and lion enclosures, elephant pool, and their 12 candidate hiding places (`loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree`; `loc_fountain`, `loc_log_pile`, `loc_big_ball`; `loc_lookout_tower`, `loc_train`, `loc_playground`; `loc_sun_rocks`, `loc_stage`, `loc_deckchairs`); exit `barrier_l2_construction` | draft — proposal (Q-088, Q-089, Q-091, Q-094, Q-095) |
 | `level_3` | [levels/level-3.md](levels/level-3.md) (GAME-LEVEL-3): behind `barrier_l2_construction` (north of level 1, second entry through `barrier_north_gate`, Q-090); zookeeper house with the fish bowl and a tap, food storage 3, stream with waterfall, monkey, goldfish (pond) and snow fox enclosures, adventure playground with the pirate ship, and their 9 candidate hiding places (`loc_pirate_ship`, `loc_carousel`, `loc_trampoline`; `loc_waterfall`, `loc_water_wheel`, `loc_willow`; `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`) | draft — proposal (Q-017, Q-088…Q-095) |
 | later levels | night levels (GAME-NIGHT `night_1`, `specs/10-gameplay/levels/night-1.md`); further day areas after Q-023 | — |
@@ -295,10 +336,13 @@ assembly. Proposed fixes *(Q-087)*:
 | LAYOUT-022 | Given levels 1…N joined and exactly the barriers of completed transitions open, then the flood fill from the level-1 spawn reaches every walkable cell of the unlocked levels that LAYOUT-001 requires and no cell of a locked level; opening the next transition's barrier(s) makes the next level's spawn reachable. | unit |
 | LAYOUT-023 | Given a `building` with `interior` and `door` (Q-092), then its interior and door cells are walkable with surface `path`, its other cells are solid, and the door cell is edge-adjacent to a walkable cell outside the building. | unit |
 | LAYOUT-024 | Given all levels joined, then every `[[scenery]]` kind and every element kind named as riddle scenery of a hiding place (e.g. `fountain`, `waterfall`, `treehouse`, `pirate_ship`) occurs only at that one hiding place in the joined map (zoo-wide riddle uniqueness, Q-083). | unit |
+| LAYOUT-025 | Given the joined zoo with level N locked, then the animals of level N are hidden and not simulated (positions unchanged after 120 s), its info boards, animals and gates are not interactable, and the missions in scope are exactly the union of the unlocked levels' missions (Q-088 proposal, RESC-025). | unit |
 
 ## Open questions
 
 - Q-006, Q-017, Q-022, Q-023.
+- Q-104 draw-call budget for the joined zoo, Q-105 background kinds exempt from LAYOUT-024.
+- Q-102 garden data (`[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]`, fence edges, self-opening gate, animals never enter).
 - Q-088 joining levels (one continuous map, `[[entry]]`), Q-089 food storage per level, Q-090 level-1 north gate as second level-3 entry, Q-091 barrier opens the next morning, Q-092 enterable buildings (`interior`, `door`), Q-093 fish bowl / water-source data, Q-094 `perch_height_m`, Q-095 new hiding places of levels 2–3.
 - Q-056 answered: coordinate spaces (level x east / z north; world = (x, 0, −z)).
 - Q-057 answered: 1 m segment variants and the fill rule. Q-059 band joins, Q-060 enclosure fence and band placement (proposals), Q-061 front direction of props (open).

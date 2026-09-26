@@ -64,4 +64,8 @@ language for player-facing text.
 | `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (proposal Q-093). |
 | `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (proposal Q-093). |
 | `level_entry` (data `[[entry]]`) | Levelzugang † | level entry | Cells of a level directly behind a barrier of an earlier level; the only walkable border cells of a level (GAME-LAYOUT "Joining levels", proposal Q-088). |
+| `pocket` | Tasche † | pocket | Second carry slot for one food while the player carries the fish bowl (GAME-RESCUE goldfish bowl, proposal Q-084). |
+| `unlocked_level` / `locked_level` | freigeschaltetes / gesperrtes Level † | unlocked / locked level | A level of the joined zoo is unlocked when one of its `[[entry]]` barriers is open; a locked level is sealed, its animals are hidden and asleep (GAME-LAYOUT "Joining levels", proposal Q-088). |
+| `enterable_building` (data `interior`, `door`) | begehbares Gebäude † | enterable building | Building whose interior and door cells are walkable floor; its roof and upper walls hide while the player is inside (GAME-PLAYER §2, proposal Q-092). |
+| `render_region` | — | render region | Group of static batches culled together: one per level, per barrier, per enterable-building roof (GAME-LAYOUT "Joining levels"). Not player-facing. |
 | `perch` (data `perch_height_m`) | Sitzplatz oben † | perch | Raised spot where an escaped animal sits instead of wandering on the ground (koala in a tree, monkey in the crow's nest; proposal Q-094). |

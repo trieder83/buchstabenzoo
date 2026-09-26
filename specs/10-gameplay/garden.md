@@ -25,6 +25,13 @@ between missions.
    `zoo-level-designer`, GAME-LEVEL-1), later one per day level. Beds with rows of plants,
    a wheelbarrow, a watering can and a **garden sign** per bed with the vegetable name
    (read via the text panel — reading is still part of it: *Karotten*, *Kartoffeln*).
+   **Level 1** (GAME-LEVEL-1 "Vegetable garden", data proposal Q-102): `garden_veg` in the
+   strip x 6–9, z 36–45 between the panda enclosure and the river, 2 m gate on the south
+   side (5.6 s from the bridge), 2 carrot beds × 3 plant spots and 2 potato beds × 2 plant
+   spots along a 2 m path, wheelbarrow and watering can at the hedge. Plant spots are data
+   (`[[plant_spot]]`: `id`, `kind`, `pos`, `start_stage`, `stand`). Animals never enter
+   the garden; following animals wait at the gate (Q-102). Sign texts per reading level:
+   Q-103.
 2. **Plants:** carrot plants show green leaves above the soil (the orange top just
    visible); potato plants are small bushes with a few white flowers. From the 55° camera
    the two are clearly different.

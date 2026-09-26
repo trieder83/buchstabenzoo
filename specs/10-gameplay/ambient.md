@@ -44,8 +44,11 @@ decoration with behaviour: no mission, no food, never block the player.
 
 7. **Frogs** (`frog`) at the pond: sit on lily pads/ the bank, `croak` (throat puff) and
    sometimes `hop` to another pad; hop into the water when the player comes within 2 m.
-8. **Butterflies** on the meadow and at the flower beds: flutter in small loops, land on
-   flowers; drawn as tiny animated quads or a 2-bone model.
+8. **Butterflies** only where the level data allows them — the meadow hiding place
+   (`loc_meadow`, where they are a riddle clue) and the flower beds by the map board: flutter
+   in small loops, land on flowers; drawn as tiny animated quads or a 2-bone model. **Never in
+   the vegetable garden** (GAME-GARDEN) or at other hiding places, so they never make another
+   place look like the meadow riddle.
 
 ## Rules
 

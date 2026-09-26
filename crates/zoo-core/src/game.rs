@@ -88,6 +88,35 @@ pub enum GameEvent {
     BarrierOpened {
         id: String,
     },
+    /// Every mission of a level is complete (its exit barrier opens, Q-091 temporary rule).
+    LevelComplete {
+        level: String,
+    },
+    /// The player picked up a carryable item (the fish bowl).
+    ItemTaken {
+        id: String,
+    },
+    /// The player put a carried item down.
+    ItemPutDown {
+        id: String,
+    },
+    /// The fish bowl was filled at a water source (RESC-019).
+    ContainerFilled {
+        id: String,
+        animal: String,
+    },
+    /// Right food, but the animal needs a container the player does not carry (RESC-018).
+    NeedsContainer {
+        animal: String,
+    },
+    /// Right food and the container is carried, but it holds no water (RESC-019).
+    ContainerEmpty {
+        animal: String,
+    },
+    /// The animal jumped into the carried container (RESC-019).
+    InContainer {
+        animal: String,
+    },
     /// The reading panel of an info board / food box opened by itself (GAME-PLAYER §4).
     PanelOpened {
         target: Target,
@@ -147,10 +176,20 @@ pub enum Target {
     Animal {
         animal: &'static str,
     },
-    /// Enclosure gate (only while leading animals).
+    /// Enclosure gate (only while leading animals or carrying an animal in its container).
     Gate {
         enclosure: String,
     },
+    /// A carryable item lying somewhere (the fish bowl), to pick up.
+    Item {
+        id: String,
+    },
+    /// A water source (tap, bank) to fill the carried container.
+    Water {
+        source: String,
+    },
+    /// Put the carried item down here (lowest priority, only when nothing else is available).
+    PutDown,
 }
 
 impl Target {
@@ -166,6 +205,9 @@ impl Target {
             Target::FoodBox { .. } => "food_box",
             Target::Animal { .. } => "animal",
             Target::Gate { .. } => "gate",
+            Target::Item { .. } => "item",
+            Target::Water { .. } => "water",
+            Target::PutDown => "put_down",
         }
     }
 }
@@ -193,6 +235,8 @@ pub enum Interaction {
     },
     /// Leading animals into an enclosure gate.
     Gate { enclosure: String, entered: bool },
+    /// Picked up / put down / filled a carryable item.
+    Item { id: String, action: &'static str },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -223,6 +267,10 @@ pub struct Animal {
     pub refusing: bool,
     pub(crate) path: Vec<IVec2>,
     pub(crate) path_target: Option<IVec2>,
+    /// 0, or 1 for the second animal of a pair (GAME-FAMILY).
+    pub member: u8,
+    /// Level part of its enclosure (missions in scope = unlocked levels).
+    pub part: usize,
 }
 
 impl Animal {
@@ -386,6 +434,39 @@ pub struct Game {
     pub time_s: f64,
     /// Autosave bookkeeping (GAME-SAVE §3).
     pub(crate) autosave: Autosave,
+    /// The fish bowl (`[[item]]` of kind `fish_bowl`, GAME-RESCUE "goldfish bowl"), if the
+    /// joined levels have one.
+    pub bowl: Option<Bowl>,
+}
+
+/// Walking speed factor while carrying an animal in its container (proposal Q-084, RESC-023).
+pub const CARRY_ANIMAL_SPEED_FACTOR: f32 = 0.9;
+/// Height of a table top an item stands on inside a building (presentation).
+pub const TABLE_HEIGHT_M: f32 = 0.78;
+
+/// A carryable container for an animal that cannot walk (the fish bowl, GAME-RESCUE
+/// "goldfish bowl", proposal Q-093/Q-084).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Bowl {
+    /// Item id (`fish_bowl`).
+    pub id: String,
+    /// The animal that travels in it.
+    pub animal: String,
+    /// Where it stands when not carried (level coordinates).
+    pub pos: Vec2,
+    /// Height of what it stands on (table / step), presentation only.
+    pub lift_m: f32,
+    pub carried: bool,
+    /// Filled with water (RESC-019).
+    pub water: bool,
+    /// The animal is inside (RESC-019…022).
+    pub fish: bool,
+}
+
+/// Seed of the discovery RNG of level part `k ≥ 1` (level 1 keeps the main RNG, so its picks
+/// and wandering do not change when later levels are joined).
+fn part_seed(seed: u64, k: usize) -> u64 {
+    seed ^ (k as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
 }
 
 /// Autosave rules (GAME-SAVE §3): after every progress event and every 5 s of moving.
@@ -412,6 +493,11 @@ impl GameEvent {
                 | GameEvent::MissionComplete { .. }
                 | GameEvent::AllAnimalsHome
                 | GameEvent::BarrierOpened { .. }
+                | GameEvent::LevelComplete { .. }
+                | GameEvent::ItemTaken { .. }
+                | GameEvent::ItemPutDown { .. }
+                | GameEvent::ContainerFilled { .. }
+                | GameEvent::InContainer { .. }
         )
     }
 }
@@ -432,38 +518,47 @@ impl Game {
         avoid: &BTreeMap<String, String>,
     ) -> Result<Self, GameError> {
         let mut rng = Pcg32::new(seed);
-        let scope = &data.level.missions;
-        let mut enclosures = Vec::new();
-        for (i, enc) in data.elements.iter().enumerate() {
-            if enc.ty != ElementType::Enclosure {
-                continue;
-            }
-            let id = enc.animal.clone().unwrap_or_default();
-            if !scope.is_empty() && !scope.contains(&id) {
-                continue; // not in scope: scenery only (Q-069)
-            }
-            let info = animal_info(&id).ok_or_else(|| GameError::UnknownAnimal(id.clone()))?;
-            enclosures.push((i, info));
-        }
-        let ids: Vec<&str> = enclosures.iter().map(|(_, info)| info.id).collect();
-        let picks = pick_hiding_places(&data, &ids, &mut rng, avoid)?;
+        let mut part_rngs: Vec<Pcg32> = (0..data.parts.len())
+            .map(|k| Pcg32::new(part_seed(seed, k)))
+            .collect();
         let mut animals = Vec::new();
-        for ((i, info), place_id) in enclosures.into_iter().zip(picks) {
-            let place = data.hiding_place(&place_id).expect("picked from the data");
-            animals.push(Animal {
-                info,
-                state: AnimalState::Escaped,
-                pos: place.spot(),
-                facing: Vec2::NEG_Y,
-                wander: Wander::default(),
-                area: WanderArea::default(),
-                hiding_place: place_id,
-                enclosure: i,
-                waiting: false,
-                refusing: false,
-                path: Vec::new(),
-                path_target: None,
-            });
+        for (k, part) in data.parts.iter().enumerate() {
+            let mut enclosures = Vec::new();
+            for (i, enc) in data.elements.iter().enumerate() {
+                if enc.ty != ElementType::Enclosure || enc.part != k {
+                    continue;
+                }
+                let id = enc.animal.clone().unwrap_or_default();
+                if !part.missions.contains(&id) {
+                    continue; // not in scope: scenery only (Q-069)
+                }
+                let info = animal_info(&id).ok_or_else(|| GameError::UnknownAnimal(id.clone()))?;
+                enclosures.push((i, info, enc.pair));
+            }
+            let ids: Vec<&str> = enclosures.iter().map(|(_, info, _)| info.id).collect();
+            let r = if k == 0 { &mut rng } else { &mut part_rngs[k] };
+            let picks = pick_hiding_places(&data, &ids, r, avoid)?;
+            for ((i, info, pair), place_id) in enclosures.into_iter().zip(picks) {
+                let place = data.hiding_place(&place_id).expect("picked from the data");
+                for member in 0..if pair { 2 } else { 1 } {
+                    animals.push(Animal {
+                        info,
+                        state: AnimalState::Escaped,
+                        pos: place.spot(),
+                        facing: Vec2::NEG_Y,
+                        wander: Wander::default(),
+                        area: WanderArea::default(),
+                        hiding_place: place_id.clone(),
+                        enclosure: i,
+                        waiting: false,
+                        refusing: false,
+                        path: Vec::new(),
+                        path_target: None,
+                        member,
+                        part: k,
+                    });
+                }
+            }
         }
         let move_params = MoveParams::default();
         let facing = facing_vec(&data.spawn.facing);
@@ -474,11 +569,49 @@ impl Game {
             .collect();
         let player = Player::new(cell_center(data.spawn.cell()), facing, &move_params);
         let missions = vec![Mission::default(); animals.len()];
+        let bowl = data
+            .items
+            .iter()
+            .find(|it| it.kind == "fish_bowl")
+            .map(|it| Bowl {
+                id: it.id.clone(),
+                animal: it.animal.clone().unwrap_or_default(),
+                pos: it.pos(),
+                lift_m: if it.building.is_some() {
+                    TABLE_HEIGHT_M
+                } else {
+                    0.0
+                },
+                carried: false,
+                water: false,
+                fish: false,
+            });
         let level = Level::new(data);
         for a in &mut animals {
             a.area = wander_area_of(&level, a);
             a.facing = rest_facing(&level, a);
-            a.wander.pause_s = wander::draw_pause(&mut rng);
+            // the second animal of a pair waits one wander cell away (GAME-FAMILY §1)
+            if a.member > 0 {
+                if let Some(c) = a
+                    .area
+                    .cells()
+                    .map(|(c, _)| c)
+                    .filter(|&c| c != cell_of(a.pos))
+                    .min_by(|x, y| {
+                        cell_center(*x)
+                            .distance(a.pos)
+                            .total_cmp(&cell_center(*y).distance(a.pos))
+                    })
+                {
+                    a.pos = cell_center(c);
+                }
+            }
+            let r = if a.part == 0 {
+                &mut rng
+            } else {
+                &mut part_rngs[a.part]
+            };
+            a.wander.pause_s = wander::draw_pause(r);
         }
         Ok(Self {
             level,
@@ -499,7 +632,61 @@ impl Game {
             rng,
             time_s: 0.0,
             autosave: Autosave::default(),
+            bowl,
         })
+    }
+
+    /// Whether a level part is unlocked: the first level always, a later one when one of its
+    /// entry barriers is open (GAME-LAYOUT "Joining levels"; missions in scope = union of the
+    /// unlocked levels' missions).
+    pub fn part_unlocked(&self, k: usize) -> bool {
+        k == 0
+            || self.level.data.parts.get(k).is_some_and(|p| {
+                p.entries
+                    .iter()
+                    .any(|e| self.level.is_barrier_open(&e.barrier))
+            })
+    }
+
+    /// Whether a level (by id) is unlocked.
+    pub fn level_unlocked(&self, id: &str) -> bool {
+        self.level
+            .data
+            .part_index(id)
+            .is_some_and(|k| self.part_unlocked(k))
+    }
+
+    /// Whether the animal's mission is in scope (its level is unlocked).
+    pub fn in_scope(&self, a: &Animal) -> bool {
+        self.part_unlocked(a.part)
+    }
+
+    /// Indices of the animals of one species (both animals of a pair, GAME-FAMILY).
+    pub fn group(&self, animal: &str) -> Vec<usize> {
+        (0..self.animals.len())
+            .filter(|&i| self.animals[i].id() == animal)
+            .collect()
+    }
+
+    /// Whether the player carries the bowl with its animal inside (RESC-023).
+    pub fn carrying_animal(&self) -> bool {
+        self.bowl.as_ref().is_some_and(|b| b.carried && b.fish)
+    }
+
+    /// Whether an animal needs a container to be carried home (an `[[item]]` names it).
+    pub fn needs_container(&self, animal: &str) -> bool {
+        self.bowl.as_ref().is_some_and(|b| b.animal == animal)
+    }
+
+    /// Perch of an escaped animal (proposal Q-094): the point it sits at (level) and its
+    /// height above the ground, if its hiding place has `perch_height_m`.
+    pub fn perch(&self, a: &Animal) -> Option<(Vec2, f32)> {
+        if a.state != AnimalState::Escaped {
+            return None;
+        }
+        let place = self.level.data.hiding_place(&a.hiding_place)?;
+        let h = place.perch_height_m?;
+        Some((crate::scene::perch_point(place, &self.level.data), h))
     }
 
     /// Takes the events since the last call. Progress events among them make an autosave due
@@ -596,8 +783,13 @@ impl Game {
         let i = self
             .animal_index(animal)
             .ok_or(InteractError::UnknownTarget)?;
+        if !self.in_scope(&self.animals[i]) {
+            return Err(InteractError::UnknownTarget);
+        }
         if !self.missions[i].started {
-            self.missions[i].started = true;
+            for j in self.group(animal) {
+                self.missions[j].started = true;
+            }
             self.events.push(GameEvent::MissionStarted {
                 animal: animal.to_owned(),
             });
@@ -633,10 +825,12 @@ impl Game {
         let d = if self.food_boxes.is_empty() {
             self.storage_distance()
         } else {
+            // every level has its own storage with all boxes (Q-089): the nearest box
             self.food_boxes
                 .iter()
-                .find(|b| b.0 == food)
+                .filter(|b| b.0 == food)
                 .map(|b| b.1.distance(self.player.pos))
+                .reduce(f32::min)
         }
         .ok_or(InteractError::UnknownTarget)?;
         if !in_interaction_range(d) {
@@ -654,35 +848,179 @@ impl Game {
     }
 
     /// Shows the carried food to an animal group within 2 m (GAME-RESCUE §5, GAME-FEED §4).
+    /// Both animals of a pair follow (FAM-002). An animal that needs a container (the goldfish)
+    /// jumps into the carried, filled bowl instead (RESC-018/019).
     pub fn show_food(&mut self, animal: &str) -> Result<(), InteractError> {
         let i = self
             .animal_index(animal)
             .ok_or(InteractError::UnknownTarget)?;
-        if !in_interaction_range(self.animals[i].pos.distance(self.player.pos)) {
+        if !self.in_scope(&self.animals[i]) {
+            return Err(InteractError::UnknownTarget);
+        }
+        let near = self
+            .group(animal)
+            .into_iter()
+            .map(|j| self.animals[j].pos.distance(self.player.pos))
+            .fold(f32::MAX, f32::min);
+        if !in_interaction_range(near) {
             return Err(InteractError::OutOfRange);
         }
         if self.animals[i].state != AnimalState::Escaped {
             return Ok(()); // following or home: nothing changes (ANIM-002)
         }
         // Only one group follows at a time (§5); a second group is not interested (Q-041 proposal).
-        let other_following = self.is_leading();
+        let other_following = self.is_leading() || self.carrying_animal();
         let right_food = self
             .carry
             .food()
             .is_some_and(|f| self.animals[i].info.eats(f));
         let id = animal.to_owned();
+        if right_food && self.needs_container(animal) {
+            let (carried, water) = self
+                .bowl
+                .as_ref()
+                .map_or((false, false), |b| (b.carried, b.water));
+            if !carried || other_following {
+                self.events.push(GameEvent::NeedsContainer { animal: id });
+            } else if !water {
+                self.events.push(GameEvent::ContainerEmpty { animal: id });
+            } else {
+                // fed from the bank: it jumps into the bowl, the food is used up
+                if let Some(food) = self.carry.consume() {
+                    self.events.push(GameEvent::FoodConsumed { food });
+                }
+                for j in self.group(animal) {
+                    let a = &mut self.animals[j];
+                    a.state = AnimalState::InBowl;
+                    a.wander = Wander::default();
+                    a.area = WanderArea::default();
+                    a.pos = self.player.pos;
+                }
+                if let Some(b) = &mut self.bowl {
+                    b.fish = true;
+                }
+                self.events.push(GameEvent::InContainer { animal: id });
+            }
+            return Ok(());
+        }
         if right_food && !other_following {
-            let a = &mut self.animals[i];
-            a.state = AnimalState::Following;
-            a.waiting = false;
-            a.path.clear();
-            a.path_target = None;
-            a.wander = Wander::default();
+            for j in self.group(animal) {
+                let a = &mut self.animals[j];
+                if a.state != AnimalState::Escaped {
+                    continue;
+                }
+                a.state = AnimalState::Following;
+                a.waiting = false;
+                a.path.clear();
+                a.path_target = None;
+                a.wander = Wander::default();
+            }
             self.events.push(GameEvent::StartedFollowing { animal: id });
         } else {
             self.events.push(GameEvent::NotInterested { animal: id });
         }
         Ok(())
+    }
+
+    /// Picks up the bowl (within 2 m, not carried).
+    pub fn take_item(&mut self, id: &str) -> Result<(), InteractError> {
+        let p = self.player.pos;
+        let b = self
+            .bowl
+            .as_mut()
+            .filter(|b| b.id == id)
+            .ok_or(InteractError::UnknownTarget)?;
+        if b.carried {
+            return Ok(());
+        }
+        if !in_interaction_range(b.pos.distance(p)) {
+            return Err(InteractError::OutOfRange);
+        }
+        b.carried = true;
+        b.lift_m = 0.0;
+        self.events.push(GameEvent::ItemTaken { id: id.to_owned() });
+        Ok(())
+    }
+
+    /// Puts the carried bowl down in front of the player (GAME-RESCUE "goldfish bowl" 7: the
+    /// fish stays safe in it).
+    pub fn put_down_item(&mut self) -> bool {
+        let at = self.player.pos + self.player.facing * 0.5;
+        let Some(b) = self.bowl.as_mut().filter(|b| b.carried) else {
+            return false;
+        };
+        b.carried = false;
+        b.pos = at;
+        b.lift_m = 0.0;
+        let id = b.id.clone();
+        self.events.push(GameEvent::ItemPutDown { id });
+        true
+    }
+
+    /// Fills the carried bowl at a water source within range (RESC-019).
+    pub fn fill_container(&mut self) -> Result<(), InteractError> {
+        let (source, point) = self.water_point().ok_or(InteractError::OutOfRange)?;
+        let _ = source;
+        if !in_interaction_range(point.distance(self.player.pos)) {
+            return Err(InteractError::OutOfRange);
+        }
+        let b = self
+            .bowl
+            .as_mut()
+            .filter(|b| b.carried)
+            .ok_or(InteractError::UnknownTarget)?;
+        if !b.water {
+            b.water = true;
+            self.events.push(GameEvent::ContainerFilled {
+                id: b.id.clone(),
+                animal: b.animal.clone(),
+            });
+        }
+        Ok(())
+    }
+
+    /// The nearest point of a water source in the unlocked levels (proposal Q-093): a tap
+    /// (`[[water_source]] kind = "tap"`) or the edge of a water landmark (`[[water_source]]
+    /// kind = "bank"`, and every river, pond, stream and fountain of the unlocked map).
+    pub fn water_point(&self) -> Option<(String, Vec2)> {
+        let data = &self.level.data;
+        let p = self.player.pos;
+        let mut best: Option<(String, Vec2)> = None;
+        let mut offer = |id: &str, q: Vec2| {
+            if best
+                .as_ref()
+                .is_none_or(|(_, b)| q.distance(p) < b.distance(p))
+            {
+                best = Some((id.to_owned(), q));
+            }
+        };
+        for w in &data.water_sources {
+            if !self.part_unlocked(w.part) {
+                continue;
+            }
+            if let (Some(pos), "tap") = (w.pos, w.kind.as_str()) {
+                offer(&w.id, Vec2::from(pos));
+            }
+        }
+        for e in &data.elements {
+            let water = e.ty == ElementType::Landmark
+                && e.kind
+                    .as_deref()
+                    .is_some_and(|k| crate::level::WATER_KINDS.contains(&k));
+            if !water || !self.part_unlocked(e.part) {
+                continue;
+            }
+            let r = e.rect;
+            let min = Vec2::new(r.x as f32, r.z as f32);
+            let q = p.clamp(min, min + Vec2::new(r.w as f32, r.d as f32));
+            let id = data
+                .water_sources
+                .iter()
+                .find(|w| w.water.as_deref() == Some(e.id.as_str()))
+                .map_or(e.id.as_str(), |w| w.id.as_str());
+            offer(id, q);
+        }
+        best
     }
 
     /// Everything the player can interact with right now, with interaction point and — for
@@ -700,7 +1038,7 @@ impl Game {
             let Some(a) = self
                 .animals
                 .iter()
-                .find(|a| data.elements[a.enclosure].id == enc)
+                .find(|a| data.elements[a.enclosure].id == enc && self.in_scope(a))
             else {
                 continue;
             };
@@ -719,7 +1057,7 @@ impl Game {
             });
         }
         for a in &self.animals {
-            if a.state == AnimalState::Escaped {
+            if a.state == AnimalState::Escaped && self.in_scope(a) {
                 out.push(Interactable {
                     target: Target::Animal { animal: a.id() },
                     point: a.pos,
@@ -727,7 +1065,25 @@ impl Game {
                 });
             }
         }
-        if self.is_leading() {
+        if let Some(b) = &self.bowl {
+            if !b.carried && self.part_unlocked(data.part_at(cell_of(b.pos)).unwrap_or(0)) {
+                out.push(Interactable {
+                    target: Target::Item { id: b.id.clone() },
+                    point: b.pos,
+                    readable: None,
+                });
+            }
+            if b.carried && !b.water {
+                if let Some((source, point)) = self.water_point() {
+                    out.push(Interactable {
+                        target: Target::Water { source },
+                        point,
+                        readable: None,
+                    });
+                }
+            }
+        }
+        if self.is_leading() || self.carrying_animal() {
             for e in data.elements_of(ElementType::Enclosure) {
                 if let Some(g) = e.gate {
                     let c = Vec2::new(g.x as f32 + g.w as f32 / 2.0, g.z as f32 + g.d as f32 / 2.0);
@@ -769,7 +1125,8 @@ impl Game {
         angle_deg(self.player.facing, -to_player) <= FACING_DEG
     }
 
-    /// The nearest available interactable (PLAY-021), if any.
+    /// The nearest available interactable (PLAY-021), if any. Putting a carried item down
+    /// is offered only when nothing else is available.
     pub fn available_target(&self) -> Option<Target> {
         let p = self.player.pos;
         self.interactables()
@@ -777,6 +1134,12 @@ impl Game {
             .filter(|it| self.is_available(it))
             .min_by(|a, b| a.point.distance(p).total_cmp(&b.point.distance(p)))
             .map(|it| it.target)
+            .or_else(|| {
+                self.bowl
+                    .as_ref()
+                    .is_some_and(|b| b.carried)
+                    .then_some(Target::PutDown)
+            })
     }
 
     /// Interacts with the available target (GAME-PLAYER §4/§5). Reading targets return what
@@ -817,10 +1180,64 @@ impl Game {
                     .elements
                     .iter()
                     .position(|e| e.id == enclosure)?;
-                let entered = self.lead_into(i, true);
+                let entered = if self.carrying_animal() {
+                    self.deliver_container(i)
+                } else {
+                    self.lead_into(i, true)
+                };
                 Some(Interaction::Gate { enclosure, entered })
             }
+            Target::Item { id } => {
+                self.take_item(&id).ok()?;
+                Some(Interaction::Item { id, action: "take" })
+            }
+            Target::Water { .. } => {
+                self.fill_container().ok()?;
+                let id = self.bowl.as_ref()?.id.clone();
+                Some(Interaction::Item { id, action: "fill" })
+            }
+            Target::PutDown => {
+                let id = self.bowl.as_ref()?.id.clone();
+                self.put_down_item().then_some(Interaction::Item {
+                    id,
+                    action: "put_down",
+                })
+            }
         }
+    }
+
+    /// Puts the bowl with its animal at an enclosure's gate (the goldfish's stone step): its
+    /// own home → it jumps in, mission complete (RESC-021); another enclosure → it refuses.
+    fn deliver_container(&mut self, enc: usize) -> bool {
+        let Some(animal) = self.bowl.as_ref().map(|b| b.animal.clone()) else {
+            return false;
+        };
+        let group = self.group(&animal);
+        let Some(&first) = group.first() else {
+            return false;
+        };
+        if self.animals[first].enclosure != enc {
+            self.events.push(GameEvent::Refuse {
+                animal,
+                enclosure: self.level.data.elements[enc].id.clone(),
+            });
+            return false;
+        }
+        let gate = self.level.data.elements[enc].gate;
+        if let Some(b) = &mut self.bowl {
+            b.carried = false;
+            b.fish = false;
+            b.pos = gate.map_or(self.player.pos, |g| {
+                Vec2::new(g.x as f32 + g.w as f32 / 2.0, g.z as f32 + g.d as f32 / 2.0)
+            });
+            b.lift_m = 0.1;
+        }
+        for j in group.clone() {
+            self.animals[j].pos = self.player.pos;
+            self.enter_enclosure(j, false);
+        }
+        self.complete_group(&animal);
+        true
     }
 
     /// The leading group enters enclosure element `enc` if it is theirs, else refuses
@@ -832,7 +1249,14 @@ impl Game {
             .position(|a| a.state == AnimalState::Following && !a.waiting);
         let Some(i) = leader else { return false };
         if self.animals[i].enclosure == enc {
-            self.enter_enclosure(i);
+            let id = self.animals[i].id();
+            for j in self.group(id) {
+                let a = &self.animals[j];
+                if a.state == AnimalState::Following && !a.waiting {
+                    self.enter_enclosure(j, true);
+                }
+            }
+            self.complete_group(id);
             true
         } else {
             self.animals[i].refusing = true;
@@ -850,14 +1274,25 @@ impl Game {
     /// coordinates `(x, z)`).
     pub fn update(&mut self, dt: f32, input: Vec2) {
         let leading = self.is_leading();
+        let mut params = self.move_params;
+        if self.carrying_animal() {
+            params.walk_speed *= CARRY_ANIMAL_SPEED_FACTOR; // careful (RESC-023)
+        }
         self.player.step_with(
             self.level.grid(),
             self.level.colliders(),
-            &self.move_params,
+            &params,
             input,
             dt,
             leading,
         );
+        if let Some(b) = self.bowl.as_ref().filter(|b| b.carried && b.fish) {
+            let animal = b.animal.clone();
+            for j in self.group(&animal) {
+                self.animals[j].pos = self.player.pos;
+                self.animals[j].facing = self.player.facing;
+            }
+        }
         self.check_gate();
         self.update_followers(dt);
         self.update_wander(dt);
@@ -964,8 +1399,10 @@ impl Game {
         self.lead_into(enc, entered);
     }
 
-    /// GAME-RESCUE §8 / §9.
-    fn enter_enclosure(&mut self, i: usize) {
+    /// GAME-RESCUE §8: one animal enters its enclosure (steps onto the cell inside the gate).
+    /// `eat_food`: the carried food is used up (not for an animal carried in its container,
+    /// which was fed at the bank).
+    fn enter_enclosure(&mut self, i: usize, eat_food: bool) {
         let enc_index = self.animals[i].enclosure;
         let area = wander::home_area(&self.level, enc_index);
         let entry = wander::home_entry(&self.level, enc_index)
@@ -996,21 +1433,77 @@ impl Game {
             route: Vec::new(),
         };
         let id = a.id().to_owned();
-        if let Some(food) = self.carry.consume() {
-            self.events.push(GameEvent::FoodConsumed { food });
+        if eat_food {
+            if let Some(food) = self.carry.consume() {
+                self.events.push(GameEvent::FoodConsumed { food });
+            }
         }
-        self.events
-            .push(GameEvent::InEnclosure { animal: id.clone() });
-        self.missions[i].complete = true;
-        self.events.push(GameEvent::MissionComplete { animal: id });
+        self.events.push(GameEvent::InEnclosure { animal: id });
+    }
+
+    /// GAME-RESCUE §8/§9, GAME-FAMILY §2: the mission completes when every animal of the
+    /// species is home; a level whose missions are all complete opens its exit barrier and
+    /// the entry barriers of the next level (temporary rule for Q-091: right after the last
+    /// celebration, until nightfall exists).
+    fn complete_group(&mut self, animal: &str) {
+        let group = self.group(animal);
+        if group.is_empty()
+            || !group
+                .iter()
+                .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
+            || self.missions[group[0]].complete
+        {
+            return;
+        }
+        for &j in &group {
+            self.missions[j].complete = true;
+        }
+        self.events.push(GameEvent::MissionComplete {
+            animal: animal.to_owned(),
+        });
+        let part = self.animals[group[0]].part;
+        let part_done = (0..self.animals.len())
+            .filter(|&j| self.animals[j].part == part)
+            .all(|j| self.missions[j].complete);
         if !self.all_home && self.missions.iter().all(|m| m.complete) {
             self.all_home = true;
             self.events.push(GameEvent::AllAnimalsHome);
-            // Proposal Q-022: exit barriers open when all animals of the level are home.
-            for b in self.level.exit_barriers() {
-                if self.level.open_barrier(&b) {
-                    self.events.push(GameEvent::BarrierOpened { id: b });
-                }
+        }
+        if part_done {
+            let level_id = self.level.data.parts[part].id.clone();
+            self.events.push(GameEvent::LevelComplete {
+                level: level_id.clone(),
+            });
+            self.open_exits(&level_id);
+        }
+    }
+
+    /// Opens the exit barriers of a completed level (`<level>-><next>`, proposal Q-022) and
+    /// every entry barrier of the next level if it is joined (level 3 is also entered
+    /// through the level-1 north gate, proposal Q-090).
+    fn open_exits(&mut self, level_id: &str) {
+        let mut ids = Vec::new();
+        for b in self.level.exit_barriers_of(level_id) {
+            let next = self
+                .level
+                .data
+                .element(&b)
+                .and_then(|e| e.transition.as_deref())
+                .and_then(|t| t.split("->").nth(1))
+                .map(str::to_owned);
+            ids.push(b);
+            if let Some(k) = next.and_then(|n| self.level.data.part_index(&n)) {
+                ids.extend(
+                    self.level.data.parts[k]
+                        .entries
+                        .iter()
+                        .map(|e| e.barrier.clone()),
+                );
+            }
+        }
+        for b in ids {
+            if self.level.open_barrier(&b) {
+                self.events.push(GameEvent::BarrierOpened { id: b });
             }
         }
     }
@@ -1073,7 +1566,19 @@ impl Game {
         let p = self.player.pos;
         for i in 0..self.animals.len() {
             let state = self.animals[i].state;
-            if state == AnimalState::Following || self.animals[i].area.is_empty() {
+            if matches!(state, AnimalState::Following | AnimalState::InBowl)
+                || self.animals[i].area.is_empty()
+                || !self.part_unlocked(self.animals[i].part)
+            {
+                continue; // locked levels are asleep (not simulated)
+            }
+            if self.perch(&self.animals[i]).is_some() {
+                // up in the tree / crow's nest: looks at the player when she is near (Q-094)
+                let a = &mut self.animals[i];
+                let to = p - a.pos;
+                if to.length() <= wander::NOTICE_PLAYER_M {
+                    a.facing = to.normalize_or(a.facing);
+                }
                 continue;
             }
             let escaped = state == AnimalState::Escaped;
@@ -1128,6 +1633,9 @@ impl Game {
     /// while escaped (e.g. `drink` at the river, `swim` in the pond), `swim` in water at home,
     /// else `idle`. The presentation falls back to `idle` if the model lacks the clip.
     pub fn rest_clip(&self, a: &Animal) -> &str {
+        if a.state == AnimalState::InBowl {
+            return "swim";
+        }
         if self.water_depth(a) > 0.5 && a.state != AnimalState::Following {
             return "swim";
         }
@@ -1159,7 +1667,16 @@ impl Game {
         if self.animals[i].state == AnimalState::InEnclosure {
             return false;
         }
-        self.enter_enclosure(i);
+        let id = self.animals[i].id();
+        for j in self.group(id) {
+            if self.animals[j].state != AnimalState::InEnclosure {
+                self.enter_enclosure(j, true);
+            }
+        }
+        if let Some(b) = self.bowl.as_mut().filter(|b| b.animal == id && b.fish) {
+            b.fish = false;
+        }
+        self.complete_group(id);
         true
     }
 
@@ -1182,7 +1699,7 @@ fn wander_area_of(level: &Level, a: &Animal) -> WanderArea {
             .map(|h| wander::hiding_area(level, h))
             .unwrap_or_default(),
         AnimalState::InEnclosure => wander::home_area(level, a.enclosure),
-        AnimalState::Following => WanderArea::default(),
+        AnimalState::Following | AnimalState::InBowl => WanderArea::default(),
     }
 }
 

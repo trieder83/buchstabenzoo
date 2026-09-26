@@ -32,6 +32,11 @@ updated: 2026-09-26
      (or in the doorway), the roof fades out within 0.3 s so the child sees what happens
      inside; it fades back in 0.3 s after she leaves. Animals inside a building are visible
      the same way when the player is inside with them.
+     *Implementation (M5b):* enterable buildings are those with `interior` + `door` in the
+     layout data (Q-092; so far only `zookeeper_house_3`). Its walls are split at 1 m: the
+     lower walls stay, the upper walls and the roof are one render region that is hidden
+     (instantly, i.e. within 0.3 s) while the player stands on an interior or door cell and
+     shown again as soon as she leaves (PLAY-028/029 e2e in `m5b.spec.ts`).
 3. **Movement and camera controls.**
    - **Desktop:** WASD / arrow keys walk; mouse drag or `Q`/`R` rotates the camera in 45°
      steps; mouse wheel (or `+`/`-`) zooms; `E`, Space or Enter interacts. (Fix 2026-09-26:

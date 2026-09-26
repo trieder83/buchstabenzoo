@@ -1,10 +1,14 @@
 // Save slot in the browser (GAME-SAVE): the game state is serialised in Rust; the host only
-// stores and loads the string. One slot per level for the PoC (profiles: Q-011).
+// stores and loads the string. One slot for the whole zoo (levels joined, M5b; profiles:
+// Q-011). The M4b/M5a slot of level 1 is read once and migrated by the game (save v1 → v2).
 import type { KeyValue } from './ui';
 
-export const SAVE_KEY = 'zoo.save.level-1';
+export const SAVE_KEY = 'zoo.save';
+/** Slot of the level-1-only saves (M4b/M5a): read when `SAVE_KEY` is empty, then removed. */
+export const LEGACY_SAVE_KEY = 'zoo.save.level-1';
 /** Hiding places of the last new game (Q-082: the next new game avoids them). */
-export const PICKS_KEY = 'zoo.picks.level-1';
+export const PICKS_KEY = 'zoo.picks';
+export const LEGACY_PICKS_KEY = 'zoo.picks.level-1';
 
 /** The subset of the WASM `App` used for saving. */
 export interface SaveApp {
@@ -28,7 +32,7 @@ export interface Removable extends KeyValue {
 
 function read(store: KeyValue | null): string | null {
   try {
-    return store?.getItem(SAVE_KEY) ?? null;
+    return store?.getItem(SAVE_KEY) ?? store?.getItem(LEGACY_SAVE_KEY) ?? null;
   } catch {
     return null;
   }
@@ -45,6 +49,7 @@ function write(store: KeyValue | null, json: string): void {
 export function clearSave(store: Removable | null): void {
   try {
     store?.removeItem(SAVE_KEY);
+    store?.removeItem(LEGACY_SAVE_KEY);
   } catch {
     // blocked storage
   }
@@ -71,7 +76,7 @@ export class SaveSlot {
     if (this.restore()) return true;
     let avoid = '';
     try {
-      avoid = this.store?.getItem(PICKS_KEY) ?? '';
+      avoid = this.store?.getItem(PICKS_KEY) ?? this.store?.getItem(LEGACY_PICKS_KEY) ?? '';
     } catch {
       avoid = '';
     }
@@ -88,7 +93,18 @@ export class SaveSlot {
   restore(): boolean {
     const json = read(this.store);
     if (!json) return false;
-    if (this.app.restore(json)) return true;
+    if (this.app.restore(json)) {
+      // migrated legacy slot: continue in the new slot
+      try {
+        if (this.store?.getItem(SAVE_KEY) === null) {
+          this.store.setItem(SAVE_KEY, this.app.save());
+          this.store.removeItem(LEGACY_SAVE_KEY);
+        }
+      } catch {
+        // blocked storage
+      }
+      return true;
+    }
     clearSave(this.store);
     return false;
   }

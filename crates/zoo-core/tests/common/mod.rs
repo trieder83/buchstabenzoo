@@ -27,3 +27,20 @@ pub fn content() -> Content {
 pub fn game(seed: u64) -> Game {
     Game::new(level1(), seed).expect("game starts")
 }
+
+pub fn level2() -> LevelData {
+    LevelData::from_toml_str(&read("assets/levels/level-2.toml")).expect("level-2.toml parses")
+}
+
+pub fn level3() -> LevelData {
+    LevelData::from_toml_str(&read("assets/levels/level-3.toml")).expect("level-3.toml parses")
+}
+
+/// Levels 1–3 joined into one zoo (GAME-LAYOUT "Joining levels", proposal Q-088).
+pub fn zoo() -> LevelData {
+    LevelData::join(vec![level1(), level2(), level3()]).expect("levels join")
+}
+
+pub fn zoo_game(seed: u64) -> Game {
+    Game::new(zoo(), seed).expect("zoo game starts")
+}

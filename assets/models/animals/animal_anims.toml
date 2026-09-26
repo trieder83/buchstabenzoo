@@ -408,3 +408,121 @@ loop = false
 crossfade_in = 0.10
 events = {}
 used_for = ["refuse", "not_interested"]
+
+# ---- ambient animals (GAME-AMBIENT): decoration with behaviour, no missions. Every clip row
+# carries kind = "ambient" (a per-clip key so both the TOML and the tiny Python parser of
+# check_animal.py read it without an [animal] table). No root motion anywhere: the game
+# moves / turns them.
+#
+# duck, duckling (bird rig, tools/blender/animals/bird_rig.py). Origin = WATER SURFACE under
+# the body centre (like the goldfish): place the origin at the water height, never sink the
+# model. swim.speed = authored paddling speed (playback rate = actual / speed, like walk);
+# GAME-AMBIENT swims 0.3-0.6 m/s. dip: head under water between dip_under and dip_up (water
+# rings, TECH-WATER); flap: splash when it drops back on the water.
+[duck.swim]
+frames = 30
+loop = true
+crossfade_in = 0.25
+events = {}
+speed = 0.45
+kind = "ambient"
+
+[duck.idle]
+frames = 90
+loop = true
+crossfade_in = 0.30
+events = {}
+kind = "ambient"
+
+[duck.dip]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { dip_under = 11, dip_up = 46 }
+kind = "ambient"
+
+[duck.flap]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { flap_peak = 14, splash = 38 }
+kind = "ambient"
+
+[duck.preen]
+frames = 75
+loop = false
+crossfade_in = 0.20
+events = {}
+kind = "ambient"
+
+[duckling.swim]
+frames = 30
+loop = true
+crossfade_in = 0.25
+events = {}
+speed = 0.45
+kind = "ambient"
+
+[duckling.idle]
+frames = 90
+loop = true
+crossfade_in = 0.30
+events = {}
+kind = "ambient"
+
+[duckling.dip]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { dip_under = 11, dip_up = 46 }
+kind = "ambient"
+
+[duckling.flap]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { flap_peak = 14, splash = 38 }
+kind = "ambient"
+
+[duckling.preen]
+frames = 75
+loop = false
+crossfade_in = 0.20
+events = {}
+kind = "ambient"
+
+# frog (own frog rig, tools/blender/animals/frog.py). Origin on the ground at the feet (on a
+# lily pad or the bank). hop: vertical hips arc only (peak +0.17 m) — NO forward root
+# motion: the game carries the frog hop_distance m forward between takeoff and land (a
+# 0.6 m hop in 14 frames = 0.47 s). swim: the hips sink 0.085 m so the body floats with the
+# eyes out; while swimming the origin is the WATER SURFACE. croak: vocal sac puffs at the
+# events.
+[frog.idle]
+frames = 90
+loop = true
+crossfade_in = 0.25
+events = {}
+kind = "ambient"
+
+[frog.croak]
+frames = 45
+loop = false
+crossfade_in = 0.15
+events = { croak = 11, croak_2 = 28 }
+kind = "ambient"
+
+[frog.hop]
+frames = 30
+loop = false
+crossfade_in = 0.08
+events = { takeoff = 8, land = 22 }
+hop_distance = 0.6
+kind = "ambient"
+
+[frog.swim]
+frames = 30
+loop = true
+crossfade_in = 0.20
+events = {}
+speed = 0.3
+kind = "ambient"

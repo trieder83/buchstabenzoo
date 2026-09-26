@@ -17,6 +17,8 @@ export interface UiApp {
   take_food(food: string): boolean;
   carry_food(): string;
   carry_text(): string;
+  /** Carried fish bowl: '' (none), 'empty', 'water', 'fish' (RESC-020). */
+  carry_bowl?(): string;
   poll_events(): string;
   set_language(id: string): boolean;
   set_reading_level(id: string): boolean;
@@ -44,15 +46,43 @@ export const FOOD_ICONS: Record<string, string> = {
 /** Placeholder pictures of hiding places (kiga riddle). */
 export const PLACE_ICONS: Record<string, string> = {
   loc_river: '🏞️',
+  loc_meadow: '🌼',
+  loc_sand: '🏖️',
   loc_pond: '🪷',
+  loc_mud: '🟤',
+  loc_shade: '🌳',
   loc_cave: '🕳️',
-  loc_tallest_tree: '🌳',
+  loc_bamboo: '🎋',
+  loc_leaves: '🍂',
+  loc_treehouse: '🛖',
+  loc_tallest_tree: '🌲',
+  loc_blossom_tree: '🌸',
   loc_mud_pool: '🟤',
   loc_fountain: '⛲',
-  loc_pirate_ship: '🏴‍☠️',
+  loc_log_pile: '🪵',
+  loc_big_ball: '🔴',
+  loc_lookout_tower: '🗼',
+  loc_train: '🚂',
   loc_playground: '🛝',
   loc_sun_rocks: '🪨',
+  loc_stage: '🥁',
+  loc_deckchairs: '⛱️',
+  loc_pirate_ship: '🏴‍☠️',
+  loc_carousel: '🎠',
+  loc_trampoline: '🤸',
+  loc_waterfall: '💦',
+  loc_water_wheel: '⚙️',
+  loc_willow: '🌿',
   loc_ice_cream_kiosk: '🍦',
+  loc_sprinkler: '🌈',
+  loc_laundry: '👕',
+};
+
+/** Placeholder pictures of the carried fish bowl (HUD, RESC-020). */
+export const BOWL_ICONS: Record<string, string> = {
+  empty: '🫙',
+  water: '💧',
+  fish: '🐠',
 };
 
 /** Placeholder animal pictures (info board heading, kiga facts picture). */
@@ -75,6 +105,9 @@ export const TARGET_ICONS: Record<string, string> = {
   food_box: '✋',
   animal: '🤲',
   gate: '🏠',
+  item: '🫙',
+  water: '💧',
+  put_down: '⬇️',
 };
 
 const LEVEL_ICONS: Record<string, string> = { kiga: '🧸', klasse1: '1', klasse2: '2', klasse3: '3' };
@@ -135,6 +168,8 @@ interface PanelData {
   food?: string;
   food_text?: string;
   take?: string;
+  /** Info board: a container is needed (the goldfish bowl hint). */
+  hint?: string | null;
 }
 
 interface GameEventMsg {
@@ -247,7 +282,7 @@ export class Ui {
       (this.hint.querySelector('.icon') as HTMLElement).textContent = icon;
       // reading panels open/close by themselves: decided in Rust (panel_open/panel_close)
     }
-    const carry = this.app.carry_food();
+    const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
       this.renderCarry();
@@ -255,13 +290,23 @@ export class Ui {
     this.pollEvents();
   }
 
+  /** HUD: the carried food and — carried with both hands — the fish bowl (RESC-020). */
   private renderCarry(): void {
     const carry = this.app.carry_food();
-    this.hud.hidden = !carry;
+    const bowl = this.app.carry_bowl?.() ?? '';
+    this.hud.hidden = !carry && !bowl;
     this.hud.dataset.food = carry;
+    this.hud.dataset.bowl = bowl;
     this.hud.replaceChildren();
-    if (!carry) return;
-    this.hud.append(el('span', 'icon', FOOD_ICONS[carry] ?? '📦'), el('span', 'word', this.app.carry_text()));
+    if (bowl) {
+      const b = el('span', 'bowl', BOWL_ICONS[bowl] ?? '🫙');
+      b.id = 'hud-bowl';
+      b.dataset.bowl = bowl;
+      this.hud.append(b);
+    }
+    if (carry) {
+      this.hud.append(el('span', 'icon', FOOD_ICONS[carry] ?? '📦'), el('span', 'word', this.app.carry_text()));
+    }
     this.hud.setAttribute('aria-label', `${this.app.t('ui-carrying')} ${this.app.carry_text()}`);
   }
 
@@ -305,6 +350,12 @@ export class Ui {
       food.append(el('span', 'word', data.food_text ?? ''));
       food.dataset.food = data.food ?? '';
       main.append(food);
+      if (data.hint) {
+        // the goldfish needs a bowl with water (GAME-RESCUE "goldfish bowl" 1)
+        const hint = el('p', 'panel-hint', data.hint);
+        hint.id = 'panel-hint';
+        main.append(hint);
+      }
       kids.push(main);
       const more = el('div', 'panel-more');
       more.id = 'panel-more';

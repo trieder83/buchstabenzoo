@@ -4,8 +4,8 @@ use std::path::PathBuf;
 
 use zoo_assets::{find_files, Model};
 
-/// Models whose origin is the water surface (fish rig), not the ground.
-const WATER_ORIGIN: &[&str] = &["goldfish"];
+/// Models whose origin is the water surface (fish rig, ducks — GAME-AMBIENT §4), not the ground.
+const WATER_ORIGIN: &[&str] = &["goldfish", "duck", "duckling"];
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -26,8 +26,10 @@ fn every_glb_loads() {
         let (lo, _) = m.mesh.bounds();
         // Swimming animals (fish rig, ART-ANIMALS) have their origin at the water surface
         // with the body below it; everything else stands on the ground.
-        if f.file_stem()
-            .is_some_and(|n| WATER_ORIGIN.contains(&n.to_string_lossy().as_ref()))
+        let in_animals = f.parent().is_some_and(|d| d.ends_with("animals"));
+        if in_animals
+            && f.file_stem()
+                .is_some_and(|n| WATER_ORIGIN.contains(&n.to_string_lossy().as_ref()))
         {
             assert!(
                 lo.y < 0.0,

@@ -83,14 +83,58 @@ FISH_PARENTS = {"root": None, "hips": "root", "head": "hips", "spine_1": "hips",
                 "spine_2": "spine_1", "spine_3": "spine_2", "tail_fin": "spine_3",
                 "fin_dorsal": "spine_1", "fin_pec_l": "hips", "fin_pec_r": "hips",
                 "fin_pelvic_l": "hips", "fin_pelvic_r": "hips", "fin_anal": "spine_2"}
+# ambient animals (GAME-AMBIENT; tools/blender/animals/bird_rig.py, frog.py): bird = duck
+# rig, origin at the water surface (waterline) under the body; frog = origin at the feet.
+BIRD_PARENTS = {"root": None, "hips": "root", "spine": "hips", "chest": "spine",
+                "neck_1": "chest", "neck_2": "neck_1", "head": "neck_2", "tail": "hips"}
+FROG_PARENTS = {"root": None, "hips": "root", "spine": "hips", "head": "spine",
+                "throat": "head"}
+for _s in ("l", "r"):
+    BIRD_PARENTS.update({f"wing_upper_{_s}": "chest", f"wing_lower_{_s}": f"wing_upper_{_s}",
+                         f"leg_upper_{_s}": "hips", f"leg_lower_{_s}": f"leg_upper_{_s}"})
+    FROG_PARENTS.update({f"arm_{_s}": "spine", f"leg_upper_{_s}": "hips",
+                         f"leg_lower_{_s}": f"leg_upper_{_s}"})
 OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
     "monkey": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 1.10}),
     "goldfish": ("fish", FISH_PARENTS, [], {"length": 0.60, "depth": 0.22}),
+    "duck": ("bird", BIRD_PARENTS, [], {"length": 0.45, "height": 0.34}),
+    "duckling": ("bird", BIRD_PARENTS, [], {"length": 0.22, "height": 0.23}),
+    "frog": ("frog", FROG_PARENTS, [], {"length": 0.18, "height": 0.17}),
 }
+# ambient animals are not in assets/manifest.toml (their concept is approved as part of
+# kit_water); their expected clips come from here (== animal_anims.toml, kind = "ambient")
+AMBIENT = {
+    "duck": ["swim", "idle", "dip", "flap", "preen"],
+    "duckling": ["swim", "idle", "dip", "flap", "preen"],
+    "frog": ["idle", "croak", "hop", "swim"],
+}
+MAX_AMBIENT_TRIS = 1200
 
 
 def check_other_rest(rig, exp, rp, mn, mx, err):
-    """AANI-005 for the biped / fish rigs."""
+    """AANI-005 for the biped / fish / bird / frog rigs."""
+    if rig in ("bird", "frog"):
+        if any(abs(c) > 1e-4 for c in rp["root"]):
+            err.append(f"AANI-005 {rig} root is not at the origin")
+        if abs(mx[2] - mn[2] - exp["length"]) > 0.03:
+            err.append(f"AANI-005 length {mx[2] - mn[2]:.3f} m (expected {exp['length']} +- 0.03)")
+        if abs(mx[1] - exp["height"]) > 0.03:
+            err.append(f"AANI-005 height {mx[1]:.3f} m (expected {exp['height']} +- 0.03)")
+        if not rp["head"][2] > rp["hips"][2]:
+            err.append("AANI-005 not facing +Z")
+        if not rp["leg_upper_l"][0] > 0 > rp["leg_upper_r"][0]:
+            err.append("AANI-005 leg_upper_l is not at +X")
+        if rig == "bird":
+            # waterline origin: body floats (hips above the water), only legs/feet deep below
+            if not 0 < rp["hips"][1] < 0.5 * mx[1]:
+                err.append(f"AANI-005 bird hips y {rp['hips'][1]:.3f} not just above the water")
+            if mn[1] < -0.25 * mx[1]:
+                err.append(f"AANI-005 bird reaches {mn[1]:.3f} m below the waterline")
+            if not rp["head"][2] > 0 > rp["tail"][2]:
+                err.append("AANI-005 bird head / tail not at +Z / -Z")
+        elif abs(mn[1]) > 0.01:
+            err.append(f"AANI-005 frog min Y = {mn[1]:.4f} (expected 0: origin at the feet)")
+        return
     if rig == "biped":
         if abs(mn[1]) > 0.01:
             err.append(f"AANI-005 min Y = {mn[1]:.4f} (expected 0)")
@@ -283,6 +327,8 @@ def check(path, anims_data):
         wh = png_size(m, js["images"][js["textures"][ti]["source"]])
         if wh is None or wh[0] > 256 or wh[1] > 256:
             err.append(f"AANI-004 texture {wh} exceeds 256 x 256")
+    if asset in AMBIENT and tris > MAX_AMBIENT_TRIS:
+        err.append(f"GAME-AMBIENT {tris} triangles > {MAX_AMBIENT_TRIS}")
     if tris > MAX_TRIS:
         err.append(f"AANI-004 {tris} triangles > {MAX_TRIS}")
     if size > MAX_BYTES:
@@ -309,6 +355,10 @@ def check(path, anims_data):
     # AANI-006 clips
     anims = {a["name"]: a for a in js.get("animations", [])}
     want = manifest_animations(asset)
+    if want is None and asset in AMBIENT:
+        want = AMBIENT[asset]
+        if any(r.get("kind") != "ambient" for r in anims_data.get(asset, {}).values()):
+            err.append("animal_anims.toml: ambient clip rows need kind = \"ambient\"")
     if want is None:
         err.append("asset not in manifest")
         want = []
@@ -346,7 +396,7 @@ def check(path, anims_data):
             if worst_r > 0.5 or dt > 0.002:
                 err.append(f"AANI-006 {name}: loop seam {worst_r:.2f} deg / {dt * 1000:.1f} mm")
         # AANI-008 planted hooves (locomotion clips carry a speed)
-        if "speed" in row:
+        if "speed" in row and (FEET if not other else other[2]):
             v = row["speed"]
             drift_all = []
             for foot in (other[2] if other else FEET):

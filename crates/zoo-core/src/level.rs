@@ -146,6 +146,16 @@ pub struct Element {
     /// `["grass"]` (GAME-LAYOUT "Enclosure features and wandering at home", Q-085).
     #[serde(default)]
     pub home_wander_on: Vec<String>,
+    /// Enterable buildings (proposal Q-092): walkable interior cells (surface `path`); with
+    /// the `door` cell they are the only walkable cells of the building rect.
+    pub interior: Option<Rect>,
+    /// Enclosures: the species lives here as a pair (GAME-FAMILY; data flag, off until the
+    /// female model exists).
+    #[serde(default)]
+    pub pair: bool,
+    /// Index of the level part the element comes from ([`LevelData::parts`]).
+    #[serde(skip)]
+    pub part: usize,
 }
 
 /// One tree or bush of a `sparse` tree area.
@@ -187,6 +197,17 @@ impl Element {
         self.door.map(|d| IVec2::new(d[0], d[1]))
     }
 
+    /// An enterable building (Q-092): a `building` with an `interior` rect.
+    pub fn is_enterable(&self) -> bool {
+        self.ty == ElementType::Building && self.interior.is_some()
+    }
+
+    /// Whether a cell of an enterable building is walkable (interior or door cell).
+    pub fn is_open_cell(&self, c: IVec2) -> bool {
+        self.interior.is_some_and(|r| r.contains(c)) && self.ty == ElementType::Building
+            || (self.is_enterable() && self.door_cell() == Some(c))
+    }
+
     pub fn animal_spot_cell(&self) -> Option<IVec2> {
         self.animal_spot.map(|d| IVec2::new(d[0], d[1]))
     }
@@ -219,6 +240,60 @@ pub struct Spawn {
     pub facing: String,
 }
 
+/// A level entry (`[[entry]]`, GAME-LAYOUT "Joining levels", proposal Q-088): cells of this
+/// level edge-adjacent to a barrier of an earlier level; the only walkable border cells.
+#[derive(Debug, Clone, Deserialize)]
+pub struct EntryData {
+    pub id: String,
+    pub cells: Rect,
+    pub from_level: String,
+    pub barrier: String,
+}
+
+/// A carryable item (`[[item]]`, proposal Q-093), e.g. the fish bowl.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ItemData {
+    pub id: String,
+    pub kind: String,
+    pub pos: [f32; 2],
+    pub building: Option<String>,
+    /// The animal that needs this item to be carried home (GAME-RESCUE "goldfish bowl").
+    pub animal: Option<String>,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+impl ItemData {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::from(self.pos)
+    }
+}
+
+/// A place where the fish bowl is filled (`[[water_source]]`, proposal Q-093): `tap` = prop
+/// at `pos`; `bank` = every walkable cell edge-adjacent to the water element `water`.
+#[derive(Debug, Clone, Deserialize)]
+pub struct WaterSourceData {
+    pub id: String,
+    pub kind: String,
+    pub pos: Option<[f32; 2]>,
+    pub facing: Option<String>,
+    pub water: Option<String>,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+/// One level file inside a (joined) [`LevelData`] (GAME-LAYOUT "Joining levels").
+#[derive(Debug, Clone)]
+pub struct LevelPart {
+    pub id: String,
+    pub bounds: Rect,
+    pub spawn: Spawn,
+    /// Missions in scope of this level: `[level] missions`, else the animal of every
+    /// enclosure of the level (Q-069).
+    pub missions: Vec<String>,
+    pub entries: Vec<EntryData>,
+}
+
 impl Spawn {
     pub fn cell(&self) -> IVec2 {
         IVec2::new(self.cell[0], self.cell[1])
@@ -248,6 +323,8 @@ pub struct FoodBoxData {
     pub pos: [f32; 2],
     #[serde(default = "default_south")]
     pub facing: String,
+    #[serde(skip)]
+    pub part: usize,
 }
 
 impl FoodBoxData {
@@ -285,6 +362,11 @@ pub struct HidingPlaceData {
     pub scenery: Vec<String>,
     /// Clip played at the place when not walking (proposal, Q-043).
     pub pose: Option<String>,
+    /// The animal sits up in a tree / on the ship at this height above its spot and does not
+    /// wander (proposal Q-094).
+    pub perch_height_m: Option<f32>,
+    #[serde(skip)]
+    pub part: usize,
 }
 
 fn default_wander_radius() -> f32 {
@@ -363,7 +445,26 @@ pub struct LevelData {
     /// Enclosure pools and reserved areas.
     #[serde(default, rename = "enclosure_feature")]
     pub enclosure_features: Vec<EnclosureFeature>,
+    /// Level entries (proposal Q-088).
+    #[serde(default, rename = "entry")]
+    pub entries: Vec<EntryData>,
+    /// Carryable items (proposal Q-093).
+    #[serde(default, rename = "item")]
+    pub items: Vec<ItemData>,
+    /// Water sources for the fish bowl (proposal Q-093).
+    #[serde(default, rename = "water_source")]
+    pub water_sources: Vec<WaterSourceData>,
+    /// The level files joined into this data (one for a single level file).
+    #[serde(skip)]
+    pub parts: Vec<LevelPart>,
 }
+
+/// Id of the joined zoo (all day levels in one grid, GAME-LAYOUT "Joining levels").
+pub const ZOO_ID: &str = "zoo";
+
+/// Water landmark kinds (not walkable; hiding places `wander_on = "water"`; their banks fill
+/// the fish bowl, proposal Q-093).
+pub const WATER_KINDS: [&str; 4] = ["pond", "river", "stream", "fountain"];
 
 #[derive(Debug)]
 pub enum LevelError {
@@ -419,7 +520,117 @@ impl LevelData {
                 "only ground_walkable = true is supported (Q-046)".into(),
             ));
         }
+        let mut data = data;
+        let missions = if data.level.missions.is_empty() {
+            data.elements_of(ElementType::Enclosure)
+                .filter_map(|e| e.animal.clone())
+                .collect()
+        } else {
+            data.level.missions.clone()
+        };
+        data.parts = vec![LevelPart {
+            id: data.level.id.clone(),
+            bounds: data.level.bounds,
+            spawn: data.spawn.clone(),
+            missions,
+            entries: data.entries.clone(),
+        }];
         Ok(data)
+    }
+
+    /// Joins level files into one continuous zoo (GAME-LAYOUT "Joining levels", proposal
+    /// Q-088): same coordinates, disjoint bounds, the union of all elements. The first level
+    /// gives the spawn; ids must be unique over all levels. `parts` keeps each level's id,
+    /// bounds, spawn, missions and entries (the order of `levels`).
+    pub fn join(levels: Vec<LevelData>) -> Result<Self, LevelError> {
+        let mut it = levels.into_iter();
+        let Some(mut out) = it.next() else {
+            return Err(LevelError::Invalid("no level to join".into()));
+        };
+        for next in it {
+            let k = out.parts.len();
+            for p in &next.parts {
+                if out.parts.iter().any(|q| rects_overlap(q.bounds, p.bounds)) {
+                    return Err(LevelError::Invalid(format!(
+                        "bounds of {} overlap another level",
+                        p.id
+                    )));
+                }
+            }
+            for e in &next.elements {
+                if out.element(&e.id).is_some() {
+                    return Err(LevelError::Invalid(format!(
+                        "duplicate element id {}",
+                        e.id
+                    )));
+                }
+            }
+            for h in &next.hiding_places {
+                if out.hiding_place(&h.id).is_some() {
+                    return Err(LevelError::Invalid(format!(
+                        "duplicate hiding place {}",
+                        h.id
+                    )));
+                }
+            }
+            let shift = |p: usize| p + k;
+            out.elements.extend(next.elements.into_iter().map(|mut e| {
+                e.part = shift(e.part);
+                e
+            }));
+            out.food_boxes
+                .extend(next.food_boxes.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
+            out.hiding_places
+                .extend(next.hiding_places.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
+            out.items.extend(next.items.into_iter().map(|mut e| {
+                e.part = shift(e.part);
+                e
+            }));
+            out.water_sources
+                .extend(next.water_sources.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
+            out.scenery.extend(next.scenery);
+            out.enclosure_features.extend(next.enclosure_features);
+            out.entries.extend(next.entries);
+            out.parts.extend(next.parts);
+        }
+        if out.parts.len() > 1 {
+            let mut b = out.parts[0].bounds;
+            for p in &out.parts[1..] {
+                b = rect_union(b, p.bounds);
+            }
+            out.level.id = ZOO_ID.to_owned();
+            out.level.spec = None;
+            out.level.bounds = b;
+            out.level.missions = out.parts.iter().flat_map(|p| p.missions.clone()).collect();
+        }
+        Ok(out)
+    }
+
+    /// Index of the level part whose bounds contain the cell.
+    pub fn part_at(&self, c: IVec2) -> Option<usize> {
+        self.parts.iter().position(|p| p.bounds.contains(c))
+    }
+
+    /// Index of a level part by its id.
+    pub fn part_index(&self, id: &str) -> Option<usize> {
+        self.parts.iter().position(|p| p.id == id)
+    }
+
+    /// Level part of the enclosure of an animal (by the enclosure's `animal`).
+    pub fn part_of_animal(&self, animal: &str) -> Option<usize> {
+        self.elements
+            .iter()
+            .find(|e| e.ty == ElementType::Enclosure && e.animal.as_deref() == Some(animal))
+            .map(|e| e.part)
     }
 
     pub fn element(&self, id: &str) -> Option<&Element> {
@@ -470,6 +681,18 @@ impl LevelData {
     }
 }
 
+fn rects_overlap(a: Rect, b: Rect) -> bool {
+    a.x < b.x + b.w && b.x < a.x + a.w && a.z < b.z + b.d && b.z < a.z + a.d
+}
+
+fn rect_union(a: Rect, b: Rect) -> Rect {
+    let x0 = a.x.min(b.x);
+    let z0 = a.z.min(b.z);
+    let x1 = (a.x + a.w).max(b.x + b.w);
+    let z1 = (a.z + a.d).max(b.z + b.d);
+    Rect::new(x0, z0, x1 - x0, z1 - z0)
+}
+
 /// What a grid cell is, for movement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CellKind {
@@ -489,6 +712,8 @@ struct CellInfo {
     gate: Option<u16>,
     /// The player circle cannot stand on the cell centre because of a prop (GAME-PLAYER §7).
     prop_blocked: bool,
+    /// Inside the joined bounding box but in no level (GAME-LAYOUT "Joining levels").
+    outside: bool,
 }
 
 /// Walkable grid of a level.
@@ -508,11 +733,21 @@ impl Grid {
             b.contains(c)
                 .then(|| ((c.y - b.z) * b.w + (c.x - b.x)) as usize)
         };
+        if data.parts.len() > 1 {
+            for c in b.cells() {
+                if data.part_at(c).is_none() {
+                    cells[index(c).expect("in bounds")].outside = true;
+                }
+            }
+        }
         for (i, e) in data.elements.iter().enumerate() {
             let open = e.ty == ElementType::Barrier && open_barriers.contains(&e.id);
             for c in e.rect.cells() {
                 let Some(k) = index(c) else { continue };
                 if e.ty == ElementType::Path {
+                    cells[k].path = true;
+                } else if e.is_open_cell(c) {
+                    // interior / door of an enterable building: floor (Q-092)
                     cells[k].path = true;
                 } else if e.is_solid() && !open && cells[k].solid.is_none() {
                     cells[k].solid = Some(i as u16);
@@ -564,6 +799,9 @@ impl Grid {
             return CellKind::OutOfBounds;
         };
         let info = self.cells[k];
+        if info.outside {
+            return CellKind::OutOfBounds;
+        }
         match (info.gate, info.solid) {
             (Some(g), _) => CellKind::Gate(g as usize),
             (None, Some(_)) => CellKind::Solid,
@@ -706,7 +944,12 @@ impl Level {
 
     /// Barriers whose transition leaves this level (`<level_id>-><next>`), proposal Q-022.
     pub fn exit_barriers(&self) -> Vec<String> {
-        let prefix = format!("{}->", self.data.level.id);
+        self.exit_barriers_of(&self.data.parts[0].id.clone())
+    }
+
+    /// Barriers whose transition leaves the level `level_id` (`<level_id>-><next>`).
+    pub fn exit_barriers_of(&self, level_id: &str) -> Vec<String> {
+        let prefix = format!("{level_id}->");
         self.data
             .elements_of(ElementType::Barrier)
             .filter(|e| {

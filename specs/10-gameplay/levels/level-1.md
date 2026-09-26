@@ -4,7 +4,7 @@ title: Level 1 — entrance, zebra, hippo, panda
 aspect: gameplay
 module: levels
 status: draft
-depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER]
+depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN]
 test_prefix: LAYOUT-L1
 updated: 2026-09-26
 ---
@@ -26,7 +26,8 @@ three times:
 | `hippo` | `enc_hippo` (east) | Melonen / melons | `loc_pond` (west), `loc_mud` (north-west corner), `loc_shade` (west, at the zoo wall) | still water, water lilies, frogs · brown mud, wet, splashing · shade under big trees, zoo wall, dry grass |
 | `panda` | `enc_panda` (north) | Bambus / bamboo | `loc_cave` (south-east), `loc_bamboo` (south-west corner), `loc_leaves` (north-east corner) | dark, cool, stone, echo · tall green bamboo thicket taller than the wall · red/yellow leaf pile, rake |
 
-Plus the zoo entrance (spawn) and the food storage. Everything else of the zoo is closed off
+Plus the zoo entrance (spawn), the food storage and, in the back, the vegetable garden
+`garden_veg` (GAME-GARDEN, see "Vegetable garden"). Everything else of the zoo is closed off
 by child-friendly barriers.
 
 **Discovery (user decision 2026-09-26, GAME-RESCUE §1):** every animal has 3 candidate
@@ -67,6 +68,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Tree areas | `grove_center` `dense` with a bush border; `trees_nw`, `trees_ne` `sparse` with explicit tree/bush positions (see "Woods"); wander areas of hiding places clipped to their `rect`. Implemented in M5a as proposed. | Q-085 |
 | Collision footprints, invisible walls | Footprint values and fixes of GAME-LAYOUT "Collision footprints"; exceptions for this level in "Woods" and "Collision and billboards". Implemented in M5a as proposed (deviations noted there). | Q-087 |
 | Enclosure signs | The sign in front of each gate becomes a gate arch (panel bottom ≥ 2.1 m) so the player never passes through its panel. | Q-086 |
+| Vegetable garden | `garden_veg` (GAME-GARDEN) in the back strip x 6–9, z 36–45 between panda enclosure and river: data lists `[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]` (not elements; fence, beds, signs and tools are prop colliders), a 2 m gate that swings open by itself, animals never enter the garden (see "Vegetable garden"). | Q-102 |
 
 ## Spawn and camera
 
@@ -85,16 +87,16 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
 ```
   47 ##%%%%%%%%%%%%%XXX%%%%%%%%%%%%%%%%~~~%%%%%%%%%%%
   46 ##%%%%%%%%%%%%%XXX%%%%%%%%%%%%%%%%~~~%%%%%%%%%%%
-  45 ##..mmmmmmm....===.....sssssss....~~~.........%%
-  44 ##..mmm6mmm....===.....sss5sss....~~~..ll9l...%%
-  43 ##..mmmmmmm....===.....sssssss....~~~..llll...%%
-  42 ##..mmmmmmm....===.....sssssss....~~~==::::::.%%
-  41 ##..::*::*::...===pppppppppppp....~~~==:t::t:.%%
-  40 ##..::::::::...===pppppppppppp....~~~==::::::.%%
-  39 ##,,::::::::...===pppppppppppp....~~~==::::::.%%
-  38 ##,,:t::t::t...===pppppppppppp....~~~==::t::t.%%
-  37 ##,,::::::::...===pppppppppppp....~~~==::::::.%%
-  36 ##7,::t::t::...===pppppppppppp....~~~==::::::.%%
+  45 ##..mmmmmmm....===.....sssssssww_a~~~.........%%
+  44 ##..mmm6mmm....===.....sss5sssP==P~~~..ll9l...%%
+  43 ##..mmmmmmm....===.....sssssssP==P~~~..llll...%%
+  42 ##..mmmmmmm....===.....sssssssP==P~~~==::::::.%%
+  41 ##..::*::*::...===pppppppppppp!==!~~~==:t::t:.%%
+  40 ##..::::::::...===ppppppppppppK==K~~~==::::::.%%
+  39 ##,,::::::::...===ppppppppppppK==K~~~==::::::.%%
+  38 ##,,:t::t::t...===ppppppppppppK==K~~~==::t::t.%%
+  37 ##,,::::::::...===pppppppppppp!==!~~~==::::::.%%
+  36 ##7,::t::t::...===pppppppppppp_nn_~~~==::::::.%%
   35 ##,,::::::::...===pppppppppppp....~~~==:t::t:.%%
   34 ##,,::::::::...===pppppppppppp....~~~==:::::*.%%
   33 ##,,:t::t::t...===pppppppppppp....~~~=="""""""%%
@@ -156,7 +158,14 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
 | `"` | tall grass with wildflowers (`[[scenery]]` `tall_grass_ne`, walkable) | `s` | sand patch (`sand_n`, walkable) |
 | `m` | mud puddle (`mud_nw`, walkable) | `,` | tree shade at the zoo wall (`shade_w`, walkable) |
 | `l` | leaf pile (`leaf_pile_ne`, walkable) | | |
+| `K` / `P` | carrot bed / potato bed of the vegetable garden `garden_veg` (solid bed frames) | `!` | garden sign (one per bed, faces the garden path) |
+| `n` | garden gate (path cells just inside the 2 m opening on the south fence line z = 36) | `_` | grass inside the garden fence |
+| `w` / `a` | wheelbarrow / watering can (tool corner of the garden) | | |
 | `.` | grass (walkable, slower — Q-046) | | |
+
+The low garden fence runs on cell edges (not drawn): along z = 36 on both sides of the gate,
+along x = 10 (river bank) and along x = 6 for z 42–46 (towards the sand); the rest of the
+garden outline is the panda enclosure fence (west, z 36–42) and `hedge_north_b` (north).
 
 Scenery cells (`"` `s` `m` `,` `l`) keep surface `grass`; they are drawn where no spot digit
 is. Each hiding place's wander area (all cells within 3 m of its spot on its `wander_on`
@@ -223,6 +232,7 @@ Solid = every type except `path` and `hiding_place`.
 | `rock_hill_e` | landmark (rock_hill) | 13, 0, 9, 8 | Rock hill, main mass east of the cave. |
 | `path_cave_floor` | path (cave) | 10, 5, 3, 3 | Cave floor under the rock roof (walkable, dark). |
 | `path_cave` | path | 8, 8, 14, 3 | Service path along the rock hill; cave mouth; ends at `barrier_east_repair`. |
+| `path_garden` | path (garden) | 7, 36, 2, 9 | 2 m path inside the vegetable garden `garden_veg` (GAME-GARDEN), from its gate on the south fence line between the four beds to the tool corner. The garden itself, its fence, beds, plant spots and tools are `[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]` data, not elements (see "Vegetable garden", proposal Q-102). |
 
 ## Hiding places (candidates)
 
@@ -276,7 +286,7 @@ three chosen spots ≥ 12 m apart:
 uniformly (animals in the order of their enclosures in the level data); if two chosen spots
 are < 12 m apart, draw the whole set again (at most 64 draws), then fall back to the first
 valid combination in data order. A **new game avoids each animal's place of the previous
-game** (the host remembers the last picks, `zoo.picks.level-1`; 2 of 3 candidates remain).
+game** (the host remembers the last picks, `zoo.picks` — formerly `zoo.picks.level-1`, GAME-SAVE §8; 2 of 3 candidates remain).
 The chosen place ids are saved (GAME-SAVE). In level 1 the first draw is always valid.
 Implementation: `zoo_core::game::pick_hiding_places`; a new game gets a random seed from the
 host (`?seed=N` in the page URL fixes it for tests; seed 17 = river, pond, cave).
@@ -330,7 +340,7 @@ Riddle guards (so the riddle points to exactly one place):
 | Id | Kind | Cells (x, z, w, d) | Unlock condition — **proposal (Q-022)** | In-world explanation |
 |---|---|---|---|---|
 | `barrier_ne_tree` | fallen tree | 22, 28, 2, 3 | Level 1 → level 2: all three level-1 missions complete (`zebra`, `hippo`, `panda` in `in_enclosure`). | A storm knocked the tree over. When all three animals are home, a zookeeper saws it up and rolls the logs aside (GAME-LAYOUT §3). |
-| `barrier_north_gate` | closed gate | -9, 46, 3, 2 | Later level (to be defined with Q-023). | Wooden gate with a padlock and a "closed" icon sign (no text). |
+| `barrier_north_gate` | closed gate | -9, 46, 3, 2 | Second entry of level 3 (proposal Q-090, implemented in M5b): opens together with `barrier_l2_construction` when level 2 is complete (temporary Q-091 rule: right after its last celebration). | Wooden gate with a padlock and a "closed" icon sign (no text). |
 | `barrier_east_repair` | road block | 22, 8, 2, 3 | Later level (to be defined with Q-023). | "Path under repair": striped road block, blank sign with a shovel icon, zookeeper cart with traffic cones. |
 
 The west and south sides are the permanent outer zoo wall. North and east are sealed by
@@ -357,6 +367,8 @@ animal spot. Shortest distance (any surface) given for reference.
 | cave → food storage door | 10.1 m | 6.1 s |
 | hippo info board → food storage door | 12.2 m | 6.6 s |
 | spawn → map board | 6.4 m | 3.6 s |
+| bridge (`path_bridge_w`) → garden gate (inside, cells (7, 36), (8, 36)) | 6.0 m | 5.6 s |
+| garden gate → farthest harvest place (`stand` of `potato_w2` / `potato_e2`) | 8.0 m | 4.1 s |
 
 All neighbour pairs are ≤ 10 s (longest: river → hippo info board 7.0 s; 7.7 s at 1.75 m/s).
 Not neighbours (for information): panda info board → food storage 13.4 s (14.8 s at
@@ -435,6 +447,10 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
     ("Woods").
 19. Info boards, enclosure signs and the map board are solid from every side; the player
     never passes through or under a sign panel (Q-086).
+20. The vegetable garden `garden_veg` (GAME-GARDEN) is entered only through its gate; every
+    plant spot has a reachable standing cell on `path_garden` in front of it; the garden
+    overlaps no hiding place, scenery, solid element or other path, changes no wander area
+    and opens no route past a barrier ("Vegetable garden").
 
 
 ## Hippo enclosure pool (user decision 2026-09-26)
@@ -552,6 +568,87 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 - **Enclosure signs** remain the one billboard violation until Q-086 is decided (the
   LAYOUT-017 test reports it).
 
+## Vegetable garden (user request 2026-09-26, GAME-GARDEN)
+
+A small fenced vegetable garden `garden_veg` in the **back** (north) of level 1, where the
+child harvests carrots and potatoes as treats (GAME-GARDEN). Data: `[[garden]]`,
+`[[garden_bed]]`, `[[plant_spot]]` at the end of `level-1.toml` plus the path element
+`path_garden` (*data shape proposal Q-102*).
+
+**Location — why here.** The open grass strip **x 6–9, z 36–45** between the panda
+enclosure (west), the river (east) and the north hedge (north) is the only free field in
+the back that is no hiding place, no scenery, no wander area and no path: the other free
+patches there are 3–5 m wide slivers next to `path_north` (x −12…−10, x −6…−2), which is
+also the future route to level 3 (`barrier_north_gate`, Q-090). The strip is closed on three
+sides by solid elements, so the garden needs a fence only on the south side, along the
+river bank and towards the sand; it touches no border and no barrier (no shortcut). It lies
+40 m from the entrance, 4 m north of the `loc_river` spot and 6 m (5.6 s) from the bridge.
+
+```
+       x: 6  7  8  9   (1 char = 1 m, north up)
+  46      %  %  %  %   hedge_north_b
+  45      w  w  _  a   tool corner: wheelbarrow, watering can
+  44      P  =  =  P   bed_potato_w | path_garden | bed_potato_e
+  43      P  =  =  P     potato_w2 (6.5, 44.25), potato_e2 (9.5, 44.25)
+  42      P  =  =  P     potato_w1 (6.5, 42.75), potato_e1 (9.5, 42.75)
+  41      !  =  =  !   garden signs "Kartoffeln"
+  40      K  =  =  K   bed_carrot_w | path_garden | bed_carrot_e
+  39      K  =  =  K     carrot_w1..w3 (6.5, 38.5 / 39.5 / 40.5)
+  38      K  =  =  K     carrot_e1..e3 (9.5, 38.5 / 39.5 / 40.5)
+  37      !  =  =  !   garden signs "Karotten"
+  36      _  n  n  _   gate opening x 7.0–9.0 on the line z = 36.0
+  35      .  .  .  .   grass north of the bridge (loc_river rect, z 30–35)
+west of x 6: enc_panda (z ≤ 41) and sand_n (z 42–45); east of x 9: river_n
+```
+
+| Part | Data | Notes |
+|---|---|---|
+| Garden area | `[[garden]] garden_veg`, rect (6, 36, 4, 10) | All its colliders lie inside the rect (fence pieces stand `fence_inset_m` = 0.08 m inside the outline). Its cells stay walkable (surface `grass`, except `path_garden`); no grid cell changes (LAYOUT-L1-003 unaffected). |
+| Fence | `garden_fence` (low white/wooden picket fence, 0.8 m; 2 m + 1 m pieces, GAME-LAYOUT fill rule), runs (6, 36)–(7, 36), (9, 36)–(10, 36), (10, 36)–(10, 46), (6, 42)–(6, 46) | West z 36–42 is the panda enclosure fence (line x = 6); north is `hedge_north_b`. The fence blocks the player (thin box colliders, half thickness 0.06 m) and every cell-edge crossing on its lines. |
+| Gate | `gate` (7, 36, 2, 1), `gate_side = "-z"`, `garden_gate` (two 1 m leaves) | "Small gate": the leaves swing inwards by themselves when the player is within 2 m and close behind her (no collider while open; the child never has to operate it). *Proposal Q-102.* |
+| Garden path | element `path_garden` (7, 36, 2, 9) | Standard path tiles; the child stands here to harvest (surface `path`, full speed). |
+| Beds | `[[garden_bed]]` `bed_carrot_w` (6, 38, 1, 3), `bed_carrot_e` (9, 38, 1, 3), `bed_potato_w` (6, 42, 1, 3), `bed_potato_e` (9, 42, 1, 3) | `garden_bed` raised frame 0.8 × 2.9 m, 0.25 m high, solid (the child does not trample the plants). Carrots nearest the gate. |
+| Plant spots | `[[plant_spot]]` — 6 carrots `carrot_w1…3`, `carrot_e1…3` (1 m apart), 4 potatoes `potato_w1/2`, `potato_e1/2` (1.5 m apart) | Fields below. Plants are not solid (inside the bed collider). |
+| Garden signs | one per bed (`sign_pos`, `sign_facing` towards the path, `sign_key`) at (6.5, 37.45), (9.5, 37.45), (6.5, 41.45), (9.5, 41.45) | `garden_sign`: small stake sign with a **picture** of the vegetable and its word (`garden-carrot` / `garden-potato`, GARD-009); interactable like an info board (GAME-PLAYER §5) — recognisable without reading (`kiga`) by the picture. |
+| Tools | `props`: `wheelbarrow` at (7.2, 45.45) facing +x, `watering_can` at (9.45, 45.4) | Decoration with colliders (proposed footprints: wheelbarrow B(0, 0, 0.72, 0.36) along its facing, watering can C(0, 0, 0.22), garden sign B(0, 0, 0.28, 0.10) across its panel, bed B(0, 0, 0.40, 1.45)); the wheelbarrow is empty (no vegetables — it must not look harvestable). |
+
+**Plant spot data (for the implementer).** Each `[[plant_spot]]` has:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | unique in the level (`carrot_w1` …); the save key of its stage and regrow timer (GAME-SAVE) |
+| `garden`, `bed` | id | its garden and bed; `pos` lies inside the bed `rect` |
+| `kind` | `"carrot"` \| `"potato"` | what the harvest yields (GAME-GARDEN §3: 1 carrot / 2–3 potatoes) — equal to the bed's `plant` |
+| `pos` | [x, z] metres | plant centre (level coordinates); the interaction point (GAME-PLAYER §5: within 2 m and facing it ±75°) |
+| `start_stage` | `"empty"` \| `"sprout"` \| `"young"` \| `"ripe"` | stage in a new game (level 1: all `ripe`). Stages = GAME-GARDEN §3's 3 visible growth steps after harvest (`empty` → `sprout` → `young` → `ripe`); only `ripe` can be harvested. The runtime stage and timer are saved state, not layout data. |
+| `stand` | [x, z] cell | the `path_garden` cell in front of the plant where the child stands (1.0–1.03 m from `pos`); used by tests and by a scripted player |
+
+**Animals and the garden** (*proposal Q-102*): animals never enter the garden — following
+animals wait outside the gate while the child harvests (`animals_enter = false`; their grid
+paths exclude the garden cells, so they never cut through the fence line), and no wander area
+reaches into it (`loc_river` is clipped to z ≤ 35). The zebra at `loc_river` can stand on
+(8, 35) in front of the east half of the gate; the west half stays free.
+
+**Checks** (scratch analysis of `level-1.toml`, 2026-09-26): reachable cells 1 154 (1 173
+before: the garden's beds, signs and tools block 19 cell centres); every border cell still
+solid; nothing unreachable; with the gate closed no garden cell is reachable, with it open all
+21 walkable garden cells are; the garden overlaps no hiding place, scenery, solid element or
+other path and touches no barrier; all 9 wander areas unchanged (19, 16, 22, 22, 22, 12, 9,
+21, 17) → the screen test LAYOUT-L1-006 is unaffected. Side effect: the 4 m strip was a
+grass link between `loc_sand` and `loc_river`; the fastest walk between those two zebra spots
+grows from 16.0 s to 25.9 s (not a neighbour pair; only one zebra place is used per game).
+
+**Riddle guards** (the garden must not match a riddle, CONT-MISSIONS):
+- **Not mud** (`loc_mud`: brown, wet): the soil is dry, dark and crumbly in wooden frames with
+  neat green rows — never glossy, no puddles, no splashes.
+- **Not sand** (`loc_sand` next door): brown soil, not yellow; plants on every bed.
+- **Not the meadow** (`loc_meadow`): no tall grass, no wildflowers, **no butterflies** (GAME-AMBIENT
+  butterflies stay on the meadow); potato flowers are few, small and white.
+- **Not the leaf pile** (`loc_leaves`): **no rake** in the garden (the only rake is at `loc_leaves`), no leaves on the ground.
+- **No water** except the watering can (the level-3 sprinkler `loc_sprinkler` must stay unique):
+  no sprinkler, no hose spray, no water trough.
+- No hiding place lies in the garden; animals are never found there.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -581,10 +678,18 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 | LAYOUT-L1-023 | Given `grove_center` (`dense`), then none of its cells is reachable (LAYOUT-016) and each of its walkable sides has a bush border (LAYOUT-019). | unit |
 | LAYOUT-L1-024 | Given the wander areas of all 9 hiding places computed with the rect clip, then they equal the cell counts of the "Hiding places" table (19, 16, 22, 22, 22, 12, 9, 21, 17) and contain no tree or bush collider. | unit |
 | LAYOUT-L1-025 | Given the level-1 scene, then the player circle can reach no position that overlaps the cross-section below 1.4 m of any `info_board`, `enclosure_sign` or `map_board` mesh (LAYOUT-017), and the only invisible-wall edges wider than 0.3 m (LAYOUT-019) are the accepted ones listed in "Collision and billboards" (none once Q-087 is implemented). | unit |
+| LAYOUT-L1-026 | Given `level-1.toml` with the garden (fence runs block cell-edge crossings, bed/sign/tool colliders block the cell centres the 0.3 m player circle cannot occupy), then the garden gate cells (7, 36), (8, 36) are reachable from the spawn, the fastest walk from `path_bridge_w` to a gate cell is ≤ 10 s (5.6 s) and from a gate cell to every `stand` cell ≤ 10 s (4.1 s). | unit |
+| LAYOUT-L1-027 | Given each `[[plant_spot]]`, then its `pos` lies inside its bed's `rect`, `kind` equals the bed's `plant`, its `stand` cell is a `path_garden` cell that is reachable, not blocked by a collider, edge-adjacent to the bed and ≤ 1.2 m (centre) from `pos` with the plant in front (inside ±75° when facing it); the garden has 6 `carrot` and 4 `potato` spots, all `start_stage = "ripe"`, and ids are unique. | unit |
+| LAYOUT-L1-028 | Given the garden with its gate **closed** (the gate edges blocked like the fence), then no cell of the garden `rect` is reachable from the spawn; with the gate open, every walkable garden cell is; the player circle cannot cross any `fence_runs` line outside the gate opening (scene collision). | unit |
+| LAYOUT-L1-029 | Given the garden, then its `rect` overlaps no `[[hiding_place]]` or `[[scenery]]` rect, no solid element and no path except `path_garden`, touches no barrier and no border cell; every garden collider (fence, beds, signs, props) lies inside the `rect`; all wander areas keep the counts of LAYOUT-L1-024; and the reachable cells with all barriers closed are a subset of those without the garden (no new route past a barrier). | unit |
+| LAYOUT-L1-030 | Given each `[[garden_bed]]`, then it has a sign with `sign_key` `garden-carrot` / `garden-potato` matching its `plant`, the key exists in every locale (L10N), and the sign's readable side faces an adjacent `path_garden` cell. | unit |
+| LAYOUT-L1-031 | Given an animal following the player and the player inside the garden, then the animal's grid path never enters a garden cell (it waits outside the gate), and no wander area contains a garden cell (proposal Q-102). | unit |
+| LAYOUT-L1-032 | Given the approved `env_garden` mockup, then a reviewer sees carrot and potato beds as clearly different from the 55° camera, the soil does not look like `loc_mud` (dry, not glossy), and no rake, butterflies, wildflowers or running water appear. | manual |
 
 ## Open questions
 
 - Q-022 barrier unlock conditions, Q-023 number of levels and their areas.
+- Q-102 vegetable garden data shape (`[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]`, fence as prop colliders + blocked cell edges, self-opening gate, animals never enter). Q-103 garden sign texts per reading level. Q-100, Q-101 treats (GAME-GARDEN).
 - Q-085 data shape for woods, hippo pool and home wandering (`density`, `trees`, `edge`, `[[enclosure_feature]]`, `home_wander_on`, wander clip to `rect`, 7/10 water targets) — implemented as proposed in M5a. Q-086 enclosure sign as a gate arch. Q-087 collision footprint values and invisible-wall fixes — implemented as proposed in M5a. Q-097 animals out of reach come to the player. Q-098 `hut` enclosure feature. Q-099 accepted invisible walls (map board back, fallen tree).
 - Q-069 answered: all three level-1 missions in scope.
 - Q-033 food storage lock (level 1 assumes unlocked).

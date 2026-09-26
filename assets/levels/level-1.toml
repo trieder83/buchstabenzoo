@@ -13,6 +13,8 @@
 #   - tree-area data: `density` + explicit `trees` list for sparse woods (GAME-LAYOUT "Forests",
 #     user decision 2026-09-26; data shape proposal Q-085)
 #   - [[enclosure_feature]] list (hippo pool) and `home_wander_on` on enclosures (Q-085)
+#   - vegetable garden: [[garden]], [[garden_bed]], [[plant_spot]] lists at the end of this file
+#     and the path_garden element (GAME-GARDEN, GAME-LEVEL-1 "Vegetable garden"; Q-102)
 #
 # DECIDED (user 2026-09-26): tree areas are `dense` (solid as a whole) or `sparse` (walkable
 # between the trees; only trunks/bushes are solid — GAME-LAYOUT "Forests"); the hippo
@@ -484,6 +486,14 @@ kind = "side"
 rect = [8, 8, 14, 3]
 notes = "Service path along the rock hill to barrier_east_repair."
 
+# ---------------------------------------------------------------- vegetable garden (GAME-GARDEN)
+[[element]]
+id = "path_garden"
+type = "path"
+kind = "garden"
+rect = [7, 36, 2, 9]
+notes = "2 m garden path from the garden gate (south) between the four beds to the tool corner; inside garden_veg (see [[garden]] at the end of this file)."
+
 
 # ---------------------------------------------------------------- food boxes (GAME-FEED §7)
 # PoC (Q-065): the storage interior is not modelled, so the 10 boxes stand in a row in front
@@ -739,3 +749,180 @@ rect = [15, 43, 4, 2]
 hiding_place = "loc_leaves"
 props = ["leaf_pile", "rake"]
 notes = "Big raked heap of red, yellow and brown leaves at the north edge of trees_ne, a rake leaning on a tree. Sunlit (not dark — must not look like loc_cave). The only leaf pile in level 1."
+
+# ================================================================ vegetable garden (GAME-GARDEN)
+# Proposal Q-102 (data shape, level design). Like [[food_box]] and [[scenery]] the garden is NOT
+# an [[element]]: its cells stay walkable (surface "grass", except the path_garden element) and
+# it changes no grid cell (LAYOUT-L1-003/004 unaffected). It adds prop colliders (fence, beds,
+# signs, tools — GAME-PLAYER §7) and the harvestable plant spots. Every collider lies inside
+# the garden `rect`. Fields:
+#   [[garden]]
+#     id            unique
+#     rect          garden area [x, z, w, d]; all beds, plant spots, signs, props and fence pieces inside
+#     gate          gate cells [x, z, w, d] (inside rect); the opening is their `gate_side` edge
+#     gate_side     "-z" = south edge (line z = rect z)
+#     gate_model    `garden_gate`: two 1 m leaves, swing inwards when the player is within 2 m
+#                   (proposal Q-102); never a collider while open
+#     fence_model   `garden_fence` (low picket fence, 0.8 m, 2 m + 1 m pieces, GAME-LAYOUT fill rule)
+#     fence_runs    [x0, z0, x1, z1] on cell-edge lines (level metres); pieces stand
+#                   `fence_inset_m` inside the rect, so their colliders never reach outside it
+#     edges_closed_by  ids of solid elements that close the remaining outline (no garden fence there)
+#     animals_enter false = following / wandering animals never path into the garden cells
+#                   (they wait outside the gate — proposal Q-102)
+#     props         decoration with collider: model, pos [x, z] (centre), facing (front side)
+#   [[garden_bed]]  raised soil bed (`garden_bed`, 0.8 x 2.9 m frame, 0.25 m high, solid):
+#     id, garden, rect (1 x 3 cells), plant (carrot | potato), sign_pos, sign_facing (readable
+#     side, towards the garden path), sign_key (Fluent key of the sign word, GARD-009)
+#   [[plant_spot]]  one harvestable plant (GAME-GARDEN §3):
+#     id, garden, bed, kind (carrot | potato), pos [x, z] (plant centre, inside the bed rect),
+#     start_stage (stage in a new game: "empty" | "sprout" | "young" | "ripe"; runtime stage
+#     and regrow timer are saved state, GAME-SAVE, not layout data), stand [x, z] (cell of
+#     the garden path in front of it, where the child stands to harvest; facing the plant)
+
+[[garden]]
+id = "garden_veg"
+rect = [6, 36, 4, 10]          # x 6-9, z 36-45: between enc_panda (west), river_n (east), hedge_north_b (north)
+gate = [7, 36, 2, 1]           # opening x 7.0-9.0 on the line z = 36.0, onto the grass north of the bridge
+gate_side = "-z"
+gate_model = "garden_gate"
+fence_model = "garden_fence"
+fence_runs = [
+  [6.0, 36.0, 7.0, 36.0],      # south, west of the gate (1 m)
+  [9.0, 36.0, 10.0, 36.0],     # south, east of the gate (1 m)
+  [10.0, 36.0, 10.0, 46.0],    # east, along the river bank (10 m)
+  [6.0, 42.0, 6.0, 46.0],      # west, north of the panda enclosure: separates the garden from sand_n (4 m)
+]
+fence_inset_m = 0.08
+edges_closed_by = ["enc_panda", "hedge_north_b"]   # west z 36-42 = panda fence (line x = 6.0); north = hedge band
+animals_enter = false
+props = [
+  { model = "wheelbarrow", pos = [7.2, 45.45], facing = "+x" },    # tool corner at the north end, empty green tub
+  { model = "watering_can", pos = [9.45, 45.4], facing = "-z" },
+]
+notes = "Fenced vegetable garden in the back (north) of level 1: two carrot beds nearest the gate, two potato beds behind them, a tool corner at the hedge. Dry dark-brown soil in wooden frames, neat green rows — never glossy or wet (riddle guard: not loc_mud), no rake (loc_leaves), no butterflies or flower meadow (loc_meadow), no water except the watering can."
+
+[[garden_bed]]
+id = "bed_carrot_w"
+garden = "garden_veg"
+rect = [6, 38, 1, 3]
+plant = "carrot"
+sign_pos = [6.5, 37.45]
+sign_facing = "+x"
+sign_key = "garden-carrot"
+
+[[garden_bed]]
+id = "bed_carrot_e"
+garden = "garden_veg"
+rect = [9, 38, 1, 3]
+plant = "carrot"
+sign_pos = [9.5, 37.45]
+sign_facing = "-x"
+sign_key = "garden-carrot"
+
+[[garden_bed]]
+id = "bed_potato_w"
+garden = "garden_veg"
+rect = [6, 42, 1, 3]
+plant = "potato"
+sign_pos = [6.5, 41.45]
+sign_facing = "+x"
+sign_key = "garden-potato"
+
+[[garden_bed]]
+id = "bed_potato_e"
+garden = "garden_veg"
+rect = [9, 42, 1, 3]
+plant = "potato"
+sign_pos = [9.5, 41.45]
+sign_facing = "-x"
+sign_key = "garden-potato"
+
+[[plant_spot]]
+id = "carrot_w1"
+garden = "garden_veg"
+bed = "bed_carrot_w"
+kind = "carrot"
+pos = [6.5, 38.5]
+start_stage = "ripe"
+stand = [7, 38]
+
+[[plant_spot]]
+id = "carrot_w2"
+garden = "garden_veg"
+bed = "bed_carrot_w"
+kind = "carrot"
+pos = [6.5, 39.5]
+start_stage = "ripe"
+stand = [7, 39]
+
+[[plant_spot]]
+id = "carrot_w3"
+garden = "garden_veg"
+bed = "bed_carrot_w"
+kind = "carrot"
+pos = [6.5, 40.5]
+start_stage = "ripe"
+stand = [7, 40]
+
+[[plant_spot]]
+id = "carrot_e1"
+garden = "garden_veg"
+bed = "bed_carrot_e"
+kind = "carrot"
+pos = [9.5, 38.5]
+start_stage = "ripe"
+stand = [8, 38]
+
+[[plant_spot]]
+id = "carrot_e2"
+garden = "garden_veg"
+bed = "bed_carrot_e"
+kind = "carrot"
+pos = [9.5, 39.5]
+start_stage = "ripe"
+stand = [8, 39]
+
+[[plant_spot]]
+id = "carrot_e3"
+garden = "garden_veg"
+bed = "bed_carrot_e"
+kind = "carrot"
+pos = [9.5, 40.5]
+start_stage = "ripe"
+stand = [8, 40]
+
+[[plant_spot]]
+id = "potato_w1"
+garden = "garden_veg"
+bed = "bed_potato_w"
+kind = "potato"
+pos = [6.5, 42.75]
+start_stage = "ripe"
+stand = [7, 42]
+
+[[plant_spot]]
+id = "potato_w2"
+garden = "garden_veg"
+bed = "bed_potato_w"
+kind = "potato"
+pos = [6.5, 44.25]
+start_stage = "ripe"
+stand = [7, 44]
+
+[[plant_spot]]
+id = "potato_e1"
+garden = "garden_veg"
+bed = "bed_potato_e"
+kind = "potato"
+pos = [9.5, 42.75]
+start_stage = "ripe"
+stand = [8, 42]
+
+[[plant_spot]]
+id = "potato_e2"
+garden = "garden_veg"
+bed = "bed_potato_e"
+kind = "potato"
+pos = [9.5, 44.25]
+start_stage = "ripe"
+stand = [8, 44]

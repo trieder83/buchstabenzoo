@@ -145,6 +145,18 @@ pub fn footprint(model: &str) -> &'static [LocalShape] {
             hx: 1.22,
             hz: 2.14,
         }],
+        // placeholders (levels 2-3): the zookeeper-house table and the water tap
+        "table_wood" => &[B {
+            x: 0.0,
+            z: 0.0,
+            hx: 0.45,
+            hz: 0.35,
+        }],
+        "water_tap" => &[C {
+            x: 0.0,
+            z: 0.0,
+            r: 0.15,
+        }],
         // handrails along both deck edges (deck along X, 2.5 m wide)
         "bridge_wood" => &[
             B {

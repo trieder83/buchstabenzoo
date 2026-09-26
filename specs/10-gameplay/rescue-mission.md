@@ -80,6 +80,15 @@ occupied again.
     `mission-<animal>-home`. Interacting at an enclosure gate while leading animals is the
     same as walking into it (GAME-PLAYER §5). Arriving animals step onto the cell just
     inside the gate first, then wander at home (GAME-ANIMALS).
+12. *Levels 2–3 (M5b):* the seven new missions use the same loop; missions in scope are
+    those of the unlocked levels (GAME-LAYOUT "Joining levels"). Animals whose hiding place
+    has `perch_height_m` (koala in the tree house / giant tree / blossom tree, monkey in the
+    crow's nest; proposal Q-094) sit at that height beside their spot (on a branch, porch
+    or the nest), do not wander, turn towards the player, and are shown the food from the
+    ground within 2 m; when they follow they first come down (`climb` at its `climb_speed`,
+    else `walk` at 1.8 m/s). In water the hippo sinks 0.9 m, the elephant wades 0.8 m (no
+    `swim` clip → `walk` / `idle`), the goldfish (origin = water surface) is drawn through
+    the water surface with a water tint.
 
 
 ## Animals that cannot walk behind the player — the goldfish bowl
@@ -109,6 +118,22 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 8. The mechanic is generic (`carry container` + `fill` + `animal enters container`) so later
    swimming animals can reuse it; data per animal says which container it needs.
 
+*Implementation (M5b, 2026-09-26; proposals Q-084/Q-093 as written, data-driven):* the bowl
+is `[[item]] fish_bowl` (`animal = "goldfish"` says who needs it), standing on a table in
+`zookeeper_house_3`. Interact targets: **item** (pick it up), **water** (only while the carried
+bowl is empty: the nearest tap of `[[water_source]]` or the edge of any river, pond, stream or
+fountain of the unlocked levels within 2 m), the **goldfish** (fish food + filled bowl → it
+jumps in; without bowl → `mission-goldfish-needs-bowl`, empty bowl → `mission-goldfish-bowl-empty`,
+the food stays), the **gates** (while carrying the fish: its own stone step → home and
+mission complete, another enclosure → `ui-refuse`) and — only when nothing else is in range —
+**put down** (the fish stays safe in the bowl). The food box row stays usable: the food goes
+into the pocket and the HUD shows bowl and food (RESC-020). At a bank the fill target is nearer
+than the fish, so with an empty bowl the child fills it first (the "no water" line appears when
+the fish is fed out of reach of water). The fish in the bowl travels at the bowl (walking
+× 0.9, RESC-023); the leap into and out of the bowl is the `happy` clip on an arc (0.9 s).
+The bowl is a placeholder glass mesh built by the renderer (light-blue screen-door glass
+with outlines; water as a smaller glass cylinder) until a model exists.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -127,7 +152,7 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 | RESC-012 | Given mission `zebra` not started, when the player reads the zebra info board for the first time, then mission `zebra` is started. | unit |
 | RESC-013 | Given the zebra info board has not been read, when the player shows grass to the zebras, then the zebras become `following`. | unit |
 | RESC-017 | Given level 1 as built, then every info board and animal that is interactable has its texts (location riddle for every reading level, home message) in `de` and `en` — no panel, bubble or celebration shows a raw Fluent key (Q-069 answered; QA 2026-09-26). | unit |
-| RESC-014 | Given 1 000 different seeds, then every animal of level 1 is placed at each of its ≥ 3 candidate hiding places at least once, no two animals ever share a place, and chosen places of one playthrough are ≥ 12 m apart. | unit |
+| RESC-014 | Given 1 000 different seeds, then every animal of each level (picks per level, GAME-LAYOUT "Joining levels") is placed at each of its ≥ 3 candidate hiding places at least once, no two animals ever share a place, and chosen places of one playthrough are ≥ 12 m apart. | unit |
 | RESC-015 | Given any seed and reading level, then the info board shows the riddle of the hiding place actually chosen for that playthrough. | unit |
 | RESC-016 | Given a saved game, when it is restored, then every animal is still at (or wandering around) the same chosen hiding place. | unit |
 | RESC-018 | Given the goldfish mission, when the player has no bowl and feeds the fish, then it stays in the river with the "needs a bowl" feedback. | unit |
@@ -136,8 +161,10 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 | RESC-021 | Given the fish is in the bowl, when the player puts the bowl at the goldfish home, then the fish is in its enclosure and the mission completes. | unit |
 | RESC-022 | Given a save with a carried filled bowl and the fish in it, when restored, then bowl, water and fish are unchanged. | unit |
 | RESC-023 | Given the player carries the bowl with the fish, then her speed is 0.9 × the surface speed. | unit |
-| RESC-024 | Given the last picks of the previous game (host key `zoo.picks.level-1`), when a new game starts with any seed, then no animal gets the hiding place it had in the previous game (§1 implementation note, Q-082 answered). | e2e |
+| RESC-024 | Given the last picks of the previous game (host key `zoo.picks`, formerly `zoo.picks.level-1`), when a new game starts with any seed, then no animal gets the hiding place it had in the previous game (§1 implementation note, Q-082 answered). | e2e |
 | RESC-025 | Given a level whose `[level] missions` lists only some of its enclosures' animals, then only the info boards, animals and gates of the listed missions are interactable; without the field every animal is in scope (§1, Q-069 answered, GAME-LAYOUT). | unit |
+| RESC-026 | Given an animal whose picked hiding place has `perch_height_m` (koala, monkey), then it sits at that height beside its spot, does not wander and faces the player; the player shows the right food from the ground within 2 m; when it follows it first comes down (`climb` at its `climb_speed`, else `walk` at 1.8 m/s) (§12, Q-094). | unit, e2e |
+| RESC-027 | Given the player carries the bowl with the fish, when she interacts at another enclosure's gate, then `ui-refuse` and the fish stays in the bowl; when she puts the bowl down (nothing else in range), then the fish stays safe in the bowl and can be picked up again (goldfish bowl implementation note). | unit |
 
 ## Open questions
 
@@ -145,6 +172,7 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 - Q-034 Math tasks: separate math level, where they appear, can they block?
 - Q-031 What happens after all animals are home (end, sandbox, next zoo)?
 - Q-022/Q-023 How missions map to levels and barriers.
+- Q-094 perches (§12), Q-084/Q-093 goldfish bowl (implemented as proposed, open).
 - Q-020 Several missions active at once? Q-041 Food shown to a second group while one follows.
 - Q-036 Goldfish transport, Q-039 riddle/place-word rule, Q-040 monkey baby quest.
 - Q-097 Out-of-reach escaped animal comes towards the player (proposal, GAME-ANIMALS). Q-069 (answered) only missions in scope are interactable. Q-082 (answered) picking rule.

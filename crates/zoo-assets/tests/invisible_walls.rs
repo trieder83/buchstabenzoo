@@ -128,6 +128,7 @@ fn geometry(data: &LevelData) -> (Geometry, LevelScene, HashMap<&'static str, Ve
                             color,
                             fadeable: false,
                             source: p.model.to_owned(),
+                            part: p.part,
                         });
                     }
                     sections.insert(p.model, Vec::new());

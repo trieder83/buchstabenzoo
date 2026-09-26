@@ -270,6 +270,13 @@ concept_approved = false
 animations = []
 
 [[asset]]
+id = "env_garden"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
 id = "loc_treehouse"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
@@ -511,6 +518,13 @@ animations = []
 id = "rock_hill_cave"
 kind = "props"
 spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "kit_garden"
+kind = "props"
+spec = "GAME-GARDEN"
 concept_approved = false
 animations = []
 

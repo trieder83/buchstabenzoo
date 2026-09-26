@@ -20,7 +20,7 @@ use zoo_core::level::ElementType;
 use zoo_core::nav::Autopilot;
 use zoo_core::player::walk_clip_rate;
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
-use zoo_render::renderer::CAPSULE;
+use zoo_render::renderer::{cylinder_mesh, CAPSULE};
 use zoo_render::scene::{model_placeholder, Decal, DecalImage};
 use zoo_render::{CameraParams, CharacterDraw, FollowCamera, Instance, LevelScene, Renderer};
 
@@ -35,27 +35,52 @@ const DYN_BOX: &str = "__dyn_box";
 const CARRY_BOX: &str = "__carry_food_box";
 /// Horizontal mouse drag distance (CSS px) for one 45° camera step.
 const DRAG_STEP_PX: f32 = 70.0;
+/// Glass fish bowl and its water (placeholder meshes built here, GAME-RESCUE "goldfish bowl").
+const BOWL: &str = "__bowl_glass";
+const BOWL_WATER: &str = "__bowl_water";
+/// Bowl size (m): radius and height of the glass.
+const BOWL_RADIUS_M: f32 = 0.3;
+const BOWL_HEIGHT_M: f32 = 0.36;
+/// Glass colour; alpha 0.5 = screen-door transparency in the cel shader.
+const GLASS: [f32; 4] = [0.78, 0.92, 0.98, 0.5];
+const BOWL_WATER_COLOR: [f32; 4] = [0.36, 0.66, 0.90, 0.5];
+/// Descending speed from a perch when the animal has no `climb_speed` (m/s).
+const DESCEND_SPEED: f32 = 1.8;
+/// Duration of the goldfish's leap into / out of the bowl (s).
+const LEAP_S: f32 = 0.9;
 
 /// Asset path of an animal model.
 pub fn animal_model_path(animal: &str) -> String {
     format!("models/animals/{animal}.glb")
 }
 
-/// Animals of a level: the animal of every enclosure in scope (`[level] missions`, Q-069).
+/// Animals of the (joined) levels: the animal of every enclosure in scope of its level
+/// (`[level] missions`, Q-069).
 pub fn level_animals(data: &LevelData) -> Vec<String> {
-    let scope = &data.level.missions;
     data.elements_of(ElementType::Enclosure)
-        .filter_map(|e| e.animal.clone())
-        .filter(|a| scope.is_empty() || scope.contains(a))
+        .filter_map(|e| {
+            let a = e.animal.clone()?;
+            let scope = data.parts.get(e.part).map(|p| &p.missions);
+            scope.is_none_or(|m| m.contains(&a)).then_some(a)
+        })
         .collect()
 }
 
-/// Asset paths (relative to the served `assets/` folder) needed for a level: palette, every
-/// model the level scene places, the player and every animal of the level. Missing models
-/// become placeholders.
+/// Joins the level files (GAME-LAYOUT "Joining levels", proposal Q-088).
+pub fn join_levels(tomls: &[String]) -> Result<LevelData, String> {
+    let mut levels = Vec::new();
+    for t in tomls {
+        levels.push(LevelData::from_toml_str(t).map_err(|e| e.to_string())?);
+    }
+    LevelData::join(levels).map_err(|e| e.to_string())
+}
+
+/// Asset paths (relative to the served `assets/` folder) needed for the levels (TOML texts,
+/// joined in this order): palette, every model the scene places, the player and every
+/// animal. Missing models become placeholders.
 #[wasm_bindgen]
-pub fn required_assets(level_toml: &str) -> Result<Vec<String>, JsError> {
-    let data = LevelData::from_toml_str(level_toml).map_err(|e| JsError::new(&e.to_string()))?;
+pub fn required_assets(level_tomls: Vec<String>) -> Result<Vec<String>, JsError> {
+    let data = join_levels(&level_tomls).map_err(|e| JsError::new(&e))?;
     let scene = LevelScene::build(&data);
     let mut models: Vec<&str> = scene.placements.iter().map(|p| p.model).collect();
     models.sort_unstable();
@@ -104,6 +129,18 @@ struct AnimalView {
     locomotion: &'static str,
     /// Current depth below the land pose (m), eased (swimmers in water).
     sink: f32,
+    /// Height above the ground (m): up in a perch, eased down when it follows (Q-094).
+    lift: f32,
+    /// Leap arc (goldfish into / out of the bowl): start, time, whether into the bowl.
+    leap: Option<(Vec3, f32, bool)>,
+    /// Drawn at all (its level is unlocked).
+    visible: bool,
+    /// Drawn through the water surface (the goldfish in the stream / pond).
+    under_water: bool,
+    /// Drawn here instead (world): the fish in the bowl.
+    anchor: Option<Vec3>,
+    /// Yaw of a perched animal (towards its tree / mast).
+    perch_yaw: Option<f32>,
 }
 
 impl AnimalView {
@@ -122,6 +159,12 @@ impl AnimalView {
             rest: "idle",
             locomotion: "walk",
             sink: 0.0,
+            lift: 0.0,
+            leap: None,
+            visible: true,
+            under_water: false,
+            anchor: None,
+            perch_yaw: None,
         }
     }
 }
@@ -169,6 +212,14 @@ pub struct App {
     text_textures: Vec<(String, &'static str, u32, u32)>,
     /// Text textures must be (re-)rendered (start, language change).
     text_dirty: bool,
+    /// Render regions of barriers (hidden once open) and roofs (hidden while inside).
+    barrier_regions: Vec<(String, u16)>,
+    roof_regions: Vec<(String, u16)>,
+    /// Fish bowl instances (glass, water).
+    bowl_glass: [Instance; 1],
+    bowl_water: [Instance; 1],
+    /// Building the player is inside (roof hidden), if any.
+    inside: Option<String>,
 }
 
 #[wasm_bindgen]
@@ -178,7 +229,7 @@ impl App {
     #[wasm_bindgen(constructor)]
     pub fn new(
         canvas: HtmlCanvasElement,
-        level_path: &str,
+        level_paths: Vec<String>,
         assets: &js_sys::Map,
     ) -> Result<App, JsError> {
         console_error_panic_hook::set_once();
@@ -188,12 +239,14 @@ impl App {
                 files.insert(k, arr.to_vec());
             }
         });
-        let level_bytes = files
-            .get(level_path)
-            .ok_or_else(|| JsError::new(&format!("missing {level_path}")))?;
-        let level_toml = std::str::from_utf8(level_bytes)?;
-        let data =
-            LevelData::from_toml_str(level_toml).map_err(|e| JsError::new(&e.to_string()))?;
+        let mut tomls = Vec::new();
+        for path in &level_paths {
+            let bytes = files
+                .get(path)
+                .ok_or_else(|| JsError::new(&format!("missing {path}")))?;
+            tomls.push(String::from_utf8_lossy(bytes).into_owned());
+        }
+        let data = join_levels(&tomls).map_err(|e| JsError::new(&e))?;
         let scene = LevelScene::build(&data);
         let game = Game::new(data, 1).map_err(|e| JsError::new(&e.to_string()))?;
 
@@ -204,6 +257,12 @@ impl App {
                 .add_mesh(name, &box_mesh, 1.0)
                 .map_err(|e| JsError::new(&format!("{e:?}")))?;
         }
+        renderer
+            .add_mesh(BOWL, &cylinder_mesh(12, false, true), 1.0)
+            .map_err(|e| JsError::new(&format!("{e:?}")))?;
+        renderer
+            .add_mesh(BOWL_WATER, &cylinder_mesh(12, true, false), 1.0)
+            .map_err(|e| JsError::new(&format!("{e:?}")))?;
         if let Some(png) = files.get("textures/palette.png") {
             renderer
                 .set_palette_png(png)
@@ -258,7 +317,11 @@ impl App {
         let mut animals = Vec::new();
         for a in &game.animals {
             let id = a.id();
-            let skinned = add_skinned(id, &animal_model_path(id));
+            // the second animal of a pair shares the model (GAME-FAMILY)
+            let skinned = match animals.iter().find(|v: &&AnimalView| v.id == id) {
+                Some(v) => v.skinned,
+                None => add_skinned(id, &animal_model_path(id)),
+            };
             animals.push(AnimalView::new(id, skinned));
         }
         let anims = files
@@ -266,9 +329,52 @@ impl App {
             .and_then(|b| AnimTable::from_toml_str(&String::from_utf8_lossy(b)).ok())
             .unwrap_or_default();
 
+        // Render regions (QA F12): one per level part, one per barrier (hidden once open),
+        // one per enterable building's roof (hidden while the player is inside).
+        let part_regions: Vec<u16> = (0..game.level.data.parts.len())
+            .map(|_| renderer.add_region())
+            .collect();
+        let barrier_regions: Vec<(String, u16)> = scene
+            .barrier_parts
+            .iter()
+            .map(|(id, _)| (id.clone(), renderer.add_region()))
+            .collect();
+        let roof_regions: Vec<(String, u16)> = scene
+            .roof_boxes
+            .iter()
+            .map(|(id, _)| (id.clone(), renderer.add_region()))
+            .collect();
+        let placement_region = |i: usize, part: u8| -> u16 {
+            scene
+                .barrier_parts
+                .iter()
+                .zip(&barrier_regions)
+                .find(|((_, r), _)| r.contains(&i))
+                .map_or(part_regions[part as usize], |(_, (_, reg))| *reg)
+        };
+        let box_region = |i: usize, part: u8| -> u16 {
+            if let Some((_, (_, reg))) = scene
+                .barrier_boxes
+                .iter()
+                .zip(&barrier_regions)
+                .find(|((_, r), _)| r.contains(&i))
+            {
+                return *reg;
+            }
+            if let Some((_, (_, reg))) = scene
+                .roof_boxes
+                .iter()
+                .zip(&roof_regions)
+                .find(|((_, r), _)| r.contains(&i))
+            {
+                return *reg;
+            }
+            part_regions[part as usize]
+        };
         let mut placeholders: BTreeMap<String, usize> = BTreeMap::new();
-        for p in &scene.placements {
-            if !renderer.add_instance_scaled(p.model, p.pos, p.yaw, p.scale) {
+        for (i, p) in scene.placements.iter().enumerate() {
+            let region = placement_region(i, p.part);
+            if !renderer.add_instance_in(p.model, region, p.pos, p.yaw, p.scale) {
                 *placeholders.entry(p.model.to_owned()).or_default() += 1;
                 if scene.fallbacks.iter().any(|f| f.model == p.model) {
                     continue; // drawn by its fallback geometry below
@@ -276,7 +382,7 @@ impl App {
                 let (offset, size, color) = model_placeholder(p.model);
                 let size = size * p.scale;
                 let pos = p.pos + glam::Quat::from_rotation_y(p.yaw) * offset * p.scale;
-                renderer.add_box(pos, size, p.yaw, color, pos.y + size.y > 1.5);
+                renderer.add_box_in(region, pos, size, p.yaw, color, pos.y + size.y > 1.5);
             }
         }
         // placeholder geometry of missing models (e.g. the tiled pool rim, `pool_tiled`)
@@ -285,14 +391,17 @@ impl App {
                 continue;
             }
             for b in &f.boxes {
-                renderer.add_box(b.pos, b.size, b.yaw, b.color, b.fadeable);
+                let region = part_regions[b.part as usize];
+                renderer.add_box_in(region, b.pos, b.size, b.yaw, b.color, b.fadeable);
             }
             for p in &f.placements {
-                renderer.add_instance_scaled(p.model, p.pos, p.yaw, p.scale);
+                let region = part_regions[p.part as usize];
+                renderer.add_instance_in(p.model, region, p.pos, p.yaw, p.scale);
             }
         }
-        for b in &scene.boxes {
-            renderer.add_box(b.pos, b.size, b.yaw, b.color, b.fadeable);
+        for (i, b) in scene.boxes.iter().enumerate() {
+            let region = box_region(i, b.part);
+            renderer.add_box_in(region, b.pos, b.size, b.yaw, b.color, b.fadeable);
             *placeholders
                 .entry(format!("element:{}", b.source))
                 .or_default() += 1;
@@ -417,6 +526,11 @@ impl App {
             decals: scene.decals,
             text_textures,
             text_dirty: true,
+            barrier_regions,
+            roof_regions,
+            bowl_glass: [Instance::model(Vec3::ZERO, 0.0, false)],
+            bowl_water: [Instance::model(Vec3::ZERO, 0.0, false)],
+            inside: None,
         };
         app.reset_views();
         Ok(app)
@@ -576,8 +690,8 @@ impl App {
             yaw_steps: self.camera.yaw_steps(),
             distance_m: self.camera.target_distance(),
         });
-        for a in &mut s.animals {
-            a.yaw = self.animals.iter().find(|v| v.id == a.id).map(|v| v.yaw);
+        for (a, v) in s.animals.iter_mut().zip(&self.animals) {
+            a.yaw = Some(v.yaw);
         }
         self.game.mark_saved();
         s.to_json()
@@ -609,14 +723,14 @@ impl App {
         self.camera.snap(level_to_world(self.game.player.pos));
         self.player_yaw = facing_to_yaw(self.game.player.facing);
         self.reset_views();
-        for v in &mut self.animals {
-            let Some(a) = self.game.animal(v.id) else {
+        for (i, v) in self.animals.iter_mut().enumerate() {
+            let Some(a) = self.game.animals.get(i) else {
                 continue;
             };
             if let Some(yaw) = state
                 .animals
                 .iter()
-                .find(|s| s.id == v.id)
+                .find(|s| s.id == v.id && s.member == a.member)
                 .and_then(|s| s.yaw)
                 .filter(|y| y.is_finite())
             {
@@ -791,7 +905,9 @@ impl App {
         // Carried food box in front of the chest (socket_carry approximation).
         let fwd = Quat::from_rotation_y(yaw) * Vec3::Z;
         if self.has_carry_model {
-            let n = usize::from(self.game.carry.food().is_some());
+            // with the bowl in both hands the food is in the pocket (Q-084): not drawn
+            let bowl_carried = self.game.bowl.as_ref().is_some_and(|b| b.carried);
+            let n = usize::from(self.game.carry.food().is_some() && !bowl_carried);
             let p = player + fwd * 0.32 + Vec3::Y * 0.45;
             self.carry_box[0] = Instance {
                 pos_yaw: [p.x, p.y, p.z, yaw],
@@ -802,11 +918,65 @@ impl App {
                 .set_dynamic_instances(CARRY_BOX, &self.carry_box[..n]);
         }
 
+        // Barriers that opened disappear; the roof of the building the player is in is hidden
+        // (GAME-PLAYER §2, PLAY-028).
+        for (id, region) in &self.barrier_regions {
+            let open = self.game.level.is_barrier_open(id);
+            if open != self.renderer.region_hidden(*region) {
+                self.renderer.set_region_hidden(*region, open);
+            }
+        }
+        self.inside = self.building_inside();
+        for (id, region) in &self.roof_regions {
+            let hide = self.inside.as_deref() == Some(id.as_str());
+            if hide != self.renderer.region_hidden(*region) {
+                self.renderer.set_region_hidden(*region, hide);
+            }
+        }
+
+        // The fish bowl: glass + water (+ the fish inside, drawn with the animals).
+        let bowl_base = self.bowl_base(fwd, player);
+        let (mut n_glass, mut n_water) = (0, 0);
+        if let (Some(base), Some(b)) = (bowl_base, &self.game.bowl) {
+            let r = BOWL_RADIUS_M * 2.0;
+            self.bowl_glass[0] = Instance {
+                pos_yaw: [base.x, base.y, base.z, 0.0],
+                scale_fade: [r, BOWL_HEIGHT_M, r, 0.0],
+                color: GLASS,
+            };
+            n_glass = 1;
+            if b.water {
+                let w = r - 0.04;
+                self.bowl_water[0] = Instance {
+                    pos_yaw: [base.x, base.y + 0.02, base.z, 0.0],
+                    scale_fade: [w, BOWL_HEIGHT_M * 0.72, w, 0.0],
+                    color: BOWL_WATER_COLOR,
+                };
+                n_water = 1;
+            }
+        }
+        self.renderer
+            .set_dynamic_instances(BOWL, &self.bowl_glass[..n_glass]);
+        self.renderer
+            .set_dynamic_instances(BOWL_WATER, &self.bowl_water[..n_water]);
+
         // Animals: skinned models, else placeholder boxes in the dynamic box batch.
         self.dyn_boxes.clear();
         self.draws.clear();
         for a in &self.animals {
-            let pos = level_to_world(a.pos) - Vec3::Y * a.sink;
+            if !a.visible {
+                continue; // its level is still locked
+            }
+            let pos = a
+                .anchor
+                .unwrap_or_else(|| level_to_world(a.pos) - Vec3::Y * a.sink + Vec3::Y * a.lift);
+            let pos = match a.leap {
+                Some((from, t, _)) => {
+                    let k = (t / LEAP_S).clamp(0.0, 1.0);
+                    from.lerp(pos, k) + Vec3::Y * (4.0 * k * (1.0 - k)) * 0.9
+                }
+                None => pos,
+            };
             let (action, t) = a.action.map_or((None, 0.0), |(n, t, _)| (Some(n), t));
             if a.skinned {
                 self.draws.push((
@@ -821,6 +991,7 @@ impl App {
                         walk_clip: a.locomotion,
                         action: action.map(|n| (n, t)),
                         action_blend: if action.is_some() { 1.0 } else { 0.0 },
+                        under_water: a.under_water,
                     },
                 ));
             } else {
@@ -1021,6 +1192,7 @@ impl App {
                 AnimalState::Escaped => "escaped",
                 AnimalState::Following => "following",
                 AnimalState::InEnclosure => "in_enclosure",
+                AnimalState::InBowl => "in_bowl",
             })
             .unwrap_or_default()
             .to_owned()
@@ -1152,6 +1324,129 @@ impl App {
     pub fn time(&self) -> f64 {
         self.time
     }
+
+    // ------------------------------------------------------------------ M5b: levels, bowl
+
+    /// Whether a level (`level_1` …) is unlocked (its entry barrier is open).
+    pub fn level_unlocked(&self, id: &str) -> bool {
+        self.game.level_unlocked(id)
+    }
+
+    /// Ids of the joined levels, one per line.
+    pub fn level_ids(&self) -> String {
+        self.game
+            .level
+            .data
+            .parts
+            .iter()
+            .map(|p| p.id.as_str())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Spawn point `[x, z]` (cell centre) of a level, empty if unknown.
+    pub fn level_spawn(&self, id: &str) -> Vec<f32> {
+        let data = &self.game.level.data;
+        data.part_index(id)
+            .map(|k| {
+                let c = zoo_core::level::cell_center(data.parts[k].spawn.cell());
+                vec![c.x, c.y]
+            })
+            .unwrap_or_default()
+    }
+
+    /// Whether a barrier is open (removed).
+    pub fn barrier_open(&self, id: &str) -> bool {
+        self.game.level.is_barrier_open(id)
+    }
+
+    /// Whether the renderer hides a barrier's models (opened) or a building's roof (inside).
+    pub fn region_hidden(&self, id: &str) -> bool {
+        self.barrier_regions
+            .iter()
+            .chain(&self.roof_regions)
+            .find(|(k, _)| k == id)
+            .is_some_and(|(_, r)| self.renderer.region_hidden(*r))
+    }
+
+    /// The enterable building the player is inside (its roof is hidden), or empty.
+    pub fn player_inside(&self) -> String {
+        self.building_inside().unwrap_or_default()
+    }
+
+    /// Carried bowl for the HUD: empty (not carried), `empty`, `water` or `fish` (RESC-020).
+    pub fn carry_bowl(&self) -> String {
+        match &self.game.bowl {
+            Some(b) if b.carried => {
+                if b.fish {
+                    "fish"
+                } else if b.water {
+                    "water"
+                } else {
+                    "empty"
+                }
+            }
+            _ => "",
+        }
+        .to_owned()
+    }
+
+    /// The fish bowl as JSON `{"x","z","carried","water","fish"}` or empty (tests).
+    pub fn bowl_json(&self) -> String {
+        self.game
+            .bowl
+            .as_ref()
+            .map(|b| {
+                format!(
+                    "{{\"x\":{},\"z\":{},\"carried\":{},\"water\":{},\"fish\":{}}}",
+                    b.pos.x, b.pos.y, b.carried, b.water, b.fish
+                )
+            })
+            .unwrap_or_default()
+    }
+
+    /// Height of an animal above the ground (perch, Q-094) as drawn.
+    pub fn animal_lift(&self, id: &str) -> f32 {
+        self.animals
+            .iter()
+            .find(|v| v.id == id)
+            .map_or(0.0, |v| v.lift)
+    }
+
+    /// Whether an animal is drawn (its level is unlocked).
+    pub fn animal_visible(&self, id: &str) -> bool {
+        self.animals.iter().any(|v| v.id == id && v.visible)
+    }
+
+    /// Static batches skipped by region culling in the last frame (QA F12).
+    pub fn culled_batches(&self) -> u32 {
+        self.renderer.stats.culled_batches
+    }
+
+    /// Debug/e2e: a free standing point `[x, z]` near a level point (the passable cell centre
+    /// closest to it, at least `min_m` away) — e.g. next to the fish bowl or at a bank.
+    pub fn debug_stand_near_point(&self, x: f32, z: f32, min_m: f32) -> Vec<f32> {
+        let p = Vec2::new(x, z);
+        let grid = self.game.level.grid();
+        let r = zoo_core::level::Rect::new(x as i32 - 4, z as i32 - 4, 9, 9);
+        r.cells()
+            .filter(|&c| grid.is_passable(c, false))
+            .map(zoo_core::level::cell_center)
+            .filter(|q| q.distance(p) >= min_m)
+            .min_by(|a, b| a.distance(p).total_cmp(&b.distance(p)))
+            .map(|q| vec![q.x, q.y])
+            .unwrap_or_default()
+    }
+
+    /// Debug/e2e: turns the player towards a level point.
+    pub fn debug_face_point(&mut self, x: f32, z: f32) -> bool {
+        let to = Vec2::new(x, z) - self.game.player.pos;
+        if to.length() < 1e-3 {
+            return false;
+        }
+        self.game.player.facing = to.normalize();
+        true
+    }
 }
 
 impl App {
@@ -1200,7 +1495,7 @@ impl App {
     fn interaction_json(&self, result: &Interaction) -> String {
         match result {
             Interaction::InfoBoard(b) => format!(
-                "{{\"kind\":\"info_board\",\"key\":{},\"animal\":{},\"title\":{},\"more\":{},\"facts\":{},\"text\":{},\"picture\":{},\"food\":{},\"food_text\":{},\"level\":{}}}",
+                "{{\"kind\":\"info_board\",\"key\":{},\"animal\":{},\"title\":{},\"more\":{},\"facts\":{},\"text\":{},\"picture\":{},\"food\":{},\"food_text\":{},\"level\":{},\"hint\":{}}}",
                 js(&format!("info_board:{}", b.animal)),
                 js(b.animal),
                 js(&self.text_now(&b.name_key)),
@@ -1211,6 +1506,16 @@ impl App {
                 js(b.food_key.trim_start_matches("food-")),
                 js(&self.text_now(&b.food_key)),
                 js(self.game.settings.reading_level.id()),
+                // animals that travel in a container: the board says a bowl is needed
+                if self.game.needs_container(b.animal) {
+                    js(&self.text_now(&format!(
+                        "mission-{}-bowl-hint-{}",
+                        b.animal,
+                        self.game.settings.reading_level.id()
+                    )))
+                } else {
+                    "null".to_owned()
+                },
             ),
             Interaction::FoodBox { food, label } => format!(
                 "{{\"kind\":\"food_box\",\"key\":{},\"food\":{},\"text\":{},\"picture\":{},\"take\":{}}}",
@@ -1229,6 +1534,11 @@ impl App {
             Interaction::Gate { enclosure, entered } => format!(
                 "{{\"kind\":\"gate\",\"enclosure\":{},\"entered\":{entered}}}",
                 js(enclosure)
+            ),
+            Interaction::Item { id, action } => format!(
+                "{{\"kind\":\"item\",\"id\":{},\"action\":{}}}",
+                js(id),
+                js(action)
             ),
         }
     }
@@ -1251,11 +1561,30 @@ impl App {
     }
 
     fn queue(&mut self, animal: &str, clips: &[&'static str], wait_arrival: bool) {
-        if let Some(v) = self.animals.iter_mut().find(|v| v.id == animal) {
+        for v in self.animals.iter_mut().filter(|v| v.id == animal) {
             v.queue.clear();
             v.action = None;
             v.queue.extend(clips.iter().copied());
             v.wait_arrival = wait_arrival;
+        }
+    }
+
+    /// Starts the leap arc of an animal from where it is drawn now (the goldfish jumping into
+    /// the bowl or out of it into its pond).
+    fn leap(&mut self, animal: &str, into_bowl: bool) {
+        let fwd = Quat::from_rotation_y(self.player_yaw) * Vec3::Z;
+        let player = level_to_world(self.game.player.pos);
+        let bowl = self.bowl_base(fwd, player);
+        for v in self.animals.iter_mut().filter(|v| v.id == animal) {
+            let from = if into_bowl {
+                level_to_world(v.pos) - Vec3::Y * v.sink
+            } else {
+                // out of the bowl on the step: from the bowl's water surface
+                bowl.map_or(level_to_world(v.pos), |b| {
+                    b + Vec3::Y * (BOWL_HEIGHT_M * 0.74)
+                })
+            };
+            v.leap = Some((from, 0.0, into_bowl));
         }
     }
 
@@ -1281,7 +1610,41 @@ impl App {
                     self.say(&animal, "ui-refuse");
                 }
                 GameEvent::InEnclosure { animal } => {
-                    self.queue(&animal, &["eat", "happy", "happy"], true);
+                    if self.game.needs_container(&animal) {
+                        // from the bowl on the stone step into its pond
+                        self.leap(&animal, false);
+                        self.queue(&animal, &["happy", "eat"], false);
+                    } else {
+                        self.queue(&animal, &["eat", "happy", "happy"], true);
+                    }
+                }
+                GameEvent::NeedsContainer { animal } => {
+                    self.queue(&animal, &["happy"], false);
+                    self.say(&animal.clone(), &format!("mission-{animal}-needs-bowl"));
+                }
+                GameEvent::ContainerEmpty { animal } => {
+                    self.queue(&animal, &["refuse"], false);
+                    self.say(&animal.clone(), &format!("mission-{animal}-bowl-empty"));
+                }
+                GameEvent::ContainerFilled { animal, .. } => {
+                    self.say(&animal.clone(), &format!("mission-{animal}-bowl-filled"));
+                }
+                GameEvent::InContainer { animal } => {
+                    self.leap(&animal, true);
+                    self.queue(&animal, &["happy"], false);
+                    self.say(&animal.clone(), &format!("mission-{animal}-in-bowl"));
+                }
+                GameEvent::BarrierOpened { id } => {
+                    self.outbox.push(format!(
+                        "{{\"type\":\"barrier_opened\",\"id\":{}}}",
+                        js(&id)
+                    ));
+                }
+                GameEvent::LevelComplete { level } => {
+                    self.outbox.push(format!(
+                        "{{\"type\":\"level_complete\",\"level\":{}}}",
+                        js(&level)
+                    ));
                 }
                 GameEvent::MissionComplete { animal } => {
                     let key = format!("mission-{animal}-home");
@@ -1320,8 +1683,8 @@ impl App {
 
     /// Snaps every animal view to its logic state (start, new game, restore).
     fn reset_views(&mut self) {
-        for v in &mut self.animals {
-            let Some(a) = self.game.animal(v.id) else {
+        for (i, v) in self.animals.iter_mut().enumerate() {
+            let Some(a) = self.game.animals.get(i) else {
                 continue;
             };
             v.pos = a.pos;
@@ -1330,24 +1693,72 @@ impl App {
             v.action = None;
             v.wait_arrival = false;
             v.walk_blend = 0.0;
+            v.leap = None;
             let depth = self.game.water_depth(a);
             v.sink = swim_sink_m(v.id) * depth;
+            v.lift = self.game.perch(a).map_or(0.0, |(_, h)| h);
             v.rest = static_clip(self.game.rest_clip(a));
             v.locomotion = if depth > 0.5 { "swim" } else { "walk" };
+            v.visible = self.game.in_scope(a);
         }
+    }
+
+    /// Where the bowl stands (world, bottom centre): in front of the player's chest when
+    /// carried (both hands, `socket_carry` approximation), else on its table / step / ground.
+    fn bowl_base(&self, fwd: Vec3, player: Vec3) -> Option<Vec3> {
+        let b = self.game.bowl.as_ref()?;
+        if b.carried {
+            return Some(player + fwd * 0.42 + Vec3::Y * 0.42);
+        }
+        let part = self
+            .game
+            .level
+            .data
+            .part_at(zoo_core::level::cell_of(b.pos))
+            .unwrap_or(0);
+        self.game
+            .part_unlocked(part)
+            .then(|| zoo_core::coords::level_to_world_at(b.pos, b.lift_m))
+    }
+
+    /// The enterable building whose interior or door cell the player stands on (PLAY-028).
+    fn building_inside(&self) -> Option<String> {
+        let c = zoo_core::level::cell_of(self.game.player.pos);
+        self.game
+            .level
+            .data
+            .elements
+            .iter()
+            .find(|e| e.is_enterable() && e.is_open_cell(c))
+            .map(|e| e.id.clone())
     }
 
     fn update_animals(&mut self, dt: f32) {
         let walk_speed = self.game.move_params.walk_speed;
-        for v in &mut self.animals {
-            let Some(a) = self.game.animal(v.id) else {
+        let fwd = Quat::from_rotation_y(self.player_yaw) * Vec3::Z;
+        let player = level_to_world(self.game.player.pos);
+        let bowl = self.bowl_base(fwd, player);
+        for (i, v) in self.animals.iter_mut().enumerate() {
+            let Some(a) = self.game.animals.get(i) else {
                 continue;
             };
+            v.visible = self.game.in_scope(a);
+            // in the bowl: at its water surface (origin = water surface, fish rig)
+            v.anchor = match (a.state, bowl) {
+                (AnimalState::InBowl, Some(base)) => Some(base + Vec3::Y * (BOWL_HEIGHT_M * 0.74)),
+                _ => None,
+            };
+            if let Some((from, t, into)) = v.leap {
+                let t = t + dt;
+                v.leap = (t < LEAP_S).then_some((from, t, into));
+            }
             let to = a.pos - v.pos;
             let dist = to.length();
-            let moved = if dist > 12.0 {
+            let moved = if dist > 12.0 || v.anchor.is_some() {
                 v.pos = a.pos;
                 0.0
+            } else if v.lift > 0.3 && a.state == AnimalState::Following {
+                0.0 // still coming down from its perch
             } else {
                 let step = (2.2 * dt).min(dist);
                 if step > 1e-5 {
@@ -1356,10 +1767,34 @@ impl App {
                 step
             };
             let speed = if dt > 0.0 { moved / dt } else { 0.0 };
+            // perch (Q-094): up there while escaped, climbs down when it follows
+            let perch = self.game.perch(a);
+            let want_lift = perch.map_or(0.0, |(_, h)| h);
+            let mut climbing = false;
+            if (v.lift - want_lift).abs() > 1e-3 {
+                let rate = self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED);
+                let step = rate * dt;
+                v.lift += (want_lift - v.lift).clamp(-step, step);
+                climbing = true;
+            }
+            if let Some((p, _)) = perch {
+                if v.leap.is_none() {
+                    v.pos = p;
+                }
+            }
+            v.perch_yaw = perch.and_then(|_| {
+                let place = self.game.level.data.hiding_place(&a.hiding_place)?;
+                let e = zoo_core::scene::perch_scenery(place, &self.game.level.data)?;
+                let r = e.rect;
+                let c = Vec2::new(r.x as f32 + r.w as f32 / 2.0, r.z as f32 + r.d as f32 / 2.0);
+                Some(facing_to_yaw(c - v.pos))
+            });
             // turn towards the walking direction, else to the logic facing (e.g. the player,
             // ANIM-009, or the water it drinks from)
             let target = if speed > 0.1 {
                 facing_to_yaw(to)
+            } else if let (Some(y), "climb") = (v.perch_yaw, self.game.rest_clip(a)) {
+                y // clings to the mast / trunk
             } else {
                 facing_to_yaw(a.facing)
             };
@@ -1370,22 +1805,44 @@ impl App {
             let want_sink = swim_sink_m(v.id) * depth;
             v.sink += (want_sink - v.sink) * (1.0 - (-3.0 * dt).exp());
             let in_water = depth > 0.5 && a.state != AnimalState::Following;
+            v.under_water =
+                in_water && v.id == "goldfish" && v.leap.is_none() && v.anchor.is_none();
             v.rest = static_clip(self.game.rest_clip(a));
-            v.locomotion = if in_water { "swim" } else { "walk" };
+            v.locomotion = if climbing {
+                "climb"
+            } else if in_water || a.state == AnimalState::InBowl {
+                "swim"
+            } else {
+                "walk"
+            };
             if v.skinned {
                 if !self.renderer.has_clip(v.id, v.rest) {
                     v.rest = "idle";
                 }
                 if !self.renderer.has_clip(v.id, v.locomotion) {
-                    v.locomotion = "walk";
+                    v.locomotion = if self.renderer.has_clip(v.id, "walk") {
+                        "walk"
+                    } else {
+                        "swim"
+                    };
                 }
             }
-            let want = (speed / (0.5 * walk_speed)).clamp(0.0, 1.0);
+            let moving = if climbing { DESCEND_SPEED } else { speed };
+            let want = (moving / (0.5 * walk_speed)).clamp(0.0, 1.0);
             v.walk_blend += (want - v.walk_blend) * (1.0 - (-10.0 * dt).exp());
             v.idle_time += dt;
             // walk clip playback = speed ÷ authored speed (animal_anims.toml), clamped
-            let authored = self.anims.walk_speed(v.id);
-            v.walk_time += dt * walk_clip_rate(speed * 1.4 / authored);
+            let authored = if climbing {
+                self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED)
+            } else {
+                self.anims.walk_speed(v.id)
+            };
+            let actual = if climbing {
+                self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED)
+            } else {
+                speed
+            };
+            v.walk_time += dt * walk_clip_rate(actual * 1.4 / authored);
             let arrived = dist < 0.05;
             if v.wait_arrival && arrived {
                 v.wait_arrival = false;
@@ -1477,6 +1934,9 @@ fn target_key(t: &Target) -> String {
         Target::FoodBox { food } => format!("food_box:{}", food.id()),
         Target::Animal { animal } => format!("animal:{animal}"),
         Target::Gate { enclosure } => format!("gate:{enclosure}"),
+        Target::Item { id } => format!("item:{id}"),
+        Target::Water { source } => format!("water:{source}"),
+        Target::PutDown => "put_down".to_owned(),
     }
 }
 
@@ -1528,21 +1988,31 @@ mod tests {
         assert!((facing_to_yaw(Vec2::X) - std::f32::consts::FRAC_PI_2).abs() < 1e-5);
     }
 
+    fn level_tomls() -> Vec<String> {
+        (1..=3)
+            .map(|n| {
+                std::fs::read_to_string(format!(
+                    "{}/../../assets/levels/level-{n}.toml",
+                    env!("CARGO_MANIFEST_DIR")
+                ))
+                .unwrap()
+            })
+            .collect()
+    }
+
     #[test]
     fn required_assets_lists_props_player_and_every_animal() {
-        let toml = std::fs::read_to_string(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../assets/levels/level-1.toml"
-        ))
-        .unwrap();
-        let list = required_assets(&toml).unwrap();
+        let list = required_assets(level_tomls()).unwrap();
         assert!(list.contains(&"models/props/grass_tile.glb".to_owned()));
         assert!(list.contains(&"models/props/fence_wood.glb".to_owned()));
         assert!(list.contains(&"models/props/food_box.glb".to_owned()));
         assert!(list.contains(&"models/characters/player_girl.glb".to_owned()));
-        for a in ["zebra", "hippo", "panda"] {
+        for a in zoo_core::ANIMALS.iter().map(|a| a.id) {
             assert!(list.contains(&format!("models/animals/{a}.glb")), "{a}");
         }
+        // AENV-011 for the new enclosures, placeholder props of levels 2-3
+        assert!(list.contains(&"textures/signs/silhouette_goldfish.png".to_owned()));
+        assert!(list.contains(&"models/props/tree_eucalyptus.glb".to_owned()));
         assert!(list.contains(&ANIMAL_ANIMS.to_owned()));
         // the hippo pool's model (placeholder rim when missing)
         assert!(list.contains(&"models/props/pool_tiled.glb".to_owned()));

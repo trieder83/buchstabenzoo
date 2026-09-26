@@ -58,6 +58,9 @@ escaped ──(shown correct food)──▶ following ──(enters own enclosur
   the game RNG; targets prefer cells whose 8 neighbours belong to the same part of the area
   (an animal does not rest with its head through a fence or over the pool rim). Facing,
   pause and route are saved (ANIM-011).
+  *Exception — perches (proposal Q-094, implemented M5b):* an animal whose hiding place has
+  `perch_height_m` sits up there and does not wander (ANIM-008 applies to ground hiding
+  places only; GAME-RESCUE §12, RESC-026).
 - `following`: follows the player (GAME-RESCUE §6).
 - `in_enclosure`: inside, plays idle/happy animations and **wanders slowly inside its
   enclosure** the same way (pause 6–15 s, ≈ 0.5 m/s, stays inside the fence, avoids the

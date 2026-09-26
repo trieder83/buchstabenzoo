@@ -114,8 +114,42 @@ fn compile(gl: &Gl, kind: u32, src: &str) -> Result<WebGlShader, String> {
     }
 }
 
-/// One mesh drawn with instancing.
+/// Geometry of a static mesh, shared by its batches of every region.
+struct MeshInfo {
+    vbo: WebGlBuffer,
+    ibo: WebGlBuffer,
+    index_count: i32,
+    edge_mask: f32,
+    height: f32,
+    /// Horizontal/vertical extent from the origin (m), for region bounds.
+    radius: f32,
+}
+
+/// A render region (chunk): a level part, a barrier or a building roof. Its batches are
+/// skipped when it is hidden or its bounds are outside the view frustum (QA F12).
+#[derive(Debug, Clone, Copy)]
+struct Region {
+    min: Vec3,
+    max: Vec3,
+    hidden: bool,
+}
+
+impl Default for Region {
+    fn default() -> Self {
+        Self {
+            min: Vec3::splat(f32::MAX),
+            max: Vec3::splat(f32::MIN),
+            hidden: false,
+        }
+    }
+}
+
+/// Region 0: never culled (dynamic batches, characters' helpers).
+pub const REGION_ALWAYS: u16 = 0;
+
+/// One mesh drawn with instancing (per region).
 struct Batch {
+    region: u16,
     vao: WebGlVertexArrayObject,
     inst_vbo: WebGlBuffer,
     index_count: i32,
@@ -175,7 +209,16 @@ pub struct CharacterDraw {
     pub action: Option<(&'static str, f32)>,
     /// Weight of the action over the idle/walk pose (0…1).
     pub action_blend: f32,
+    /// Under a water surface (the goldfish): drawn through the water with a water tint
+    /// (depth pulled towards the camera by [`UNDER_WATER_DEPTH_BIAS_M`]).
+    pub under_water: bool,
 }
+
+/// How far an under-water character is pulled towards the camera for the depth test, so it
+/// shows through the water surface above it (m).
+pub const UNDER_WATER_DEPTH_BIAS_M: f32 = 0.45;
+/// Water tint of under-water characters (rgb, amount).
+pub const UNDER_WATER_TINT: [f32; 4] = [0.36, 0.66, 0.90, 0.35];
 
 impl CharacterDraw {
     /// Idle/walk only.
@@ -196,6 +239,7 @@ impl CharacterDraw {
             walk_clip: "walk",
             action: None,
             action_blend: 0.0,
+            under_water: false,
         }
     }
 }
@@ -214,6 +258,8 @@ pub struct FrameStats {
     pub instances: u32,
     pub triangles: u32,
     pub decals: u32,
+    /// Static batches skipped by region culling (hidden or outside the frustum).
+    pub culled_batches: u32,
 }
 
 /// A decal quad on the GPU: texture name, face normal, index of its first vertex.
@@ -245,7 +291,9 @@ pub struct Renderer {
     decals: Decals,
     palette: WebGlTexture,
     batches: Vec<Batch>,
-    batch_index: HashMap<String, usize>,
+    batch_index: HashMap<(String, u16), usize>,
+    meshes: HashMap<String, MeshInfo>,
+    regions: Vec<Region>,
     skinned: HashMap<String, SkinnedModel>,
     gbuf: Option<GBuffer>,
     width: i32,
@@ -281,11 +329,12 @@ impl Renderer {
             "u_edge_mask",
             "u_fade",
             "u_dither",
+            "u_tint",
         ];
         let static_prog = Program::new(&gl, &shaders::static_vs(), &shaders::static_fs(), &common)
             .map_err(err)?;
         let mut skinned_names = common.to_vec();
-        skinned_names.extend(["u_model", "u_joint_tex", "u_color"]);
+        skinned_names.extend(["u_model", "u_joint_tex", "u_color", "u_eye", "u_depth_bias"]);
         let skinned_prog = Program::new(
             &gl,
             &shaders::skinned_vs(),
@@ -336,6 +385,8 @@ impl Renderer {
             palette,
             batches: Vec::new(),
             batch_index: HashMap::new(),
+            meshes: HashMap::new(),
+            regions: vec![Region::default()],
             skinned: HashMap::new(),
             gbuf: None,
             width: 0,
@@ -345,7 +396,8 @@ impl Renderer {
         };
         r.add_mesh(BOX, &box_mesh(), 1.0)?;
         r.add_mesh(CAPSULE, &capsule_mesh(0.3, 1.2), 1.0)?;
-        r.batches[r.batch_index[CAPSULE]].dynamic = true;
+        let i = r.batch_index[&(CAPSULE.to_owned(), REGION_ALWAYS)];
+        r.batches[i].dynamic = true;
         Ok(r)
     }
 
@@ -574,7 +626,73 @@ impl Renderer {
     }
 
     pub fn has_model(&self, name: &str) -> bool {
-        self.batch_index.contains_key(name)
+        self.meshes.contains_key(name)
+    }
+
+    /// Creates a new render region (chunk) and returns its id (> 0).
+    pub fn add_region(&mut self) -> u16 {
+        self.regions.push(Region::default());
+        (self.regions.len() - 1) as u16
+    }
+
+    /// Hides / shows every batch of a region (opened barriers, roofs while inside).
+    pub fn set_region_hidden(&mut self, region: u16, hidden: bool) {
+        if let Some(r) = self.regions.get_mut(region as usize) {
+            r.hidden = hidden;
+        }
+    }
+
+    pub fn region_hidden(&self, region: u16) -> bool {
+        self.regions.get(region as usize).is_some_and(|r| r.hidden)
+    }
+
+    /// Batch of a mesh in a region (created on first use).
+    fn batch_for(&mut self, name: &str, region: u16) -> Option<usize> {
+        if let Some(&i) = self.batch_index.get(&(name.to_owned(), region)) {
+            return Some(i);
+        }
+        let m = self.meshes.get(name)?;
+        let gl = &self.gl;
+        let vao = gl.create_vertex_array()?;
+        gl.bind_vertex_array(Some(&vao));
+        gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&m.vbo));
+        attrib(gl, 0, 3, 32, 0);
+        attrib(gl, 1, 3, 32, 12);
+        attrib(gl, 2, 2, 32, 24);
+        gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, Some(&m.ibo));
+        let inst_vbo = gl.create_buffer()?;
+        gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&inst_vbo));
+        for (k, loc) in (3..6).enumerate() {
+            attrib(gl, loc, 4, 48, k as i32 * 16);
+            gl.vertex_attrib_divisor(loc, 1);
+        }
+        gl.bind_vertex_array(None);
+        let batch = Batch {
+            region,
+            vao,
+            inst_vbo,
+            index_count: m.index_count,
+            instances: Vec::new(),
+            uploaded: usize::MAX,
+            capacity: 0,
+            edge_mask: m.edge_mask,
+            height: m.height,
+            dynamic: false,
+        };
+        self.batch_index
+            .insert((name.to_owned(), region), self.batches.len());
+        self.batches.push(batch);
+        Some(self.batches.len() - 1)
+    }
+
+    fn grow_region(&mut self, region: u16, pos: Vec3, radius: f32, height: f32) {
+        if region == REGION_ALWAYS {
+            return;
+        }
+        if let Some(r) = self.regions.get_mut(region as usize) {
+            r.min = r.min.min(pos - Vec3::new(radius, 0.1, radius));
+            r.max = r.max.max(pos + Vec3::new(radius, height.max(0.1), radius));
+        }
     }
 
     /// Duration in seconds of a clip of a skinned model.
@@ -605,8 +723,6 @@ impl Renderer {
             verts.extend_from_slice(&mesh.normals[i]);
             verts.extend_from_slice(&mesh.uvs[i]);
         }
-        let vao = gl.create_vertex_array().ok_or("create_vertex_array")?;
-        gl.bind_vertex_array(Some(&vao));
         let vbo = gl.create_buffer().ok_or("create_buffer")?;
         gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&vbo));
         gl.buffer_data_with_u8_array(
@@ -614,42 +730,47 @@ impl Renderer {
             bytemuck::cast_slice(&verts),
             Gl::STATIC_DRAW,
         );
-        attrib(gl, 0, 3, 32, 0);
-        attrib(gl, 1, 3, 32, 12);
-        attrib(gl, 2, 2, 32, 24);
         let ibo = gl.create_buffer().ok_or("create_buffer")?;
+        gl.bind_vertex_array(None);
         gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, Some(&ibo));
         gl.buffer_data_with_u8_array(
             Gl::ELEMENT_ARRAY_BUFFER,
             bytemuck::cast_slice(&mesh.indices),
             Gl::STATIC_DRAW,
         );
-        let inst_vbo = gl.create_buffer().ok_or("create_buffer")?;
-        gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&inst_vbo));
-        for (k, loc) in (3..6).enumerate() {
-            attrib(gl, loc, 4, 48, k as i32 * 16);
-            gl.vertex_attrib_divisor(loc, 1);
-        }
-        gl.bind_vertex_array(None);
-        let height = mesh.bounds().1.y;
-        let batch = Batch {
-            vao,
-            inst_vbo,
-            index_count: mesh.indices.len() as i32,
-            instances: Vec::new(),
-            uploaded: usize::MAX,
-            capacity: 0,
-            edge_mask,
-            height,
-            dynamic: false,
-        };
-        match self.batch_index.get(name) {
-            Some(&i) => self.batches[i] = batch,
-            None => {
-                self.batch_index.insert(name.to_owned(), self.batches.len());
-                self.batches.push(batch);
+        let (lo, hi) = mesh.bounds();
+        let radius =
+            lo.x.abs()
+                .max(hi.x.abs())
+                .max(lo.z.abs())
+                .max(hi.z.abs())
+                .max(0.01);
+        // replacing a mesh drops its old batches
+        let old: Vec<(String, u16)> = self
+            .batch_index
+            .keys()
+            .filter(|(n, _)| n == name)
+            .cloned()
+            .collect();
+        for k in &old {
+            if let Some(i) = self.batch_index.remove(k) {
+                self.batches[i].instances.clear();
+                self.batches[i].uploaded = usize::MAX;
             }
         }
+        self.meshes.insert(
+            name.to_owned(),
+            MeshInfo {
+                vbo,
+                ibo,
+                index_count: mesh.indices.len() as i32,
+                edge_mask,
+                height: hi.y,
+                radius,
+            },
+        );
+        self.batch_for(name, REGION_ALWAYS)
+            .ok_or_else(|| JsValue::from_str("create batch"))?;
         Ok(())
     }
 
@@ -665,7 +786,22 @@ impl Renderer {
 
     /// Adds a uniformly scaled model instance; returns `false` if the model is unknown.
     pub fn add_instance_scaled(&mut self, name: &str, pos: Vec3, yaw: f32, scale: f32) -> bool {
-        let Some(&i) = self.batch_index.get(name) else {
+        self.add_instance_in(name, REGION_ALWAYS, pos, yaw, scale)
+    }
+
+    /// Adds a model instance to a render region (culled with it); `false` for an unknown model.
+    pub fn add_instance_in(
+        &mut self,
+        name: &str,
+        region: u16,
+        pos: Vec3,
+        yaw: f32,
+        scale: f32,
+    ) -> bool {
+        let Some((radius, height)) = self.meshes.get(name).map(|m| (m.radius, m.height)) else {
+            return false;
+        };
+        let Some(i) = self.batch_for(name, region) else {
             return false;
         };
         let b = &mut self.batches[i];
@@ -675,22 +811,40 @@ impl Renderer {
         inst.scale_fade[2] = scale;
         b.instances.push(inst);
         b.uploaded = usize::MAX;
+        self.grow_region(region, pos, radius * scale, height * scale);
         true
     }
 
     /// Adds a flat-coloured placeholder box (`pos` = bottom centre).
     pub fn add_box(&mut self, pos: Vec3, size: Vec3, yaw: f32, color: [f32; 3], fadeable: bool) {
-        let i = self.batch_index[BOX];
+        self.add_box_in(REGION_ALWAYS, pos, size, yaw, color, fadeable);
+    }
+
+    /// Adds a placeholder box to a render region.
+    pub fn add_box_in(
+        &mut self,
+        region: u16,
+        pos: Vec3,
+        size: Vec3,
+        yaw: f32,
+        color: [f32; 3],
+        fadeable: bool,
+    ) {
+        let Some(i) = self.batch_for(BOX, region) else {
+            return;
+        };
         let b = &mut self.batches[i];
         b.instances
             .push(Instance::flat(pos, yaw, size, color, fadeable));
         b.uploaded = usize::MAX;
+        let radius = (size.x * size.x + size.z * size.z).sqrt() * 0.5;
+        self.grow_region(region, pos, radius, size.y);
     }
 
     /// Replaces the instances of a dynamic batch (e.g. the player capsule) for this frame.
     /// Reuses the batch's buffers; allocation-free once the capacity is reached.
     pub fn set_dynamic_instances(&mut self, name: &str, instances: &[Instance]) {
-        if let Some(&i) = self.batch_index.get(name) {
+        if let Some(&i) = self.batch_index.get(&(name.to_owned(), REGION_ALWAYS)) {
             let b = &mut self.batches[i];
             b.dynamic = true;
             b.instances.clear();
@@ -843,6 +997,7 @@ impl Renderer {
         gl.uniform4f(p.u("u_fade"), fade.x, fade.y, fade.z, fade.w);
         gl.uniform1f(p.u("u_dither"), self.outline_px() * 0.5);
         gl.uniform1i(p.u("u_palette"), 0);
+        gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
     }
 
     /// Outline sample offset in device pixels (even, so the fade pattern stays line-free).
@@ -908,8 +1063,27 @@ impl Renderer {
         let gl = &self.gl;
         gl.active_texture(Gl::TEXTURE0);
         gl.bind_texture(Gl::TEXTURE_2D, Some(&self.palette));
+        let planes = frustum_planes(&view_proj);
+        let ground = visible_ground(&view_proj);
+        let visible: Vec<bool> = self
+            .regions
+            .iter()
+            .enumerate()
+            .map(|(k, r)| {
+                k == REGION_ALWAYS as usize
+                    || (!r.hidden
+                        && aabb_visible(&planes, r.min, r.max)
+                        && ground.is_none_or(|(lo, hi)| {
+                            r.min.x <= hi.x && r.max.x >= lo.x && r.min.z <= hi.y && r.max.z >= lo.y
+                        }))
+            })
+            .collect();
         for b in &self.batches {
             if b.instances.is_empty() {
+                continue;
+            }
+            if !visible.get(b.region as usize).copied().unwrap_or(true) {
+                stats.culled_batches += 1;
                 continue;
             }
             gl.uniform1f(self.static_prog.u("u_edge_mask"), b.edge_mask);
@@ -957,6 +1131,16 @@ impl Renderer {
             }
             gl.uniform1i(p.u("u_joint_tex"), 1);
             gl.uniform1f(p.u("u_edge_mask"), 1.0);
+            let eye = camera.eye();
+            gl.uniform3f(p.u("u_eye"), eye.x, eye.y, eye.z);
+            if draw.under_water {
+                let t = UNDER_WATER_TINT;
+                gl.uniform4f(p.u("u_tint"), t[0], t[1], t[2], t[3]);
+                gl.uniform1f(p.u("u_depth_bias"), UNDER_WATER_DEPTH_BIAS_M);
+            } else {
+                gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
+                gl.uniform1f(p.u("u_depth_bias"), 0.0);
+            }
             let model = Mat4::from_translation(draw.pos) * Mat4::from_rotation_y(draw.yaw);
             gl.uniform_matrix4fv_with_f32_array(p.u("u_model"), false, &model.to_cols_array());
             gl.bind_vertex_array(Some(&sm.vao));
@@ -1056,6 +1240,62 @@ impl Renderer {
         stats.draw_calls += 1;
         self.stats = stats;
     }
+}
+
+/// The 6 planes (a, b, c, d; inside ≥ 0) of a view-projection matrix (Gribb/Hartmann).
+fn frustum_planes(m: &Mat4) -> [Vec4; 6] {
+    let r0 = m.row(0);
+    let r1 = m.row(1);
+    let r2 = m.row(2);
+    let r3 = m.row(3);
+    [r3 + r0, r3 - r0, r3 + r1, r3 - r1, r3 + r2, r3 - r2]
+}
+
+/// Tallest static geometry (m): the giant tree of level 2.
+const MAX_SCENE_HEIGHT_M: f32 = 13.0;
+
+/// World `(x, z)` bounds of what the camera can see between the ground and
+/// [`MAX_SCENE_HEIGHT_M`] (the frustum corner rays cut with both planes, or their far end):
+/// big regions whose box straddles the frustum planes are still culled when they lie outside
+/// the visible ground (QA F12).
+fn visible_ground(view_proj: &Mat4) -> Option<(Vec2, Vec2)> {
+    let inv = view_proj.inverse();
+    let mut lo = Vec2::splat(f32::MAX);
+    let mut hi = Vec2::splat(f32::MIN);
+    for (x, y) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
+        let near = inv.project_point3(Vec3::new(x, y, -1.0));
+        let far = inv.project_point3(Vec3::new(x, y, 1.0));
+        if !near.is_finite() || !far.is_finite() {
+            return None;
+        }
+        for h in [0.0, MAX_SCENE_HEIGHT_M] {
+            let d = far - near;
+            let p = if d.y.abs() > 1e-5 {
+                let t = ((h - near.y) / d.y).clamp(0.0, 1.0);
+                near + d * t
+            } else {
+                far
+            };
+            lo = lo.min(Vec2::new(p.x, p.z));
+            hi = hi.max(Vec2::new(p.x, p.z));
+        }
+    }
+    Some((lo, hi))
+}
+
+/// Whether an axis-aligned box intersects the frustum (conservative).
+fn aabb_visible(planes: &[Vec4; 6], min: Vec3, max: Vec3) -> bool {
+    if min.x > max.x {
+        return false; // empty region
+    }
+    planes.iter().all(|p| {
+        let v = Vec3::new(
+            if p.x >= 0.0 { max.x } else { min.x },
+            if p.y >= 0.0 { max.y } else { min.y },
+            if p.z >= 0.0 { max.z } else { min.z },
+        );
+        p.x * v.x + p.y * v.y + p.z * v.z + p.w >= 0.0
+    })
 }
 
 fn pose_character(sm: &mut SkinnedModel, d: &CharacterDraw) {
@@ -1162,6 +1402,58 @@ pub fn decode_png(bytes: &[u8]) -> Result<(u32, u32, Vec<u8>), String> {
 }
 
 /// Unit box: x, z in [-0.5, 0.5], y in [0, 1], flat normals, no bottom face.
+/// Unit cylinder (radius 0.5, height 1, origin at the bottom centre) with `segments` flat
+/// sides: optional top cap, optional inner walls (an open glass bowl seen from above).
+pub fn cylinder_mesh(segments: u32, top: bool, inner: bool) -> MeshData {
+    let mut m = MeshData::default();
+    let n = segments.max(3);
+    for k in 0..n {
+        let a0 = k as f32 / n as f32 * std::f32::consts::TAU;
+        let a1 = (k + 1) as f32 / n as f32 * std::f32::consts::TAU;
+        let (p0, p1) = (
+            Vec3::new(a0.cos() * 0.5, 0.0, a0.sin() * 0.5),
+            Vec3::new(a1.cos() * 0.5, 0.0, a1.sin() * 0.5),
+        );
+        let mid = (a0 + a1) / 2.0;
+        let normal = Vec3::new(mid.cos(), 0.0, mid.sin());
+        for (sign, flip) in [(1.0f32, false), (-1.0, true)] {
+            if flip && !inner {
+                continue;
+            }
+            let base = m.positions.len() as u32;
+            for p in [p0, p1, p1 + Vec3::Y, p0 + Vec3::Y] {
+                m.positions.push(p.to_array());
+                m.normals.push((normal * sign).to_array());
+                m.uvs.push([0.0, 0.0]);
+            }
+            // outer walls wind counter-clockwise seen from outside
+            if flip {
+                m.indices
+                    .extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
+            } else {
+                m.indices
+                    .extend_from_slice(&[base, base + 2, base + 1, base, base + 3, base + 2]);
+            }
+        }
+    }
+    if top {
+        let c = m.positions.len() as u32;
+        m.positions.push([0.0, 1.0, 0.0]);
+        m.normals.push([0.0, 1.0, 0.0]);
+        m.uvs.push([0.0, 0.0]);
+        for k in 0..=n {
+            let a = k as f32 / n as f32 * std::f32::consts::TAU;
+            m.positions.push([a.cos() * 0.5, 1.0, a.sin() * 0.5]);
+            m.normals.push([0.0, 1.0, 0.0]);
+            m.uvs.push([0.0, 0.0]);
+        }
+        for k in 0..n {
+            m.indices.extend_from_slice(&[c, c + 2 + k, c + 1 + k]);
+        }
+    }
+    m
+}
+
 pub fn box_mesh() -> MeshData {
     let mut m = MeshData::default();
     let faces: [(Vec3, Vec3, Vec3); 5] = [

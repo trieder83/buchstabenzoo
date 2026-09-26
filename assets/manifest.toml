@@ -613,3 +613,33 @@ kind = "environment"
 spec = "GAME-NIGHT"
 concept_approved = false
 animations = []
+
+# Night art (GAME-NIGHT, plan art/night/README.md) — concept briefs only
+
+[[asset]]
+id = "kit_night"
+kind = "props"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "kit_bedroom"
+kind = "props"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_night_house"
+kind = "environment"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_night_overview"
+kind = "environment"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = []

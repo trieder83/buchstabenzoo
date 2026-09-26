@@ -135,7 +135,7 @@ mockups): `hedge` (tall, 3 m), `water_tile_flowing` (river, moving texture), `br
 Added for the level-1 candidate hiding places (proposal, zoo-level-designer, 2026-09-26 —
 only where no existing prop fits): `wildflowers` (small tuft with coloured flower heads,
 ≤ 80 tris, scattered in tall grass — `flower_bed` is a formal bed and does not fit a meadow),
-`butterfly` (≤ 20 tris, bobbing like the ducks), `mud_tile` (1 m ground tile of glossy brown
+`butterfly` (≤ 20 tris, bobbing like the ducks; M6: a built-in 12-triangle two-wing mesh in the renderer, GAME-AMBIENT), `mud_tile` (1 m ground tile of glossy brown
 mud with an edge variant, for `kit_ground`), `shade_decal` (flat dark-green ground decal for
 tree shade — Q-080 answered: a flat ground decal, not a renderer feature), `leaf_pile` (lumpy heap of red/yellow/brown
 leaves, ≤ 300 tris) and `rake` (≤ 60 tris). Reused: `grass_tuft` scaled ×3 for tall grass,
@@ -192,6 +192,35 @@ cutaway), `kit_furniture` (`bench`, `feeding_trough` for GAME-FAMILY care feedin
 filled). New ids proposed there, not yet placed in `level-1.toml`: `zookeeper_house`,
 `bamboo_feeding_rack`, `feeding_trough`.
 
+## Night art (GAME-NIGHT)
+
+Plan and per-group decisions: `art/night/README.md` (proposal 2026-09-26). Night is a
+**renderer mode** (GAME-NIGHT §10) — existing models get **no night copies**; the renderer
+tints them with blue moonlight and adds lamp point lights and emissive areas.
+
+- **(a) no new art (tinted):** ground and paths, fences/hedges/walls, enclosure signs, food
+  boxes, nature, barriers, player and animals' bodies, UI panels (look as by day, NIGHT-005).
+- **(b) emissive parts / night state on existing models:** `info_board` and `map_board` get a
+  `board_lamp` (GAME-NIGHT rule 5); buildings (`zookeeper_house`, `food_storage_building`,
+  `entrance_arch`, `hut_wood`, shelters) get lit windows (`*_glow` material slots) and a
+  `wall_lamp`; water shows reflected stars and lantern reflections (shader); every animal has
+  an `eye_glow` slot for eyeshine (NIGHT-006, never red) and a `sleep` pose; ducks sleep,
+  butterflies/bees hide.
+- **(c) night-only new assets:** `lantern_post`, `string_lights`, `hand_lantern`,
+  `board_lamp`, `wall_lamp`, `firefly`, `sky_moon` / `sky_stars` and the `moon_door`
+  (closed / opening / open) — `art/props/kit_night`; `bed`, `night_table`, `bedside_lamp`,
+  `window_moon`, `rug_round`, `toy_chest` — `art/props/kit_bedroom`; `night_house` —
+  `art/environment/env_night_house`; night level mood — `art/environment/env_night_overview`;
+  night animals — `art/animals/*`; choice icons `icon_sleep`, `icon_moon_door` (UI).
+- **Emissive convention:** glowing parts are separate `*_glow` material slots (pale cream by
+  day, emissive at night); each lamp model has a `light` empty (position, radius) for its
+  point light. Night colours (proposal): lamp glow `#FFD66B`, light pools `#FFC46E`, windows
+  `#FFC857`, moon `#FFF4C9`, eyeshine `#E6F7A0`, darkest night shadow not below `#2B3566`.
+- **Prompts:** night briefs copy the STYLE block verbatim and add the "NIGHT LIGHTING"
+  paragraph of `art/night/README.md` right after it (Q-113).
+- Open: Q-113 (night style block), Q-114 (light-pool fallback), Q-115 (fireflies), Q-116
+  (night-house red light), Q-117 (hand lantern), Q-118 (number/placement of lanterns).
+
 ## Behaviour
 
 1. Each mockup's `layout.md` lists which modular props it uses; new props are added to the
@@ -239,6 +268,10 @@ filled). New ids proposed there, not yet placed in `level-1.toml`: `zookeeper_ho
      animated meshes; it loops seamlessly, is independent of frame rate, and costs no
      extra draw calls per tile. The same motion must be visible from the 55° game camera at
      every zoom (10–20 m).
+   - *Implemented (M6):* TECH-WATER (water field + water shader, obstacle foam, bobbing) and
+     GAME-AMBIENT (animated ducks, ducklings, frogs, butterflies); review shots
+     `art/environment/poc/screenshot_poc_water_{river,pond,stream}.png` and
+     `river_loop.gif` (catalog item `water_ingame`).
 
 ## Test cases
 

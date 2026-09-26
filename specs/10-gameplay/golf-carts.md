@@ -19,17 +19,17 @@ still means walking the animal home.
 
 ## Behaviour
 
-1. **Three carts** stand at parking spots (proposal Q-107: one at the entrance plaza of
+1. **Three carts** stand at parking spots (proposal Q-119: one at the entrance plaza of
    level 1, one at the entry of level 2, one at the entry of level 3 — a cart of a locked
    level is only usable once that level is open). Each cart has a small parking sign.
 2. **Getting in / out:** standing next to a cart (GAME-PLAYER §5 rules, the driver's side),
    the interact button shows a cart icon; interact → the girl sits in the driver's seat.
    Interact again (or a big "get out" button) → she steps out on the side, the cart stays
-   exactly where it was left (it does not drive back by itself — proposal Q-107).
+   exactly where it was left (it does not drive back by itself — proposal Q-119).
 3. **Driving:** the same controls as walking (left thumb / WASD): push forward = drive
    forward, steer by the joystick direction relative to the camera; smooth acceleration and
    braking, no reversing needed (proposal: slow reverse when pulling back). Speed on paths
-   **4.5 m/s** (≈ 2.3× walking), on grass 2.0 m/s (proposal Q-108). The camera zooms out a
+   **4.5 m/s** (≈ 2.3× walking), on grass 2.0 m/s (proposal Q-120). The camera zooms out a
    little (+3 m) while driving and follows smoothly.
 4. **Where carts can go:** only walkable cells of unlocked levels — paths and grass; never
    through barriers, fences, gates into enclosures, the garden gate, buildings, water
@@ -71,5 +71,5 @@ still means walking the animal home.
 
 ## Open questions
 
-- Q-107 Where the 3 carts park, and whether a cart drives back to its parking spot by itself.
-- Q-108 Speeds (paths 4.5 m/s, grass 2.0 m/s) and whether carts may drive on grass at all.
+- Q-119 Where the 3 carts park, and whether a cart drives back to its parking spot by itself.
+- Q-120 Speeds (paths 4.5 m/s, grass 2.0 m/s) and whether carts may drive on grass at all.

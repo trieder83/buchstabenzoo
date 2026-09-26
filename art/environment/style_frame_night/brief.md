@@ -61,3 +61,4 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-26 | style_frame_night_v1.png (quota test) | gemini-3-pro-image (1K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | **failed — HTTP 429** (monthly spending cap still reached; no image) |

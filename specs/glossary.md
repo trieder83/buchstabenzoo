@@ -69,3 +69,6 @@ language for player-facing text.
 | `enterable_building` (data `interior`, `door`) | begehbares Gebäude † | enterable building | Building whose interior and door cells are walkable floor; its roof and upper walls hide while the player is inside (GAME-PLAYER §2, proposal Q-092). |
 | `render_region` | — | render region | Group of static batches culled together: one per level, per barrier, per enterable-building roof (GAME-LAYOUT "Joining levels"). Not player-facing. |
 | `perch` (data `perch_height_m`) | Sitzplatz oben † | perch | Raised spot where an escaped animal sits instead of wandering on the ground (koala in a tree, monkey in the crow's nest; proposal Q-094). |
+| `view_mode` (`zoo`, `look_around`, `first_person`) | Ansicht (Zoo-Ansicht, Umschauen, Ich-Ansicht) † | camera view (zoo view, look-around, first person) | The camera view: the high-angle zoo view (default, GAME-PLAYER §2), the look-around view while the eye button is held, and the first-person view (toggle) — GAME-CAMERA-VIEWS. |
+| `fog_end` (`FOG_END_M`) | Sichtweite † | visibility distance | Distance from the eye beyond which the comic haze hides everything in the close views (16 m, proposal Q-109); hiding places must lie beyond it from their own board (CAMV-008). |
+| `golf_cart` | Golfwagen | golf cart | Small zoo vehicle the player can drive; animals do not follow it (GAME-CART). |

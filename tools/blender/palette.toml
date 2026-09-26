@@ -1,0 +1,46 @@
+# Buchstabenzoo shared colour palette (ART-DIRECTION §6, ART-PIPELINE §10).
+#
+# Every model samples ONE palette texture, assets/textures/palette.png, generated from
+# this table by tools/blender/lib/zoo_blender.py (write_palette_png) whenever a kit script
+# runs. The atlas is `cells` x `cells` flat colour squares of `cell_px` pixels; a colour's
+# `index` is its cell, row-major from the top-left (index 0 = top-left, 1 = next to the
+# right, 16 = start of the second row). Models put all UVs of a face on the centre of
+# their colour's cell, so the texture can be filtered NEAREST (or LINEAR + mipmaps down
+# to 4 px cells) without bleeding.
+#
+# Rules: never renumber an index that a model already uses (append new colours instead);
+# colours were picked from the approved concept sheets (art/props/*/sheet_*.jpg) and the
+# style frame (art/environment/style_frame/style_frame.png). Unused cells are filled with
+# magenta so a wrong UV is obvious.
+
+cells = 16
+cell_px = 16
+
+[colors]
+# ---- ground (kit_ground sheet_v2, style frame)
+grass            = { index = 0,  hex = "#8FBE56" }  # fresh grass green (tile tops)
+grass_dark       = { index = 1,  hex = "#5E9A3C" }  # grass tufts
+soil             = { index = 2,  hex = "#9A5E3C" }  # tile sides (only visible at map edges)
+path_mortar      = { index = 3,  hex = "#E9C27F" }  # sand-beige path bed between stones
+path_stone       = { index = 4,  hex = "#F2E4CE" }  # light rounded paving stones
+plaza_stone      = { index = 5,  hex = "#E8D8C0" }  # large plaza slabs
+plaza_stone_dark = { index = 6,  hex = "#D8C2A4" }  # plaza slab accent
+plaza_joint      = { index = 7,  hex = "#BFA888" }  # plaza joints
+edge_stone       = { index = 8,  hex = "#ABA6AD" }  # grey path edging stones
+sand             = { index = 9,  hex = "#F1D29B" }  # enclosure sand
+sand_dark        = { index = 10, hex = "#E0B878" }  # sand mounds
+# ---- wood (kit_fences sheet_v3, style frame fences)
+wood             = { index = 16, hex = "#B97A48" }  # posts
+wood_light       = { index = 17, hex = "#C98C56" }  # rails, planks, wall cap
+wood_dark        = { index = 18, hex = "#8E5A36" }  # brace, post tops
+metal            = { index = 19, hex = "#8C8A92" }  # latch, hinges
+# ---- hedge
+hedge            = { index = 32, hex = "#6E9C45" }  # trimmed hedge
+hedge_dark       = { index = 33, hex = "#4F7A3A" }  # hedge base / shade accent
+# ---- stone wall
+wall_stone       = { index = 48, hex = "#CFCAC5" }  # light grey rounded wall stones
+wall_stone_dark  = { index = 49, hex = "#B9B3B0" }  # alternate wall stones
+wall_mortar      = { index = 50, hex = "#8F8886" }  # wall joints (core behind the stones)
+# ---- reference only (drawn by the renderer, never used on a model)
+outline          = { index = 240, hex = "#4A2A22" } # comic outline colour (dark brown)
+shadow_tint      = { index = 241, hex = "#8E86A8" } # cel shadow tint seen in the sheets (blue-violet)

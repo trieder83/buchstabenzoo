@@ -310,7 +310,7 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 | LAYOUT-L1-008 | Given `level-1.toml`, then the only water elements are `river_*` and `pond_water` and the only `bridge` is `bridge_river`. | unit |
 | LAYOUT-L1-009 | Given each level-1 hiding place, then at least one walkable cell centre is within 2 m of its animal spot. | unit |
 | LAYOUT-L1-010 | Given missions `zebra`, `hippo`, `panda` complete, then `barrier_ne_tree` cells are walkable, `barrier_north_gate` and `barrier_east_repair` are still solid (depends on Q-022). | unit |
-| LAYOUT-L1-011 | Given level 1 starts on a 1080×2340 viewport, then the player stands on the plaza facing north and the food storage is on screen. | e2e |
+| LAYOUT-L1-011 | Given level 1 starts on a 1080×2340 viewport, then the player stands on the plaza facing north with the camera at maximum zoom-out (20 m) and the food storage is on screen. | e2e |
 | LAYOUT-L1-012 | Given the approved mockups `loc_river` and `loc_pond`, then a reviewer can tell river and pond apart without text (flow + bridge + ducks vs. still + lilies + frogs), and `env_zebra` shows no water, `env_panda` no stone cave. | manual |
 
 ## Open questions
@@ -319,6 +319,6 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 - Q-033 food storage lock (level 1 assumes unlocked).
 - Q-044 `hiding_place` element type and `blocks_view` data.
 - Q-046 answered: grass walkable, slower than paths.
-- Q-049 answered: high-angle game camera (GAME-PLAYER §2; section above). Q-052 FOV axis (LAYOUT-L1-006, LAYOUT-L1-011).
+- Q-049 answered: high-angle game camera (GAME-PLAYER §2; section above). Q-052 answered: 35° vertical FOV; level 1 starts at maximum zoom-out (LAYOUT-L1-011).
 - Q-047 which food boxes stand in the storage in level 1.
 - Q-024 walking speed (distance limit assumes 1.4 m/s).

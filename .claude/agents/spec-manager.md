@@ -28,7 +28,7 @@ frontmatter schema, the body template and the test ID rules. Also read `CLAUDE.m
 3. **Consistency.** Terms must match `glossary.md` exactly (e.g. "enclosure", never "cage";
    `reading_level` vs. `level`). Numbers, names, animation lists, asset ids and rules that
    appear in several specs must agree. Tech decisions in `CLAUDE.md` override specs
-   (Rust main language, raw WebGL2, no three.js, Blender MCP → .glb).
+   (Rust main language, raw WebGL2, no three.js, scripted Blender (MCP for inspection) → .glb).
 4. **Contradictions.** Find statements that conflict across specs or with `CLAUDE.md`.
 5. **Gaps.** Behaviour rules without test cases; test cases without a rule; features
    mentioned but never specified; assets referenced but not listed in an ART-* spec;

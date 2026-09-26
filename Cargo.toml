@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = ["crates/zoo-core", "crates/zoo-assets", "crates/zoo-render", "crates/zoo-web"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.98"
+license = "UNLICENSED"
+publish = false
+
+[workspace.dependencies]
+zoo-core = { path = "crates/zoo-core" }
+zoo-assets = { path = "crates/zoo-assets" }
+zoo-render = { path = "crates/zoo-render" }
+
+[profile.release]
+opt-level = "s"
+lto = true

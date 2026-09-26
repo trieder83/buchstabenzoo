@@ -41,7 +41,7 @@ The reference images below are for content and layout ideas, not for the style.
    riddles) are read in a close-up text panel that opens on interaction (GAME-PLAYER §4).
 5. Each enclosure has a distinct silhouette/material so children can recognise it without
    reading (important for `kiga`).
-6. Colour palette is defined once (`art/palette.png`) and reused by all assets.
+6. Colour palette is defined once (`assets/textures/palette.png` (generated from `tools/blender/palette.toml`)) and reused by all assets.
 
 ## Test cases
 

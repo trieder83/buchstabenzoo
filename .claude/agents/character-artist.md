@@ -32,7 +32,8 @@ Read first: `CLAUDE.md`, `specs/README.md`, `specs/glossary.md`, `specs/30-art/a
    scale, pose (A-pose) and plain background.
 2. **Turnaround** images → human review → `concept_approved = true` in the manifest
    (the user approves, not you).
-3. **Model** in Blender via the Blender MCP server: comic style (`art/style/style.md`),
+3. **Model** in Blender with a headless Python script in `tools/blender/characters/` (source
+   of truth; the Blender MCP connection is for live inspection): comic style (`art/style/style.md`),
    rounded chunky low poly (≤ 3 000 tris), smooth normals, flat-colour body atlas + face
    decal atlas (ART-RIG), no modelled outlines (the renderer draws them), origin at the
    feet, Y-up, 1 unit = 1 m.

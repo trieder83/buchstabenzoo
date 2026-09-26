@@ -52,7 +52,7 @@ window.ART_CATALOG = {
         {
           id: "player_girl",
           title: "Player — girl",
-          status: "in-review",
+          status: "approved",
           description: "Playable girl, ~6–8 years old, comic style; hair, clothes and colours from the reference image.",
           spec: "ART-CHARACTERS",
           brief: "characters/player_girl/brief.md",
@@ -70,7 +70,7 @@ window.ART_CATALOG = {
         {
           id: "player_boy",
           title: "Player — boy",
-          status: "in-review",
+          status: "approved",
           description: "Playable boy, matching counterpart to the girl, same rig and proportions.",
           spec: "ART-CHARACTERS",
           brief: "characters/player_boy/brief.md",
@@ -95,7 +95,7 @@ window.ART_CATALOG = {
         {
           id: "zebra",
           title: "Zebra",
-          status: "in-review",
+          status: "approved",
           description: "Start mission animal (CONT-MISSIONS), hides at: river (drinking).",
           spec: "ART-ANIMALS",
           brief: "animals/zebra/brief.md",
@@ -383,7 +383,7 @@ window.ART_CATALOG = {
         {
           id: "kit_ground",
           title: "Kit 1 — ground and paths",
-          status: "in-review",
+          status: "approved",
           description: "Floor tiles: path straight/curve/T/cross/end, plaza, grass, path edge, sand.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_ground/brief.md",
@@ -391,12 +391,13 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_ground/sheet_v2.jpg", label: "sheet_v2 (chosen)", required: true },
             { file: "props/kit_ground/sheet_v1.jpg", label: "sheet_v1 (alternative)" },
+            { file: "props/kit_ground/model_preview.png", label: "3D model preview" },
           ],
         },
         {
           id: "kit_fences",
           title: "Kit 2 — fences, gates, hedges, walls",
-          status: "in-review",
+          status: "approved",
           description: "Wooden post-and-rail fence, gate (closed/open), tall hedge, outer zoo wall — with corners.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_fences/brief.md",
@@ -404,12 +405,13 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_fences/sheet_v3.jpg", label: "sheet_v3 (chosen)", required: true },
             { file: "props/kit_fences/sheet_v1.jpg", label: "sheet_v1 (alternative)" },
+            { file: "props/kit_fences/model_preview.png", label: "3D model preview" },
           ],
         },
         {
           id: "kit_signs",
           title: "Kit 3 — signs, boards, food boxes",
-          status: "in-review",
+          status: "approved",
           description: "Enclosure sign (blank, silhouette slot), info board, map board, food box, stack of food boxes — all blank.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_signs/brief.md",
@@ -422,7 +424,7 @@ window.ART_CATALOG = {
         {
           id: "kit_nature",
           title: "Kit 4 — nature",
-          status: "in-review",
+          status: "approved",
           description: "Round tree, dense grove tree, eucalyptus, bush, flower bed, rock, bamboo, reeds, grass tuft.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_nature/brief.md",
@@ -435,7 +437,7 @@ window.ART_CATALOG = {
         {
           id: "kit_water",
           title: "Kit 5 — water",
-          status: "in-review",
+          status: "approved",
           description: "Flowing river (straight, curve), still pond (tile, edge), wooden bridge, jetty, lily pads, duck, frog.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_water/brief.md",
@@ -448,7 +450,7 @@ window.ART_CATALOG = {
         {
           id: "kit_barriers",
           title: "Kit 6 — barriers",
-          status: "in-review",
+          status: "approved",
           description: "Road block, repair sign (shovel pictogram), zookeeper cart, traffic cone, fallen tree, closed zoo gate.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_barriers/brief.md",

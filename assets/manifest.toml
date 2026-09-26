@@ -5,21 +5,21 @@
 id = "player_girl"
 kind = "characters"
 spec = "ART-CHARACTERS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "run", "pick_up", "give", "talk", "cheer", "wave", "carry"]
 
 [[asset]]
 id = "player_boy"
 kind = "characters"
 spec = "ART-CHARACTERS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "run", "pick_up", "give", "talk", "cheer", "wave", "carry"]
 
 [[asset]]
 id = "zebra"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
@@ -159,40 +159,40 @@ animations = []
 id = "kit_ground"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_fences"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_signs"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_nature"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_water"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_barriers"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []

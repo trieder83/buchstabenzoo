@@ -22,8 +22,10 @@ faster than guessing.
 - **Host shell:** minimal **TypeScript** + **Vite** — loads the WASM module, owns the
   `<canvas>`, forwards input (touch, mouse, keyboard), handles audio and asset loading.
   Keep JS thin; if logic can live in Rust, it goes in Rust.
-- **3D assets:** modelled in **Blender**, driven by Claude through the **Blender MCP
-  server**. Export as **glTF 2.0 binary (`.glb`)**, loaded in Rust with the `gltf` crate.
+- **3D assets:** modelled in **Blender** by **Python scripts** (`tools/blender/`, run headless —
+  the source of truth). The **Blender MCP** server (ahujasid `blender-mcp`, see below) is for
+  live inspection and tuning. Export as **glTF 2.0 binary (`.glb`)**, loaded in Rust with the
+  `gltf` crate.
 - **Math:** `glam`. **i18n:** Project Fluent (`fluent-bundle`, `.ftl` files).
 - **Mobile packaging (later):** Capacitor wrapping the same web build — one codebase for
   web, Android, iOS.
@@ -47,7 +49,7 @@ assets/
   manifest.toml        # every asset + concept_approved gate (ART-PIPELINE)
   levels/              # level layout data (GAME-LAYOUT)
   i18n/{de,en,fr}/     # Fluent .ftl files — every user-visible string lives here
-  blender/             # Source .blend files (edited via Blender MCP)
+  blender/             # .blend files written by tools/blender/*.py (never hand-edited)
   models/              # Exported .glb files used by the game
   audio/
 tests/e2e/             # Playwright end-to-end tests
@@ -123,8 +125,13 @@ npm --prefix web run lint && npm --prefix web test
 - Characters and animals need a **turnaround sheet** (front, side, back, ¾); environment areas need **mockups**
   (overview + player view + layout). A human sets `concept_approved = true` in
   `assets/manifest.toml`. Details: `specs/30-art/asset-pipeline.md`.
-- Create and edit models in Blender through the Blender MCP tools; save the source
-  `.blend` in `assets/blender/` and export the `.glb` to `assets/models/` — commit both.
+- Models are built by scripts: `blender -b --python tools/blender/<kind>/<asset>.py` writes
+  `assets/blender/…/.blend`, exports `assets/models/…/.glb` and a preview render — commit all.
+  Change a model by changing its script, never by hand-editing the `.blend`.
+- **Blender MCP (live):** ahujasid `blender-mcp` — in Blender the add-on (N-panel → BlenderMCP →
+  Connect, port 9876); in Claude Code registered per project with
+  `claude mcp add blender -- uvx blender-mcp`. Use it to look at models, test lighting/camera
+  and try changes; port anything worth keeping back into the script.
 - **Generating concept art:** `tools/gen_image.py <brief.md> --prompt N --out a.png b.png
   --ref art/environment/style_frame/style_frame.png` (Gemini, `GEMINI_API_KEY`); `--prompt 0
   --extra "..." --ref img` edits an image. Characters/animals/props: generate one **sheet**

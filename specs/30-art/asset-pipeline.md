@@ -24,13 +24,16 @@ area goes through concept → approval → Blender → glTF → game, and each s
    |---|---|---|---|
    | 1 | Concept | Turnaround sheet (characters, animals) or mockup (environment), listed in `art/catalog.js`, reviewed on `art/index.html` | `art/<kind>/<asset_id>/` |
    | 2 | Approval | Entry in `assets/manifest.toml` with `concept_approved = true` | `assets/manifest.toml` |
-   | 3 | Modelling | `.blend` file, built via Blender MCP | `assets/blender/<kind>/<asset_id>.blend` |
+   | 3 | Modelling | Blender **Python script** (source of truth, run headless: `blender -b --python`), producing the `.blend`; Blender MCP for interactive inspection/tuning | `tools/blender/<kind>/<asset_id>.py` → `assets/blender/<kind>/<asset_id>.blend` |
    | 4 | Export | `.glb` (glTF 2.0 binary) | `assets/models/<kind>/<asset_id>.glb` |
    | 5 | Integration | Referenced by game data, loads in the game | `crates/zoo-core` data |
 
    `<kind>` is one of `characters`, `animals`, `props`, `environment`.
+   Scripted modelling keeps assets reproducible and reviewable: changing a model means
+   changing its script and re-running it; the script exports the `.glb` too. Hand edits in
+   the `.blend` that are not in the script are not allowed.
 2. **Gate.** Stage 3 must not start for an asset whose concept is not approved. The
-   Blender MCP agent checks `assets/manifest.toml` before modelling.
+   modelling script (or the agent running it) checks `assets/manifest.toml` before modelling.
 3. **Turnaround sheet** (characters and animals): one image per view — `front.png`,
    `side.png` (left profile), `back.png`, `three_quarter.png` — same scale, same pose
    (neutral T- or A-pose for humans, standing pose for animals), plain background, and a

@@ -70,6 +70,12 @@ updated: 2026-09-26
    has left and re-entered the interactable's range. Actions stay explicit: taking a food
    box needs the take button (✋) or interact; animals and gates still use the interact
    button. The panel has a read-aloud button (CONT-READING).
+   **Scrolling long texts** (user request 2026-09-26): when the facts part is longer than the
+   panel, it scrolls inside the panel. The child scrolls by **dragging anywhere on the panel
+   box** with a finger (or the mouse), with a short coast after a swipe; the mouse wheel
+   also scrolls. Taps on buttons still work (a drag starts after 6 px of movement). The
+   scrollbar is styled like the dialog (rounded brown thumb on a cream track, same border
+   colour), wide enough to see on a phone, and only shown when there is something to scroll.
    *PoC implementation notes (M4b):* the open/close state machine lives in zoo-core
    (`Game::update`, events `PanelOpened` / `PanelClosed`; `Game::close_panel` for ✖/Esc and
    after taking food); the host only shows/hides the panel. The panel is anchored at the top
@@ -147,6 +153,8 @@ updated: 2026-09-26
 | PLAY-031 | Given every walkable cell centre of level 1 not covered by a prop and 8 walking directions, when the player walks 3 s, then her circle never overlaps a solid cell or prop shape, she is never trapped (can move ≥ 0.15 m in some direction afterwards) and she does not jitter (< 2 cm back-and-forth) while pushing against walls, props and corners (QA 2026-09-26). | unit |
 | PLAY-028 | Given the player walks through the door into an enterable building, then its roof (and the blocking wall top) fades out within 0.3 s while she is inside and fades back in within 0.3 s after she leaves; other buildings keep their roofs. | e2e |
 | PLAY-029 | Given the player inside a building, then everything inside (floor, props, animals) is visible from the default camera at every 45° rotation. | e2e |
+| PLAY-032 | Given an info board panel whose facts overflow, when a finger drags upward on the riddle area of the panel (not on the scrollbar) on a touch device, then the facts scroll down by the dragged distance and the player does not move. | e2e |
+| PLAY-033 | Given a panel, when the finger taps a button without moving more than 6 px, then the button's action happens and nothing scrolls. | unit |
 
 ## Open questions
 

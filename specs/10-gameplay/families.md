@@ -36,7 +36,7 @@ Other species stay single until decided (Q-073).
    children: the male is ~10 % larger; the female has a small distinguishing detail
    (proposal: slightly different mane/ear tuft pattern; no clothing or bows — Q-074). Both
    are friendly; nothing stereotyped.
-4. **Caring after the rescue:** at home, the enclosure has a **feeding trough**. Bringing the
+4. **Caring after the rescue** (treats from the vegetable garden also count — GAME-GARDEN): at home, the enclosure has a **feeding trough**. Bringing the
    pair its correct food again (taken from the food storage, read from the box label) and
    putting it into the trough is one **care feeding**.
 5. **Baby:** after **3 care feedings on 3 different play sessions** (proposal — Q-075), the

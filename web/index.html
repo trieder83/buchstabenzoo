@@ -275,6 +275,30 @@
         border-top: 4px dashed #d9c49a;
         padding-top: 6px;
       }
+      /* scrollbar styled like the dialog (GAME-PLAYER §4): rounded brown thumb on a cream
+         track, only visible when there is something to scroll */
+      .panel-more {
+        scrollbar-width: auto;
+        scrollbar-color: #8a5a35 #f3e3bf;
+        cursor: grab;
+      }
+      .panel-more::-webkit-scrollbar {
+        width: 16px;
+      }
+      .panel-more::-webkit-scrollbar-track {
+        background: #f3e3bf;
+        border-radius: 10px;
+        border: 3px solid #fff8e7;
+      }
+      .panel-more::-webkit-scrollbar-thumb {
+        background: #8a5a35;
+        border-radius: 10px;
+        border: 3px solid #f3e3bf;
+        min-height: 40px;
+      }
+      .panel-more::-webkit-scrollbar-thumb:active {
+        background: #6b4428;
+      }
       @media (orientation: landscape) {
         .panel-body[data-kind='info_board'] {
           display: grid;

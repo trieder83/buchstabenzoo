@@ -3,6 +3,8 @@
 // mission celebration. Every text comes from the game (Fluent via `App.t` / `App.interact`);
 // icons are placeholders (emoji) until the icon art exists.
 
+import { dragScroll } from './scroll';
+
 /** The subset of the WASM `App` the UI needs. */
 export interface UiApp {
   t(key: string): string;
@@ -334,7 +336,12 @@ export class Ui {
     this.panel.replaceChildren(body);
     this.panel.dataset.kind = data.kind;
     this.panel.hidden = false;
-    if (data.kind === 'info_board') fitReadingText(body);
+    if (data.kind === 'info_board') {
+      fitReadingText(body);
+      // long facts scroll by dragging anywhere on the panel box (PLAY-032/033)
+      const more = body.querySelector<HTMLElement>('.panel-more');
+      if (more) dragScroll(body, more);
+    }
   }
 
   /** Closed by hand (✖, Esc): stays closed until the player leaves and returns (PLAY-026). */

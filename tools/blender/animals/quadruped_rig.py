@@ -73,7 +73,10 @@ class Rig:
     ear_base, ear_tip                                         left ear (mirrored for _r)
     tail_1, tail_2, tail_end                                  tail chain
     front_xy, hind_xy: (x, y) of the left leg; front_z, hind_z: (top, knee, fetlock)
-    toe: hoof/paw toe offset forward of the fetlock (foot bone tail)."""
+    toe: hoof/paw toe offset forward of the fetlock (foot bone tail).
+    extra_joints (optional): [(name, parent, head, tail), ...] per-animal *leaf* chains
+    appended after the 23 standard joints (e.g. trunk_1..3 under `head`, tail_3 under
+    `tail_2`); the standard joints keep their names and parents (ART-ANIMALS §Rig 2)."""
 
     def __init__(self, P):
         self.P = P
@@ -97,10 +100,15 @@ class Rig:
                 j.append((f"{end}_lower_{s}", f"{end}_upper_{s}", (X, y, knee), (X, y, fet)))
                 j.append((f"{end}_foot_{s}", f"{end}_lower_{s}", (X, y, fet), (X, y - P["toe"], 0.0)))
         assert [n for n, *_ in j] == JOINT_NAMES
+        for n, par, h, t in P.get("extra_joints", ()):
+            assert n not in JOINT_NAMES and par in [x for x, *_ in j], n
+            j.append((n, par, tuple(h), tuple(t)))
         self.skel = j
+        self.names = [n for n, *_ in j]
+        self.parent = {n: par for n, par, *_ in j}
         self.rest_head = {n: Vector(h) for n, _, h, _ in j}
         self.rest_tail = {n: Vector(t) for n, _, _, t in j}
-        self.length = {n: (self.rest_tail[n] - self.rest_head[n]).length for n in JOINT_NAMES}
+        self.length = {n: (self.rest_tail[n] - self.rest_head[n]).length for n in self.names}
         self.rest_rot = {}
         self.fet_z = {leg: self.rest_head[leg_bones(leg)[2]].z for leg in LEGS}
 
@@ -223,11 +231,12 @@ def ring_h(k, n):
 class MeshBuilder:
     """All parts of an animal in one bmesh: UVs, one material (body), deform weights."""
 
-    def __init__(self):
+    def __init__(self, names=None):
+        self.names = list(names or JOINT_NAMES)
         self.bm = bmesh.new()
         self.uvl = self.bm.loops.layers.uv.new("UVMap")
         self.dl = self.bm.verts.layers.deform.new()
-        self.gidx = {n: i for i, n in enumerate(JOINT_NAMES)}
+        self.gidx = {n: i for i, n in enumerate(self.names)}
 
     def _weights(self, verts, weight_fn):
         for v in verts:
@@ -295,7 +304,7 @@ class MeshBuilder:
         me.shade_smooth()  # smooth averaged normals (ART-RIG §3.5)
         obj = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(obj)
-        for n in JOINT_NAMES:
+        for n in self.names:
             obj.vertex_groups.new(name=n)
         obj.parent = arm_obj
         mod = obj.modifiers.new("Armature", "ARMATURE")
@@ -346,7 +355,7 @@ class Pose:
 
     def __init__(self, rig):
         self.rig = rig
-        self.rel = {n: Quaternion() for n in JOINT_NAMES}
+        self.rel = {n: Quaternion() for n in rig.names}
         self.hips_offset = Vector((0, 0, 0))
 
     def world(self, name):
@@ -355,13 +364,13 @@ class Pose:
         n = name
         while n:
             ch.append(n)
-            n = PARENT[n]
+            n = self.rig.parent[n]
         for n in reversed(ch):
             q = q @ self.rel[n]
         return q
 
     def head(self, name):
-        p = PARENT[name]
+        p = self.rig.parent[name]
         rh = self.rig.rest_head
         if p is None:
             return rh[name].copy()
@@ -375,7 +384,7 @@ class Pose:
         return self.head(bone) + self.world(bone) @ (Vector(rest_point) - self.rig.rest_head[bone])
 
     def set_world(self, name, w):
-        p = PARENT[name]
+        p = self.rig.parent[name]
         self.rel[name] = self.world(p).inverted() @ w if p else w
 
     def leg_ik(self, leg, fet_target, pitch_deg=0.0, pole=None):
@@ -453,7 +462,7 @@ class Clip:
 
 def apply_pose(rig, arm_obj, pose, frame, prev=None):
     out = {}
-    for n in JOINT_NAMES:
+    for n in rig.names:
         if n == "root":
             continue
         pb = arm_obj.pose.bones[n]
@@ -623,7 +632,7 @@ def setup_preview(mesh_obj, body_img):
     mesh_obj.material_slots[0].link = "OBJECT"
     mesh_obj.material_slots[0].material = mat
 
-    bpy.ops.mesh.primitive_plane_add(size=80, location=(0, 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=600, location=(0, 0, 0))  # tall animals: no horizon
     ground = bpy.context.active_object
     ground.data.materials.append(zb._toon_material("pv_ground", flat_rgb=(0.56, 0.75, 0.34),
                                                    shadow=(0.72, 0.72, 0.86)))
@@ -711,7 +720,7 @@ def render_preview(arm_obj, out_png, ls, center_z, walk_frame, game_yaw=-60.0,
     print(f"preview -> {out_png}")
 
 
-def render_debug(arm_obj, out_dir, ls, clips, center_z, head_pt):
+def render_debug(arm_obj, out_dir, ls, clips, center_z, head_pt, scale=1.0):
     """Extra review renders (not committed): head close-ups, top view, clip strips."""
     os.makedirs(out_dir, exist_ok=True)
     grey = (0.90, 0.90, 0.91)
@@ -720,11 +729,11 @@ def render_debug(arm_obj, out_dir, ls, clips, center_z, head_pt):
     for name, d in (("head_front", (0, 1, -0.05)), ("head_34", (0.7, 0.7, -0.15)),
                     ("head_side", (-1, 0, -0.05))):
         loc, dd = _look(head_pt, d)
-        hr._render(os.path.join(out_dir, name + ".png"), (500, 500), loc, dd, 1.0, grey)
+        hr._render(os.path.join(out_dir, name + ".png"), (500, 500), loc, dd, 1.0 * scale, grey)
     loc, dd = _look((0, 0, center_z), (0.7, -0.7, -0.35))
-    hr._render(os.path.join(out_dir, "back_34.png"), (700, 700), loc, dd, 2.8, grey)
+    hr._render(os.path.join(out_dir, "back_34.png"), (700, 700), loc, dd, 2.8 * scale, grey)
     loc, dd = _look((0, 0, center_z), game_view_dir(-150.0))
-    hr._render(os.path.join(out_dir, "game_back.png"), (700, 700), loc, dd, 3.2, (0.56, 0.75, 0.34))
+    hr._render(os.path.join(out_dir, "game_back.png"), (700, 700), loc, dd, 3.2 * scale, (0.56, 0.75, 0.34))
     side = Vector((-1, 0, -0.05))
     for c in clips:
         step = max(1, c.frames // 6)
@@ -733,7 +742,7 @@ def render_debug(arm_obj, out_dir, ls, clips, center_z, head_pt):
             hr._pose_at(arm_obj, c.name, f)
             loc, dd = _look((0, -0.2, center_z), side)
             paths.append(hr._render(os.path.join(out_dir, f"_{c.name}_{f:02d}.png"), (330, 330),
-                                    loc, dd, 3.0, grey))
+                                    loc, dd, 3.0 * scale, grey))
         hr._compose(paths, os.path.join(out_dir, f"clip_{c.name}.png"), heights=330)
         for pth in paths:
             os.remove(pth)

@@ -6,7 +6,8 @@ Usage:  python3 tools/blender/check_animal.py [file.glb ...]
 
 Pure Python 3.10+ (no Blender, no dependencies). Reuses the glTF/pose helpers of
 check_character.py. Covers AANI-003..AANI-008:
-  AANI-003 skeleton: the 23 `quadruped` joint names + parents, <= 24 joints
+  AANI-003 skeleton: the 23 `quadruped` joint names + parents (+ the animal's optional extra
+           leaf joints of EXTRA, e.g. elephant trunk_1..3), <= 24 standard, hard max 32
   AANI-004 skin/mesh: one skinned mesh, material `body`, <= 4 influences, weights sum 1,
            JOINTS_0 UNSIGNED_BYTE, no morphs/vertex colours, smooth normals, texture
            <= 256 x 256, <= 3000 triangles, <= 400 KB
@@ -47,8 +48,77 @@ for _end, _par in (("front", "chest"), ("hind", "hips")):
         PARENTS[f"{_end}_foot_{_s}"] = f"{_end}_lower_{_s}"
 FEET = [f"{e}_foot_{s}" for e in ("front", "hind") for s in ("l", "r")]
 
-# per-animal rest checks: back (withers) height in m (+-0.05), max total height
-SIZES = {"zebra": {"back": 1.30, "max_height": 2.35}}
+# optional per-animal extra joints (leaf chains; ART-ANIMALS rig conventions §2)
+EXTRA = {
+    "elephant": {"trunk_1": "head", "trunk_2": "trunk_1", "trunk_3": "trunk_2"},
+    "snow_fox": {"tail_3": "tail_2"},
+}
+MAX_JOINTS = 32
+
+# per-animal rest checks: back (withers) height in m (+-0.05), max total height and
+# (optional) game size = total height (+-0.08, ART-ANIMALS "Game sizes")
+SIZES = {
+    "zebra": {"back": 1.30, "max_height": 2.35},
+    "hippo": {"back": 1.43, "max_height": 1.75, "height": 1.70},
+    "panda": {"back": 0.84, "max_height": 1.15, "height": 1.10},
+    "koala": {"back": 0.61, "max_height": 0.95, "height": 0.90},
+    "elephant": {"back": 2.33, "max_height": 3.05, "height": 3.00},
+    "giraffe": {"back": 2.30, "max_height": 4.55, "height": 4.50},
+    "lion": {"back": 1.02, "max_height": 1.55, "height": 1.50},
+    "snow_fox": {"back": 0.62, "max_height": 0.95, "height": 0.90},
+}
+
+# non-quadruped rigs (tools/blender/animals/biped_rig.py, fish_rig.py): skeleton, feet for
+# AANI-008 and rest checks. biped: min Y = 0, total height +- 0.05; fish: origin = water
+# surface above the body centre (hips `depth` m below y = 0), length along Z +- 0.03.
+BIPED_PARENTS = {"root": None, "hips": "root", "spine": "hips", "chest": "spine",
+                 "neck": "chest", "head": "neck", "tail_1": "hips"}
+for _s in ("l", "r"):
+    BIPED_PARENTS.update({f"upper_arm_{_s}": "chest", f"lower_arm_{_s}": f"upper_arm_{_s}",
+                          f"hand_{_s}": f"lower_arm_{_s}", f"upper_leg_{_s}": "hips",
+                          f"lower_leg_{_s}": f"upper_leg_{_s}", f"foot_{_s}": f"lower_leg_{_s}"})
+for _i in range(2, 6):
+    BIPED_PARENTS[f"tail_{_i}"] = f"tail_{_i - 1}"
+FISH_PARENTS = {"root": None, "hips": "root", "head": "hips", "spine_1": "hips",
+                "spine_2": "spine_1", "spine_3": "spine_2", "tail_fin": "spine_3",
+                "fin_dorsal": "spine_1", "fin_pec_l": "hips", "fin_pec_r": "hips",
+                "fin_pelvic_l": "hips", "fin_pelvic_r": "hips", "fin_anal": "spine_2"}
+OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
+    "monkey": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 1.10}),
+    "goldfish": ("fish", FISH_PARENTS, [], {"length": 0.60, "depth": 0.22}),
+}
+
+
+def check_other_rest(rig, exp, rp, mn, mx, err):
+    """AANI-005 for the biped / fish rigs."""
+    if rig == "biped":
+        if abs(mn[1]) > 0.01:
+            err.append(f"AANI-005 min Y = {mn[1]:.4f} (expected 0)")
+        if abs(mx[1] - exp["height"]) > 0.05:
+            err.append(f"AANI-005 height {mx[1]:.3f} m (game size {exp['height']} +- 0.05)")
+        if not rp["tail_3"][2] < -0.1 < 0 <= rp["head"][2] + 0.05:
+            err.append("AANI-005 not facing +Z (tail must be at -Z)")
+        for a in ("upper_arm", "upper_leg"):
+            if not rp[f"{a}_l"][0] > 0 > rp[f"{a}_r"][0]:
+                err.append(f"AANI-005 {a}_l is not at +X")
+        for s in ("l", "r"):
+            d = vsub(rp[f"foot_{s}"], rp[f"upper_leg_{s}"])
+            tilt = math.degrees(math.atan2(math.hypot(d[0], d[2]), -d[1]))
+            if tilt > 2:
+                err.append(f"AANI-005 leg {s} tilted {tilt:.1f} deg in rest pose")
+    else:
+        if any(abs(c) > 1e-4 for c in rp["root"]):
+            err.append("AANI-005 fish root is not at the origin (water surface)")
+        if abs(rp["hips"][1] + exp["depth"]) > 0.01 or abs(rp["hips"][0]) > 1e-3:
+            err.append(f"AANI-005 hips y {rp['hips'][1]:.3f} (expected -{exp['depth']} below the surface)")
+        if abs(mx[2] - mn[2] - exp["length"]) > 0.03:
+            err.append(f"AANI-005 length {mx[2] - mn[2]:.3f} m (expected {exp['length']} +- 0.03)")
+        if mx[1] > 0.05:
+            err.append(f"AANI-005 fish sticks {mx[1]:.3f} m out of the water in rest pose")
+        if not rp["head"][2] > 0 > rp["tail_fin"][2]:
+            err.append("AANI-005 not facing +Z")
+        if not rp["fin_pec_l"][0] > 0 > rp["fin_pec_r"][0]:
+            err.append("AANI-005 fin_pec_l is not at +X")
 
 
 def load_anims(path=ANIMS_TOML):
@@ -99,21 +169,26 @@ def check(path, anims_data):
 
     # AANI-003 skeleton
     jn = [m.names[j] for j in m.joints]
-    if sorted(jn) != sorted(PARENTS):
-        err.append(f"AANI-003 joint names differ: extra {sorted(set(jn) - set(PARENTS))}, "
-                   f"missing {sorted(set(PARENTS) - set(jn))}")
+    other = OTHER_RIGS.get(asset)
+    if "front_upper_l" not in jn and asset not in SIZES and not other:
+        info.append("not a quadruped rig (no front legs) — skipped")
+        return asset, err, info
+    parents = other[1] if other else dict(PARENTS, **EXTRA.get(asset, {}))
+    if sorted(jn) != sorted(parents):
+        err.append(f"AANI-003 joint names differ: extra {sorted(set(jn) - set(parents))}, "
+                   f"missing {sorted(set(parents) - set(jn))}")
     for j in m.joints:
         n = m.names[j]
         p = m.parent.get(j)
         pn = m.names[p] if p is not None else None
-        want = PARENTS.get(n, "?")
+        want = parents.get(n, "?")
         if want is None:
-            if pn in PARENTS:
+            if pn in parents:
                 err.append(f"AANI-003 root has joint parent {pn}")
         elif pn != want:
             err.append(f"AANI-003 parent of {n} is {pn}, expected {want}")
-    if len(jn) > 24:
-        err.append(f"AANI-003 {len(jn)} joints > 24")
+    if len(set(jn) & set(PARENTS)) > 24 or len(jn) > MAX_JOINTS:
+        err.append(f"AANI-003 {len(jn)} joints (> 24 standard or > {MAX_JOINTS} in total)")
 
     idx = {n: i for i, n in enumerate(m.names)}
     arm_node = m.parent.get(idx["root"]) if "root" in idx else None
@@ -131,9 +206,11 @@ def check(path, anims_data):
     # AANI-005 rest pose: facing, sides, vertical legs
     rest_local = lambda j: m.rest_trs(j)  # noqa: E731
     rp = {m.names[j]: m.world(j, rest_local)[0] for j in m.joints}
-    if not (rp["head"][2] > 0 > rp["tail_1"][2]):
+    if other:
+        pass  # checked after the mesh bounds (check_other_rest)
+    elif not (rp["head"][2] > 0 > rp["tail_1"][2]):
         err.append(f"AANI-005 not facing +Z: head z {rp['head'][2]:.2f}, tail z {rp['tail_1'][2]:.2f}")
-    for e in ("front", "hind"):
+    for e in (("front", "hind") if not other else ()):
         if not (rp[f"{e}_upper_l"][0] > 0 > rp[f"{e}_upper_r"][0]):
             err.append(f"AANI-005 {e}_upper_l is not at +X")
         if rp[f"front_upper_l"][2] <= rp["hind_upper_l"][2]:
@@ -210,14 +287,20 @@ def check(path, anims_data):
         err.append(f"AANI-004 {tris} triangles > {MAX_TRIS}")
     if size > MAX_BYTES:
         err.append(f"AANI-004 file {size / 1024:.0f} KB > 400 KB")
-    if abs(mn[1]) > 0.01:
+    if other:
+        check_other_rest(other[0], other[3], rp, mn, mx, err)
+    elif abs(mn[1]) > 0.01:
         err.append(f"AANI-005 min Y = {mn[1]:.4f} (expected 0)")
     exp = SIZES.get(asset)
-    if exp:
+    if other:
+        pass
+    elif exp:
         if abs(back - exp["back"]) > 0.05:
             err.append(f"AANI-005 back height {back:.3f} m (expected {exp['back']} +- 0.05)")
         if mx[1] > exp["max_height"]:
             err.append(f"AANI-005 height {mx[1]:.3f} m > {exp['max_height']}")
+        if "height" in exp and abs(mx[1] - exp["height"]) > 0.08:
+            err.append(f"AANI-005 height {mx[1]:.3f} m (game size {exp['height']} +- 0.08)")
     else:
         err.append(f"AANI-005 no expected size for {asset} in SIZES")
     info.append(f"{tris} tris, {len(jn)} joints, {size / 1024:.0f} KB, back {back:.3f} m, "
@@ -266,7 +349,7 @@ def check(path, anims_data):
         if "speed" in row:
             v = row["speed"]
             drift_all = []
-            for foot in FEET:
+            for foot in (other[2] if other else FEET):
                 fj = idx[foot]
                 loc = [m.world(fj, pose_local(m, cd, f / FPS))[0] for f in range(frames)]
                 ymin = min(p[1] for p in loc)

@@ -54,3 +54,357 @@ loop = false
 crossfade_in = 0.10
 events = {}
 used_for = ["refuse", "not_interested"]
+
+# ---- hippo, panda, koala, elephant, giraffe, lion, snow_fox (model v1, quad_kit.py).
+# hippo.swim: floating loop (legs paddle, head up); the game sinks the model to its water
+# line (~0.9 m) so back, eyes and ears stay above the water.
+
+[hippo.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[hippo.walk]
+frames = 20
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 5, footstep_hr = 10, footstep_fr = 15 }
+speed = 1.4
+
+[hippo.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[hippo.swim]
+frames = 48
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[hippo.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[hippo.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[panda.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[panda.walk]
+frames = 16
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 4, footstep_hr = 8, footstep_fr = 12 }
+speed = 1.4
+
+[panda.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[panda.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[panda.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[koala.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[koala.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 1.4
+
+[koala.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[koala.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[koala.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[elephant.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[elephant.walk]
+frames = 28
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 7, footstep_hr = 14, footstep_fr = 21 }
+speed = 1.4
+
+[elephant.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 30 }
+used_for = ["eat"]
+
+[elephant.drink]
+frames = 60
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[elephant.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[elephant.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[giraffe.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[giraffe.walk]
+frames = 28
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 7, footstep_hr = 14, footstep_fr = 21 }
+speed = 1.4
+
+[giraffe.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[giraffe.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[giraffe.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[lion.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[lion.walk]
+frames = 20
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 5, footstep_hr = 10, footstep_fr = 15 }
+speed = 1.4
+
+[lion.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[lion.drink]
+frames = 60
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[lion.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[lion.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[snow_fox.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[snow_fox.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 1.4
+
+[snow_fox.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[snow_fox.drink]
+frames = 60
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[snow_fox.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[snow_fox.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+# ---- monkey (biped_animal rig, tools/blender/animals/monkey.py)
+[monkey.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[monkey.walk]
+frames = 14
+loop = true
+crossfade_in = 0.15
+events = { footstep_l = 0, footstep_r = 7 }
+speed = 1.4
+
+# climb: in place on a vertical pole 0.17 m in front of the origin; the gripping hands move
+# down at climb_speed m/s, so the game moves the monkey up at that speed (playback-rate
+# matched like walk)
+[monkey.climb]
+frames = 30
+loop = true
+crossfade_in = 0.20
+events = {}
+climb_speed = 0.72
+
+[monkey.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[monkey.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[monkey.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[monkey.wave]
+frames = 40
+loop = false
+crossfade_in = 0.15
+events = {}
+
+# ---- goldfish (fish rig, tools/blender/animals/goldfish.py). Origin = water surface
+# above the body centre; rest body centre 0.22 m below it. No root motion: the game moves
+# the fish (swim) and carries it along the jump arc (happy, e.g. river -> bowl between
+# splash_out and splash_in).
+[goldfish.swim]
+frames = 30
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[goldfish.idle]
+frames = 90
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[goldfish.eat]
+frames = 45
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 18 }
+used_for = ["eat"]
+
+[goldfish.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { splash_out = 11, happy_peak = 20, splash_in = 28 }
+used_for = ["happy"]
+
+[goldfish.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]

@@ -534,3 +534,82 @@ kind = "props"
 spec = "ART-ENVIRONMENT"
 concept_approved = false
 animations = []
+
+# Night animals (GAME-NIGHT) — concept briefs only; animations are proposals (Q-043)
+
+[[asset]]
+id = "hedgehog"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "bat"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "fly", "eat", "happy", "hang"]
+
+[[asset]]
+id = "owl"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "look"]
+
+[[asset]]
+id = "raccoon"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "badger"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "fennec"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "kiwi"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "porcupine"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "slow_loris"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "tarsier"
+kind = "animals"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = ["idle", "hop", "eat", "happy"]
+
+[[asset]]
+id = "style_frame_night"
+kind = "environment"
+spec = "GAME-NIGHT"
+concept_approved = false
+animations = []

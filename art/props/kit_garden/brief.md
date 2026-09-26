@@ -2,7 +2,7 @@
 
 Spec: GAME-GARDEN (§ Assets, item 9). Style: `art/style/style.md` (comic) — style
 reference image for asset sheets: `art/props/kit_fences/sheet_v3.jpg` (the style frame as
-reference blends its scene into the sheet). Status: **brief** (not yet generated — Gemini spending cap reached 2026-09-26).
+reference blends its scene into the sheet). Status: **brief** (not yet generated — Gemini monthly spending cap reached 2026-09-26; re-checked the same day: still HTTP 429 RESOURCE_EXHAUSTED).
 
 ## Purpose
 

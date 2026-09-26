@@ -76,6 +76,23 @@ mockups): `hedge` (tall, 3 m), `water_tile_flowing` (river, moving texture), `br
 `road_block`, `repair_sign` (blank, shovel icon), `zookeeper_cart`, `traffic_cone`,
 `fallen_tree`, `flower_bed`.
 
+### Built kits (scripted, `tools/blender/props/`)
+
+Axes and orientation follow GAME-LAYOUT "Coordinate spaces" (Q-056): model east = +X,
+model north = −Z (Blender +Y), origin on the ground; models are oriented by rotation about
++Y only, never mirrored.
+
+| Kit | Asset ids | Size / placement |
+|---|---|---|
+| `kit_ground` | `path_tile_straight`, `path_tile_curve`, `path_tile_t`, `path_tile_cross`, `path_tile_end`, `plaza_tile`, `grass_tile`, `sand_tile`, `path_edge` | **1 m × 1 m tiles, one per grid cell** (the level grid is 1 m; level-1 paths are 3 cells wide). The path tile of a cell is chosen from which of its **4 neighbours** (N, E, S, W) are path cells, and rotated about +Y in 90° steps (mapping in `kit_ground.py`). `path_edge` is a 1 m strip. |
+| `kit_fences` | `fence_wood`, `fence_wood_1m`, `fence_wood_corner`, `fence_wood_end`, `gate_wood`, `hedge`, `hedge_1m`, `hedge_corner`, `zoo_wall`, `zoo_wall_1m`, `zoo_wall_corner` | Straight pieces **2 m and 1 m** long (Q-057); corner pieces are L pieces with 1 m arms; fence 1.1 m high, hedge 3 m high × ~1 m thick, zoo wall 2.5 m high × 0.6 m (0.8 m cap). **One** `gate_wood` (the leaf, origin on the hinge axis), opened in-game by rotating it about +Y — there are no separate closed/open models. |
+
+**Filling edges (Q-057):** straight runs of fence, hedge and wall are filled by the rule of
+GAME-LAYOUT "Modular edges": 2 m segments from the run start, plus one 1 m segment at the
+end when the length is odd; corner pieces where a run turns. Hedge/wall bands in the level
+data are 1–2 cells deep; the models are placed as one row on the band's centre line
+(proposal; joins Q-059).
+
 Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_building`,
 `stone_arch_shelter` (zebra), `hut_wood` and `pool_tiled` (hippo), `panda_platform` and
 `panda_shelter`, `rock_hill_cave`, `river_grate`.
@@ -87,6 +104,9 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 2. Enclosure signs and food box labels are **not** baked into textures — text is rendered
    by the game from i18n keys so they switch language (CONT-L10N).
 3. Areas are sized so that walking from one enclosure to the next takes ≤ 10 s.
+4. Straight edge pieces (`fence_wood`, `hedge`, `zoo_wall`) exist as 2 m and 1 m variants
+   of the same look; ground tiles are 1 m (one per cell). Models use the world axes of
+   GAME-LAYOUT (north = −Z) and are never mirrored (Q-056, Q-057).
 
 ## Test cases
 
@@ -96,6 +116,8 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 | AENV-002 | Given each `layout.md`, then every prop it names exists in the modular props list. | asset |
 | AENV-003 | Given the language is switched from `de` to `en`, then all enclosure signs show the English name without reloading the level. | e2e |
 | AENV-004 | Given every hiding place id in CONT-MISSIONS, then at least one approved mockup's `layout.md` lists it. | asset |
+| AENV-005 | Given the exported `kit_fences` models, then `fence_wood`, `hedge` and `zoo_wall` each exist as a 2 m and a 1 m (`_1m`) straight piece with the same height and thickness, and `tools/blender/check_glb.py` passes for all of them (sizes, budget, Y-up, origin on the ground). | asset |
+| AENV-006 | Given the exported `kit_ground` tiles, then every tile is 1 m × 1 m (one per grid cell) and `tools/blender/check_glb.py` passes. | asset |
 
 ## Open questions
 
@@ -103,3 +125,4 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 - Q-017 Is the pirate ship a playground in the zoo, or a separate location?
 - Q-033 Food storage locked? Q-044 Hiding places in layout and mockups.
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2). Q-048 screen orientation. Q-052 FOV axis.
+- Q-056 answered: axes (model north = −Z, never mirrored). Q-057 answered: 1 m segment variants, fill rule. Q-059 band joins, Q-060 fence/band placement, Q-061 front direction of props (open).

@@ -55,7 +55,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 ## Spawn and camera
 
 - Spawn cell **(0, 2)** on `path_plaza`, 2 m inside the entrance gate.
-- Facing **+Z (north)**; the camera starts south of the player looking north — the
+- Facing **+Z (north)** in level coordinates (= world −Z, GAME-LAYOUT "Coordinate spaces", Q-056); the camera starts south of the player looking north — the
   high-angle ≈ 55° follow camera of GAME-PLAYER §2 (Q-049 answered), default distance.
 - First view: the entrance gate below the player, the food storage straight ahead (8 m), the zebra enclosure fence on the
   left, the grey rock hill on the right (its cave mouth faces north, away from the spawn),
@@ -276,7 +276,7 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 
 1. Level 1 contains exactly the elements of the table above; `assets/levels/level-1.toml`
    mirrors it (GAME-LAYOUT LAYOUT-005).
-2. The player spawns at cell (0, 2) facing +Z.
+2. The player spawns at cell (0, 2) facing north (level +z = world −Z, Q-056).
 3. Every enclosure, building, landmark, barrier and hiding place is reachable from the
    spawn over walkable cells (hedges and walls need not be).
 4. Every border cell of the level bounds `(-24, -2, 48, 50)` is solid; with all barriers
@@ -322,3 +322,4 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2; section above). Q-052 answered: 35° vertical FOV; level 1 starts at maximum zoom-out (LAYOUT-L1-011).
 - Q-047 which food boxes stand in the storage in level 1.
 - Q-024 walking speed (distance limit assumes 1.4 m/s).
+- Q-056 answered (axes: level x east / z north, world = (x, 0, −z)). Q-057 answered (fences, hedges, walls: 2 m + 1 m segments, bands as one row on the centre line — GAME-LAYOUT "Modular edges", LAYOUT-013). Q-059 band joins, Q-060 fence/band placement (proposals).

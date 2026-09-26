@@ -20,7 +20,7 @@ one looks like. Skeleton, clips, sockets, expressions and export rules are in AR
 
 | Asset id | Role | Turnaround | Animations (ART-RIG §4) | Status |
 |---|---|---|---|---|
-| `player_girl` | Player character (girl) | required | `idle`, `walk`, `run`, `pick_up`, `give`, `talk`, `cheer`, `wave`, `carry` | concept |
+| `player_girl` | Player character (girl) | required | `idle`, `walk`, `run`, `pick_up`, `give`, `talk`, `cheer`, `wave`, `carry` | model v1 (review) |
 | `player_boy` | Player character (boy) | required | same as `player_girl` (shared rig, identical clips) | concept |
 | `visitor_*` | Visitors giving hints (see GAME-QUESTS) | required per visitor type | `idle`, `talk`, `point` | concept |
 | `pirate` | Pirate on the pirate ship (if an NPC — Q-015) | required | `idle`, `talk` | blocked |
@@ -64,7 +64,7 @@ Kept close to the girl in `art/reference/ref-player-style.jpg`.
 
 | Part | Design |
 |---|---|
-| Hair | Long, straight, dark brown, falls behind the shoulders to the upper back as one chunky rounded mass; soft straight fringe, slightly side-parted; ends flick slightly outwards. Rigid on `head` (ends above the shoulder blades so it does not need to bend). |
+| Hair | Long, straight, dark brown, falls behind the shoulders as one chunky rounded mass; soft straight fringe, slightly side-parted; ends flick slightly outwards. Rigid on `head`, no hair bones. The approved sheet (sheet_v1) shows it to the waist; model v1 follows the sheet (hair mass sits behind the back so it need not bend) — Q-062. |
 | Face | Comic face decal: big round dark-brown eyes with a white highlight, short brows in hair colour, small rose smile, light rosy cheeks, light peach skin; small rounded nose modelled. |
 | Top | White short-sleeve T-shirt with 3 broad horizontal blue stripes (body; one on each sleeve), sleeves end at mid upper arm. |
 | Belt | Brown belt at the hips. |
@@ -76,6 +76,13 @@ Colours (proposal): skin `#F2C29B` / shade `#D9A27E`, hair `#4A2A17` / highlight
 `#6B3E22`, eyes `#2B1B12`, mouth `#C8645A`, shirt `#F4F4F0`, stripes `#2F5DA8`, belt
 `#6B3A1E`, trousers `#3559A0` / cuff `#2A4780`, socks `#FFFFFF`, shoes `#3B2314`, sole
 `#F4F4F0`.
+
+**Model v1** (`tools/blender/characters/player_girl.py`): 2 156 triangles, one skinned mesh
+with primitives `body` (64 × 64 flat-colour atlas, 8 × 8 cells of 8 px, NEAREST,
+`assets/textures/characters/player_girl_body.png`) and `face` (256 × 128 decal atlas,
+`player_girl_face.png`, alpha MASK); all 9 player clips; preview
+`art/characters/player_girl/model_preview.png`. The face atlas is a procedurally drawn
+placeholder until the hand-drawn `expressions.png` exists.
 
 ### `player_boy`
 
@@ -123,3 +130,4 @@ zookeeper", both get a zoo vest over the same base design.
 - Q-027 Visitor proportions and whether visitors walk.
 - Q-028 Choice of skin tone / hair beyond girl and boy.
 - Q-051 Close-up for dialogue so faces/expressions are visible.
+- Q-062 `player_girl` hair length (sheet: waist; old text: shoulder blades).

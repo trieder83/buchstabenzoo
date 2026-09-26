@@ -390,7 +390,8 @@ impl Game {
         Ok(())
     }
 
-    /// Advances the simulation by `dt` seconds with the joystick `input` (world `(x, z)`).
+    /// Advances the simulation by `dt` seconds with the joystick `input` (level
+    /// coordinates `(x, z)`).
     pub fn update(&mut self, dt: f32, input: Vec2) {
         let leading = self.is_leading();
         self.player

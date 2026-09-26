@@ -69,7 +69,9 @@ area goes through concept → approval → Blender → glTF → game, and each s
    animations = ["idle", "walk", "eat"]
    ```
 9. **Export rules:** 1 unit = 1 m, Y-up, origin at the feet (ground contact), transforms
-   applied, animation names from the owning spec, no unused materials.
+   applied, animation names from the owning spec, no unused materials. Axes: east = +X,
+   north = −Z (Blender +Y), models never mirrored (GAME-LAYOUT "Coordinate spaces",
+   TECH-ARCH §8, Q-056).
 10. **Budgets** (mobile, per model): characters and animals ≤ 3 000 triangles; props ≤ 500;
    flat-colour texture atlases only (≤ 512×512; characters: body ≤ 256² + face decal atlas, ART-RIG); exact approach Q-026.
 

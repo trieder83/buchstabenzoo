@@ -14,15 +14,22 @@ Props are modelled once and reused (ART-ENVIRONMENT, modular props). Budgets: pr
 
 | Asset id | Size (game units, 1 = 1 m) | Notes |
 |---|---|---|
-| `path_tile_straight` | 2 m × 2 m | light sand-beige paved path, straight |
-| `path_tile_curve` | 2 m × 2 m | 90° curve |
-| `path_tile_t` | 2 m × 2 m | T-junction |
-| `path_tile_cross` | 2 m × 2 m | crossing |
-| `path_tile_end` | 2 m × 2 m | rounded dead end |
-| `plaza_tile` | 2 m × 2 m | larger paving stones for the entrance plaza |
-| `grass_tile` | 2 m × 2 m | short fresh grass with a few tufts |
-| `path_edge` | 2 m long | low edging stones between path and grass |
-| `sand_tile` | 2 m × 2 m | warm sand for enclosure floors |
+| `path_tile_straight` | 1 m × 1 m | light sand-beige paved path, straight (connects N–S) |
+| `path_tile_curve` | 1 m × 1 m | 90° curve (connects E–S) |
+| `path_tile_t` | 1 m × 1 m | T-junction (connects N–E–S; edge cell of a wide path) |
+| `path_tile_cross` | 1 m × 1 m | crossing (connects all 4; inner cell of a wide path) |
+| `path_tile_end` | 1 m × 1 m | rounded dead end (connects S) |
+| `plaza_tile` | 1 m × 1 m | larger paving stones for the entrance plaza |
+| `grass_tile` | 1 m × 1 m | short fresh grass with a few tufts |
+| `path_edge` | 1 m long | low edging stones between path and grass |
+| `sand_tile` | 1 m × 1 m | warm sand for enclosure floors |
+
+Built as **1 m tiles, one per grid cell** (Q-057; the level grid is 1 m and level-1 paths are
+3 cells wide, so the 2 m tiles first planned here cannot cover them). The path tile of a cell
+is chosen from which of its **4 neighbours** (N, E, S, W) are path cells and rotated about +Y
+in 90° steps (mapping in `tools/blender/props/kit_ground.py`; axes GAME-LAYOUT "Coordinate
+spaces", Q-056). The sheet below was generated before this decision and shows the tiles
+without a size — the prompt is kept as generated.
 
 ## Image settings
 

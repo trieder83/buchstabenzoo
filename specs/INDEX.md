@@ -8,6 +8,7 @@
 
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
+| PROD-POC | Proof of concept — zebra mission on level 1 | draft | PROD-VISION, GAME-RESCUE, GAME-PLAYER, GAME-LEVEL-1, CONT-MISSIONS, TECH-ARCH, ART-PIPELINE | 6 | Q-013 | [00-product/poc.md](00-product/poc.md) |
 | PROD-VISION | Product vision | draft | — | 2 | Q-001, Q-002, Q-006, Q-023, Q-034, Q-035 | [00-product/vision.md](00-product/vision.md) |
 
 ## Gameplay
@@ -16,9 +17,10 @@
 |---|---|---|---|---|---|---|
 | GAME-ANIMALS | Animals and enclosures | draft | GAME-WORLD | 5 | Q-002, Q-004, Q-005, Q-007, Q-030, Q-036, Q-043, Q-044 | [10-gameplay/animals.md](10-gameplay/animals.md) |
 | GAME-FEED | Food boxes and carrying food | draft | GAME-WORLD, CONT-READING | 6 | Q-025, Q-032, Q-033, Q-034, Q-042 | [10-gameplay/feeding.md](10-gameplay/feeding.md) |
-| GAME-LAYOUT | Zoo layout and level boundaries | draft | GAME-WORLD, ART-ENVIRONMENT | 6 | Q-006, Q-017, Q-022, Q-023, Q-044, Q-052 | [10-gameplay/layout.md](10-gameplay/layout.md) |
-| GAME-LEVEL-1 | Level 1 — entrance, zebra, hippo, panda | draft | GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER | 12 | Q-022, Q-023, Q-024, Q-033, Q-044, Q-047, Q-052 | [10-gameplay/levels/level-1.md](10-gameplay/levels/level-1.md) |
-| GAME-PLAYER | Player character, camera and controls | draft | PROD-VISION, CONT-READING | 12 | Q-001, Q-018, Q-024, Q-025, Q-028, Q-048, Q-051, Q-052 | [10-gameplay/player.md](10-gameplay/player.md) |
+| GAME-LAYOUT | Zoo layout and level boundaries | draft | GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER | 13 | Q-006, Q-017, Q-022, Q-023, Q-044, Q-059, Q-060, Q-061 | [10-gameplay/layout.md](10-gameplay/layout.md) |
+| GAME-LEVEL-1 | Level 1 — entrance, zebra, hippo, panda | draft | GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER | 12 | Q-022, Q-023, Q-024, Q-033, Q-044, Q-047, Q-059, Q-060 | [10-gameplay/levels/level-1.md](10-gameplay/levels/level-1.md) |
+| GAME-MAP | Zoo map with explored areas | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE | 9 | Q-053, Q-054, Q-055 | [10-gameplay/map.md](10-gameplay/map.md) |
+| GAME-PLAYER | Player character, camera and controls | draft | PROD-VISION, CONT-READING | 12 | Q-001, Q-018, Q-024, Q-025, Q-028, Q-048, Q-051 | [10-gameplay/player.md](10-gameplay/player.md) |
 | GAME-QUESTS | Quests and riddles | draft | GAME-WORLD, GAME-RESCUE, CONT-READING | 5 | Q-015, Q-017, Q-020, Q-033, Q-040 | [10-gameplay/quests/overview.md](10-gameplay/quests/overview.md) |
 | GAME-RESCUE | Rescue mission — core loop | draft | PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH | 13 | Q-020, Q-022, Q-023, Q-030, Q-031, Q-034, Q-036, Q-039, Q-040, Q-041 | [10-gameplay/rescue-mission.md](10-gameplay/rescue-mission.md) |
 | GAME-WORLD | Zoo world | draft | PROD-VISION | 4 | Q-006, Q-017, Q-033 | [10-gameplay/world.md](10-gameplay/world.md) |
@@ -39,7 +41,7 @@
 | ART-ANIMALS | Animals — concept and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS | 2 | Q-002, Q-040, Q-043 | [30-art/animals.md](30-art/animals.md) |
 | ART-CHARACTERS | Characters — concept and models | draft | ART-PIPELINE, ART-DIRECTION, ART-RIG, GAME-PLAYER | 7 | Q-001, Q-009, Q-015, Q-016, Q-026, Q-027, Q-028, Q-051 | [30-art/characters.md](30-art/characters.md) |
 | ART-DIRECTION | Art direction | draft | — | 4 | Q-048, Q-050 | [30-art/art-direction.md](30-art/art-direction.md) |
-| ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 4 | Q-005, Q-006, Q-017, Q-033, Q-044, Q-048, Q-052 | [30-art/environment.md](30-art/environment.md) |
+| ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 6 | Q-005, Q-006, Q-017, Q-033, Q-044, Q-048, Q-059, Q-060, Q-061 | [30-art/environment.md](30-art/environment.md) |
 | ART-PIPELINE | Asset pipeline — concept to game | draft | ART-DIRECTION | 10 | Q-009, Q-026 | [30-art/asset-pipeline.md](30-art/asset-pipeline.md) |
 | ART-RIG | Character rig and animation — technical contract | draft | ART-PIPELINE, GAME-PLAYER, TECH-ARCH | 22 | Q-009, Q-014, Q-024, Q-025, Q-026, Q-027, Q-029, Q-042, Q-050, Q-051 | [30-art/character-rig-and-animation.md](30-art/character-rig-and-animation.md) |
 
@@ -50,4 +52,4 @@
 | TECH-ARCH | Technical architecture | draft | — | 4 | Q-026, Q-050 | [40-tech/architecture.md](40-tech/architecture.md) |
 | TECH-PLATFORMS | Platforms, performance and testing | draft | TECH-ARCH | 2 | Q-011, Q-012, Q-013 | [40-tech/platforms-and-testing.md](40-tech/platforms-and-testing.md) |
 
-**Summary:** 21 specs — draft: 21, review: 0, approved: 0, implemented: 0, deprecated: 0; 137 test cases; questions: answered: 4, open: 45, partly answered: 1, proposed: 2.
+**Summary:** 23 specs — draft: 23, review: 0, approved: 0, implemented: 0, deprecated: 0; 161 test cases; questions: answered: 7, open: 51, partly answered: 1, proposed: 2.

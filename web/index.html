@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <title>Buchstabenzoo</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #5e8c3d;
+        overscroll-behavior: none;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100dvh;
+        display: block;
+        touch-action: none;
+        outline: none;
+      }
+      /* Virtual joystick (GAME-PLAYER §3), bottom-left; only on touch screens. */
+      #stick {
+        position: fixed;
+        left: calc(24px + env(safe-area-inset-left));
+        bottom: calc(24px + env(safe-area-inset-bottom));
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.25);
+        border: 4px solid rgba(59, 35, 20, 0.55);
+        box-sizing: border-box;
+        touch-action: none;
+        display: none;
+      }
+      #knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 64px;
+        height: 64px;
+        margin: -32px 0 0 -32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.85);
+        border: 4px solid #3b2314;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      @media (pointer: coarse) {
+        #stick {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" tabindex="0"></canvas>
+    <div id="stick"><div id="knob"></div></div>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>

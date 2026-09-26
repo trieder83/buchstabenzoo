@@ -72,8 +72,9 @@ impl Player {
         self.surface_speed
     }
 
-    /// Moves the player. `input` is the world-space direction `(x, z)`, length ≤ 1 (joystick
-    /// deflection). The player cannot enter solid cells; gates only with `allow_gates`.
+    /// Moves the player. `input` is the direction in level coordinates `(x, z)` (x east,
+    /// z north), length ≤ 1 (joystick deflection). The player cannot enter solid cells;
+    /// gates only with `allow_gates`.
     /// Blocked moves slide along the blocking cell edges.
     pub fn step(
         &mut self,

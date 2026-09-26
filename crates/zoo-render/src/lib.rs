@@ -1,33 +1,15 @@
-//! WebGL2 renderer (TECH-ARCH §7) — stub until milestone M3.
+//! WebGL2 renderer (TECH-ARCH §7): comic look — 2-tone cel shading and a screen-space
+//! outline pass (Q-050) — plus the high-angle follow camera (GAME-PLAYER §2) and the level
+//! assembly that turns layout data into model placements (GAME-LAYOUT).
 //!
-//! Holds only the camera parameters of GAME-PLAYER §2 for now; the WebGL2 code (via
-//! `web-sys`) arrives with M3.
+//! `camera` and `scene` are pure (unit-tested natively); `renderer` talks to WebGL2 through
+//! `web-sys` and only runs in the browser.
 
-/// High-angle follow camera defaults (GAME-PLAYER §2, PLAY-008/009).
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct CameraParams {
-    /// Downward pitch in degrees.
-    pub pitch_deg: f32,
-    /// Default distance to the player in metres.
-    pub distance_m: f32,
-    /// Zoom limits in metres.
-    pub min_distance_m: f32,
-    pub max_distance_m: f32,
-    /// Vertical field of view in degrees (every orientation, Q-052).
-    pub vertical_fov_deg: f32,
-    /// Rotation step in degrees.
-    pub yaw_step_deg: f32,
-}
+pub mod camera;
+pub mod renderer;
+pub mod scene;
+pub mod shaders;
 
-impl Default for CameraParams {
-    fn default() -> Self {
-        Self {
-            pitch_deg: 55.0,
-            distance_m: 14.0,
-            min_distance_m: 10.0,
-            max_distance_m: 20.0,
-            vertical_fov_deg: 35.0,
-            yaw_step_deg: 45.0,
-        }
-    }
-}
+pub use camera::{CameraParams, FollowCamera};
+pub use renderer::{CharacterDraw, FrameStats, Instance, Renderer};
+pub use scene::{BoxPlacement, LevelScene, Placement};

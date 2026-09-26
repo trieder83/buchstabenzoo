@@ -65,6 +65,7 @@ window.ART_CATALOG = {
             { file: "characters/player_girl/expressions.png", label: "expressions" },
             { file: "characters/player_girl/sheet_v1.jpg", label: "sheet_v1 (source)" },
             { file: "characters/player_girl/sheet_v2.jpg", label: "sheet_v2 (alternative)" },
+            { file: "characters/player_girl/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -419,6 +420,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_signs/sheet_v5.jpg", label: "sheet_v5 (chosen)", required: true },
             { file: "props/kit_signs/sheet_v3.jpg", label: "sheet_v3 (alternative)" },
+            { file: "props/kit_signs/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -432,6 +434,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_nature/sheet_v1.jpg", label: "sheet_v1 (chosen)", required: true },
             { file: "props/kit_nature/sheet_v2.jpg", label: "sheet_v2 (alternative)" },
+            { file: "props/kit_nature/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -445,6 +448,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_water/sheet_v1.jpg", label: "sheet_v1 (chosen)", required: true },
             { file: "props/kit_water/sheet_v2.jpg", label: "sheet_v2 (alternative)" },
+            { file: "props/kit_water/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -458,6 +462,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_barriers/sheet_v1.jpg", label: "sheet_v1 (chosen)", required: true },
             { file: "props/kit_barriers/sheet_v2.jpg", label: "sheet_v2 (alternative)" },
+            { file: "props/kit_barriers/model_preview.png", label: "3D model preview" },
           ],
         },
       ],

@@ -44,3 +44,56 @@ wall_mortar      = { index = 50, hex = "#8F8886" }  # wall joints (core behind t
 # ---- reference only (drawn by the renderer, never used on a model)
 outline          = { index = 240, hex = "#4A2A22" } # comic outline colour (dark brown)
 shadow_tint      = { index = 241, hex = "#8E86A8" } # cel shadow tint seen in the sheets (blue-violet)
+# ---- signs (kit_signs sheet_v5). Overlay areas: the renderer draws text / silhouettes on
+# faces of these cells, so each panel kind has its own cell (same cream colour).
+sign_panel       = { index = 128, hex = "#F3E6C8" } # enclosure sign text panel (blank)
+sign_slot        = { index = 129, hex = "#F7EEDC" } # enclosure sign round silhouette slot
+info_panel       = { index = 130, hex = "#F3E6C8" } # info board panel (riddle)
+map_panel        = { index = 131, hex = "#F3E6C8" } # map board panel (level map)
+label_plate      = { index = 132, hex = "#EDE5DD" } # food box label plate (food name)
+# ---- nature (kit_nature sheet_v1)
+leaf             = { index = 144, hex = "#6FA83F" } # round tree / bush crown
+leaf_light       = { index = 145, hex = "#86BC4E" } # crown accent clumps
+grove_leaf       = { index = 146, hex = "#3F7A3C" } # dense grove tree
+grove_leaf_light = { index = 147, hex = "#4F8C45" } # grove accent clumps
+trunk            = { index = 148, hex = "#8A5A34" } # tree trunks
+trunk_dark       = { index = 149, hex = "#6B4128" } # roots, cut ends
+rock             = { index = 150, hex = "#A8A6AE" } # boulders
+rock_dark        = { index = 151, hex = "#8E8C96" } # boulder facets
+bamboo           = { index = 152, hex = "#8DBA4A" } # bamboo stalks
+bamboo_joint     = { index = 153, hex = "#5E8A30" } # bamboo joints and leaves
+cattail          = { index = 154, hex = "#7A4A2A" } # reed cattail heads
+flower_red       = { index = 155, hex = "#E0413A" }
+flower_yellow    = { index = 156, hex = "#F5CE3A" }
+flower_purple    = { index = 157, hex = "#8E5BD0" }
+flower_center    = { index = 158, hex = "#F4A93A" }
+bed_soil         = { index = 159, hex = "#6B4A33" } # flower bed soil
+euca_leaf        = { index = 160, hex = "#4E8C7A" } # eucalyptus blue-green leaves
+euca_trunk       = { index = 161, hex = "#E8E4D6" } # eucalyptus pale trunk
+# ---- water (kit_water sheet_v1). River = light lively blue + flow streaks (the renderer may
+# animate faces of water_river_light / water_foam); pond = darker, plain, still.
+water_river      = { index = 176, hex = "#5BB2E0" } # flowing river surface
+water_river_light= { index = 177, hex = "#A2D8F2" } # river flow streaks
+water_foam       = { index = 178, hex = "#F4FAFD" } # foam / rapids
+water_pond       = { index = 179, hex = "#3F74B0" } # still pond surface
+water_pond_light = { index = 180, hex = "#7AA6D6" } # pond reflection
+lily_pad         = { index = 181, hex = "#5FA646" }
+lily_pink        = { index = 182, hex = "#F2A0C0" }
+lily_center      = { index = 183, hex = "#F7D34A" }
+duck             = { index = 184, hex = "#FBF3D6" } # duck body (cream white)
+duck_beak        = { index = 185, hex = "#F5A623" }
+frog             = { index = 186, hex = "#6DB344" }
+frog_light       = { index = 187, hex = "#B5DB6B" } # frog belly
+eye_white        = { index = 188, hex = "#FFFFFF" }
+eye_dark         = { index = 189, hex = "#2E2220" }
+# ---- barriers (kit_barriers sheet_v1)
+stripe_red       = { index = 192, hex = "#D4453E" }
+stripe_white     = { index = 193, hex = "#F4F1EC" }
+sign_blue        = { index = 194, hex = "#2F5FB0" } # repair sign panel
+pictogram        = { index = 195, hex = "#E9E9EF" } # shovel pictogram
+cart_green       = { index = 196, hex = "#4E9A45" }
+cart_green_dark  = { index = 197, hex = "#3A7A38" }
+tyre             = { index = 198, hex = "#3A3638" }
+cone_orange      = { index = 199, hex = "#F28A2E" }
+iron             = { index = 200, hex = "#4E4A50" } # gate straps, rings, padlock
+brass            = { index = 201, hex = "#E8B436" } # padlock

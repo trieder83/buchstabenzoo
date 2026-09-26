@@ -4,7 +4,9 @@ Run kit scripts with:  blender -b --python tools/blender/props/<kit>.py -- [--no
 
 Conventions (see tools/blender/README.md):
 - 1 Blender unit = 1 m. Scripts model in Blender's Z-up space; the glTF exporter converts
-  to Y-up. Game axes: +X east = Blender +X, +Y up = Blender +Z, +Z north = Blender -Y.
+  to Y-up (glTF = (x, z, -y) of Blender). World axes (GAME-LAYOUT "Coordinate spaces",
+  Q-056): east = +X = Blender +X, up = +Y = Blender +Z, north = world -Z = Blender +Y.
+  Level coordinates (x east, z north) map to world (x, 0, -z); models are never mirrored.
 - Every asset is ONE mesh object with ONE material ("palette") that samples the shared
   palette atlas assets/textures/palette.png; colour = UV position (palette_uv).
 - Smooth normals with sharp edges from angle; no outline geometry (the renderer draws
@@ -453,16 +455,16 @@ def save_blend(path):
 
 GAME_PITCH_DEG = 55.0
 # Preview yaw: camera looks north-west, so X-aligned pieces run lower-left -> upper-right
-# like on the concept sheets, and the south (+Y Blender) faces the in-game camera sees
+# like on the concept sheets, and the south (-Y Blender) faces the in-game camera sees
 # are visible.
 PREVIEW_YAW_DEG = -45.0
 
 
 def camera_basis(yaw_deg, pitch_deg=GAME_PITCH_DEG):
     """Horizontal forward (towards the scene) and right vectors for a camera whose yaw is
-    measured from game north (+Z game = -Y Blender) clockwise towards east."""
+    measured from north (Blender +Y = world -Z) clockwise towards east."""
     y = math.radians(yaw_deg)
-    fwd = Vector((math.sin(y), -math.cos(y), 0.0))
+    fwd = Vector((math.sin(y), math.cos(y), 0.0))
     right = Vector((fwd.y, -fwd.x, 0.0))  # fwd x up: right-hand side when looking along fwd
     return fwd, right
 

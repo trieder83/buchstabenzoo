@@ -1,7 +1,8 @@
 //! Level layout data (GAME-LAYOUT, GAME-LEVEL-1) and the walkable grid derived from it.
 //!
 //! Grid: 1 m cells, `+X` east, `+Z` north. A cell `(x, z)` covers `[x, x+1) × [z, z+1)`;
-//! world positions are `Vec2(x, z)` in metres.
+//! positions are level coordinates `Vec2(x, z)` in metres (GAME-LAYOUT "Coordinate spaces";
+//! convert to render/world space only with `crate::coords::level_to_world`).
 
 use std::collections::BTreeSet;
 
@@ -45,7 +46,7 @@ impl Rect {
             .flat_map(move |z| (self.x..self.x + self.w).map(move |x| IVec2::new(x, z)))
     }
 
-    /// Distance in metres from a world position to the nearest point of the rectangle's area.
+    /// Distance in metres from a level position to the nearest point of the rectangle's area.
     pub fn distance_to(&self, p: Vec2) -> f32 {
         let min = Vec2::new(self.x as f32, self.z as f32);
         let max = min + Vec2::new(self.w as f32, self.d as f32);
@@ -62,12 +63,12 @@ impl Rect {
     }
 }
 
-/// Centre of a grid cell in world metres.
+/// Centre of a grid cell in level coordinates (metres).
 pub fn cell_center(c: IVec2) -> Vec2 {
     Vec2::new(c.x as f32 + 0.5, c.y as f32 + 0.5)
 }
 
-/// Grid cell containing a world position.
+/// Grid cell containing a level position.
 pub fn cell_of(p: Vec2) -> IVec2 {
     IVec2::new(p.x.floor() as i32, p.y.floor() as i32)
 }
@@ -428,5 +429,244 @@ impl Level {
             })
             .map(|e| e.id.clone())
             .collect()
+    }
+}
+
+// ------------------------------------------------------------------ modular edges (Q-057)
+
+/// Axis of a straight run in level coordinates; runs always go towards +x (east) or +z
+/// (north) from their start (GAME-LAYOUT "Modular edges").
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RunAxis {
+    X,
+    Z,
+}
+
+impl RunAxis {
+    /// Unit direction in level coordinates.
+    pub fn dir(self) -> Vec2 {
+        match self {
+            RunAxis::X => Vec2::X,
+            RunAxis::Z => Vec2::Y,
+        }
+    }
+}
+
+/// One straight modular piece of a run: `length_m` is 2 (`fence_wood`, `hedge`, `zoo_wall`)
+/// or 1 (`*_1m`), starting `offset_m` metres from the run start.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Segment {
+    pub offset_m: u32,
+    pub length_m: u32,
+}
+
+/// Fill rule of GAME-LAYOUT "Modular edges" (Q-057): 2 m segments from the start, plus one
+/// 1 m segment at the end when the length is odd.
+pub fn segment_run(length_m: u32) -> Vec<Segment> {
+    let mut out = Vec::with_capacity(length_m.div_ceil(2) as usize);
+    let mut offset_m = 0;
+    while offset_m + 2 <= length_m {
+        out.push(Segment {
+            offset_m,
+            length_m: 2,
+        });
+        offset_m += 2;
+    }
+    if offset_m < length_m {
+        out.push(Segment {
+            offset_m,
+            length_m: 1,
+        });
+    }
+    out
+}
+
+/// A straight run of modular pieces: `start` is on the run's centre line (level metres),
+/// the run extends `length_m` along `axis`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Run {
+    pub start: Vec2,
+    pub axis: RunAxis,
+    pub length_m: u32,
+}
+
+impl Run {
+    pub fn end(&self) -> Vec2 {
+        self.start + self.axis.dir() * self.length_m as f32
+    }
+
+    pub fn segments(&self) -> Vec<Segment> {
+        segment_run(self.length_m)
+    }
+
+    /// Centre of a segment in level coordinates (where the origin of a straight piece goes).
+    pub fn segment_center(&self, s: Segment) -> Vec2 {
+        self.start + self.axis.dir() * (s.offset_m as f32 + s.length_m as f32 / 2.0)
+    }
+}
+
+/// Hedge/wall band → one run on the band's centre line (GAME-LAYOUT "Modular edges",
+/// proposal). The run is parallel to the level border the band touches; a band touching no
+/// border or two borders runs along its longer side. `None` if the direction is ambiguous
+/// (square band off the border) or the band is deeper than 2 cells.
+pub fn band_run(rect: Rect, bounds: Rect) -> Option<Run> {
+    let x_border = rect.x == bounds.x || rect.x + rect.w == bounds.x + bounds.w;
+    let z_border = rect.z == bounds.z || rect.z + rect.d == bounds.z + bounds.d;
+    let axis = match (x_border, z_border) {
+        (true, false) => RunAxis::Z,
+        (false, true) => RunAxis::X,
+        _ if rect.w > rect.d => RunAxis::X,
+        _ if rect.d > rect.w => RunAxis::Z,
+        _ => return None,
+    };
+    let (start, length, depth) = match axis {
+        RunAxis::X => (
+            Vec2::new(rect.x as f32, rect.z as f32 + rect.d as f32 / 2.0),
+            rect.w,
+            rect.d,
+        ),
+        RunAxis::Z => (
+            Vec2::new(rect.x as f32 + rect.w as f32 / 2.0, rect.z as f32),
+            rect.d,
+            rect.w,
+        ),
+    };
+    (depth <= 2 && length > 0).then_some(Run {
+        start,
+        axis,
+        length_m: length as u32,
+    })
+}
+
+/// Fence of an enclosure (GAME-LAYOUT "Modular edges", proposal): corner pieces at the four
+/// corners of the rectangle outline, a 2 m gate opening on one side and the straight runs
+/// in between.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FenceLayout {
+    /// SW, SE, NE, NW corner points (level metres).
+    pub corners: [Vec2; 4],
+    /// The 2 m gate opening, as a run along its side.
+    pub gate: Option<Run>,
+    /// Straight runs between corner arms and the gate.
+    pub runs: Vec<Run>,
+}
+
+/// Lays out the fence along the outline of `rect`; `gate` = the gate cells (inside `rect`,
+/// one cell deep, on exactly one side). Errors if the gate is not 2 m wide, not on a side,
+/// or overlaps a corner arm.
+pub fn enclosure_fence(rect: Rect, gate: Option<Rect>) -> Result<FenceLayout, String> {
+    if rect.w < 2 || rect.d < 2 {
+        return Err(format!("enclosure {rect:?} too small for corner pieces"));
+    }
+    let (x0, z0, x1, z1) = (rect.x, rect.z, rect.x + rect.w, rect.z + rect.d);
+    // sides: (fixed coordinate, from, to, axis); runs go towards +x / +z
+    let sides = [
+        (z0, x0, x1, RunAxis::X), // south
+        (z1, x0, x1, RunAxis::X), // north
+        (x0, z0, z1, RunAxis::Z), // west
+        (x1, z0, z1, RunAxis::Z), // east
+    ];
+    let gate_side = match gate {
+        None => None,
+        Some(g) => {
+            let inside = g.x >= x0 && g.z >= z0 && g.x + g.w <= x1 && g.z + g.d <= z1;
+            let on = [
+                g.d == 1 && g.z == z0,
+                g.d == 1 && g.z + 1 == z1,
+                g.w == 1 && g.x == x0,
+                g.w == 1 && g.x + 1 == x1,
+            ];
+            let hits: Vec<usize> = (0..4).filter(|&i| on[i]).collect();
+            if !inside || hits.len() != 1 {
+                return Err(format!("gate {g:?} is not on exactly one side of {rect:?}"));
+            }
+            let i = hits[0];
+            let (g0, g1) = match sides[i].3 {
+                RunAxis::X => (g.x, g.x + g.w),
+                RunAxis::Z => (g.z, g.z + g.d),
+            };
+            if g1 - g0 != 2 {
+                return Err(format!("gate {g:?} is {} m wide, expected 2 m", g1 - g0));
+            }
+            if g0 < sides[i].1 + 1 || g1 > sides[i].2 - 1 {
+                return Err(format!("gate {g:?} overlaps a corner arm"));
+            }
+            Some((i, g0, g1))
+        }
+    };
+    let point = |axis: RunAxis, fixed: i32, along: i32| match axis {
+        RunAxis::X => Vec2::new(along as f32, fixed as f32),
+        RunAxis::Z => Vec2::new(fixed as f32, along as f32),
+    };
+    let mut runs = Vec::new();
+    let mut gate_run = None;
+    for (i, &(fixed, from, to, axis)) in sides.iter().enumerate() {
+        let (a, b) = (from + 1, to - 1);
+        let mut spans = vec![(a, b)];
+        if let Some((gi, g0, g1)) = gate_side {
+            if gi == i {
+                spans = vec![(a, g0), (g1, b)];
+                gate_run = Some(Run {
+                    start: point(axis, fixed, g0),
+                    axis,
+                    length_m: 2,
+                });
+            }
+        }
+        for (s, e) in spans {
+            if e > s {
+                runs.push(Run {
+                    start: point(axis, fixed, s),
+                    axis,
+                    length_m: (e - s) as u32,
+                });
+            }
+        }
+    }
+    Ok(FenceLayout {
+        corners: [
+            Vec2::new(x0 as f32, z0 as f32),
+            Vec2::new(x1 as f32, z0 as f32),
+            Vec2::new(x1 as f32, z1 as f32),
+            Vec2::new(x0 as f32, z1 as f32),
+        ],
+        gate: gate_run,
+        runs,
+    })
+}
+
+#[cfg(test)]
+mod modular_tests {
+    use super::*;
+
+    // LAYOUT-012
+    #[test]
+    fn layout_012_segment_run_small_cases() {
+        assert!(segment_run(0).is_empty());
+        let one = segment_run(1);
+        assert_eq!(
+            one,
+            vec![Segment {
+                offset_m: 0,
+                length_m: 1
+            }]
+        );
+        let three: Vec<u32> = segment_run(3).iter().map(|s| s.length_m).collect();
+        assert_eq!(three, vec![2, 1]);
+        let four: Vec<u32> = segment_run(4).iter().map(|s| s.length_m).collect();
+        assert_eq!(four, vec![2, 2]);
+    }
+
+    // LAYOUT-013 (fence rules on a synthetic enclosure)
+    #[test]
+    fn layout_013_fence_rejects_bad_gates() {
+        let r = Rect::new(0, 0, 10, 8);
+        assert!(enclosure_fence(r, Some(Rect::new(0, 3, 1, 3))).is_err()); // 3 m wide
+        assert!(enclosure_fence(r, Some(Rect::new(0, 0, 1, 2))).is_err()); // corner arm
+        assert!(enclosure_fence(r, Some(Rect::new(4, 3, 1, 2))).is_err()); // not on a side
+        let f = enclosure_fence(r, Some(Rect::new(4, 0, 2, 1))).unwrap();
+        let total: u32 = f.runs.iter().map(|r| r.length_m).sum();
+        // perimeter 36 m = 4 corners x 2 arms + 2 m gate + runs
+        assert_eq!(total, 36 - 8 - 2);
     }
 }

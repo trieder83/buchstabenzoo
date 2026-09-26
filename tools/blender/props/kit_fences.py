@@ -7,21 +7,27 @@ Outputs
   assets/blender/props/kit_fences.blend
   art/props/kit_fences/model_preview.png
 
-Placement conventions (game axes: +X east, +Y up, +Z north; origin on the ground):
-- Straight pieces (fence_wood, hedge, zoo_wall) are 2 m long along X, centred on the
-  origin (x = -1 .. +1), thickness centred on z = 0. fence_wood has posts at both ends
-  and in the middle; neighbouring segments share the end-post position (identical,
-  overlapping post geometry — drop one when batching if wanted).
+Placement conventions (world axes, GAME-LAYOUT "Coordinate spaces", Q-056: +X east, +Y up,
+-Z north = Blender +Y; level (x, z) -> world (x, 0, -z); never mirror a piece, only rotate
+it about +Y; origin on the ground):
+- Straight pieces come in 2 m (fence_wood, hedge, zoo_wall) and 1 m (fence_wood_1m,
+  hedge_1m, zoo_wall_1m, Q-057) lengths along X, centred on the origin (x = -L/2 .. +L/2),
+  thickness centred on the other axis. fence_wood has posts at both ends and in the
+  middle, fence_wood_1m at both ends; neighbouring segments share the end-post position
+  (identical, overlapping post geometry — drop one when batching if wanted).
+  Fill rule for a straight run of L m (GAME-LAYOUT "Modular edges",
+  zoo_core::level::segment_run): 2 m pieces from the run start, one 1 m piece at the end
+  if L is odd.
 - Corner pieces (fence_wood_corner, hedge_corner, zoo_wall_corner) are L pieces whose
-  origin is the intersection of the two centre lines; the arms run 1 m towards +X (east)
-  and +Z (north). Other directions: rotate about +Y in 90 deg steps.
+  origin is the intersection of the two centre lines; the arms run 1 m towards east (+X)
+  and north (world -Z). Other directions: rotate about +Y in 90 deg steps.
 - fence_wood_end: a single post with a rounded top, origin at its centre.
 - gate_wood: only the moving leaf (no posts). Origin = HINGE AXIS on the ground. The leaf
   spans local x = 0.02 .. 1.80 (closed = along +X). Hang it in a 2 m fence span whose
   posts (0.18 m) stand at s and s + 2: origin at (s + 0.09) = inner face of the hinge
   post, leaving 2 cm clearance at both posts. Open
-  = rotate about local +Y: +90 deg swings the leaf to -Z (south), -90 deg to +Z (north).
-  Latch on the free end (x = 1.80); brace, hinge straps and latch are on the -Z (south)
+  = rotate about local +Y: +90 deg swings the leaf to -Z (north), -90 deg to +Z (south).
+  Latch on the free end (x = 1.80); brace, hinge straps and latch are on the +Z (south)
   face, the side the default follow camera (looking north) sees.
 - Sizes: fence 1.1 m high, hedge 3.0 m high x 1.0 m thick, zoo wall 2.5 m high x 0.6 m
   thick (0.8 m wooden cap).
@@ -38,9 +44,9 @@ import zoo_blender as zb  # noqa: E402
 
 KIT = "kit_fences"
 
-# Blender: +Y = game south (-Z), -Y = game north (+Z)
-NORTH = -1.0
-SOUTH = 1.0
+# Blender +Y = north (world -Z), Blender -Y = south (world +Z)
+NORTH = 1.0
+SOUTH = -1.0
 
 FENCE_H = 1.1
 POST_W = 0.18
@@ -73,9 +79,11 @@ def rail(x0, x1, z, y=0.0, along="x", color="wood_light"):
     return p
 
 
-def fence_wood():
-    parts = [post(x, 0) for x in (-1.0, 0.0, 1.0)]
-    parts += [rail(-1.0, 1.0, z) for z in RAIL_Z]
+def fence_wood(length=2.0):
+    h = length / 2
+    xs = (-h, 0.0, h) if length >= 2.0 else (-h, h)
+    parts = [post(x, 0) for x in xs]
+    parts += [rail(-h, h, z) for z in RAIL_Z]
     return parts
 
 
@@ -155,9 +163,11 @@ def lumpy(is_seam, amp=0.07):
 HEDGE_PROFILE = dict(t=HEDGE_T - 0.05, h=HEDGE_H - 0.04)
 
 
-def hedge():
-    path = [(-1.0 + 0.2 * i, 0.0) for i in range(11)]
-    seam = lambda co: abs(abs(co.x) - 1.0) < 1e-4  # noqa: E731
+def hedge(length=2.0):
+    h = length / 2
+    n = round(length / 0.2)
+    path = [(-h + length * i / n, 0.0) for i in range(n + 1)]
+    seam = lambda co: abs(abs(co.x) - h) < 1e-4  # noqa: E731
     return [zb.sweep(hedge_profile(**HEDGE_PROFILE), path, color="hedge", jitter=lumpy(seam))]
 
 
@@ -195,19 +205,21 @@ def cap_profile(t=CAP_T, h=CAP_H, z0=WALL_H - CAP_H, b=0.05):
             (-half, z0 + h - b), (-half, z0)]
 
 
-def zoo_wall(seed=3):
+def zoo_wall(length=2.0, seed=3):
     rnd = random.Random(seed)
     body_h = WALL_H - CAP_H
     courses = 4
     ch = body_h / courses
     half = WALL_T / 2
-    parts = [zb.box((2.0, WALL_T - 0.24, body_h), (0, 0, body_h / 2), color="wall_mortar")]
+    h = length / 2
+    n_full = max(1, round(length * 1.5))  # blocks ~0.67 m long (3 per 2 m, 2 per 1 m)
+    parts = [zb.box((length, WALL_T - 0.24, body_h), (0, 0, body_h / 2), color="wall_mortar")]
     for k in range(courses):
-        cuts = course_cuts(2.0, k)
+        cuts = course_cuts(length, k, n_full)
         for a, b in zip(cuts, cuts[1:]):
             col = rnd.choice(["wall_stone", "wall_stone", "wall_stone_dark"])
-            parts.append(wall_block(-1.0 + a, -1.0 + b, k * ch, (k + 1) * ch, -half, half, col))
-    parts.append(zb.sweep(cap_profile(), [(-1.0, 0.0), (1.0, 0.0)], color="wood_light"))
+            parts.append(wall_block(-h + a, -h + b, k * ch, (k + 1) * ch, -half, half, col))
+    parts.append(zb.sweep(cap_profile(), [(-h, 0.0), (h, 0.0)], color="wood_light"))
     return parts
 
 
@@ -236,7 +248,7 @@ def zoo_wall_corner(seed=5):
             b = east_start + L * (i + 1) / n
             col = rnd.choice(["wall_stone", "wall_stone", "wall_stone_dark"])
             parts.append(wall_block(a, b, z0, z1, -half, half, col))
-        # north arm (along Blender -Y): build along X then rotate into place
+        # north arm (along Blender +Y): build along X then rotate into place
         L = 1.0 - north_start
         n = 1 if k % 2 == 0 else 2
         for i in range(n):
@@ -244,7 +256,7 @@ def zoo_wall_corner(seed=5):
             b = north_start + L * (i + 1) / n
             col = rnd.choice(["wall_stone", "wall_stone", "wall_stone_dark"])
             p = wall_block(a, b, z0, z1, -half, half, col)
-            p.rotate_z(-90)  # +X -> -Y (game north)
+            p.rotate_z(90)  # +X -> +Y (north)
             parts.append(p)
     parts.append(zb.sweep(cap_profile(), [(1.0, 0.0), (0.0, 0.0), (0.0, NORTH * 1.0)], color="wood_light"))
     return parts
@@ -266,10 +278,13 @@ def main():
     zb.clean_scene()
     builders = {
         "hedge": hedge,
+        "hedge_1m": lambda: hedge(1.0),
         "hedge_corner": hedge_corner,
         "zoo_wall": zoo_wall,
+        "zoo_wall_1m": lambda: zoo_wall(1.0, seed=4),
         "zoo_wall_corner": zoo_wall_corner,
         "fence_wood": fence_wood,
+        "fence_wood_1m": lambda: fence_wood(1.0),
         "fence_wood_corner": fence_wood_corner,
         "fence_wood_end": fence_wood_end,
         "gate_wood": gate_wood,
@@ -283,25 +298,31 @@ def main():
     zb.layout_grid(order, cols=4, spacing=(3.3, 4.2))
     zb.save_blend(zb.repo_path("assets", "blender", "props", KIT + ".blend"))
     # preview only: turn the corner pieces so the inside of the L faces the camera
+    # (the preview camera looks north-west, so it sits south-east of the pieces)
     for n in ("hedge_corner", "zoo_wall_corner", "fence_wood_corner"):
-        objs[n].rotation_euler.z = math.radians(90)
+        objs[n].rotation_euler.z = math.radians(-90)
 
     if "--no-preview" not in args:
         # sample assembly (seams + placement conventions): wall and hedge runs with
-        # corners, fence corner + segment + half-open gate + end post
+        # corners and a 1 m piece at the end (Q-057 fill rule), fence corner + segment +
+        # half-open gate + 1 m segment + end post
         fwd, right = zb.camera_basis(zb.PREVIEW_YAW_DEG)
         B = right * 15.0 - fwd * 3.0
         V = zb.Vector
+        F = SOUTH * 3.5  # fence row, closer to the camera
         extra = [
             instance(objs["zoo_wall_corner"], "s_wall_c", B),
             instance(objs["zoo_wall"], "s_wall", B + V((2.0, 0, 0))),
+            instance(objs["zoo_wall_1m"], "s_wall_1m", B + V((3.5, 0, 0))),
             instance(objs["zoo_wall"], "s_wall_n", B + V((0, NORTH * 2.0, 0)), rot_deg=90),
             instance(objs["hedge_corner"], "s_hedge_c", B + V((-4.5, 0, 0))),
             instance(objs["hedge"], "s_hedge", B + V((-2.5, 0, 0))),
-            instance(objs["fence_wood_corner"], "s_fence_c", B + V((-3.0, 3.5, 0))),
-            instance(objs["fence_wood"], "s_fence", B + V((-1.0, 3.5, 0))),
-            instance(objs["gate_wood"], "s_gate", B + V((0.09, 3.5, 0)), rot_deg=60),
-            instance(objs["fence_wood_end"], "s_end", B + V((2.0, 3.5, 0))),
+            instance(objs["hedge_1m"], "s_hedge_1m", B + V((-1.0, 0, 0))),
+            instance(objs["fence_wood_corner"], "s_fence_c", B + V((-3.0, F, 0))),
+            instance(objs["fence_wood"], "s_fence", B + V((-1.0, F, 0))),
+            instance(objs["gate_wood"], "s_gate", B + V((0.09, F, 0)), rot_deg=-60),
+            instance(objs["fence_wood_1m"], "s_fence_1m", B + V((2.5, F, 0))),
+            instance(objs["fence_wood_end"], "s_end", B + V((3.0, F, 0))),
         ]
         zb.render_preview(order, zb.repo_path("art", "props", KIT, "model_preview.png"), extra_objs=extra)
     if not ok:

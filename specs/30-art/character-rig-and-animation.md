@@ -27,7 +27,8 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
 ### 1. Coordinate system and units
 
 1. 1 unit = 1 m, Y-up, the character faces **+Z** in glTF (Blender: faces −Y before
-   export). The character's right side is at **−X**. Suffix `_l`/`_r` always means the
+   export) — at yaw 0 that is level south; axes per GAME-LAYOUT "Coordinate spaces"
+   (Q-056), never mirrored. The character's right side is at **−X**. Suffix `_l`/`_r` always means the
    character's own left/right.
 2. The origin is on the ground between the feet (ART-PIPELINE §9). All transforms are
    applied on the mesh before skinning; the armature object has identity transform.
@@ -229,6 +230,22 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
 The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 `assets/blender/characters/<asset_id>.blend` (ART-PIPELINE).
 
+### 8. Reference implementation (model v1)
+
+- Scripts: `tools/blender/characters/human_rig.py` (skeleton, weights, clips, export) and
+  `tools/blender/characters/player_girl.py` (look). The template armature is written to
+  `assets/blender/characters/_rig_human.blend` on every run (§2.5); all bones have roll 0.
+- Clips are generated procedurally: legs by two-bone IK with ground-locked feet
+  (heel-roll / flat / toe-roll), so the `walk`/`run` planted-foot drift is 0 mm at
+  the authored speed (RIG-010); every frame is keyed with linear interpolation.
+- Body texture: 64 × 64 atlas of 8 × 8 flat cells (8 px), per character, sampled
+  NEAREST (Q-026 option a). Face atlas: 256 × 128, 4 × 2 cells of 64 px, LINEAR +
+  mipmaps, alpha MASK (cutoff 0.5).
+- `face` patch: the head's own vertex grid (azimuth ± 67.5°, elevation −54° … +36°)
+  pushed 2 mm out along the ellipsoid normal, rigid on `head`.
+- Checker: `python3 tools/blender/check_character.py` covers RIG-001…008, 010, 011, 018,
+  021, 022 on the exported `.glb`.
+
 ## Acceptance criteria
 
 - Both player `.glb` files load in `zoo-assets`, have the 20-joint `human` skeleton with
@@ -280,4 +297,5 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 - Q-049 High-angle game camera (characters small on screen).
 - Q-050 Outline technique for characters (inverted hull vs. screen-space).
 - Q-051 Close-up for dialogue so faces/expressions are visible.
+- Q-063 Walk cadence vs. speed (hips dip needed for no foot sliding at 1.4 m/s).
 - Q-042 `give` releases the item, but showing food must not consume it (GAME-FEED §4).

@@ -1,0 +1,99 @@
+# Human character clip data (ART-RIG §4.8) — mirrors the clip tables of
+# specs/30-art/character-rig-and-animation.md §4.3 / §4.4 exactly (RIG-009).
+# Events are NOT stored in the .glb; zoo-core fires them from clip time.
+#
+# frames         clip length at 30 fps (duration = frames / 30 s)
+# loop           looping clip (last frame == first frame)
+# crossfade_in   seconds, linear crossfade when this clip is requested
+# events         { name = frame } fired once when playback crosses the frame
+# expression     default face decal cell (ART-RIG §6); "talk_neutral" = alternate every 0.15 s
+# speed          authored locomotion speed in m/s (walk/run only, ART-RIG §4.7)
+# layer          "upper_body" = blended on top of locomotion for the arm joints (ART-RIG §4.6)
+
+fps = 30
+
+[player.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "neutral"
+
+[player.walk]
+frames = 24
+loop = true
+crossfade_in = 0.15
+events = { footstep_l = 0, footstep_r = 12 }
+expression = "neutral"
+speed = 1.4
+
+[player.run]
+frames = 16
+loop = true
+crossfade_in = 0.15
+events = { footstep_l = 0, footstep_r = 8 }
+expression = "happy"
+speed = 3.0
+
+[player.pick_up]
+frames = 24
+loop = false
+crossfade_in = 0.10
+events = { pick_up_grab = 12 }
+expression = "neutral"
+
+[player.give]
+frames = 24
+loop = false
+crossfade_in = 0.10
+events = { give_release = 14 }
+expression = "happy"
+
+[player.talk]
+frames = 60
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "talk_neutral"
+
+[player.cheer]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { cheer_peak = 15 }
+expression = "laugh"
+
+[player.wave]
+frames = 40
+loop = false
+crossfade_in = 0.15
+events = {}
+expression = "happy"
+
+[player.carry]
+frames = 30
+loop = true
+crossfade_in = 0.15
+events = {}
+layer = "upper_body"
+
+[visitor.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "neutral"
+
+[visitor.talk]
+frames = 60
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "talk_neutral"
+
+[visitor.point]
+frames = 45
+loop = false
+crossfade_in = 0.15
+events = { point_hold = 18 }
+expression = "happy"

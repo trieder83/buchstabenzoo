@@ -14,15 +14,23 @@ Props are modelled once and reused (ART-ENVIRONMENT, modular props). Budgets: pr
 
 | Asset id | Size (game units, 1 = 1 m) | Notes |
 |---|---|---|
-| `fence_wood` | 2 m long, 1.1 m high | post-and-rail, 3 rails |
-| `fence_wood_corner` | post | corner post |
-| `fence_wood_end` | post | end post |
-| `gate_wood_closed` | 2 m wide | enclosure gate, closed |
-| `gate_wood_open` | 2 m wide | same gate, open |
-| `hedge` | 2 m long, 3 m high | tall trimmed hedge |
-| `hedge_corner` | 2 m × 2 m, 3 m high | hedge corner |
-| `zoo_wall` | 2 m long, 2.5 m high | outer zoo wall, light stone with wooden cap |
-| `zoo_wall_corner` |  | wall corner |
+| `fence_wood` | 2 m long (2.18 m incl. posts), 1.1 m high | post-and-rail, 3 rails, posts at both ends and in the middle |
+| `fence_wood_1m` | 1 m long (1.18 m incl. posts), 1.1 m high | same fence, posts at both ends (Q-057) |
+| `fence_wood_corner` | L piece, 1 m arms, 1.1 m high | corner post with rails towards east and north |
+| `fence_wood_end` | post 0.25 m, 1.22 m high | end post with rounded top |
+| `gate_wood` | leaf 1.8 m wide, 1.05 m high | enclosure gate leaf for a 2 m opening; origin on the hinge axis, **opened in-game by rotating it** about +Y (no separate closed/open models) |
+| `hedge` | 2 m long, 3 m high, ~1 m thick | tall trimmed hedge |
+| `hedge_1m` | 1 m long, 3 m high, ~1 m thick | same hedge, 1 m (Q-057) |
+| `hedge_corner` | L piece, 1 m arms (1.5 m × 1.5 m), 3 m high | hedge corner |
+| `zoo_wall` | 2 m long, 2.5 m high, 0.6 m thick (0.8 m cap) | outer zoo wall, light stone with wooden cap |
+| `zoo_wall_1m` | 1 m long, 2.5 m high, 0.6 m thick (0.8 m cap) | same wall, 1 m (Q-057) |
+| `zoo_wall_corner` | L piece, 1 m arms (1.4 m × 1.4 m), 2.5 m high | wall corner |
+
+Straight runs are filled with 2 m pieces plus one 1 m piece at the end for odd lengths;
+hedge/wall bands of the level (1–2 cells deep) get one row on the band's centre line
+(GAME-LAYOUT "Modular edges", Q-057; joins Q-059). The concept sheet below was generated
+from the first list (with `gate_wood_closed` / `gate_wood_open`); the prompt is kept as
+generated.
 
 ## Image settings
 

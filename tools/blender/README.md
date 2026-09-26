@@ -50,8 +50,13 @@ It prints triangle count and size per asset and exits non-zero if an asset is ov
 
 ## Modelling conventions
 
-- 1 unit = 1 m. Scripts model in Blender Z-up; the exporter writes glTF **Y-up**.
-  Game axes: +X east = Blender +X, +Y up = Blender +Z, **+Z north = Blender -Y**.
+- 1 unit = 1 m. Scripts model in Blender Z-up; the exporter writes glTF **Y-up**
+  (glTF = Blender (x, z, -y)).
+  World axes (GAME-LAYOUT "Coordinate spaces", Q-056): east = +X = Blender +X, up = +Y =
+  Blender +Z, **north = world -Z = Blender +Y** (Blender's own top view: north up, east
+  right). Level coordinates (x east, z north) become world (x, 0, -z) through
+  `zoo_core::coords::level_to_world` only. Models are **never mirrored**; they are
+  oriented by rotation about +Y (a clockwise quarter turn seen from above = -90 deg).
 - One mesh object per asset, named after the asset id; transforms applied (the checker
   rejects node translation/rotation/scale).
 - **Origin at the ground:** min Y = 0 exactly. Pieces are centred on the origin in X/Z unless
@@ -80,6 +85,10 @@ after the `.blend` is saved and are never exported.
 - **kit_ground** uses **1 m tiles** (the level grid is 1 m and level-1 paths are 3 cells
   wide at odd coordinates, so 2 m tiles cannot cover them). Path tiles are autotiled from the
   4-neighbour mask; the mapping and rotations are documented at the top of `kit_ground.py`.
-- **kit_fences**: straight pieces 2 m, corner pieces are L pieces with 1 m arms, `gate_wood`
-  is only the leaf with its origin on the hinge axis (open = rotate about Y). Placement rules
-  are at the top of `kit_fences.py`.
+- **kit_fences**: straight pieces in **2 m and 1 m** (`fence_wood`/`fence_wood_1m`,
+  `hedge`/`hedge_1m`, `zoo_wall`/`zoo_wall_1m`, Q-057); a straight run of L m gets 2 m pieces
+  from its start and one 1 m piece at the end if L is odd (GAME-LAYOUT "Modular edges",
+  `zoo_core::level::segment_run`). Corner pieces are L pieces with 1 m arms (east and
+  north), `gate_wood` is only the leaf with its origin on the hinge axis (open = rotate
+  about Y; there are no separate closed/open models). Placement rules are at the top of
+  `kit_fences.py`.

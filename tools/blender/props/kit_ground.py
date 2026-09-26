@@ -7,7 +7,7 @@ Outputs
   assets/blender/props/kit_ground.blend
   art/props/kit_ground/model_preview.png
 
-TILE SIZE: 1 m x 1 m (not the 2 m of the brief). The level grid (GAME-LAYOUT,
+TILE SIZE: 1 m x 1 m, one tile per cell (Q-057; the first brief said 2 m). The level grid (GAME-LAYOUT,
 assets/levels/level-1.toml) uses 1 m cells and its paths are 3 cells wide at odd
 coordinates (e.g. path_ring_s = [-8, 8, 16, 3]), plaza 10 x 8, bridge 3 x 3 — 2 m tiles
 cannot cover them; 1 m tiles map one-to-one onto cells.
@@ -16,7 +16,8 @@ PATH AUTOTILING: every path cell gets one path tile chosen from which of its 4 n
 (N, E, S, W) are path cells too ("connections"); unconnected sides get a 0.14 m grass
 margin, so wide paths get a clean border and a 1-cell path looks like the concept tiles.
 Canonical orientation (rotate about +Y in 90 deg steps; N->E is one step clockwise seen
-from above):
+from above = -90 deg about +Y, zoo_core::coords::quarter_turns_cw_to_yaw; north = world -Z
+= Blender +Y, GAME-LAYOUT "Coordinate spaces", Q-056):
   path_tile_cross     N E S W   (inner cell of a wide path)
   path_tile_t         N E S     (edge cell of a wide path; grass on W)
   path_tile_straight  N   S     (1-cell path)
@@ -47,9 +48,9 @@ STONE_TOP = 0.09
 MARGIN = 0.14          # grass margin on unconnected sides
 A = 0.5 - MARGIN       # half width of the paved area
 
-# game direction -> Blender unit vector (game +Z north = Blender -Y)
-DIRS = {"E": (1, 0), "S": (0, 1), "W": (-1, 0), "N": (0, -1)}
-CCW = ["E", "S", "W", "N"]  # counter-clockwise order in Blender's top view
+# direction -> Blender unit vector (north = world -Z = Blender +Y, GAME-LAYOUT Q-056)
+DIRS = {"E": (1, 0), "N": (0, 1), "W": (-1, 0), "S": (0, -1)}
+CCW = ["E", "N", "W", "S"]  # counter-clockwise order in Blender's top view
 
 CANONICAL = {
     "path_tile_cross": {"N", "E", "S", "W"},
@@ -215,7 +216,7 @@ def sample_patch():
     parts = []
     for x in range(size):
         for z in range(-1, size - 1):
-            bx, by = x - size / 2 + 0.5, -(z - size / 2 + 1.5)  # game z north = -Y
+            bx, by = x - size / 2 + 0.5, z - size / 2 + 1.5  # level z north = Blender +Y
             if (x, z) in path:
                 conn = {d for d, (dx, dz) in {"N": (0, 1), "E": (1, 0), "S": (0, -1), "W": (-1, 0)}.items()
                         if (x + dx, z + dz) in path or (x + dx, z + dz) in plaza}

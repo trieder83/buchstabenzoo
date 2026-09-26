@@ -138,3 +138,20 @@ Turnaround with four views side by side in one row, same scale and same baseline
 | 2026-09-26 | three_quarter.png | gemini-3-pro-image (1K, 2:3) | — | prompt 4 + negative as 'Avoid', ref: style_frame.png, front.jpg + extra text | replaced by sheet_v1 split (¾ was turned too little) |
 | 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | to review — chosen, split into front/side/back/three_quarter.png |
 | 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | alternative (ground shadows) |
+
+## 3D model (stage 3, after `concept_approved = true`)
+
+Built by `tools/blender/characters/player_girl.py` (shared rig/clips in
+`tools/blender/characters/human_rig.py`), checked with `python3 tools/blender/check_character.py`.
+
+| 2026-09-26 | model v1 | `player_girl.glb` 2 156 tris, 20 joints, 9 clips, ~214 KB | preview `model_preview.png` (55° game view walking, front, back, in-game size) | to review |
+
+Modelling choices to review:
+
+- Hair falls to the waist as on sheet_v1 (the design table says "above the shoulder
+  blades"); it is rigid on `head` and sits behind the back, so it does not need to bend.
+  Shorten it if it clips in `pick_up`/`cheer` in the game.
+- Face decal atlas (`assets/textures/characters/player_girl_face.png`) is drawn
+  procedurally by the script (8 expressions, 64 px cells) as a placeholder until
+  `expressions.png` is generated and hand-traced into the atlas.
+- Ears are hidden under the hair; the sheet shows small ears — left out to save triangles.

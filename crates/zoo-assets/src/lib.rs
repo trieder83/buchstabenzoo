@@ -1,10 +1,21 @@
-//! Asset manifest and asset/concept checks (ART-PIPELINE). No web dependencies.
+//! Asset manifest and asset/concept checks (ART-PIPELINE), glTF loading and skeletal
+//! animation sampling. No web dependencies.
 //!
-//! glTF loading (APIPE-004/005) follows with milestone M2.
+//! The manifest/concept checks (regex based) sit behind the default feature `pipeline`, so
+//! the browser build (`zoo-web`) only pulls in the glTF loader.
 
-use std::collections::{BTreeMap, BTreeSet};
+pub mod anim;
+pub mod model;
+
+pub use anim::{Pose, Skeleton};
+pub use model::{Clip, ImageData, LoadError, Material, MeshData, Model, SubMesh};
+
+#[cfg(feature = "pipeline")]
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "pipeline")]
 use regex::Regex;
 use serde::Deserialize;
 
@@ -76,6 +87,7 @@ pub fn spec_ids(specs_dir: &Path) -> BTreeSet<String> {
         .collect()
 }
 
+#[cfg(feature = "pipeline")]
 /// Item id → status from `art/catalog.js`, parsed loosely: every `status: "…"` belongs to the
 /// closest preceding `id: "…"` (section ids have no status).
 pub fn catalog_statuses(js: &str) -> BTreeMap<String, String> {
@@ -95,6 +107,7 @@ pub fn catalog_statuses(js: &str) -> BTreeMap<String, String> {
     out
 }
 
+#[cfg(feature = "pipeline")]
 /// ```` ```text ```` blocks of a Markdown file.
 pub fn text_blocks(md: &str) -> Vec<String> {
     let re = Regex::new(r"(?s)```text\n(.*?)\n```").expect("valid regex");
@@ -109,6 +122,7 @@ pub struct StyleBlocks {
     pub negative: String,
 }
 
+#[cfg(feature = "pipeline")]
 impl StyleBlocks {
     pub fn from_style_md(md: &str) -> Option<Self> {
         let b = text_blocks(md);

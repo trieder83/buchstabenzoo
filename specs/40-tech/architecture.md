@@ -23,6 +23,10 @@ updated: 2026-09-26
 7. **Comic shading in the renderer** (Q-010 answered, ART-DIRECTION §2): `zoo-render` draws
    cel shading (one hard shadow tone, 2-tone shader) and the dark outline for characters,
    animals and props; textures and meshes contain neither. Outline technique: Q-050.
+8. **Coordinate spaces** (Q-056 answered, GAME-LAYOUT): `zoo-core` works in level
+   coordinates (x east, z north); `zoo-render` works in right-handed Y-up world space. The
+   only conversion is `zoo_core::coords::level_to_world` / `world_to_level`
+   (`world = (x, 0, −z)`); models are never mirrored (tests LAYOUT-007…011).
 
 ## Crates
 

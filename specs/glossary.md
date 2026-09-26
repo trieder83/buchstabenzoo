@@ -46,8 +46,12 @@ language for player-facing text.
 | `landmark` | Wahrzeichen | landmark | Notable place, e.g. the pirate ship. |
 | `barrier` | Absperrung | barrier | Removable obstacle limiting a level: road block, stones, fallen tree, construction fence, closed gate. |
 | `boundary` | Zoogrenze | boundary | Permanent outer limit of the zoo (wall, hedge, water). |
-
-† German term is a proposal until confirmed (Q-045).
+| `level_coords` | Level-Koordinaten | level coordinates | Coordinates of the layout data and game logic: x east, z north, metres (GAME-LAYOUT). |
+| `world_space` | Weltkoordinaten | world space | Right-handed Y-up render/glTF space; `world = (x, 0, −z)` (GAME-LAYOUT, Q-056). |
+| `run` | Randstrang † | run | One straight line of modular edge pieces (fence, hedge, wall) along x or z (GAME-LAYOUT). |
+| `segment` | Segment | segment | One straight 2 m or 1 m piece of a run (`fence_wood`, `fence_wood_1m`, …). |
 | `map` | Karte | map | Full-screen zoo map opened from the HUD; shows only explored areas (GAME-MAP). |
 | `explored` | erkundet | explored | A map cell the player has been close to; shown on the map, never hidden again. |
 | `fog` | Nebel | fog | How unexplored cells are drawn on the map. |
+
+† German term is a proposal until confirmed (Q-045).

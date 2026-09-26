@@ -128,6 +128,7 @@ window.ART_CATALOG = {
             { file: "animals/hippo/three_quarter.png", label: "¾", required: true },
             { file: "animals/hippo/sheet_v1.jpg", label: "sheet v1 (chosen, source)" },
             { file: "animals/hippo/sheet_v2.jpg", label: "sheet v2 (alternative)" },
+            { file: "animals/hippo/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -145,6 +146,7 @@ window.ART_CATALOG = {
             { file: "animals/panda/three_quarter.png", label: "¾", required: true },
             { file: "animals/panda/sheet_v2.jpg", label: "sheet v2 (chosen, source)" },
             { file: "animals/panda/sheet_v1.jpg", label: "sheet v1 (alternative)" },
+            { file: "animals/panda/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -162,6 +164,7 @@ window.ART_CATALOG = {
             { file: "animals/koala/three_quarter.png", label: "¾", required: true },
             { file: "animals/koala/sheet_v3.jpg", label: "sheet v3 (chosen, source)" },
             { file: "animals/koala/sheet_v2.jpg", label: "sheet v2 (alternative)" },
+            { file: "animals/koala/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -267,6 +270,7 @@ window.ART_CATALOG = {
             { file: "animals/elephant/three_quarter.png", label: "¾", required: true },
             { file: "animals/elephant/sheet_v1.jpg", label: "sheet v1 (chosen, source)" },
             { file: "animals/elephant/sheet_v2.jpg", label: "sheet v2 (alternative)" },
+            { file: "animals/elephant/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -283,6 +287,7 @@ window.ART_CATALOG = {
             { file: "animals/goldfish/front.png", label: "front", required: true },
             { file: "animals/goldfish/three_quarter.png", label: "¾", required: true },
             { file: "animals/goldfish/sheet_v2.jpg", label: "sheet v2 (chosen, source)" },
+            { file: "animals/goldfish/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -301,6 +306,7 @@ window.ART_CATALOG = {
             { file: "animals/monkey/sheet_v2.jpg", label: "sheet v2 (chosen, source)" },
             { file: "animals/monkey/sheet_v1.jpg", label: "sheet v1 (alternative)" },
             { file: "animals/monkey/baby_sheet_v2.jpg", label: "baby sheet (Q-040 proposal)" },
+            { file: "animals/monkey/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -318,6 +324,7 @@ window.ART_CATALOG = {
             { file: "animals/giraffe/three_quarter.png", label: "¾", required: true },
             { file: "animals/giraffe/sheet_v1.jpg", label: "sheet v1 (chosen, source)" },
             { file: "animals/giraffe/sheet_v2.jpg", label: "sheet v2 (alternative)" },
+            { file: "animals/giraffe/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -335,6 +342,7 @@ window.ART_CATALOG = {
             { file: "animals/lion/three_quarter.png", label: "¾", required: true },
             { file: "animals/lion/sheet_v1.jpg", label: "sheet v1 (chosen, source)" },
             { file: "animals/lion/sheet_v2.jpg", label: "sheet v2 (alternative)" },
+            { file: "animals/lion/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -352,6 +360,7 @@ window.ART_CATALOG = {
             { file: "animals/snow_fox/three_quarter.png", label: "¾", required: true },
             { file: "animals/snow_fox/sheet_v2.jpg", label: "sheet v2 (chosen, source)" },
             { file: "animals/snow_fox/sheet_v1.jpg", label: "sheet v1 (alternative)" },
+            { file: "animals/snow_fox/model_preview.png", label: "3D model preview" },
           ],
         },
         {

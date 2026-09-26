@@ -30,15 +30,15 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_hippo` | Hippo enclosure | square tiled pool (no lilies/frogs — must not look like `loc_pond`), stones, wooden hut (cf. `art/reference/ref-enclosure-buildings.jpg`) |
 | `env_panda` | Panda enclosure | cut bamboo on a feeding rack (no growing bamboo clumps — proposal Q-081, must not look like `loc_bamboo`), wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
 | `env_zebra` | Zebra enclosure | bushes, grass, leaves, stone-arch shelter — no water (riddle points to the river) |
-| `env_koala` | Koala enclosure | eucalyptus trees |
-| `env_elephant` | Elephant enclosure | water, hay, logs, bridge (Q-005) |
-| `env_goldfish` | Goldfish pond / aquarium | water plants |
-| `env_monkey` | Monkey enclosure | climbing frame, hiding spots for the baby |
-| `env_giraffe` | Giraffe enclosure | tall feeding rack |
-| `env_lion` | Lion enclosure | rocks |
-| `env_snow_fox` | Snow fox enclosure | shade, cool den |
+| `env_koala` | Koala enclosure, level 2 (GAME-LEVEL-2, west) | eucalyptus trees of normal height, climbing trunk, small wooden shelter, feeding trough; the koala pair — **no** tree taller than the others, no blossoms, no tree house (riddle guards) |
+| `env_elephant` | Elephant enclosure, level 2 (east) | tiled bathing pool `elephant_pool` with a ramp (like the hippo pool), hay rack, one boulder — **no** jet or coins in the water, no logs, no ball (riddle guards; Q-005 bridge not used) |
+| `env_goldfish` | Goldfish pond enclosure, level 3 (east) | round pond `goldfish_pond` with a low stone rim, water plants, low wooden fence, flat stone step (the gate where the bowl is put down) — no waterfall, wheel or willow |
+| `env_monkey` | Monkey enclosure, level 3 (north) | climbing frame of logs and ropes, hanging tyres, wooden monkey house, banana basket, hiding spots for the baby — no ship, carousel or trampoline |
+| `env_giraffe` | Giraffe enclosure, level 2 (north) | tall feeding rack with leafy branches, giraffe house with a tall door — no tower, slide or train |
+| `env_lion` | Lion enclosure, level 2 (south) | wooden sun deck with a straw roof, a big lying log, dry grass — **no flat rocks** (the rocks are the hiding place `loc_sun_rocks`), no stage, no chairs |
+| `env_snow_fox` | Snow fox enclosure, level 3 (south) | wooden den with straw under two pine trees, light rocks, drinking bowl — no freezer, sprinkler or washing line |
 | `env_food_storage` | Food storage | food boxes with labels (locked door only if Q-033 keeps the lock) |
-| `env_pirate_ship` | Pirate ship (playground?) | monkey hiding place `loc_pirate_ship`: mast, sail, skull flag, treasure chest; key hiding spot if Q-033 keeps `quest_key` |
+| `env_pirate_ship` | Pirate ship (Q-017 proposal: climbing frame on the level-3 adventure playground) | covered by the mockup `loc_pirate_ship` below (no separate brief) |
 | `style_frame` | Style frame (comic style, Q-010) | the zebra-enclosure scene in the comic style from the high game camera: `style_frame.png`; no `layout.md` (ART-PIPELINE §5) |
 | `env_level1_overview` | Whole level 1 (GAME-LEVEL-1) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-1 ASCII map |
 | `loc_river` | Zebra hiding place, level 1 | flowing river with rapids, wooden bridge, ducks, zebras drinking on the bank; fallen-tree barrier behind the bridge |
@@ -50,6 +50,30 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `loc_shade` | Hippo hiding place, level 1 (west, at the zoo wall) | 2 m wide strip between the high zoo wall and big trees whose crowns overhang it, flat dark-green shade on dry grass, hippo dozing; no water, no mud |
 | `loc_bamboo` | Panda hiding place, level 1 (south-west corner) | dense bamboo thicket (3 m) standing taller than the 2.5 m zoo wall behind it, panda sitting at its edge chewing bamboo; map board and plaza edge far right |
 | `loc_leaves` | Panda hiding place, level 1 (north-east corner) | big raked heap of red, yellow and brown leaves at the edge of the trees, a rake leaning on a trunk, panda lying on its back in the leaves; sunny and colourful, not dark |
+| `env_level2_overview` | Whole level 2 (GAME-LEVEL-2) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-2 ASCII map (also the GAME-MAP art) |
+| `env_level3_overview` | Whole level 3 (GAME-LEVEL-3) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-3 ASCII map |
+| `env_zookeeper_house` | Zookeeper house of level 3 (`zookeeper_house_3`) | closed house + roof cut-away with the big empty glass fish bowl on the table, bed, shelves; water tap with a small basin next to the door; food storage 3 next door |
+| `loc_treehouse` | Koala hiding place, level 2 (south-west) | old oak with a wooden tree house (roof, round window) at 3.5 m and a rope ladder; the koala pair on the porch |
+| `loc_tallest_tree` | Koala hiding place, level 2 (east) | a 12 m giant tree, twice as tall as all other trees, thick trunk; the koala pair at the very top |
+| `loc_blossom_tree` | Koala hiding place, level 2 (north-east corner) | tree covered in pink blossoms, petals drifting onto the grass, bees; the koala pair in the crown |
+| `loc_fountain` | Elephant hiding place, level 2 (south-west) | round stone basin with a water jet, coins on the bottom, the elephant drinking and showering |
+| `loc_log_pile` | Elephant hiding place, level 2 (north-west) | neatly stacked thick tree trunks, sawdust on the grass, the elephant next to them |
+| `loc_big_ball` | Elephant hiding place, level 2 (north) | giant red-and-white ball taller than the girl on the lawn, the elephant nudging it |
+| `loc_lookout_tower` | Giraffe hiding place, level 2 (south-west) | wooden lookout tower with stairs and a roofed platform at 4 m, the giraffe's head level with the platform |
+| `loc_train` | Giraffe hiding place, level 2 (south) | little zoo train (engine with chimney and bell, 2 open wagons) at a small station platform, the giraffe sniffing the chimney |
+| `loc_playground` | Giraffe hiding place, level 2 (south-east corner) | slide and double swing (no sandpit), the giraffe towering over them |
+| `loc_sun_rocks` | Lion hiding place, level 2 (north-west corner) | big flat light-grey rock slabs flush with the grass in full sun, no tree, no shade, the lion dozing |
+| `loc_stage` | Lion hiding place, level 2 (north-east) | round wooden music stage with a pointed roof, drums and a xylophone, the lion roaring in front |
+| `loc_deckchairs` | Lion hiding place, level 2 (north-east) | three striped deckchairs under a big sunshade, the lion sprawled next to them |
+| `loc_pirate_ship` | Monkey hiding place, level 3 (south-east, adventure playground; = `env_pirate_ship`) | pirate-ship climbing frame on bark mulch: mast with crow's nest, white sail, black flag with a white paw print (no skull), treasure chest, rope ladder, **no slide**; the monkey in the crow's nest |
+| `loc_carousel` | Monkey hiding place, level 3 (south-west) | small carousel with painted wooden horses under a striped round roof, the monkey riding backwards |
+| `loc_trampoline` | Monkey hiding place, level 3 (west, by the stream) | round ground-level trampoline (blue mat, red rim) flush with the lawn, the monkey mid-somersault |
+| `loc_waterfall` | Goldfish hiding place, level 3 (north-west) | the stream falling 2.5 m from a rock ledge at the north wall, white foam pool, a goldfish flashing orange in the foam |
+| `loc_water_wheel` | Goldfish hiding place, level 3 (west) | tiny wooden mill hut with a big wooden water wheel turning in the stream, glittering drops, the goldfish beside it |
+| `loc_willow` | Goldfish hiding place, level 3 (south-west) | weeping willow whose long branches hang like a green curtain into the stream, the goldfish in the shade below |
+| `loc_ice_cream_kiosk` | Snow fox hiding place, level 3 (north-east) | ice cream kiosk with a striped awning, a cone icon on the roof (no text), freezer chest with cold mist, the snow fox beside it |
+| `loc_sprinkler` | Snow fox hiding place, level 3 (north-west) | lawn with a turning garden sprinkler, arcs of drops, a small rainbow, glossy wet grass, the snow fox enjoying the spray — must not look like the fountain |
+| `loc_laundry` | Snow fox hiding place, level 3 (north-west, by the stream) | washing line with big white sheets and towels flapping, the white snow fox almost invisible between them |
 
 ## Hiding places (must appear in a mockup)
 
@@ -57,8 +81,9 @@ Every hiding place of CONT-MISSIONS must be visible in at least one mockup, show
 details its location riddles mention. Which mockup covers which place is assigned by the
 `zoo-level-designer` (Q-044). Level 1: `loc_river`, `loc_pond` and `loc_cave` each have their
 own mockup (see table above), and so do the six further level-1 candidates `loc_meadow`, `loc_sand`,
-`loc_mud`, `loc_shade`, `loc_bamboo`, `loc_leaves` (briefs in `art/environment/<id>/`); the others are
-assigned with their level. Every hiding place also needs a small **`kiga` picture** (the board
+`loc_mud`, `loc_shade`, `loc_bamboo`, `loc_leaves` (briefs in `art/environment/<id>/`). Levels 2
+and 3: every one of the 21 candidates has its own mockup brief as well (table above,
+GAME-LEVEL-2 / GAME-LEVEL-3). Every hiding place also needs a small **`kiga` picture** (the board
 shows the picture of the chosen place next to its one word; picture id = hiding place id) —
 cropped from the approved mockup.
 
@@ -73,13 +98,27 @@ cropped from the approved mockup.
 | `loc_shade` | shade of big trees right at the zoo wall, dry grass |
 | `loc_bamboo` | dense green bamboo taller than the zoo wall |
 | `loc_leaves` | raked pile of red/yellow/brown leaves, rake, sunny |
-| `loc_tallest_tree` | clearly the tallest tree, entrance gate visible from the top |
-| `loc_mud_pool` | brown mud, splashing |
+| `loc_treehouse` | tree house with roof and window high up, rope ladder |
+| `loc_tallest_tree` | clearly the tallest tree of the zoo (twice as tall as all others), thick trunk |
+| `loc_blossom_tree` | pink blossoms, drifting petals, bees |
 | `loc_fountain` | stone basin, water jet, coins |
-| `loc_pirate_ship` | see `env_pirate_ship` |
-| `loc_playground` | slide, swings, sandpit, trees |
-| `loc_sun_rocks` | big flat rocks in full sun |
+| `loc_log_pile` | stacked tree trunks, sawdust |
+| `loc_big_ball` | giant round red-and-white ball, bigger than a child |
+| `loc_lookout_tower` | wooden tower, stairs, high platform with visitors |
+| `loc_train` | little train: engine with chimney and bell, wagons, station |
+| `loc_playground` | slide, swings (no sandpit) |
+| `loc_sun_rocks` | big flat rocks in full sun, no shade |
+| `loc_stage` | round stage with a pointed roof, drums, xylophone |
+| `loc_deckchairs` | striped deckchairs, big sunshade |
+| `loc_pirate_ship` | mast, sail, black flag, treasure chest (see `env_pirate_ship`) |
+| `loc_carousel` | carousel, wooden horses, striped roof, turning |
+| `loc_trampoline` | round blue springy mat in the lawn |
+| `loc_waterfall` | water falling from a rock ledge, white foam |
+| `loc_water_wheel` | wooden water wheel turning in the stream, little mill hut |
+| `loc_willow` | weeping willow, branches hanging into the water |
 | `loc_ice_cream_kiosk` | kiosk, freezer chest, cones |
+| `loc_sprinkler` | turning sprinkler, cold drops, rainbow, wet grass |
+| `loc_laundry` | white sheets and towels on a washing line |
 
 ## Modular props (modelled once, reused)
 
@@ -97,7 +136,7 @@ only where no existing prop fits): `wildflowers` (small tuft with coloured flowe
 ≤ 80 tris, scattered in tall grass — `flower_bed` is a formal bed and does not fit a meadow),
 `butterfly` (≤ 20 tris, bobbing like the ducks), `mud_tile` (1 m ground tile of glossy brown
 mud with an edge variant, for `kit_ground`), `shade_decal` (flat dark-green ground decal for
-tree shade, or a renderer feature instead — Q-080), `leaf_pile` (lumpy heap of red/yellow/brown
+tree shade — Q-080 answered: a flat ground decal, not a renderer feature), `leaf_pile` (lumpy heap of red/yellow/brown
 leaves, ≤ 300 tris) and `rake` (≤ 60 tris). Reused: `grass_tuft` scaled ×3 for tall grass,
 `sand_tile` (kit_ground) for the sand patch, `bamboo` for the thicket, `zoo_wall` (kit_fences), `rock`, `tree_round`.
 
@@ -117,6 +156,26 @@ GAME-LAYOUT "Modular edges": 2 m segments from the run start, plus one 1 m segme
 end when the length is odd; corner pieces where a run turns. Hedge/wall bands in the level
 data are 1–2 cells deep; the models are placed as one row on the band's centre line
 (proposal; joins Q-059).
+
+Added for levels 2 and 3 (proposal, zoo-level-designer, 2026-09-26 — only where no existing
+prop fits): `petal_decal` (pink petals on grass), `flat_rock_slab` (flush grey slab, 3 sizes),
+`bark_mulch_tile` (1 m ground tile, `kit_ground`), `trampoline_ground` (flush round mat),
+`sprinkler` (turning lawn sprinkler, animated spray with a rainbow band in the renderer),
+`water_tap` (tap with a small basin, on a wall), `fish_bowl` (big glass bowl, empty / filled /
+with fish — carried with `socket_carry`), `washing_line` (two posts, line, sheets swaying),
+`bee` (≤ 20 tris, like `butterfly`), `construction_fence` (striped panel, 2 m and 1 m) and
+`digger` (small toy-like digger) for `barrier_l2_construction`, `stream` tiles (reuse
+`water_tile_flowing`, 3 m wide). Reused: `pool_tiled` (elephant pool), `food_storage_building`
+(food storages 2 and 3), `map_board`, `hedge`, `zoo_wall`, `tree_round`, `bush`, `rock`, `bench`.
+
+Unique (non-modular) models needed for levels 2 and 3: `treehouse_oak`, `tree_giant` (12 m),
+`tree_blossom`, `fountain_stone`, `log_pile`, `play_ball`, `lookout_tower`, `zoo_train`
+(engine + 2 wagons + track piece + platform), `slide`, `swings`, `music_stage`,
+`deckchairs_sunshade`, `koala_shelter`, `elephant_house`, `giraffe_house` + `giraffe_feeding_rack`,
+`lion_sun_deck`, `waterfall_ledge`, `mill_hut_wheel` (animated wheel), `willow`, `pirate_ship`,
+`carousel` (turning), `ice_cream_kiosk` + `freezer_chest`, `zookeeper_house` (closed + cut-away,
+concept in `kit_buildings`), `pond_stone_rim`, `monkey_climbing_frame`, `snow_fox_den`, `eucalyptus_tree`, `hay_rack`,
+`monkey_house`, `pine_tree`.
 
 Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_building`,
 `stone_arch_shelter` (zebra), `hut_wood` and `pool_tiled` (hippo), `panda_platform` and
@@ -199,6 +258,6 @@ filled). New ids proposed there, not yet placed in `level-1.toml`: `zookeeper_ho
 
 - Q-006 One open world vs. separate areas.
 - Q-017 Is the pirate ship a playground in the zoo, or a separate location?
-- Q-033 Food storage locked? Q-044 Hiding places in layout and mockups. Q-080 scenery data, Q-081 bamboo in the panda enclosure.
+- Q-033 Food storage locked? Q-044 Hiding places in layout and mockups. Q-080 (answered) scenery data, Q-081 (answered) bamboo in the panda enclosure. Q-098 `hut_wood` area of the hippo enclosure (`kind = "hut"`). Q-099 remaining invisible walls (`map_board`, fallen tree).
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2). Q-048 screen orientation. Q-052 FOV axis.
 - Q-056 answered: axes (model north = −Z, never mirrored). Q-057 answered: 1 m segment variants, fill rule. Q-059 band joins, Q-060 fence/band placement, Q-061 front direction of props (open).

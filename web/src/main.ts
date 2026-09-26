@@ -3,7 +3,7 @@
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
 import { attachInput, type StickView } from './input';
-import { SaveSlot } from './save';
+import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
 import { loadSettings, Ui } from './ui';
 
@@ -85,9 +85,10 @@ async function main(): Promise<void> {
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   const app = new App(canvas, LEVEL, files);
   const store = storage();
-  // GAME-SAVE: continue where the child stopped (restored before the first frame)
+  // GAME-SAVE: continue where the child stopped (restored before the first frame); else a
+  // new game with a random seed (`?seed=N` for tests) that avoids the last hiding places
   const slot = new SaveSlot(app, store);
-  slot.restore();
+  slot.start(newGameSeed(window.location.search));
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') slot.flush();
   });

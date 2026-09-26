@@ -2,6 +2,8 @@
 //!
 //! Deterministic: all randomness comes from the seed, time only from `dt`.
 
+use std::collections::BTreeMap;
+
 use glam::{IVec2, Vec2};
 
 use crate::animals::{animal_info, AnimalInfo, AnimalState};
@@ -16,6 +18,12 @@ use crate::nav;
 use crate::player::{in_interaction_range, MoveParams, Player};
 use crate::rng::Pcg32;
 use crate::scene::info_board_pose;
+use crate::wander::{self, Wander, WanderArea};
+
+/// Chosen hiding places of one animal set are at least this far apart (RESC-014, Q-082).
+pub const MIN_PICK_SPREAD_M: f32 = 12.0;
+/// Maximum number of seeded draws of the whole set before the fallback (Q-082).
+pub const MAX_PICK_DRAWS: u32 = 64;
 
 /// Follow behaviour (GAME-RESCUE §6).
 #[derive(Debug, Clone, Copy)]
@@ -199,6 +207,12 @@ pub struct Animal {
     pub info: &'static AnimalInfo,
     pub state: AnimalState,
     pub pos: Vec2,
+    /// Facing (unit, level coordinates): where it walks, or the player it looks at (ANIM-009).
+    pub facing: Vec2,
+    /// Wandering at its hiding place or at home (ANIM-008…011).
+    pub wander: Wander,
+    /// Cells it may wander on in its current state (derived from the level, not saved).
+    pub(crate) area: WanderArea,
     /// Id of the hiding place chosen for this playthrough.
     pub hiding_place: String,
     /// Index of its enclosure element.
@@ -214,6 +228,79 @@ pub struct Animal {
 impl Animal {
     pub fn id(&self) -> &'static str {
         self.info.id
+    }
+
+    /// Whether the animal is walking (wandering) right now.
+    pub fn is_wandering(&self) -> bool {
+        !self.wander.route.is_empty()
+    }
+
+    /// Its wander area (hiding place while escaped, enclosure when home).
+    pub fn wander_area(&self) -> &WanderArea {
+        &self.area
+    }
+}
+
+/// Picks one candidate hiding place per animal (GAME-RESCUE §1, Q-082): uniform seeded pick
+/// per animal (in the given order), the whole set redrawn while two chosen spots are
+/// < [`MIN_PICK_SPREAD_M`] apart (at most [`MAX_PICK_DRAWS`] draws, then the first valid
+/// combination in data order). `avoid` maps an animal to the place of the previous game,
+/// which is not picked again when the animal has another candidate.
+pub fn pick_hiding_places(
+    data: &LevelData,
+    animals: &[&str],
+    rng: &mut Pcg32,
+    avoid: &BTreeMap<String, String>,
+) -> Result<Vec<String>, GameError> {
+    let mut cands: Vec<Vec<&crate::level::HidingPlaceData>> = Vec::new();
+    for &a in animals {
+        let all: Vec<_> = data.hiding_places_of(a).collect();
+        if all.is_empty() {
+            return Err(GameError::NoHidingPlace(a.to_owned()));
+        }
+        let fresh: Vec<_> = all
+            .iter()
+            .copied()
+            .filter(|h| avoid.get(a) != Some(&h.id))
+            .collect();
+        cands.push(if fresh.is_empty() { all } else { fresh });
+    }
+    let valid = |set: &[&crate::level::HidingPlaceData]| {
+        set.iter().enumerate().all(|(i, a)| {
+            set[i + 1..]
+                .iter()
+                .all(|b| a.id != b.id && a.spot().distance(b.spot()) >= MIN_PICK_SPREAD_M - 1e-4)
+        })
+    };
+    for _ in 0..MAX_PICK_DRAWS {
+        let set: Vec<_> = cands
+            .iter()
+            .map(|c| c[rng.below(c.len() as u32) as usize])
+            .collect();
+        if valid(&set) {
+            return Ok(set.iter().map(|h| h.id.clone()).collect());
+        }
+    }
+    // fallback: first valid combination in data order (odometer over the candidate lists)
+    let mut idx = vec![0usize; cands.len()];
+    loop {
+        let set: Vec<_> = cands.iter().zip(&idx).map(|(c, &i)| c[i]).collect();
+        if valid(&set) {
+            return Ok(set.iter().map(|h| h.id.clone()).collect());
+        }
+        let mut k = 0;
+        loop {
+            if k == idx.len() {
+                // no valid combination at all: the first one
+                return Ok(cands.iter().map(|c| c[0].id.clone()).collect());
+            }
+            idx[k] += 1;
+            if idx[k] < cands[k].len() {
+                break;
+            }
+            idx[k] = 0;
+            k += 1;
+        }
     }
 }
 
@@ -261,7 +348,6 @@ pub struct InfoBoard {
 pub enum GameError {
     UnknownAnimal(String),
     NoHidingPlace(String),
-    NoAnimalSpot(String),
 }
 
 impl std::fmt::Display for GameError {
@@ -269,7 +355,6 @@ impl std::fmt::Display for GameError {
         match self {
             GameError::UnknownAnimal(a) => write!(f, "unknown animal {a}"),
             GameError::NoHidingPlace(a) => write!(f, "no hiding place for {a} in the level"),
-            GameError::NoAnimalSpot(h) => write!(f, "hiding place {h} has no animal_spot"),
         }
     }
 }
@@ -333,32 +418,46 @@ impl GameEvent {
 
 impl Game {
     /// New game: every enclosure empty, every animal at a hiding place picked with the seeded
-    /// RNG (GAME-RESCUE §1). One animal per enclosure in the level data.
+    /// RNG (GAME-RESCUE §1). One animal per enclosure in the level data (only the missions in
+    /// scope, `[level] missions`, Q-069).
     pub fn new(data: LevelData, seed: u64) -> Result<Self, GameError> {
+        Self::new_avoiding(data, seed, &BTreeMap::new())
+    }
+
+    /// [`Game::new`] that avoids each animal's hiding place of the previous game (`avoid`:
+    /// animal id → place id, Q-082).
+    pub fn new_avoiding(
+        data: LevelData,
+        seed: u64,
+        avoid: &BTreeMap<String, String>,
+    ) -> Result<Self, GameError> {
         let mut rng = Pcg32::new(seed);
-        let mut animals = Vec::new();
+        let scope = &data.level.missions;
+        let mut enclosures = Vec::new();
         for (i, enc) in data.elements.iter().enumerate() {
             if enc.ty != ElementType::Enclosure {
                 continue;
             }
             let id = enc.animal.clone().unwrap_or_default();
-            let info = animal_info(&id).ok_or_else(|| GameError::UnknownAnimal(id.clone()))?;
-            let places: Vec<_> = data
-                .elements_of(ElementType::HidingPlace)
-                .filter(|h| h.animal.as_deref() == Some(info.id))
-                .collect();
-            if places.is_empty() {
-                return Err(GameError::NoHidingPlace(id));
+            if !scope.is_empty() && !scope.contains(&id) {
+                continue; // not in scope: scenery only (Q-069)
             }
-            let place = places[rng.below(places.len() as u32) as usize];
-            let spot = place
-                .animal_spot_cell()
-                .ok_or_else(|| GameError::NoAnimalSpot(place.id.clone()))?;
+            let info = animal_info(&id).ok_or_else(|| GameError::UnknownAnimal(id.clone()))?;
+            enclosures.push((i, info));
+        }
+        let ids: Vec<&str> = enclosures.iter().map(|(_, info)| info.id).collect();
+        let picks = pick_hiding_places(&data, &ids, &mut rng, avoid)?;
+        let mut animals = Vec::new();
+        for ((i, info), place_id) in enclosures.into_iter().zip(picks) {
+            let place = data.hiding_place(&place_id).expect("picked from the data");
             animals.push(Animal {
                 info,
                 state: AnimalState::Escaped,
-                pos: cell_center(spot),
-                hiding_place: place.id.clone(),
+                pos: place.spot(),
+                facing: Vec2::NEG_Y,
+                wander: Wander::default(),
+                area: WanderArea::default(),
+                hiding_place: place_id,
                 enclosure: i,
                 waiting: false,
                 refusing: false,
@@ -375,8 +474,14 @@ impl Game {
             .collect();
         let player = Player::new(cell_center(data.spawn.cell()), facing, &move_params);
         let missions = vec![Mission::default(); animals.len()];
+        let level = Level::new(data);
+        for a in &mut animals {
+            a.area = wander_area_of(&level, a);
+            a.facing = rest_facing(&level, a);
+            a.wander.pause_s = wander::draw_pause(&mut rng);
+        }
         Ok(Self {
-            level: Level::new(data),
+            level,
             player,
             carry: Carry::default(),
             storage: FoodStorage::default(),
@@ -572,6 +677,7 @@ impl Game {
             a.waiting = false;
             a.path.clear();
             a.path_target = None;
+            a.wander = Wander::default();
             self.events.push(GameEvent::StartedFollowing { animal: id });
         } else {
             self.events.push(GameEvent::NotInterested { animal: id });
@@ -754,6 +860,7 @@ impl Game {
         );
         self.check_gate();
         self.update_followers(dt);
+        self.update_wander(dt);
         self.update_panel(dt);
         self.time_s += f64::from(dt);
         if self.player.last_speed > 0.01 {
@@ -859,14 +966,35 @@ impl Game {
 
     /// GAME-RESCUE §8 / §9.
     fn enter_enclosure(&mut self, i: usize) {
-        let enc = &self.level.data.elements[self.animals[i].enclosure];
+        let enc_index = self.animals[i].enclosure;
+        let area = wander::home_area(&self.level, enc_index);
+        let entry = wander::home_entry(&self.level, enc_index)
+            .and_then(|c| {
+                if area.contains(c) {
+                    Some(c)
+                } else {
+                    area.nearest(cell_center(c))
+                }
+            })
+            .unwrap_or_else(|| {
+                let r = self.level.data.elements[enc_index].rect;
+                IVec2::new(r.x + r.w / 2, r.z + r.d / 2)
+            });
+        let pause = wander::draw_pause(&mut self.rng);
         let a = &mut self.animals[i];
         a.state = AnimalState::InEnclosure;
         a.waiting = false;
-        a.pos = cell_center(IVec2::new(
-            enc.rect.x + enc.rect.w / 2,
-            enc.rect.z + enc.rect.d / 2,
-        ));
+        a.refusing = false;
+        a.path.clear();
+        a.path_target = None;
+        let to_entry = cell_center(entry) - a.pos;
+        a.facing = to_entry.try_normalize().unwrap_or(a.facing);
+        a.pos = cell_center(entry);
+        a.area = area;
+        a.wander = Wander {
+            pause_s: pause,
+            route: Vec::new(),
+        };
         let id = a.id().to_owned();
         if let Some(food) = self.carry.consume() {
             self.events.push(GameEvent::FoodConsumed { food });
@@ -934,7 +1062,149 @@ impl Game {
             let step = (speed * dt).min(to.length()).min(dist - fp.keep_distance_m);
             if step > 0.0 {
                 a.pos += to.normalize_or_zero() * step;
+                a.facing = to.normalize_or(a.facing);
             }
         }
     }
+
+    /// Wandering of escaped animals (inside their hiding place's wander area) and of animals
+    /// at home (inside their enclosure), GAME-ANIMALS "Animal states", ANIM-008…012.
+    fn update_wander(&mut self, dt: f32) {
+        let p = self.player.pos;
+        for i in 0..self.animals.len() {
+            let state = self.animals[i].state;
+            if state == AnimalState::Following || self.animals[i].area.is_empty() {
+                continue;
+            }
+            let escaped = state == AnimalState::Escaped;
+            let water_bias = !escaped
+                && self.level.data.elements[self.animals[i].enclosure]
+                    .home_surfaces()
+                    .contains(&"water");
+            let a = &mut self.animals[i];
+            let to_player = p - a.pos;
+            let near = to_player.length();
+            if escaped && near <= wander::NOTICE_PLAYER_M {
+                // out of reach (e.g. far out in the pond): come to the cell nearest to her
+                // (proposal Q-097); within reach: stop and look at her (ANIM-009)
+                let reachable = near <= crate::player::INTERACTION_RANGE_M - 0.2;
+                if !reachable {
+                    if let Some(best) = a.area.nearest(p) {
+                        let here = cell_of(a.pos);
+                        let gain = a.pos.distance(p) - cell_center(best).distance(p);
+                        if best != here && gain > 0.3 && a.wander.route.last() != Some(&best) {
+                            a.wander.route = a.area.route(here, best).unwrap_or_default();
+                        }
+                    }
+                }
+                if reachable || near <= wander::STOP_NEAR_PLAYER_M && a.wander.route.is_empty() {
+                    a.wander.route.clear();
+                    a.facing = to_player.normalize_or(a.facing);
+                    continue;
+                }
+            }
+            if a.wander.route.is_empty() {
+                a.wander.pause_s -= dt;
+                if a.wander.pause_s > 0.0 {
+                    continue;
+                }
+                let here = cell_of(a.pos);
+                let target = wander::draw_target(&a.area, here, water_bias, true, &mut self.rng);
+                a.wander.pause_s = wander::draw_pause(&mut self.rng);
+                if let Some(t) = target {
+                    a.wander.route = a.area.route(here, t).unwrap_or_default();
+                }
+                continue;
+            }
+            let (_, dir) =
+                wander::follow_route(&mut a.pos, &mut a.wander.route, wander::WANDER_SPEED * dt);
+            if dir != Vec2::ZERO {
+                a.facing = dir;
+            }
+        }
+    }
+
+    /// Clip an animal rests with at its place (GAME-RESCUE §11): the hiding place `pose`
+    /// while escaped (e.g. `drink` at the river, `swim` in the pond), `swim` in water at home,
+    /// else `idle`. The presentation falls back to `idle` if the model lacks the clip.
+    pub fn rest_clip(&self, a: &Animal) -> &str {
+        if self.water_depth(a) > 0.5 && a.state != AnimalState::Following {
+            return "swim";
+        }
+        if a.state == AnimalState::Escaped {
+            if let Some(pose) = self
+                .level
+                .data
+                .hiding_place(&a.hiding_place)
+                .and_then(|h| h.pose.as_deref())
+            {
+                return pose;
+            }
+        }
+        "idle"
+    }
+
+    /// Water depth factor 0…1 under an animal (presentation sinks swimmers, GAME-LEVEL-1).
+    pub fn water_depth(&self, a: &Animal) -> f32 {
+        wander::water_depth(&self.level, a.pos)
+    }
+
+    /// Debug / e2e / tests: the animal walks into its own enclosure as if led there (same
+    /// rules and events as GAME-RESCUE §8). Returns false for an unknown animal or one that
+    /// is already home.
+    pub fn debug_send_home(&mut self, animal: &str) -> bool {
+        let Some(i) = self.animal_index(animal) else {
+            return false;
+        };
+        if self.animals[i].state == AnimalState::InEnclosure {
+            return false;
+        }
+        self.enter_enclosure(i);
+        true
+    }
+
+    /// Recomputes the derived wander areas (after a restore).
+    pub(crate) fn refresh_areas(&mut self) {
+        for i in 0..self.animals.len() {
+            let area = wander_area_of(&self.level, &self.animals[i]);
+            self.animals[i].area = area;
+        }
+    }
+}
+
+/// Wander area for an animal's state: its hiding place while escaped, its enclosure when
+/// home, none while following.
+fn wander_area_of(level: &Level, a: &Animal) -> WanderArea {
+    match a.state {
+        AnimalState::Escaped => level
+            .data
+            .hiding_place(&a.hiding_place)
+            .map(|h| wander::hiding_area(level, h))
+            .unwrap_or_default(),
+        AnimalState::InEnclosure => wander::home_area(level, a.enclosure),
+        AnimalState::Following => WanderArea::default(),
+    }
+}
+
+/// Facing of an escaped animal at the start: towards the nearest water when it drinks
+/// there (`pose = "drink"`), else level south (towards the default camera).
+fn rest_facing(level: &Level, a: &Animal) -> Vec2 {
+    let drinks = level
+        .data
+        .hiding_place(&a.hiding_place)
+        .is_some_and(|h| h.pose.as_deref() == Some("drink"));
+    if !drinks {
+        return Vec2::NEG_Y;
+    }
+    level
+        .data
+        .elements
+        .iter()
+        .filter(|e| {
+            e.ty == ElementType::Landmark && matches!(e.kind.as_deref(), Some("river" | "pond"))
+        })
+        .flat_map(|e| e.rect.cells())
+        .map(|c| cell_center(c) - a.pos)
+        .min_by(|x, y| x.length().total_cmp(&y.length()))
+        .map_or(Vec2::NEG_Y, |d| d.normalize_or(Vec2::NEG_Y))
 }

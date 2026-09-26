@@ -134,9 +134,55 @@ pub struct Element {
     #[serde(default)]
     pub blocks_view: bool,
     pub height_m: Option<f32>,
+    /// Tree areas (`trees`, `tree_grove`): `dense` (solid as a whole) or `sparse` (walkable
+    /// between the listed trees) — GAME-LAYOUT "Forests", proposal Q-085.
+    pub density: Option<String>,
+    /// Dense tree areas: visible border on the walkable sides (`bushes`), Q-085.
+    pub edge: Option<String>,
+    /// Sparse tree areas: every tree/bush (trunk centre, level coordinates) and its model.
+    #[serde(default)]
+    pub trees: Vec<TreeSpot>,
+    /// Enclosures: surfaces the animal wanders on when home (`grass`, `water`), default
+    /// `["grass"]` (GAME-LAYOUT "Enclosure features and wandering at home", Q-085).
+    #[serde(default)]
+    pub home_wander_on: Vec<String>,
+}
+
+/// One tree or bush of a `sparse` tree area.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct TreeSpot {
+    pub pos: [f32; 2],
+    pub model: String,
+}
+
+impl TreeSpot {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::from(self.pos)
+    }
 }
 
 impl Element {
+    /// Solid for the player: every type except `path` and `hiding_place`, and except `sparse`
+    /// tree areas (only their trunks/bushes are solid, as prop colliders — GAME-LAYOUT
+    /// "Forests").
+    pub fn is_solid(&self) -> bool {
+        self.ty.is_solid() && !self.is_sparse()
+    }
+
+    /// A `sparse` tree area.
+    pub fn is_sparse(&self) -> bool {
+        self.density.as_deref() == Some("sparse")
+    }
+
+    /// Surfaces of the home wander area (default `grass`).
+    pub fn home_surfaces(&self) -> Vec<&str> {
+        if self.home_wander_on.is_empty() {
+            vec!["grass"]
+        } else {
+            self.home_wander_on.iter().map(String::as_str).collect()
+        }
+    }
+
     pub fn door_cell(&self) -> Option<IVec2> {
         self.door.map(|d| IVec2::new(d[0], d[1]))
     }
@@ -161,6 +207,10 @@ pub struct LevelHeader {
     pub bounds: Rect,
     pub ground_walkable: bool,
     pub ground_surface: Surface,
+    /// Missions in scope (interactable) in this level; empty = every enclosure's animal
+    /// (Q-069: only in-scope missions are interactable).
+    #[serde(default)]
+    pub missions: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -210,6 +260,90 @@ impl FoodBoxData {
     }
 }
 
+/// One candidate hiding place (`[[hiding_place]]`, GAME-LAYOUT "Hiding places", Q-080).
+#[derive(Debug, Clone, Deserialize)]
+pub struct HidingPlaceData {
+    pub id: String,
+    pub animal: String,
+    /// Overlay area (not solid); contains the spot, every wander cell and the scenery.
+    pub rect: Rect,
+    /// Cell where the animal starts and is found.
+    pub animal_spot: [i32; 2],
+    /// Escaped animals wander to cells whose centre is within this distance of the spot
+    /// centre (≤ 3 m, GAME-ANIMALS).
+    #[serde(default = "default_wander_radius")]
+    pub wander_radius_m: f32,
+    /// Surface the animal wanders on: `grass`, `water`, `cave`.
+    #[serde(default = "default_grass")]
+    pub wander_on: String,
+    /// Water kinds for `wander_on = "water"` (landmark kinds, default pond/river/stream).
+    #[serde(default)]
+    pub water_kinds: Vec<String>,
+    #[serde(default)]
+    pub features: Vec<String>,
+    #[serde(default)]
+    pub scenery: Vec<String>,
+    /// Clip played at the place when not walking (proposal, Q-043).
+    pub pose: Option<String>,
+}
+
+fn default_wander_radius() -> f32 {
+    3.0
+}
+
+fn default_grass() -> String {
+    "grass".to_owned()
+}
+
+impl HidingPlaceData {
+    pub fn spot_cell(&self) -> IVec2 {
+        IVec2::new(self.animal_spot[0], self.animal_spot[1])
+    }
+
+    pub fn spot(&self) -> Vec2 {
+        cell_center(self.spot_cell())
+    }
+}
+
+/// Non-solid ground dressing a riddle relies on (`[[scenery]]`, Q-080).
+#[derive(Debug, Clone, Deserialize)]
+pub struct SceneryData {
+    pub id: String,
+    pub kind: String,
+    pub rect: Rect,
+    pub hiding_place: Option<String>,
+    #[serde(default)]
+    pub props: Vec<String>,
+}
+
+/// Something inside an enclosure that changes how its animal moves at home
+/// (`[[enclosure_feature]]`, proposal Q-085): `pool` (water with an entry ramp) or `hut`
+/// (reserved building area).
+#[derive(Debug, Clone, Deserialize)]
+pub struct EnclosureFeature {
+    pub id: String,
+    pub enclosure: String,
+    pub kind: String,
+    pub rect: Rect,
+    pub water: Option<String>,
+    pub ramp: Option<Rect>,
+    pub ramp_side: Option<String>,
+    #[serde(default)]
+    pub edge_stones: Vec<[f32; 2]>,
+    pub model: Option<String>,
+}
+
+impl EnclosureFeature {
+    pub fn is_pool(&self) -> bool {
+        self.kind == "pool"
+    }
+
+    /// Whether a cell is part of the pool's entry ramp.
+    pub fn is_ramp(&self, c: IVec2) -> bool {
+        self.ramp.is_some_and(|r| r.contains(c))
+    }
+}
+
 /// Parsed `assets/levels/level-<N>.toml`.
 #[derive(Debug, Clone, Deserialize)]
 pub struct LevelData {
@@ -220,6 +354,15 @@ pub struct LevelData {
     /// Food boxes (GAME-FEED §7); optional.
     #[serde(default, rename = "food_box")]
     pub food_boxes: Vec<FoodBoxData>,
+    /// Candidate hiding places (discovery, GAME-RESCUE §1).
+    #[serde(default, rename = "hiding_place")]
+    pub hiding_places: Vec<HidingPlaceData>,
+    /// Non-solid riddle dressing.
+    #[serde(default, rename = "scenery")]
+    pub scenery: Vec<SceneryData>,
+    /// Enclosure pools and reserved areas.
+    #[serde(default, rename = "enclosure_feature")]
+    pub enclosure_features: Vec<EnclosureFeature>,
 }
 
 #[derive(Debug)]
@@ -254,6 +397,18 @@ impl LevelData {
                 return Err(LevelError::Invalid(format!("empty rect for {}", e.id)));
             }
         }
+        let mut place_ids = BTreeSet::new();
+        for h in &data.hiding_places {
+            if !place_ids.insert(h.id.as_str()) {
+                return Err(LevelError::Invalid(format!(
+                    "duplicate hiding place {}",
+                    h.id
+                )));
+            }
+            if !h.rect.contains(h.spot_cell()) {
+                return Err(LevelError::Invalid(format!("{}: spot outside rect", h.id)));
+            }
+        }
         for b in &data.food_boxes {
             if crate::food::Food::from_id(&b.food).is_none() {
                 return Err(LevelError::Invalid(format!("unknown food {}", b.food)));
@@ -271,13 +426,38 @@ impl LevelData {
         self.elements.iter().find(|e| e.id == id)
     }
 
+    /// A candidate hiding place by id.
+    pub fn hiding_place(&self, id: &str) -> Option<&HidingPlaceData> {
+        self.hiding_places.iter().find(|h| h.id == id)
+    }
+
+    /// Candidate hiding places of an animal, in data order.
+    pub fn hiding_places_of<'a>(
+        &'a self,
+        animal: &'a str,
+    ) -> impl Iterator<Item = &'a HidingPlaceData> + 'a {
+        self.hiding_places
+            .iter()
+            .filter(move |h| h.animal == animal)
+    }
+
+    /// Enclosure features of an enclosure element.
+    pub fn features_of<'a>(
+        &'a self,
+        enclosure: &'a str,
+    ) -> impl Iterator<Item = &'a EnclosureFeature> + 'a {
+        self.enclosure_features
+            .iter()
+            .filter(move |f| f.enclosure == enclosure)
+    }
+
     pub fn elements_of(&self, ty: ElementType) -> impl Iterator<Item = &Element> {
         self.elements.iter().filter(move |e| e.ty == ty)
     }
 
     /// Pairs of solid elements sharing a cell, with the first shared cell (LAYOUT-003).
     pub fn solid_overlaps(&self) -> Vec<(String, String, IVec2)> {
-        let solids: Vec<&Element> = self.elements.iter().filter(|e| e.ty.is_solid()).collect();
+        let solids: Vec<&Element> = self.elements.iter().filter(|e| e.is_solid()).collect();
         let mut out = Vec::new();
         for (i, a) in solids.iter().enumerate() {
             for b in &solids[i + 1..] {
@@ -334,7 +514,7 @@ impl Grid {
                 let Some(k) = index(c) else { continue };
                 if e.ty == ElementType::Path {
                     cells[k].path = true;
-                } else if e.ty.is_solid() && !open && cells[k].solid.is_none() {
+                } else if e.is_solid() && !open && cells[k].solid.is_none() {
                     cells[k].solid = Some(i as u16);
                 }
             }
@@ -448,6 +628,9 @@ pub struct Level {
     open_barriers: BTreeSet<String>,
     grid: Grid,
     colliders: crate::collision::Colliders,
+    /// Scene placements (for colliders) and the placements owned by each barrier.
+    placements: Vec<crate::scene::Placement>,
+    barrier_parts: Vec<(String, std::ops::Range<usize>)>,
 }
 
 impl Level {
@@ -463,7 +646,28 @@ impl Level {
             open_barriers,
             grid,
             colliders,
+            placements: scene.placements,
+            barrier_parts: scene.barrier_parts,
         }
+    }
+
+    /// Colliders of every placement except the parts of opened barriers.
+    fn rebuild_colliders(&mut self) {
+        let removed: Vec<std::ops::Range<usize>> = self
+            .barrier_parts
+            .iter()
+            .filter(|(id, _)| self.open_barriers.contains(id))
+            .map(|(_, r)| r.clone())
+            .collect();
+        let kept: Vec<crate::scene::Placement> = self
+            .placements
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !removed.iter().any(|r| r.contains(i)))
+            .map(|(_, p)| p.clone())
+            .collect();
+        self.colliders =
+            crate::collision::Colliders::from_placements(&kept, self.data.level.bounds);
     }
 
     pub fn grid(&self) -> &Grid {
@@ -494,6 +698,7 @@ impl Level {
         if !is_barrier || !self.open_barriers.insert(id.to_owned()) {
             return false;
         }
+        self.rebuild_colliders();
         self.grid = Grid::build(&self.data, &self.open_barriers);
         self.grid.set_prop_blocked(&self.colliders);
         true

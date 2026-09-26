@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SAVE_KEY, SaveSlot, type Removable, type SaveApp } from './save';
+import { newGameSeed, PICKS_KEY, SAVE_KEY, SaveSlot, type Removable, type SaveApp } from './save';
 
 class MapStore implements Removable {
   m = new Map<string, string>();
@@ -18,7 +18,13 @@ function fakeApp(valid = true) {
   let due = false;
   let n = 0;
   const restored: string[] = [];
+  const games: [number, string][] = [];
   const app: SaveApp & { setDue(d: boolean): void } = {
+    new_game: (seed, avoid) => {
+      games.push([seed, avoid]);
+      return true;
+    },
+    picks_json: () => `{"zebra":"loc_sand","n":${games.length}}`,
     save: () => `{"version":1,"n":${++n}}`,
     take_save: () => (due ? `{"version":1,"n":${++n}}` : ''),
     restore: (json) => {
@@ -29,7 +35,7 @@ function fakeApp(valid = true) {
       due = d;
     },
   };
-  return { app, restored };
+  return { app, restored, games };
 }
 
 describe('save slot (GAME-SAVE)', () => {
@@ -87,5 +93,26 @@ describe('save slot (GAME-SAVE)', () => {
       slot.flush();
       slot.reset();
     }).not.toThrow();
+  });
+
+  it('RESC-014 / Q-082: without a save a new game starts with the seed, avoids the last picks and stores its own', () => {
+    const store = new MapStore();
+    const { app, games } = fakeApp();
+    expect(new SaveSlot(app, store).start(42)).toBe(false);
+    expect(games).toEqual([[42, '']]);
+    expect(store.getItem(PICKS_KEY)).toBe('{"zebra":"loc_sand","n":1}');
+    // the next new game (after "new game" deleted the save) avoids those places
+    expect(new SaveSlot(app, store).start(7)).toBe(false);
+    expect(games[1]).toEqual([7, '{"zebra":"loc_sand","n":1}']);
+    // a stored save wins
+    store.setItem(SAVE_KEY, '{"version":1}');
+    expect(new SaveSlot(app, store).start(9)).toBe(true);
+    expect(games.length).toBe(2);
+  });
+
+  it('seed from ?seed=N, else random', () => {
+    expect(newGameSeed('?seed=123')).toBe(123);
+    expect(newGameSeed('?lang=de&seed=5')).toBe(5);
+    expect(newGameSeed('', () => 0.5)).toBe(Math.floor(0.5 * 0xffffffff));
   });
 });

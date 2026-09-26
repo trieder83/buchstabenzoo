@@ -87,16 +87,16 @@ one straight line of pieces, measured in whole metres along x or z.
 | `barrier` | road block, stones, fallen tree, construction fence, closed gate | no |
 | `boundary` | outer zoo wall, hedge, water | no, never removed |
 | `decoration` | trees, benches, bushes, tall hedges, info boards | no (collision) — except `sparse` tree areas: walkable between the trunks (see "Forests") |
-| `hiding_place` *(proposal, Q-044, Q-080)* | `loc_*` of CONT-MISSIONS: an overlay rectangle with `animal`, `animal_spot` (cell where the animal starts and is found), `wander_radius_m` (≤ 3 m), `wander_on` (`grass` / `water` / `cave`; for `water` optionally `water_kinds`, e.g. `["stream"]`), optional `perch_height_m` (animal sits up in a tree / on a ship, proposal Q-094), `features` (riddle details it must show), `scenery` (ids providing the features) and `pose`; listed in a level's `[[hiding_place]]` list (≥ 3 candidates per animal, see "Hiding places" below); may overlap a landmark, path or building | not solid itself — the cells keep the walkability of what lies underneath |
+| `hiding_place` *(data decided, Q-080 answered: a `[[hiding_place]]` list entry, no longer an `[[element]]`)* | `loc_*` of CONT-MISSIONS: an overlay rectangle with `animal`, `animal_spot` (cell where the animal starts and is found), `wander_radius_m` (≤ 3 m), `wander_on` (`grass` / `water` / `cave`; for `water` optionally `water_kinds`, e.g. `["stream"]`), optional `perch_height_m` (animal sits up in a tree / on a ship, proposal Q-094), `features` (riddle details it must show), `scenery` (ids providing the features) and `pose`; listed in a level's `[[hiding_place]]` list (≥ 3 candidates per animal, see "Hiding places" below); may overlap a landmark, path or building | not solid itself — the cells keep the walkability of what lies underneath |
 
-**Scenery** *(proposal, Q-080)*: non-solid ground dressing that a riddle relies on (tall
+**Scenery** *(decided, Q-080 answered)*: non-solid ground dressing that a riddle relies on (tall
 grass, sand, mud, tree shade, leaf pile) is listed in a level's `[[scenery]]` list with `id`,
 `kind`, `rect`, `hiding_place`, `props`. Like food boxes it is not an element: its cells stay
 walkable with surface `grass`, it never overlaps a solid element or a path, and each kind a
 riddle relies on exists only once per level. Solid dressing (e.g. a bamboo thicket) is a
 normal `decoration` element.
 
-**Hiding places** *(user decision 2026-09-26, GAME-RESCUE §1; data proposal Q-080)*: every
+**Hiding places** *(user decision 2026-09-26, GAME-RESCUE §1; data decided, Q-080 answered)*: every
 animal of a level has ≥ 3 candidate hiding places spread over the level; one per animal is
 picked per playthrough with the seeded RNG. Level-design rules for every candidate: its
 **wander area** (cells within `wander_radius_m` of the spot on its `wander_on` surface,
@@ -109,8 +109,12 @@ exists only at its own place.
 **Walkable ground (decided, Q-046, user 2026-09-26):** every cell of a level that is not
 covered by a solid element is walkable. Cells have a `surface`: `path` (cells of `path`
 elements, incl. bridges, jetties, cave floors) or `grass` (all other walkable cells). The
-player walks on grass **slower** than on paths (GAME-PLAYER §6: 1.75 m/s on paths,
+player walks on grass **slower** than on paths (GAME-PLAYER §6: 1.93 m/s on paths,
 0.98 m/s on grass). Because grass is walkable, all border cells of a level must be solid.
+
+**Missions in scope** (Q-069 answered 2026-09-26): `[level] missions = ["zebra", …]` lists
+the missions of a level that are playable; only their animals, info boards and gates are
+interactable. Without the field every enclosure's animal is in scope.
 
 **Proposals used by the level files (not yet decided):**
 - *Sight blocking data (Q-044):* solid elements may set `blocks_view = true` (and `height_m`,
@@ -213,7 +217,8 @@ walk is level data:
   not blocked by a prop footprint; `water` = the cells of the enclosure's `pool` feature.
 - `[[enclosure_feature]]` (like `[[food_box]]` and `[[scenery]]` **not** an element; the
   enclosure cells stay solid for the player, so LAYOUT-003 is unaffected): `id`, `enclosure`,
-  `kind = "pool"`, `rect` (inside the enclosure rectangle), `water = "still"`, `ramp` (cells
+  `kind = "pool"` (or `kind = "hut"`: a reserved building area, not part of the home wander
+  area — *proposal Q-098*, first used by `hippo_hut`), `rect` (inside the enclosure rectangle), `water = "still"`, `ramp` (cells
   of the entry ramp, part of `rect`), `ramp_side`, `edge_stones` (decoration rocks just
   outside the rim, solid for the animal), `model`.
 - Water and grass of the home wander area connect **only through ramp cells** (the rim is
@@ -239,10 +244,11 @@ values cover the cross-section within 0.02 m and extend at most 0.1 m beyond it 
 | `tree_eucalyptus` | trunk ±0.13 | C(0, 0, 0.35) | C(0, 0, 0.20) | footprint 0.22 m larger than the trunk (invisible wall); not placed in level 1 |
 | `bush` | −0.67…+0.67; −0.55…+0.64 | C(0, 0, 0.55) | C(0, +0.05, 0.67) | 0.12 m of bush not solid (F13) |
 | `rock` | −0.61…+0.86; −0.46…+0.52 (off-centre) | C(0, 0, 0.50) | C(−0.14, +0.03, 0.49) + C(+0.37, +0.03, 0.49) | 0.36 m of rock not solid on +x (F13) |
-| `bamboo` | stalks −0.31…+0.45; −0.44…+0.33 (below 0.9 m); leaves to −0.46…+0.67; −0.87…+0.72 | C(0, 0, 0.60) | C(+0.10, −0.07, 0.80) | leaves 0.27 m outside; only in solid cells today |
+| `bamboo` | stalks −0.31…+0.45; −0.44…+0.33 (below 0.9 m); leaves to −0.46…+0.67; −0.87…+0.72 | C(0, 0, 0.60) | ~~C(+0.10, −0.07, 0.80)~~ **B(+0.105, −0.075, 0.575, 0.80)** (M5a: the circle reached 0.24 m beyond the mesh, LAYOUT-018) | leaves 0.27 m outside; only in solid cells today |
 | `road_block` | −1.05…+1.05; −0.41…+0.41 (feet) | B(0, 0, 1.05, 0.20) | B(0, 0, 1.05, 0.42) | feet 0.21 m outside the box |
 | `repair_sign` | −0.37…+0.37; −0.11…+0.10 (panel 0.6–1.5 m) | C(0, 0, 0.15) | B(0, 0, 0.38, 0.12) | billboard-like panel 0.22 m wider than the post circle |
 | `zookeeper_cart` | −0.94…+1.38; −0.56…+0.56 | B(0, 0, 1.15, 0.56) | B(+0.22, 0, 1.17, 0.57) | handle end 0.23 m outside, 0.21 m invisible at the other end (F13) |
+| `gate_zoo_closed` | −1.56…+1.56; −0.36…+0.36 | none | B(0, 0, 1.56, 0.36) (M5a: its pillars reach 0.11 m past the band edge once the leaf stands 0.25 m behind it) | thin leaf between two deep pillars |
 | `fallen_tree` | −1.25…+1.17; −2.45…+1.81 | none (barrier cells only) | B(−0.04, −0.32, 1.22, 2.14), removed with the barrier | at `barrier_ne_tree` (placed at the rect centre, yaw 0) the trunk reaches x 21.75 — 0.25 m into the walkable column x = 21 of `path_ne`; the player walks into it |
 | `food_box`, `food_box_stack`, `traffic_cone`, `bridge_wood` | — | — | keep | match within 0.02 m |
 
@@ -254,8 +260,8 @@ assembly. Proposed fixes *(Q-087)*:
 |---|---|---|
 | `zoo_wall` bands (`wall_west`, `wall_south_w/e`) | 0.70 m | draw every hedge/wall band on its **walkable-side row** (piece centre 0.5 m from the walkable edge) instead of the band centre line (changes the Q-060 (b) proposal); the outer row stays solid and hidden behind it |
 | `hedge` bands (`hedge_north_*`, `hedge_east_*`) | 0.48–0.50 m | same |
-| `barrier_north_gate` (`gate_zoo_closed`, 0.6 m deep in a 2 m band) | 0.70 m | place the barrier model on the walkable-side row of its rectangle |
-| `barrier_east_repair` (`road_block`, faces west) | 0.60 m | same (road block centre 0.45 m from the west edge x = 22) |
+| `barrier_north_gate` (`gate_zoo_closed`, 0.6 m deep in a 2 m band) | 0.70 m | place the barrier model on the walkable-side row of its rectangle — *M5a:* the leaf is thin, so the gate stands with its leaf 0.25 m behind the edge |
+| `barrier_east_repair` (`road_block`, faces west) | 0.60 m | same (road block centre 0.45 m from the west edge x = 22) — *M5a:* its bar is thin, so the centre stands 0.30 m behind the edge (feet 0.12 m on the path, solid) |
 | `entrance_gate` (arch open over cells x −2…1, z −1) | whole cell | closed turnstile/gate placeholder in the arch (QA F8) |
 | `grove_center` edges along the ring path | up to the whole cell (trees on a 2.5 m grid, trunks r 0.26 at walking height) | `edge = "bushes"` border (see "Forests") |
 | `trees_nw`, `trees_ne` | up to the whole cell | now `sparse` — only trunks and bushes are solid |
@@ -296,5 +302,5 @@ assembly. Proposed fixes *(Q-087)*:
 - Q-088 joining levels (one continuous map, `[[entry]]`), Q-089 food storage per level, Q-090 level-1 north gate as second level-3 entry, Q-091 barrier opens the next morning, Q-092 enterable buildings (`interior`, `door`), Q-093 fish bowl / water-source data, Q-094 `perch_height_m`, Q-095 new hiding places of levels 2–3.
 - Q-056 answered: coordinate spaces (level x east / z north; world = (x, 0, −z)).
 - Q-057 answered: 1 m segment variants and the fill rule. Q-059 band joins, Q-060 enclosure fence and band placement (proposals), Q-061 front direction of props (open).
-- Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 enclosure sign form (panel over the gate). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side).
-- Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).
+- Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 enclosure sign form (panel over the gate). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
+- Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-069 (answered) `[level] missions`. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).

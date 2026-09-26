@@ -89,7 +89,9 @@ updated: 2026-09-26
    position) and — only while the player leads animals — enclosure gates (faces ±75°,
    distance to the gate centre; interacting = leading the animals in, same as walking into
    the gate, GAME-RESCUE §7/§8). Enclosure signs are not interactable yet (no sign texts:
-   Q-064). zoo-core decides availability and the result; the host only shows UI.
+   Q-064). Only info boards, animals and gates of the missions in scope of the level are
+   interactable (Q-069 answered; GAME-LAYOUT `[level] missions`). zoo-core decides
+   availability and the result; the host only shows UI.
 6. **Ground speed.** The player can walk on paths and on grass; on grass the player is
    slower (user decision 2026-09-26). **Path speed 1.93 m/s** — 1.75 m/s (+25 %) and then another
    +10 % (user decisions 2026-09-26, playtests); **grass speed stays 0.98 m/s**, i.e.
@@ -149,7 +151,7 @@ updated: 2026-09-26
 ## Open questions
 
 - Q-018 answered: two-thumb touch controls (§3), no tap-to-walk.
-- Q-064 Enclosure sign texts (signs not interactable until decided, §5). Q-065 Food storage interior (roof cut-away, PLAY-012).
+- Q-064 Enclosure sign texts (signs not interactable until decided, §5). Q-065 Food storage interior (roof cut-away, PLAY-012). Q-069 answered: only boards, animals and gates of missions in scope are interactable (§5). Q-097 out-of-reach escaped animal comes towards the player (reach, §5).
 - Q-001 Player role (affects intro).
 - Q-024 Walking/running speed (PLAY-005 needs a value). Q-025 Carrying and movement during `pick_up`/`give`. Q-028 Skin/hair choice.
 - Q-049 answered: high-angle follow camera (§2). Q-052 answered: 35° vertical FOV. Q-048 screen orientation. Q-051 dialogue close-up.

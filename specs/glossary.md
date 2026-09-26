@@ -61,3 +61,7 @@ language for player-facing text.
 | `moon_door` | Mondtor | moon door | Gate of the day zoo that opens at nightfall and leads to the night zoo. |
 | `lantern` | Laterne | lantern | Light the player carries at night; makes the animals' eyes shine. |
 | `nocturnal_animal` | nachtaktives Tier | nocturnal animal | Animal that is active at night (hedgehog, bat, owl, …). |
+| `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (proposal Q-093). |
+| `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (proposal Q-093). |
+| `level_entry` (data `[[entry]]`) | Levelzugang † | level entry | Cells of a level directly behind a barrier of an earlier level; the only walkable border cells of a level (GAME-LAYOUT "Joining levels", proposal Q-088). |
+| `perch` (data `perch_height_m`) | Sitzplatz oben † | perch | Raised spot where an escaped animal sits instead of wandering on the ground (koala in a tree, monkey in the crow's nest; proposal Q-094). |

@@ -691,6 +691,7 @@ dependencies = [
  "regex",
  "serde",
  "toml",
+ "zoo-core",
 ]
 
 [[package]]
@@ -727,6 +728,7 @@ dependencies = [
  "console_error_panic_hook",
  "glam",
  "js-sys",
+ "serde_json",
  "wasm-bindgen",
  "web-sys",
  "zoo-assets",

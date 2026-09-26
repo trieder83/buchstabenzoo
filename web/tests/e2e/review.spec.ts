@@ -3,6 +3,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
+import { START_URL } from './helpers';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const shots = path.resolve(here, '../../../art/environment/poc');
@@ -14,7 +15,7 @@ test('review shots: zebra gate, bridge, plaza (landscape)', async ({ page }) => 
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
   });
-  await page.goto('/');
+  await page.goto(START_URL);
   await page.waitForFunction(() => (window.__zoo?.frames ?? 0) > 3 || Boolean(window.__zooError), null, {
     timeout: 90_000,
   });

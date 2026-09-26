@@ -13,6 +13,7 @@ pub mod player;
 pub mod rng;
 pub mod save;
 pub mod scene;
+pub mod wander;
 
 pub use animals::{AnimalInfo, AnimalState, ANIMALS};
 pub use content::{Content, Language, ReadingLevel};

@@ -1,7 +1,7 @@
 // GAME-SAVE in the browser (SAVE-002/003/004/008): a page reload continues where the child
 // stopped — progress and the last positions of the player and the animals.
 import { expect, test, type Page } from '@playwright/test';
-import { face, goto, nextFrames, state, waitFrames } from './helpers';
+import { face, goto, nextFrames, state, waitFrames, START_URL, approach } from './helpers';
 
 test.describe.configure({ timeout: 240_000 });
 test.use({ viewport: { width: 1280, height: 720 } });
@@ -18,7 +18,7 @@ async function start(page: Page) {
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }
@@ -37,9 +37,7 @@ async function takeGrass(page: Page) {
 }
 
 async function zebraFollows(page: Page) {
-  const spot = await page.evaluate(() => ({ x: window.__zoo!.app.animal_x('zebra'), z: window.__zoo!.app.animal_z('zebra') }));
-  await goto(page, spot.x - 1.3, spot.z);
-  await face(page, 'KeyD');
+  await approach(page, 'zebra');
   await page.keyboard.press('KeyE');
   await expect.poll(async () => (await state(page)).zebra).toBe('following');
 }

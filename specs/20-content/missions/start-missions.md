@@ -26,14 +26,15 @@ Riddle rules (from CONT-READING / GAME-RESCUE):
 
 Facts rules (GAME-ANIMALS "Info board" item 4): true and child-friendly, never a word of the
 animal's hiding place; `kiga` one word + picture, `klasse1` 3 sentences of ≤ 5 words,
-`klasse2` 3–4 sentences, `klasse3` 4–6 sentences. Keys `mission-<animal>-facts-<level>`,
+`klasse2` 3–4 sentences, `klasse3` 4–6 sentences. Keys `mission-<animal>-facts-<reading_level>`,
 name `animal-<animal>`, heading above the facts `animal-<animal>-more`.
 
 **Several hiding places per animal** (discovery, user decision 2026-09-26, GAME-RESCUE §1):
 an animal has ≥ 3 candidate hiding places in its level; one is picked per playthrough and the
-info board shows **the riddle of the picked place**. Level 1 (zebra, hippo, panda) has all
-candidates below; the other 7 animals still have one place each until their level is laid
-out (then ≥ 3 each). Additional rules for candidates:
+info board shows **the riddle of the picked place**. All 10 animals have 3 candidates:
+level 1 (zebra, hippo, panda, GAME-LEVEL-1), level 2 (koala, elephant, giraffe, lion,
+GAME-LEVEL-2) and level 3 (monkey, goldfish, snow fox, GAME-LEVEL-3) — places of levels 2–3
+are proposals (Q-095). Additional rules for candidates:
 - Each place has its own riddle for every reading level and language; keys
   `mission-<animal>-riddle-<hiding_place>-<reading_level>` with the full place id, e.g.
   `mission-zebra-riddle-loc_meadow-klasse1` (Behaviour 1).
@@ -44,7 +45,7 @@ out (then ≥ 3 each). Additional rules for candidates:
   other animals got.
 - **Place words** (ANIM-007: facts never contain them; RESC-011: a riddle never contains the
   `kiga` word of its own place) are listed per place below. Two-word `kiga` labels (*bamboo
-  forest*, *leaf pile*, as *ice cream*) are checked word by word (proposal, Q-083).
+  forest*, *leaf pile*, as *ice cream*) are checked word by word (Q-083 answered).
 
 ## Overview
 
@@ -53,13 +54,13 @@ out (then ≥ 3 each). Additional rules for candidates:
 | 1 | `zebra` | Gras / grass | `loc_river`, `loc_meadow`, `loc_sand` | river with a bridge and ducks · tall-grass meadow with wildflowers and butterflies · dry yellow sand patch (dust bath) |
 | 2 | `hippo` | Melonen / melons | `loc_pond`, `loc_mud`, `loc_shade` | still pond with water lilies and frogs · brown mud puddle · shade under big trees at the zoo wall |
 | 3 | `panda` | Bambus / bamboo | `loc_cave`, `loc_bamboo`, `loc_leaves` | dark, cool stone cave · bamboo thicket taller than the wall · raked pile of red and yellow leaves |
-| 4 | `koala` | Eukalyptus / eucalyptus | `loc_tallest_tree` | tallest tree in the zoo |
-| 5 | `elephant` | Heu / hay | `loc_mud_pool` | mud pool |
-| 6 | `goldfish` | Fischfutter / fish food | river/stream places of its level (replaces `loc_fountain`, user decision 2026-09-26; riddles below are the old fountain texts and will be rewritten with its level) | river / stream; needs the fish bowl (GAME-RESCUE "goldfish bowl") |
-| 7 | `monkey` | Bananen / bananas | `loc_pirate_ship` | pirate ship (mast, sail, flag, treasure chest) |
-| 8 | `giraffe` | Blätter / leaves | `loc_playground` | playground with slide, swings, sandpit, trees |
-| 9 | `lion` | Fleisch / meat | `loc_sun_rocks` | big flat rocks in the sun |
-| 10 | `snow_fox` | Beeren / berries | `loc_ice_cream_kiosk` | ice cream kiosk with freezer |
+| 4 | `koala` (pair) | Eukalyptus / eucalyptus | `loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree` (level 2) | tree house with rope ladder · the tallest tree of the zoo · tree with pink blossoms and bees |
+| 5 | `elephant` | Heu / hay | `loc_fountain`, `loc_log_pile`, `loc_big_ball` (level 2) | stone fountain with water jet and coins · stacked logs, sawdust · giant red-and-white ball |
+| 6 | `goldfish` | Fischfutter / fish food | `loc_waterfall`, `loc_water_wheel`, `loc_willow` (level 3, all in the stream; replaces `loc_fountain`) | waterfall with white foam · turning wooden water wheel · weeping willow over the water; needs the fish bowl (GAME-RESCUE "goldfish bowl") |
+| 7 | `monkey` | Bananen / bananas | `loc_pirate_ship`, `loc_carousel`, `loc_trampoline` (level 3) | pirate ship climbing frame (mast, sail, black flag, treasure chest) · carousel with wooden horses · ground trampoline |
+| 8 | `giraffe` | Blätter / leaves | `loc_lookout_tower`, `loc_train`, `loc_playground` (level 2) | wooden lookout tower · little zoo train with a bell · playground with slide and swings (no sandpit) |
+| 9 | `lion` | Fleisch / meat | `loc_sun_rocks`, `loc_stage`, `loc_deckchairs` (level 2) | big flat rocks in full sun · round music stage with drums · striped deckchairs under a sunshade |
+| 10 | `snow_fox` | Beeren / berries | `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry` (level 3) | ice cream kiosk with freezer chest · lawn sprinkler with cold drops and a rainbow · washing line with white sheets |
 
 The 10 food boxes together form the food storage; the other 9 boxes are the natural
 distractors for each mission.
@@ -68,7 +69,7 @@ distractors for each mission.
 
 ## 1. Zebra — `loc_river`, `loc_meadow`, `loc_sand`
 
-Riddle — `loc_river` (keys `mission-zebra-riddle-loc_river-<level>`; the PoC keys `mission-zebra-riddle-<level>` hold the same texts until zoo-core uses the new scheme):
+Riddle — `loc_river` (keys `mission-zebra-riddle-loc_river-<reading_level>`; the PoC keys `mission-zebra-riddle-<reading_level>` were deleted 2026-09-26, M5a):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -81,7 +82,7 @@ Riddle — `loc_river` (keys `mission-zebra-riddle-loc_river-<level>`; the PoC k
 now another zebra hiding place, `loc_meadow`.) Place words: *Fluss, Bach, Brücke, Enten,
 Wasser* / *river, stream, bridge, ducks, water*.
 
-Riddle — `loc_meadow` (keys `mission-zebra-riddle-loc_meadow-<level>`):
+Riddle — `loc_meadow` (keys `mission-zebra-riddle-loc_meadow-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -93,7 +94,7 @@ Riddle — `loc_meadow` (keys `mission-zebra-riddle-loc_meadow-<level>`):
 Place words: *Wiese, Blumen, Schmetterlinge* / *meadow, flowers, butterflies* (not *Gras* /
 *grass* — that is the food word).
 
-Riddle — `loc_sand` (keys `mission-zebra-riddle-loc_sand-<level>`):
+Riddle — `loc_sand` (keys `mission-zebra-riddle-loc_sand-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -107,7 +108,7 @@ Place words: *Sand, Staubbad* / *sand, dust*.
 Animal name (`animal-zebra`, all reading levels): *Zebra* / *Zebra*. Heading above the facts
 (`animal-zebra-more`): *Mehr über das Zebra* / *More about the zebra*.
 
-**Facts** (*Steckbrief*, GAME-ANIMALS "Info board" item 4, keys `mission-zebra-facts-<level>`;
+**Facts** (*Steckbrief*, GAME-ANIMALS "Info board" item 4, keys `mission-zebra-facts-<reading_level>`;
 shown after the riddle and the food word; never a place word — ANIM-007 checks the whole words *Fluss*,
 *Brücke*, *Enten*, *Wasser* / *river*, *bridge*, *ducks*, *water*):
 
@@ -126,7 +127,7 @@ Math (`mathe1`): *3 Zebras fressen Gras. 2 kommen dazu. Wie viele Zebras sind es
 
 ## 2. Hippo — `loc_pond`, `loc_mud`, `loc_shade`
 
-Riddle — `loc_pond` (keys `mission-hippo-riddle-loc_pond-<level>`):
+Riddle — `loc_pond` (keys `mission-hippo-riddle-loc_pond-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -137,7 +138,7 @@ Riddle — `loc_pond` (keys `mission-hippo-riddle-loc_pond-<level>`):
 
 Place words: *Teich, Seerosen, Frösche* / *pond, water lilies, frogs*.
 
-Riddle — `loc_mud` (keys `mission-hippo-riddle-loc_mud-<level>`):
+Riddle — `loc_mud` (keys `mission-hippo-riddle-loc_mud-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -148,7 +149,7 @@ Riddle — `loc_mud` (keys `mission-hippo-riddle-loc_mud-<level>`):
 
 Place words: *Matsch, Pfütze, Schlamm* / *mud, puddle*.
 
-Riddle — `loc_shade` (keys `mission-hippo-riddle-loc_shade-<level>`):
+Riddle — `loc_shade` (keys `mission-hippo-riddle-loc_shade-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -159,13 +160,33 @@ Riddle — `loc_shade` (keys `mission-hippo-riddle-loc_shade-<level>`):
 
 Place words: *Schatten, Mauer* / *shade, wall*.
 
+Animal name (`animal-hippo`, all reading levels): *Flusspferd* / *Hippo*. Heading above the
+facts (`animal-hippo-more`): *Mehr über das Flusspferd* / *More about the hippo*.
+
+**Facts** (*Steckbrief*, GAME-ANIMALS "Info board" item 4, keys `mission-hippo-facts-<reading_level>`;
+shown after the riddle and the food word; never a place word of any hippo candidate — ANIM-007
+checks the whole words *Teich*, *Seerosen*, *Frösche*, *Wasser*, *Matsch*, *Pfütze*,
+*Schlamm*, *Schatten*, *Mauer*, *Bäume* / *pond*, *water*, *lilies*, *frogs*, *mud*, *puddle*,
+*shade*, *wall*, *trees*; the facts also avoid swimming, diving and sweat/sun protection, which
+would hint at a place):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 wide-open hippo mouth · **Maul** | 🖼 wide-open hippo mouth · **mouth** |
+| klasse1 | Ich bin sehr schwer. Ich lebe in Afrika. Mein Maul ist riesig. | I am very heavy. I live in Africa. My mouth is huge. |
+| klasse2 | Flusspferde leben in Afrika. Sie sind so schwer wie zwei Autos. Nachts fressen sie viel Gras. Ihr Maul können sie riesig weit aufreißen. | Hippos live in Africa. They are as heavy as two cars. At night they eat lots of grass. They can open their mouths very, very wide. |
+| klasse3 | Flusspferde kommen aus Afrika und gehören zu den schwersten Tieren an Land. Ein großes Flusspferd wiegt so viel wie zwei Autos. Trotzdem kann es schneller rennen als ein Mensch. Nachts wandert es umher und frisst viel Gras. Im Zoo mag es besonders gern Melonen. | Hippos come from Africa and are among the heaviest animals on land. A big hippo weighs as much as two cars. Even so, it can run faster than a person. At night it wanders around and eats lots of grass. In the zoo it especially likes melons. |
+
+Mission complete (`mission-hippo-home`, all reading levels): *Super! Das Flusspferd ist wieder
+zu Hause.* / *Great! The hippo is home again.*
+
 Math (`mathe2`): *Jedes Flusspferd frisst 4 Melonen. Es gibt 3 Flusspferde. Wie viele Melonen brauchst du?* /
 *Each hippo eats 4 melons. There are 3 hippos. How many melons do you need?* → **12**
 (herd size depends on Q-004 / Q-030)
 
 ## 3. Panda — `loc_cave`, `loc_bamboo`, `loc_leaves`
 
-Riddle — `loc_cave` (keys `mission-panda-riddle-loc_cave-<level>`):
+Riddle — `loc_cave` (keys `mission-panda-riddle-loc_cave-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
@@ -176,7 +197,7 @@ Riddle — `loc_cave` (keys `mission-panda-riddle-loc_cave-<level>`):
 
 Place words: *Höhle, Stein, Echo* / *cave, stone, echo*.
 
-Riddle — `loc_bamboo` (keys `mission-panda-riddle-loc_bamboo-<level>`). The `kiga` word is
+Riddle — `loc_bamboo` (keys `mission-panda-riddle-loc_bamboo-<reading_level>`). The `kiga` word is
 *Bambuswald*, not *Bambus*, because *Bambus* is the panda's food word (it must stay allowed
 in the facts, ANIM-007):
 
@@ -189,7 +210,7 @@ in the facts, ANIM-007):
 
 Place words: *Bambuswald, Dickicht* / *bamboo forest, thicket* (not *Bambus* / *bamboo* — food word).
 
-Riddle — `loc_leaves` (keys `mission-panda-riddle-loc_leaves-<level>`). The `kiga` word is
+Riddle — `loc_leaves` (keys `mission-panda-riddle-loc_leaves-<reading_level>`). The `kiga` word is
 *Laubhaufen* / *leaf pile*, not *Blätter* / *leaves*, which is the giraffe's food word:
 
 | Reading level | Deutsch | English |
@@ -201,106 +222,431 @@ Riddle — `loc_leaves` (keys `mission-panda-riddle-loc_leaves-<level>`). The `k
 
 Place words: *Laubhaufen, Laub, Haufen* / *leaf pile, heap*.
 
+Animal name (`animal-panda`, all reading levels): *Panda* / *Panda*. Heading above the facts
+(`animal-panda-more`): *Mehr über den Panda* / *More about the panda*.
+
+**Facts** (*Steckbrief*, GAME-ANIMALS "Info board" item 4, keys `mission-panda-facts-<reading_level>`;
+shown after the riddle and the food word; never a place word of any panda candidate — ANIM-007
+checks the whole words *Höhle*, *Stein*, *Echo*, *dunkel*, *kühl*, *Bambuswald*, *Dickicht*,
+*Stangen*, *Laubhaufen*, *Laub*, *Haufen*, *Blätter* / *cave*, *stone*, *echo*, *dark*, *cool*,
+*bamboo forest* (word by word, except the food word *bamboo*), *thicket*, *stalks*, *leaf pile*
+(word by word), *heap*, *leaves*; *Bambus* / *bamboo* is the food word and allowed; the facts
+also avoid sleeping and playing, which would hint at `loc_cave` / `loc_leaves`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 black-and-white panda fur · **Fell** | 🖼 black-and-white panda fur · **fur** |
+| klasse1 | Ich bin schwarz und weiß. Ich lebe in China. Ich fresse gern Bambus. | I am black and white. I live in China. I love to eat bamboo. |
+| klasse2 | Pandas leben in China. Ihr Fell ist schwarz und weiß. Sie fressen fast nur Bambus, viele Stunden am Tag. Ein Pandababy ist bei der Geburt nicht größer als eine Banane. | Pandas live in China. Their fur is black and white. They eat almost only bamboo, many hours a day. A newborn panda baby is no bigger than a banana. |
+| klasse3 | Große Pandas kommen aus China und leben dort in den Bergen. Sie fressen fast nur Bambus, bis zu vierzehn Stunden am Tag. Damit sie ihr Futter gut festhalten können, haben sie an jeder Vorderpfote einen extra Knochen, der wie ein Daumen hilft. Ein Pandababy ist bei der Geburt nicht größer als eine Banane. Zuerst ist es rosa, das schwarz-weiße Fell wächst erst später. | Giant pandas come from China, where they live in the mountains. They eat almost only bamboo, up to fourteen hours a day. To hold their food tightly, they have an extra bone on each front paw that works like a thumb. A newborn panda baby is no bigger than a banana. At first it is pink, and its black and white fur grows later. |
+
+Mission complete (`mission-panda-home`, all reading levels): *Super! Der Panda ist wieder zu
+Hause.* / *Great! The panda is home again.*
+
 Math (`mathe1`): *Der Panda will 10 Stunden schlafen. 6 Stunden sind schon vorbei. Wie viele Stunden noch?* /
 *The panda wants to sleep 10 hours. 6 hours have passed. How many hours are left?* → **4**
 
-## 4. Koala — `loc_tallest_tree`
+## 4. Koala (pair) — `loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree`
+
+Level: `level_2` (GAME-LEVEL-2). Food box: **Eukalyptus** / *eucalyptus*. The koalas are a **pair** (GAME-FAMILY): riddles use *wir* / *we* and the plural. Riddle keys `mission-koala-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_treehouse` (wooden tree house with a rope ladder in an old oak; keys `mission-koala-riddle-loc_treehouse-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 tall tree · **Baum** | 🖼 tall tree · **tree** |
-| klasse1 | Ich klettere gern. Ich sitze ganz oben. Kein Baum ist höher. | I like to climb. I sit at the top. No tree is higher. |
-| klasse2 | Der Koala sitzt ganz oben auf dem höchsten Baum im Zoo. Dort schläft er fast den ganzen Tag. | The koala sits at the very top of the tallest tree in the zoo. It sleeps there almost all day. |
-| klasse3 | Koalas schlafen bis zu zwanzig Stunden am Tag. Unser Koala hat sich den höchsten Baum im ganzen Zoo ausgesucht. Er sitzt ganz oben in einer Astgabel. Von dort kann er sogar das Eingangstor sehen. | Koalas sleep up to twenty hours a day. Our koala picked the tallest tree in the whole zoo. It sits at the very top in a fork of branches. From there it can even see the entrance gate. |
+| kiga | 🖼 wooden tree house with a rope ladder in an old oak · **Baumhaus** | 🖼 wooden tree house with a rope ladder in an old oak · **treehouse** |
+| klasse1 | Wir klettern gern. Oben ist ein Haus. Eine Leiter hängt herab. | We like to climb. A house is up high. A rope ladder hangs down. |
+| klasse2 | Die Koalas sitzen hoch oben in einem kleinen Haus aus Holz mit Dach und Fenster. Hinauf geht es nur über eine Strickleiter. | The koalas sit high up in a little wooden house with a roof and a window. The only way up is a rope ladder. |
+| klasse3 | Koalas klettern gern, und am liebsten sind sie hoch oben. Unsere zwei Koalas haben ein kleines Haus aus Holz entdeckt, das zwischen dicken Ästen sitzt. Es hat ein Dach, ein Fenster und eine Strickleiter. Dort oben fühlen sie sich wie in einem Nest. | Koalas love to climb, and they like it best high up. Our two koalas have found a little wooden house that sits between thick branches. It has a roof, a window and a rope ladder. Up there they feel as cosy as in a nest. |
 
-Math (`mathe3`): *Der Baum ist 24 Meter hoch. Der Koala sitzt 6 Meter unter der Spitze. In welcher Höhe sitzt er?* /
-*The tree is 24 metres tall. The koala sits 6 metres below the top. How high up is it?* → **18**
+Place words: *Baumhaus*, *Strickleiter* / *treehouse*, *ladder*.
 
-## 5. Elephant — `loc_mud_pool`
+Riddle — `loc_tallest_tree` (the tallest tree of the zoo, koalas at the very top; keys `mission-koala-riddle-loc_tallest_tree-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 mud · **Matsch** | 🖼 mud · **mud** |
-| klasse1 | Ich bin groß und grau. Ich mag es nass. Braun und matschig! | I am big and grey. I like it wet. Brown and muddy! |
-| klasse2 | Der Elefant wälzt sich gern in brauner, nasser Erde. Das schützt seine Haut vor der Sonne. | The elephant likes to roll in brown, wet earth. It protects its skin from the sun. |
-| klasse3 | Elefanten haben keine Sonnencreme. Darum schützen sie ihre Haut auf eine andere Art. Sie wälzen sich in nasser, brauner Erde, bis sie ganz dreckig sind. Such dort, wo es am meisten spritzt und schmatzt. | Elephants have no sun cream. So they protect their skin in another way. They roll in wet, brown earth until they are completely dirty. Look where it splashes and squelches the most. |
+| kiga | 🖼 the tallest tree of the zoo, koalas at the very top · **Riesenbaum** | 🖼 the tallest tree of the zoo, koalas at the very top · **treetop** |
+| klasse1 | Wir sitzen ganz oben. Nichts im Zoo ist höher. Wir sehen alles! | We sit at the top. Nothing here is higher. We can see everything! |
+| klasse2 | Die Koalas sitzen ganz oben im höchsten Baum des Zoos. Er ist doppelt so hoch wie alle anderen Bäume. | The koalas sit at the very top of the tallest tree in the zoo. It is twice as tall as all the other trees. |
+| klasse3 | Von ganz oben kann man am weitesten schauen, das wissen auch Koalas. Unsere zwei Koalas haben sich den höchsten Baum im ganzen Zoo ausgesucht. Sein Stamm ist so dick, dass drei Kinder ihn nicht umarmen können. Seine Krone ragt weit über alle anderen Bäume hinaus. | From the very top you can see the farthest, and koalas know that too. Our two koalas have picked the tallest tree in the whole zoo. Its trunk is so thick that three children cannot hug it. Its crown towers far above all the other trees. |
+
+Place words: *Riesenbaum*, *Wipfel* / *treetop*, *tallest*.
+
+Riddle — `loc_blossom_tree` (tree full of pink blossoms, petals drifting down, bees; keys `mission-koala-riddle-loc_blossom_tree-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 tree full of pink blossoms, petals drifting down, bees · **Blüten** | 🖼 tree full of pink blossoms, petals drifting down, bees · **blossoms** |
+| klasse1 | Wir mögen es bunt. Alles ist rosa. Es duftet süß. | We like pretty colours. Everything is pink. It smells sweet. |
+| klasse2 | Die Koalas sitzen in einem Baum, der ganz rosa ist. Kleine rosa Flocken schweben leise zu Boden, und Bienen summen. | The koalas sit in a tree that is all pink. Little pink flakes float softly to the ground, and bees hum. |
+| klasse3 | Im Frühling zieht ein Baum im Zoo ein rosa Kleid an. Die Koalas finden ihn wunderschön und sind hinaufgeklettert. Wenn der Wind weht, rieseln kleine rosa Blättchen herab wie Schnee. Um die Äste summen fleißige Bienen. | In spring one tree in the zoo puts on a pink dress. The koalas think it is beautiful and have climbed up. When the wind blows, little pink petals drift down like snow. Busy bees hum around the branches. |
+
+Place words: *Blüten*, *rosa* / *blossoms*, *pink*.
+
+The `kiga` words differ by language on purpose: *Riesenbaum* (de) but *treetop* (en), because an English label containing *tree* would forbid the word *tree* in every koala riddle (MISS-007) — proposal Q-095.
+
+Animal name (`animal-koala`): *Koala* / *Koala*. Heading above the facts (`animal-koala-more`): *Mehr über den Koala* / *More about the koala*.
+
+**Facts** (keys `mission-koala-facts-<reading_level>`; never a place word — ANIM-007 checks *Baumhaus*, *Blüten*, *Riesenbaum*, *Strickleiter*, *Wipfel*, *rosa* / *blossoms*, *ladder*, *pink*, *tallest*, *treehouse*, *treetop*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 · **Beutel** | 🖼 · **pouch** |
+| klasse1 | Ich schlafe sehr viel. Ich lebe in Australien. Mein Baby wohnt im Beutel. | I sleep a lot. I live in Australia. Babies live in a pouch. |
+| klasse2 | Koalas leben in Australien. Sie schlafen bis zu zwanzig Stunden am Tag. Ein Koalababy wohnt die ersten Monate im Beutel der Mutter. Koalas fressen fast nur Eukalyptus. | Koalas live in Australia. They sleep up to twenty hours a day. A koala baby spends its first months in its mother's pouch. Koalas eat almost nothing but eucalyptus. |
+| klasse3 | Koalas kommen aus Australien und sehen aus wie kleine Teddybären, sind aber keine Bären. Sie fressen fast nur Eukalyptus. Diese Blätter geben wenig Kraft, darum schlafen Koalas bis zu zwanzig Stunden am Tag. Ein Koalababy heißt Joey und wohnt die ersten Monate im Beutel seiner Mutter. Später reitet es auf ihrem Rücken. | Koalas come from Australia and look like little teddy bears, but they are not bears. They eat almost nothing but eucalyptus. These leaves give them little energy, so koalas sleep up to twenty hours a day. A koala baby is called a joey and lives in its mother's pouch for its first months. Later it rides on her back. |
+
+Mission complete (`mission-koala-home`): *Super! Die Koalas sind wieder zu Hause.* / *Great! The koalas are home again.*
+
+Math (`mathe1`): *Ein Koala schläft 20 Stunden am Tag. Ein Tag hat 24 Stunden. Wie viele Stunden ist er wach?* /
+*A koala sleeps 20 hours a day. A day has 24 hours. How many hours is it awake?* → **4** (reworded 2026-09-26: the old task named the tallest tree, now a hiding place (Behaviour 4))
+
+## 5. Elephant — `loc_fountain`, `loc_log_pile`, `loc_big_ball`
+
+Level: `level_2` (GAME-LEVEL-2). Food box: **Heu** / *hay*. Riddle keys `mission-elephant-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_fountain` (round stone fountain with a water jet and coins; keys `mission-elephant-riddle-loc_fountain-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 round stone fountain with a water jet and coins · **Brunnen** | 🖼 round stone fountain with a water jet and coins · **fountain** |
+| klasse1 | Ich habe Durst. Das Wasser springt hoch. Unten glänzen Münzen. | I am thirsty. The water jumps up high. Coins shine at the bottom. |
+| klasse2 | Der Elefant trinkt dort, wo Wasser aus der Mitte eines runden Steinbeckens in die Luft spritzt. Auf dem Boden des Beckens glänzen Münzen. | The elephant drinks where water sprays into the air from the middle of a round stone basin. Coins shine on the bottom of the basin. |
+| klasse3 | Der Elefant hat großen Durst und eine gute Nase für Wasser. Er hat ein rundes Becken aus Stein gefunden. In der Mitte schießt Wasser hoch in die Luft und plätschert wieder herunter. Auf dem Grund liegen glänzende Münzen, denn Besucher wünschen sich hier etwas. Jetzt saugt er mit dem Rüssel Wasser auf und duscht sich. | The elephant is very thirsty and has a good nose for water. It has found a round stone basin. In the middle, water shoots high into the air and splashes back down. Shiny coins lie on the bottom, because visitors make a wish here. Now it sucks up water with its trunk and gives itself a shower. |
+
+Place words: *Brunnen*, *Münzen* / *fountain*, *coins*.
+
+Riddle — `loc_log_pile` (stacked logs of the fallen tree, sawdust; keys `mission-elephant-riddle-loc_log_pile-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 stacked logs of the fallen tree, sawdust · **Holzstapel** | 🖼 stacked logs of the fallen tree, sawdust · **log pile** |
+| klasse1 | Ich bin sehr stark. Ich trage schweres Holz. Es riecht nach Sägespänen. | I am very strong. I carry heavy wood. It smells of sawdust. |
+| klasse2 | Der Elefant steht bei dicken Baumstämmen, die ordentlich übereinander liegen. Rundherum liegen Sägespäne im Gras. | The elephant stands by thick tree trunks stacked neatly on top of each other. Sawdust lies all around in the grass. |
+| klasse3 | Nach dem Sturm haben die Zoowärter den umgestürzten Baum in dicke Stücke gesägt und ordentlich aufgeschichtet. Das gefällt dem Elefanten! In seiner Heimat rollt er gern schwere Stämme herum. Jetzt steht er neben dem Holz, und um ihn herum riecht es nach frischen Sägespänen. | After the storm the zookeepers sawed the fallen tree into thick pieces and stacked them up neatly. The elephant loves that! At home it likes to roll heavy tree trunks around. Now it stands next to the wood, and all around it smells of fresh sawdust. |
+
+Place words: *Holzstapel*, *Stapel* / *log pile*, *log*, *pile*.
+
+Riddle — `loc_big_ball` (giant red-and-white play ball on the lawn; keys `mission-elephant-riddle-loc_big_ball-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 giant red-and-white play ball on the lawn · **Ball** | 🖼 giant red-and-white play ball on the lawn · **ball** |
+| klasse1 | Ich spiele gern. Es ist rund und rot. Es ist größer als du! | I like to play. It is round and red. It is bigger than you! |
+| klasse2 | Der Elefant spielt mit etwas Riesigem, Rundem in Rot und Weiß. Er schubst es mit dem Rüssel über das Gras. | The elephant plays with something huge and round, red and white. It pushes it across the grass with its trunk. |
+| klasse3 | Elefanten sind klug und spielen gern, auch wenn sie schon groß sind. Die Zoowärter haben ihnen deshalb ein Spielzeug geschenkt, das größer ist als ein Kind. Es ist rund, rot und weiß und rollt, wenn man es anstößt. Unser Elefant schubst es mit dem Rüssel und trompetet vor Freude. | Elephants are clever and like to play, even when they are grown up. So the zookeepers gave them a toy that is bigger than a child. It is round, red and white, and it rolls when you push it. Our elephant nudges it with its trunk and trumpets with joy. |
+
+Place words: *Ball* / *ball*.
+
+Animal name (`animal-elephant`): *Elefant* / *Elephant*. Heading above the facts (`animal-elephant-more`): *Mehr über den Elefanten* / *More about the elephant*.
+
+**Facts** (keys `mission-elephant-facts-<reading_level>`; never a place word — ANIM-007 checks *Ball*, *Brunnen*, *Holzstapel*, *Münzen*, *Stapel* / *ball*, *coins*, *fountain*, *log*, *log pile*, *pile*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 · **Rüssel** | 🖼 · **trunk** |
+| klasse1 | Ich habe einen Rüssel. Ich bin sehr schwer. Meine Ohren sind riesig. | I have a trunk. I am very heavy. My ears are huge. |
+| klasse2 | Elefanten sind die größten Tiere an Land. Mit dem Rüssel können sie riechen, trinken und greifen. Mit ihren großen Ohren fächeln sie sich kühle Luft zu. | Elephants are the biggest animals on land. With their trunk they can smell, drink and grab things. They fan themselves cool air with their big ears. |
+| klasse3 | Elefanten sind die größten Tiere, die auf dem Land leben. Ihr Rüssel ist Nase und Hand zugleich: Damit riechen sie, trinken sie und heben sogar kleine Äste auf. Ein Elefant frisst jeden Tag so viel Heu und Gras, wie in einen ganzen Wagen passt. Elefanten vergessen nie, wer nett zu ihnen war. Eine Elefantenfamilie hält fest zusammen. | Elephants are the biggest animals that live on land. Their trunk is a nose and a hand at the same time: with it they smell, drink and even pick up small branches. Every day an elephant eats as much hay and grass as fits into a whole cart. Elephants never forget who was kind to them. An elephant family sticks together. |
+
+Mission complete (`mission-elephant-home`): *Super! Der Elefant ist wieder zu Hause.* / *Great! The elephant is home again.*
 
 Math (`mathe3`): *Ein Elefant frisst am Tag 100 kg Heu. Wie viel frisst er in 3 Tagen?* /
 *An elephant eats 100 kg of hay a day. How much does it eat in 3 days?* → **300 kg**
 
-## 6. Goldfish — `loc_fountain`
+## 6. Goldfish — `loc_waterfall`, `loc_water_wheel`, `loc_willow`
+
+Level: `level_3` (GAME-LEVEL-3). Food box: **Fischfutter** / *fish food*. All three places are in the stream `stream_l3`; the player feeds the fish from the bank and needs the filled fish bowl (GAME-RESCUE "goldfish bowl"). Riddle keys `mission-goldfish-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_waterfall` (waterfall from a rock ledge into the stream, white foam; keys `mission-goldfish-riddle-loc_waterfall-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 fountain · **Brunnen** | 🖼 fountain · **fountain** |
-| klasse1 | Ich schwimme im Kreis. Das Wasser springt hoch. Unten liegen Münzen. | I swim in circles. The water jumps up high. Coins lie at the bottom. |
-| klasse2 | Der Goldfisch schwimmt dort, wo das Wasser in die Luft springt. Besucher werfen dort Münzen hinein. | The goldfish swims where the water jumps into the air. Visitors throw coins in there. |
-| klasse3 | Der kleine Goldfisch ist in ein Becken aus Stein gesprungen. In der Mitte spritzt Wasser hoch in die Luft und plätschert wieder herunter. Auf dem Boden glänzen Münzen, denn viele Besucher wünschen sich hier etwas. | The little goldfish jumped into a stone basin. In the middle, water sprays high into the air and splashes back down. Coins shine on the bottom, because many visitors make a wish here. |
+| kiga | 🖼 waterfall from a rock ledge into the stream, white foam · **Wasserfall** | 🖼 waterfall from a rock ledge into the stream, white foam · **waterfall** |
+| klasse1 | Ich schwimme gern. Hier rauscht es laut. Weißer Schaum! | I like to swim. It is loud here. White foam! |
+| klasse2 | Der Goldfisch schwimmt dort, wo das Wasser von hohen Steinen herunterfällt und weiß schäumt. | The goldfish swims where the water tumbles down from high stones and foams white. |
+| klasse3 | Der kleine Goldfisch ist weit gegen den Strom geschwommen, fast bis zum Rand des Zoos. Dort fällt das Wasser über eine Felskante herunter und spritzt in alle Richtungen. Es rauscht so laut, dass man sein eigenes Wort kaum versteht. Im weißen Schaum blitzt etwas Oranges. | The little goldfish has swum far upstream, almost to the edge of the zoo. There the water falls down over a rocky ledge and splashes in every direction. It roars so loudly that you can hardly hear yourself. Something orange flashes in the white foam. |
 
-Math (`mathe1`): *Im Wasser liegen 7 Münzen. 3 sind golden. Wie viele sind nicht golden?* /
-*There are 7 coins in the water. 3 are golden. How many are not golden?* → **4**
+Place words: *Wasserfall*, *Schaum* / *waterfall*, *foam*.
 
-Special: a fish cannot follow over land — the player needs a bucket (Q-036).
-
-## 7. Monkey — `loc_pirate_ship`
+Riddle — `loc_water_wheel` (wooden water wheel turning in the stream at a tiny mill hut; keys `mission-goldfish-riddle-loc_water_wheel-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 ship · **Schiff** | 🖼 ship · **ship** |
+| kiga | 🖼 wooden water wheel turning in the stream at a tiny mill hut · **Wasserrad** | 🖼 wooden water wheel turning in the stream at a tiny mill hut · **waterwheel** |
+| klasse1 | Klapper, klapper! Ein Rad dreht sich. Es ist aus Holz. | Clatter, clatter! A wheel turns round. It is made of wood. |
+| klasse2 | Der Goldfisch schwimmt neben einem großen Rad aus Holz, das sich im Wasser dreht und laut klappert. Daneben steht eine kleine Hütte. | The goldfish swims next to a big wooden wheel that turns in the water and clatters loudly. A little hut stands beside it. |
+| klasse3 | Am Ufer steht eine winzige Mühle aus Holz. Das Wasser schiebt ein großes Rad an, das sich immer weiter dreht. Klapper, klapper, macht es, und Tropfen fallen glitzernd herunter. Der Goldfisch findet das lustig und schwimmt direkt daneben im Kreis. | A tiny wooden mill stands on the bank. The water pushes a big wheel that keeps on turning. Clatter, clatter, it goes, and glittering drops fall down. The goldfish thinks this is fun and swims in circles right beside it. |
+
+Place words: *Wasserrad*, *Mühle* / *waterwheel*, *mill*.
+
+Riddle — `loc_willow` (weeping willow whose branches hang into the stream; keys `mission-goldfish-riddle-loc_willow-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 weeping willow whose branches hang into the stream · **Weide** | 🖼 weeping willow whose branches hang into the stream · **willow** |
+| klasse1 | Ich mag es ruhig. Lange Zweige hängen herab. Sie berühren das Wasser. | I like it quiet. Long branches hang down. They touch the water. |
+| klasse2 | Der Goldfisch versteckt sich dort, wo ein Baum seine langen, dünnen Zweige bis ins Wasser hängen lässt. | The goldfish hides where a tree lets its long, thin branches hang down into the water. |
+| klasse3 | Am Ufer steht ein Baum, der aussieht, als ließe er traurig den Kopf hängen. Seine langen, dünnen Zweige fallen wie ein grüner Vorhang bis ins Wasser. Darunter ist es schattig und still. Genau dort hat sich der Goldfisch versteckt. | On the bank stands a tree that looks as if it were sadly hanging its head. Its long, thin branches fall like a green curtain into the water. Underneath it is shady and calm. That is exactly where the goldfish is hiding. |
+
+Place words: *Weide*, *Trauerweide* / *willow*.
+
+Animal name (`animal-goldfish`): *Goldfisch* / *Goldfish*. Heading above the facts (`animal-goldfish-more`): *Mehr über den Goldfisch* / *More about the goldfish*.
+
+**Facts** (keys `mission-goldfish-facts-<reading_level>`; never a place word — ANIM-007 checks *Mühle*, *Schaum*, *Trauerweide*, *Wasserfall*, *Wasserrad*, *Weide* / *foam*, *mill*, *waterfall*, *waterwheel*, *willow*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 · **Flossen** | 🖼 · **fins** |
+| klasse1 | Ich bin orange. Ich habe Flossen. Ich atme im Wasser. | I am orange. I have fins. I breathe in water. |
+| klasse2 | Goldfische kommen ursprünglich aus China. Sie atmen mit Kiemen unter Wasser. Mit ihren Flossen steuern sie wie mit kleinen Rudern. | Goldfish originally come from China. They breathe under water with gills. They steer with their fins as if with little oars. |
+| klasse3 | Goldfische stammen aus China, wo man sie schon vor sehr langer Zeit gezüchtet hat. Sie atmen nicht mit einer Lunge, sondern mit Kiemen. Mit ihren Flossen lenken und bremsen sie wie mit kleinen Rudern. Ein Goldfisch kann viele Jahre alt werden, manchmal älter als du. Er erkennt sogar die Person, die ihn füttert. | Goldfish come from China, where people bred them a very long time ago. They do not breathe with lungs but with gills. They steer and brake with their fins as if with little oars. A goldfish can live for many years, sometimes longer than you have been alive. It even recognises the person who feeds it. |
+
+Mission complete (`mission-goldfish-home`): *Super! Der Goldfisch ist wieder zu Hause.* / *Great! The goldfish is home again.*
+
+**Fish bowl texts** (GAME-RESCUE "goldfish bowl"; the board hint is shown on the goldfish info board after the food word):
+
+| Key | Deutsch | English |
+|---|---|---|
+| `mission-goldfish-needs-bowl` | Ich brauche ein Glas mit Wasser! | I need a bowl of water! |
+| `mission-goldfish-bowl-empty` | Im Glas ist ja kein Wasser! | There is no water in the bowl! |
+| `mission-goldfish-bowl-filled` | Das Glas ist voll Wasser. | The bowl is full of water. |
+| `mission-goldfish-in-bowl` | Platsch! Der Goldfisch ist im Glas. | Splash! The goldfish is in the bowl. |
+| `mission-goldfish-bowl-hint-kiga` | Glas | bowl |
+| `mission-goldfish-bowl-hint-klasse1` | Ich brauche ein Glas. Das Glas braucht Wasser. | I need a bowl. The bowl needs water. |
+| `mission-goldfish-bowl-hint-klasse2` | Bring ein großes Glas voll Wasser mit. Nur darin kann der Goldfisch nach Hause reisen. | Bring a big bowl full of water. Only in it can the goldfish travel home. |
+| `mission-goldfish-bowl-hint-klasse3` | Ein Goldfisch kann nicht über den Weg laufen. Du brauchst ein großes Glas, und die Zoowärter haben eins in ihrem Haus. Fülle es mit Wasser, dann kann der Goldfisch hineinspringen. | A goldfish cannot walk along the path. You need a big glass bowl, and the zookeepers keep one in their house. Fill it with water, and the goldfish can jump in. |
+
+Math (`mathe1`): *Du hast 7 Futterflocken. Der Goldfisch frisst 3. Wie viele sind noch übrig?* /
+*You have 7 food flakes. The goldfish eats 3. How many are left?* → **4** (reworded 2026-09-26: the old task (coins in the water) pointed at the fountain)
+
+## 7. Monkey — `loc_pirate_ship`, `loc_carousel`, `loc_trampoline`
+
+Level: `level_3` (GAME-LEVEL-3). Food box: **Bananen** / *bananas*. Riddle keys `mission-monkey-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_pirate_ship` (pirate ship climbing frame: mast, sail, black flag, treasure chest; keys `mission-monkey-riddle-loc_pirate_ship-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 pirate ship climbing frame: mast, sail, black flag, treasure chest · **Schiff** | 🖼 pirate ship climbing frame: mast, sail, black flag, treasure chest · **ship** |
 | klasse1 | Ahoi! Ich bin jetzt Pirat. Ich sitze am Mast. | Ahoy! I am a pirate now. I sit on the mast. |
 | klasse2 | Der Affe spielt jetzt Pirat. Er sitzt ganz oben am Mast und sucht nach einem Schatz. | The monkey is playing pirate now. It sits at the top of the mast and looks for treasure. |
-| klasse3 | Der freche Affe hat ein neues Zuhause gefunden – glaubt er jedenfalls. Es hat ein großes Segel, eine Flagge mit einem Totenkopf und eine Schatzkiste. Er ruft „Ahoi!“ und klettert ganz nach oben. | The cheeky monkey has found a new home – or so it thinks. It has a big sail, a flag with a skull and a treasure chest. It shouts "Ahoy!" and climbs all the way up. |
+| klasse3 | Der freche Affe hat ein neues Zuhause gefunden – glaubt er jedenfalls. Es hat ein großes Segel, eine schwarze Flagge und eine Schatzkiste. Er ruft „Ahoi!“ und klettert ganz nach oben. | The cheeky monkey has found a new home – or so it thinks. It has a big sail, a black flag and a treasure chest. It shouts "Ahoy!" and climbs all the way up. |
 
-Math (`mathe2`): *Das Schloss der Schatzkiste öffnet sich mit der Zahl 25 + 17.* /
-*The treasure chest lock opens with the number 25 + 17.* → **42**
+Place words: *Schiff*, *Pirat*, *Mast* / *ship*, *pirate*, *mast*.
 
-## 8. Giraffe — `loc_playground`
+Riddle — `loc_carousel` (small carousel with wooden horses and a striped roof; keys `mission-monkey-riddle-loc_carousel-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 playground · **Rutsche** | 🖼 playground · **slide** |
+| kiga | 🖼 small carousel with wooden horses and a striped roof · **Karussell** | 🖼 small carousel with wooden horses and a striped roof · **carousel** |
+| klasse1 | Ich reite gern. Mein Pferd ist aus Holz. Alles dreht sich! | I like to ride. My horse is wooden. Everything turns! |
+| klasse2 | Der Affe sitzt auf einem Pferd aus Holz. Es fährt im Kreis herum, und dazu spielt fröhliche Musik. | The monkey sits on a wooden horse. It goes round and round while happy music plays. |
+| klasse3 | Der Affe liebt es, wenn sich alles dreht. Er hat einen Platz gefunden, an dem bunte Holzpferde unter einem gestreiften Dach im Kreis fahren. Dazu klingt eine fröhliche Melodie. Der Affe sitzt verkehrt herum auf einem Pferd und quietscht vor Vergnügen. | The monkey loves it when everything spins. It has found a place where colourful wooden horses go round in a circle under a striped roof. A cheerful tune plays along. The monkey sits backwards on a horse and squeals with delight. |
+
+Place words: *Karussell*, *Pferd* / *carousel*, *horse*.
+
+Riddle — `loc_trampoline` (ground-level trampoline in the lawn; keys `mission-monkey-riddle-loc_trampoline-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 ground-level trampoline in the lawn · **Trampolin** | 🖼 ground-level trampoline in the lawn · **trampoline** |
+| klasse1 | Hopp, hopp, hopp! Ich springe hoch. Der Boden federt. | Boing, boing, boing! I jump up high. The ground is bouncy. |
+| klasse2 | Der Affe hüpft auf einer runden, blauen Matte im Gras. Sie federt so gut, dass er fast bis in den Himmel springt. | The monkey bounces on a round blue mat in the grass. It is so springy that the monkey jumps almost up to the sky. |
+| klasse3 | Affen springen gern von Ast zu Ast. Unser Affe hat etwas noch Besseres entdeckt: eine runde, blaue Matte, die im Rasen liegt. Jedes Mal, wenn er darauf landet, schleudert sie ihn wieder hoch in die Luft. Er macht Purzelbäume und lacht dabei. | Monkeys like to jump from branch to branch. Our monkey has found something even better: a round blue mat lying in the lawn. Every time it lands on it, the mat throws it back up into the air. It does somersaults and laughs. |
+
+Place words: *Trampolin*, *Matte* / *trampoline*, *mat*.
+
+`loc_pirate_ship` (`klasse3` changed 2026-09-26): the flag is a plain black pirate flag (white paw print, no skull — nothing scary); the pirate ship is a climbing frame on the level-3 adventure playground (Q-017 proposal).
+
+Animal name (`animal-monkey`): *Affe* / *Monkey*. Heading above the facts (`animal-monkey-more`): *Mehr über den Affen* / *More about the monkey*.
+
+**Facts** (keys `mission-monkey-facts-<reading_level>`; never a place word — ANIM-007 checks *Karussell*, *Mast*, *Matte*, *Pferd*, *Pirat*, *Schiff*, *Trampolin* / *carousel*, *horse*, *mast*, *mat*, *pirate*, *ship*, *trampoline*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 · **Schwanz** | 🖼 · **tail** |
+| klasse1 | Ich klettere sehr gut. Ich mag Bananen. Ich bin frech. | I climb very well. I like bananas. I am cheeky. |
+| klasse2 | Affen sind sehr geschickte Kletterer. Mit ihren Händen können sie greifen wie du. Sie sind neugierig und spielen gern Streiche. | Monkeys are very good climbers. They can grab things with their hands, just like you. They are curious and love to play tricks. |
+| klasse3 | Affen sind wahre Kletterkünstler und schwingen sich von Ast zu Ast. Ihre Hände sehen fast aus wie deine, und sie können damit sogar Früchte schälen. Viele Affen halten sich mit dem Schwanz fest wie mit einer dritten Hand. Sie sind sehr neugierig und lernen schnell. Am liebsten leben sie mit ihrer Familie zusammen. | Monkeys are true climbing artists and swing from branch to branch. Their hands look almost like yours, and they can even peel fruit with them. Many monkeys hold on with their tail like a third hand. They are very curious and learn quickly. They like best to live together with their family. |
+
+Mission complete (`mission-monkey-home`): *Super! Der Affe ist wieder zu Hause.* / *Great! The monkey is home again.*
+
+Math (`mathe2`): *Der Affe hat 25 Bananen. Er findet noch 17. Wie viele Bananen hat er jetzt?* /
+*The monkey has 25 bananas. It finds 17 more. How many bananas does it have now?* → **42** (reworded 2026-09-26: the old task (treasure chest lock) pointed at the pirate ship)
+
+## 8. Giraffe — `loc_lookout_tower`, `loc_train`, `loc_playground`
+
+Level: `level_2` (GAME-LEVEL-2). Food box: **Blätter** / *leaves*. Riddle keys `mission-giraffe-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_lookout_tower` (wooden lookout tower with stairs and a high platform; keys `mission-giraffe-riddle-loc_lookout_tower-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 wooden lookout tower with stairs and a high platform · **Turm** | 🖼 wooden lookout tower with stairs and a high platform · **tower** |
+| klasse1 | Ich bin sehr groß. Oben stehen Leute. Ich schaue sie an. | I am very tall. People stand up high. I look at them. |
+| klasse2 | Die Giraffe steht neben einem hohen Gerüst aus Holz mit einer Treppe. Oben auf der Plattform ist sie genau auf Augenhöhe mit den Besuchern. | The giraffe stands next to a tall wooden frame with stairs. Up on the platform it is right at eye level with the visitors. |
+| klasse3 | Besucher steigen gern viele Stufen hinauf, um von oben über den Zoo zu schauen. Heute bekommen sie eine Überraschung: Direkt neben dem Geländer taucht ein langer Hals auf! Die Giraffe ist so groß, dass sie den Leuten oben ins Gesicht schauen kann. Sie hofft, dass ihr jemand ein paar Blätter gibt. | Visitors like to climb many steps to look out over the zoo from above. Today they get a surprise: a long neck pops up right next to the railing! The giraffe is so tall that it can look the people up there in the face. It hopes that somebody will give it a few leaves. |
+
+Place words: *Turm*, *Treppe* / *tower*, *stairs*.
+
+Riddle — `loc_train` (little zoo train (engine + 2 wagons) at its station; keys `mission-giraffe-riddle-loc_train-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 little zoo train (engine + 2 wagons) at its station · **Zug** | 🖼 little zoo train (engine + 2 wagons) at its station · **train** |
+| klasse1 | Tuut, tuut! Hier ist ein Bahnhof. Die Glocke bimmelt. | Toot, toot! Here is a station. The bell rings. |
+| klasse2 | Die Giraffe steht bei einer kleinen bunten Lok mit zwei Wagen. Sie ist viel größer als der Schornstein. | The giraffe stands by a little colourful engine with two wagons. It is much taller than the chimney. |
+| klasse3 | Im Zoo gibt es eine kleine Bahn, mit der Besucher gern fahren. Heute steht sie still am Bahnsteig, und die Giraffe ist neugierig geworden. Sie schnuppert am Schornstein der Lok und schaut in die leeren Wagen. Als sie an die Glocke stößt, bimmelt es laut. | The zoo has a little railway that visitors love to ride. Today it is standing still at the platform, and the giraffe has become curious. It sniffs the chimney of the engine and looks into the empty wagons. When it bumps the bell, it rings loudly. |
+
+Place words: *Zug*, *Bahnhof* / *train*, *station*.
+
+Riddle — `loc_playground` (playground with slide and swings; keys `mission-giraffe-riddle-loc_playground-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 playground with slide and swings · **Spielplatz** | 🖼 playground with slide and swings · **playground** |
 | klasse1 | Mein Hals ist lang. Hier rutschen Kinder. Hier schaukeln Kinder. | My neck is long. Children slide here. Children swing here. |
 | klasse2 | Die Giraffe steht dort, wo Kinder rutschen und schaukeln. Sie ist viel größer als die Rutsche. | The giraffe stands where children slide and swing. It is much taller than the slide. |
-| klasse3 | Die Giraffe ist sehr neugierig. Sie hat Kinder lachen hören und ist dem Lachen gefolgt. Jetzt steht sie zwischen Schaukeln, Rutsche und Sandkasten. Mit ihrer langen Zunge zupft sie Blätter von den Bäumen. | The giraffe is very curious. It heard children laughing and followed the sound. Now it stands between the swings, the slide and the sandpit. With its long tongue it pulls leaves off the trees. |
+| klasse3 | Die Giraffe ist sehr neugierig. Sie hat Kinder lachen hören und ist dem Lachen gefolgt. Jetzt steht sie zwischen Schaukeln und Rutsche. Mit ihrer langen Zunge zupft sie Blätter von den Bäumen. | The giraffe is very curious. It heard children laughing and followed the sound. Now it stands between the swings and the slide. With its long tongue it pulls leaves off the trees. |
 
-Math (`mathe4`): *Die Giraffe ist 5 m groß. Die Rutsche ist 180 cm hoch. Wie viele Zentimeter ist die Giraffe größer?* /
-*The giraffe is 5 m tall. The slide is 180 cm high. How many centimetres taller is the giraffe?* → **320**
+Place words: *Spielplatz*, *Rutsche*, *Schaukel* / *playground*, *slide*, *swing*.
 
-## 9. Lion — `loc_sun_rocks`
+`loc_playground`: `kiga` word *Spielplatz* / *playground* instead of *Rutsche* / *slide* (Q-039), and no sandpit any more (sand is the zebra's `loc_sand`, Q-083).
+
+Animal name (`animal-giraffe`): *Giraffe* / *Giraffe*. Heading above the facts (`animal-giraffe-more`): *Mehr über die Giraffe* / *More about the giraffe*.
+
+**Facts** (keys `mission-giraffe-facts-<reading_level>`; never a place word — ANIM-007 checks *Bahnhof*, *Rutsche*, *Schaukel*, *Spielplatz*, *Treppe*, *Turm*, *Zug* / *playground*, *slide*, *stairs*, *station*, *swing*, *tower*, *train*):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 rocks in sun · **Felsen** | 🖼 rocks in sun · **rocks** |
+| kiga | 🖼 · **Hals** | 🖼 · **neck** |
+| klasse1 | Mein Hals ist sehr lang. Ich fresse Blätter. Meine Zunge ist blau. | My neck is very long. I eat leaves. My tongue is blue. |
+| klasse2 | Giraffen sind die größten Tiere der Welt. Mit ihrem langen Hals kommen sie an die höchsten Blätter. Ihre Zunge ist dunkelblau und sehr lang. | Giraffes are the tallest animals in the world. With their long neck they reach the highest leaves. Their tongue is dark blue and very long. |
+| klasse3 | Giraffen leben in Afrika und sind die größten Tiere der Welt. Obwohl ihr Hals so lang ist, hat er nur sieben Knochen, genau wie deiner. Ihre Zunge ist fast so lang wie dein Arm und dunkelblau. Jede Giraffe hat ihr eigenes Fleckenmuster. Giraffen schlafen oft im Stehen und nur ganz kurz. | Giraffes live in Africa and are the tallest animals in the world. Although their neck is so long, it has only seven bones, just like yours. Their tongue is almost as long as your arm and dark blue. Every giraffe has its own pattern of patches. Giraffes often sleep standing up, and only for a short time. |
+
+Mission complete (`mission-giraffe-home`): *Super! Die Giraffe ist wieder zu Hause.* / *Great! The giraffe is home again.*
+
+Math (`mathe4`): *Die Giraffe ist 5 m groß. Das Mädchen ist 120 cm groß. Wie viele Zentimeter ist die Giraffe größer?* /
+*The giraffe is 5 m tall. The girl is 120 cm tall. How many centimetres taller is the giraffe?* → **380** (reworded 2026-09-26: the old task compared the giraffe with the slide (a hiding place))
+
+## 9. Lion — `loc_sun_rocks`, `loc_stage`, `loc_deckchairs`
+
+Level: `level_2` (GAME-LEVEL-2). Food box: **Fleisch** / *meat*. Riddle keys `mission-lion-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_sun_rocks` (big flat rocks in full sun, no shade; keys `mission-lion-riddle-loc_sun_rocks-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 big flat rocks in full sun, no shade · **Felsen** | 🖼 big flat rocks in full sun, no shade · **rocks** |
 | klasse1 | Ich bin faul. Die Sonne ist warm. Ich liege auf Stein. | I am lazy. The sun is warm. I lie on stone. |
 | klasse2 | Der Löwe liegt faul auf großen, warmen Steinen in der Sonne. Er gähnt und schläft fast ein. | The lion lies lazily on big, warm stones in the sun. It yawns and almost falls asleep. |
 | klasse3 | Der Löwe ist der König der Tiere, aber heute ist er vor allem faul. Er hat sich den wärmsten Platz im Zoo gesucht. Dort liegen große, flache Steine, auf die den ganzen Tag die Sonne scheint. Er streckt sich aus und gähnt laut. | The lion is the king of animals, but today it is mostly lazy. It found the warmest spot in the zoo. There are big, flat stones there that the sun shines on all day. It stretches out and yawns loudly. |
 
-Math (`mathe5`): *Der Löwe schläft ¾ von 24 Stunden. Wie viele Stunden sind das?* /
-*The lion sleeps ¾ of 24 hours. How many hours is that?* → **18**
+Place words: *Felsen*, *Steine* / *rocks*, *stones*.
 
-## 10. Snow fox — `loc_ice_cream_kiosk`
+Riddle — `loc_stage` (round wooden music stage with a pointed roof, drums; keys `mission-lion-riddle-loc_stage-<reading_level>`):
 
 | Reading level | Deutsch | English |
 |---|---|---|
-| kiga | 🖼 ice cream kiosk · **Eis** | 🖼 ice cream kiosk · **ice cream** |
+| kiga | 🖼 round wooden music stage with a pointed roof, drums · **Bühne** | 🖼 round wooden music stage with a pointed roof, drums · **stage** |
+| klasse1 | Ich brülle gern laut. Hier spielt Musik. Hier stehen Trommeln. | I like to roar loudly. Music plays here. There are drums here. |
+| klasse2 | Der Löwe liegt vor einem runden Podest aus Holz mit spitzem Dach, auf dem Trommeln stehen. Er brüllt, als ob er singen will. | The lion lies in front of a round wooden platform with a pointed roof and drums on it. It roars as if it wants to sing. |
+| klasse3 | Der Löwe ist der König der Tiere, und heute möchte er auch ein König der Musik sein. Er hat einen runden Platz aus Holz mit einem spitzen Dach gefunden, auf dem sonst Musiker spielen. Dort stehen Trommeln und ein Xylofon. Der Löwe brüllt, so laut er kann, und das klingt fast wie ein Lied. | The lion is the king of animals, and today it also wants to be the king of music. It has found a round wooden place with a pointed roof where musicians usually play. There are drums and a xylophone. The lion roars as loudly as it can, and it sounds almost like a song. |
+
+Place words: *Bühne*, *Trommeln* / *stage*, *drums*.
+
+Riddle — `loc_deckchairs` (striped deckchairs under a big sunshade; keys `mission-lion-riddle-loc_deckchairs-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 striped deckchairs under a big sunshade · **Liegestuhl** | 🖼 striped deckchairs under a big sunshade · **deckchair** |
+| klasse1 | Ich bin so müde. Hier ist ein Sonnenschirm. Die Stühle sind gestreift. | I am so sleepy. There is a sunshade here. The chairs are striped. |
+| klasse2 | Der Löwe macht Urlaub. Er räkelt sich neben bunten, gestreiften Stühlen unter einem großen Sonnenschirm. | The lion is on holiday. It stretches out next to colourful striped chairs under a big sunshade. |
+| klasse3 | Heute fühlt sich der Löwe wie im Urlaub am Meer. Er hat einen Platz mit bunt gestreiften Stühlen zum Ausruhen gefunden. Ein großer Sonnenschirm schützt ihn vor der Sonne. Dort liegt er, streckt alle vier Pfoten von sich und schnarcht. | Today the lion feels as if it were on holiday by the sea. It has found a place with colourful striped chairs for resting. A big sunshade keeps the sun off it. There it lies, stretches out all four paws and snores. |
+
+Place words: *Liegestuhl*, *Sonnenschirm* / *deckchair*, *sunshade*.
+
+Animal name (`animal-lion`): *Löwe* / *Lion*. Heading above the facts (`animal-lion-more`): *Mehr über den Löwen* / *More about the lion*.
+
+**Facts** (keys `mission-lion-facts-<reading_level>`; never a place word — ANIM-007 checks *Bühne*, *Felsen*, *Liegestuhl*, *Sonnenschirm*, *Steine*, *Trommeln* / *deckchair*, *drums*, *rocks*, *stage*, *stones*, *sunshade*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 · **Mähne** | 🖼 · **mane** |
+| klasse1 | Ich habe eine Mähne. Ich brülle sehr laut. Ich schlafe viel. | I have a mane. I roar very loudly. I sleep a lot. |
+| klasse2 | Löwen leben in Afrika in einer Gruppe, dem Rudel. Nur die Männchen haben eine große Mähne. Das Brüllen eines Löwen hört man sehr weit. | Lions live in Africa in a group called a pride. Only the males have a big mane. You can hear a lion's roar from very far away. |
+| klasse3 | Löwen leben in Afrika und sind die einzigen Katzen, die in Gruppen wohnen. So eine Gruppe heißt Rudel. Nur die Männchen tragen eine dicke Mähne. Ihr Brüllen ist so laut, dass man es noch weit entfernt hört. Die meiste Zeit des Tages verschlafen Löwen gemütlich. | Lions live in Africa and are the only big cats that live in groups. Such a group is called a pride. Only the males have a thick mane. Their roar is so loud that you can hear it far away. Lions spend most of the day sleeping comfortably. |
+
+Mission complete (`mission-lion-home`): *Super! Der Löwe ist wieder zu Hause.* / *Great! The lion is home again.*
+
+Math (`mathe5`): *Der Löwe schläft ¾ von 24 Stunden. Wie viele Stunden sind das?* /
+*The lion sleeps ¾ of 24 hours. How many hours is that?* → **18**
+
+## 10. Snow fox — `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`
+
+Level: `level_3` (GAME-LEVEL-3). Food box: **Beeren** / *berries*. Riddle keys `mission-snow_fox-riddle-<hiding_place>-<reading_level>`.
+
+Riddle — `loc_ice_cream_kiosk` (ice cream kiosk with a freezer chest and cones; keys `mission-snow_fox-riddle-loc_ice_cream_kiosk-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 ice cream kiosk with a freezer chest and cones · **Eis** | 🖼 ice cream kiosk with a freezer chest and cones · **ice cream** |
 | klasse1 | Mir ist zu warm. Ich mag es kalt. Hier gibt es Waffeln. | I am too warm. I like it cold. There are waffles here. |
 | klasse2 | Dem Schneefuchs ist es viel zu warm. Er sitzt dort, wo Kinder kalte, süße Kugeln in der Waffel kaufen. | The snow fox is much too warm. It sits where children buy cold, sweet scoops in a cone. |
 | klasse3 | Der Schneefuchs kommt aus einem Land voller Schnee. Im Zoo ist es ihm heute viel zu warm. Er hat einen Ort gefunden, an dem kalte Luft aus einer Truhe weht. Dort kaufen Kinder Waffeln mit bunten Kugeln. | The snow fox comes from a land full of snow. Today the zoo is much too warm for it. It found a place where cold air blows out of a chest. Children buy cones with colourful scoops there. |
 
-Math (`mathe4`): *Im Kiosk stehen 4 Truhen mit je 250 Eis. Wie viele Eis sind es zusammen?* /
-*The kiosk has 4 freezers with 250 ice creams each. How many ice creams in total?* → **1000**
+Place words: *Eis*, *Kiosk*, *Waffeln* / *ice cream*, *ice*, *cream*, *kiosk*.
+
+Riddle — `loc_sprinkler` (lawn with a turning sprinkler, cold drops, rainbow; keys `mission-snow_fox-riddle-loc_sprinkler-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 lawn with a turning sprinkler, cold drops, rainbow · **Rasensprenger** | 🖼 lawn with a turning sprinkler, cold drops, rainbow · **sprinkler** |
+| klasse1 | Mir ist zu heiß. Kalte Tropfen regnen herab. Ein Regenbogen! | I am too hot. Cold drops rain down. A rainbow! |
+| klasse2 | Der Schneefuchs sitzt auf nassem Gras. Dort dreht sich etwas und verspritzt kaltes Wasser im Kreis, und in den Tropfen leuchtet ein Regenbogen. | The snow fox sits on wet grass. Something there turns and sprays cold water in a circle, and a rainbow shines in the drops. |
+| klasse3 | Der Schneefuchs kommt aus einem Land, in dem es fast immer schneit. Heute ist es ihm viel zu warm. Er hat einen Rasen gefunden, auf dem sich ein kleines Gerät im Kreis dreht und kühle Tropfen verteilt. Das Gras glänzt nass, und in der Luft schimmert ein kleiner Regenbogen. | The snow fox comes from a land where it snows nearly all the time. Today it is far too warm for it. It has found a lawn where a little machine turns round and round and scatters cool drops. The grass is shiny and wet, and a small rainbow shimmers in the air. |
+
+Place words: *Rasensprenger*, *Regenbogen* / *sprinkler*, *rainbow*.
+
+Riddle — `loc_laundry` (washing line with big white sheets; keys `mission-snow_fox-riddle-loc_laundry-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 washing line with big white sheets · **Wäsche** | 🖼 washing line with big white sheets · **laundry** |
+| klasse1 | Mein Fell ist weiß. Hier ist alles weiß. Der Wind weht. | My fur is white. Everything here is white. The wind blows. |
+| klasse2 | Der Schneefuchs versteckt sich zwischen großen weißen Tüchern, die an einer Leine im Wind flattern. Weiß auf Weiß sieht man ihn kaum. | The snow fox hides between big white sheets that flap on a line in the wind. White on white, you can hardly see it. |
+| klasse3 | Im Winter ist das Fell des Schneefuchses so weiß wie Schnee. So kann er sich gut verstecken. Heute hat er einen Platz gefunden, an dem die Zoowärter große weiße Laken und Handtücher zum Trocknen aufgehängt haben. Zwischen den flatternden Tüchern sitzt er ganz still und hofft, dass ihn niemand entdeckt. | In winter the snow fox's fur is as white as snow. That helps it to hide well. Today it has found a place where the zookeepers have hung big white sheets and towels out to dry. It sits very still between the flapping sheets and hopes that nobody will spot it. |
+
+Place words: *Wäsche*, *Wäscheleine*, *Laken* / *laundry*, *sheets*.
+
+Animal name (`animal-snow_fox`): *Schneefuchs* / *Snow fox*. Heading above the facts (`animal-snow_fox-more`): *Mehr über den Schneefuchs* / *More about the snow fox*.
+
+**Facts** (keys `mission-snow_fox-facts-<reading_level>`; never a place word — ANIM-007 checks *Eis*, *Kiosk*, *Laken*, *Rasensprenger*, *Regenbogen*, *Waffeln*, *Wäsche*, *Wäscheleine* / *cream*, *ice*, *ice cream*, *kiosk*, *laundry*, *rainbow*, *sheets*, *sprinkler*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 · **Schnee** | 🖼 · **snow** |
+| klasse1 | Mein Fell ist dick. Ich mag Schnee. Ich esse Beeren. | My fur is thick. I like snow. I eat berries. |
+| klasse2 | Schneefüchse leben im hohen Norden, wo es sehr kalt ist. Im Winter ist ihr Fell weiß, im Sommer braun. Ihr dicker Schwanz wärmt sie wie ein Schal. | Snow foxes live in the far north, where it is very cold. In winter their fur is white, in summer it is brown. Their bushy tail keeps them warm like a scarf. |
+| klasse3 | Der Schneefuchs heißt auch Polarfuchs und lebt im kalten Norden. Sein Fell ist so dicht, dass ihm selbst bei großer Kälte warm bleibt. Im Winter ist es weiß, im Sommer braun, damit er sich immer gut verstecken kann. Wenn er schläft, legt er seinen buschigen Schwanz wie einen Schal um die Nase. Er frisst gern Beeren und hört sogar leise Geräusche unter dem Schnee. | The snow fox is also called the arctic fox and lives in the cold north. Its fur is so thick that it stays warm even in great cold. In winter it is white, in summer brown, so that it can always hide well. When it sleeps, it wraps its bushy tail around its nose like a scarf. It likes to eat berries and can even hear quiet sounds under the snow. |
+
+Mission complete (`mission-snow_fox-home`): *Super! Der Schneefuchs ist wieder zu Hause.* / *Great! The snow fox is home again.*
+
+Math (`mathe4`): *Im Zoo gibt es 4 Körbe mit je 250 Beeren. Wie viele Beeren sind es zusammen?* /
+*The zoo has 4 baskets with 250 berries each. How many berries are there in total?* → **1000** (reworded 2026-09-26: the old task (kiosk freezers) pointed at the kiosk)
 
 ---
 
 ## Behaviour
 
 1. Each mission's texts are stored as Fluent keys:
-   `mission-<animal>-riddle-<hiding_place>-<level>` (one riddle per candidate hiding place,
+   `mission-<animal>-riddle-<hiding_place>-<reading_level>` (one riddle per candidate hiding place,
    full place id, e.g. `mission-hippo-riddle-loc_mud-klasse2`), `food-<food_id>` (box
    label), `mission-<animal>-math`, `mission-<animal>-home` (mission complete).
-   *Migration:* the PoC keys `mission-zebra-riddle-<level>` (no place id) stay in the `.ftl`
-   files with the `loc_river` texts until zoo-core's `riddle_key` uses the hiding place; then
-   they are deleted (keys of the other 7 animals are written in the new scheme directly).
+   *Migration:* the PoC keys `mission-zebra-riddle-<reading_level>` (no place id) were deleted
+   (2026-09-26, M5a) once zoo-core's `riddle_key` used the hiding place; all animals use the
+   new scheme.
 2. Every hiding place id must exist in the layout data (GAME-LAYOUT, tested by ANIM-004);
    the zoo-level-designer places all locations (representation: Q-044; level 1 candidates:
    `[[hiding_place]]` in `level-1.toml`, Q-080).
@@ -320,7 +666,9 @@ Math (`mathe4`): *Im Kiosk stehen 4 Truhen mit je 250 Eis. Wie viele Eis sind es
 | MISS-005 | Given every math task, then the stored answer equals the computed result. | unit |
 | MISS-006 | *Retired — merged into ANIM-004.* | — |
 | MISS-007 | Given an animal with several candidate hiding places, then no `klasse1`–`klasse3` riddle of one candidate contains (whole word, case-insensitive, each word of a two-word label) the `kiga` place word of another candidate of the same animal, in the same language. | unit |
-| MISS-008 | Given every `[[hiding_place]]` of every level and every reading level and language, then the key `mission-<animal>-riddle-<hiding_place>-<level>` exists and is not empty (instance of RESC-003). | unit |
+| MISS-008 | Given every `[[hiding_place]]` of every level and every reading level and language, then the key `mission-<animal>-riddle-<hiding_place>-<reading_level>` exists and is not empty (instance of RESC-003). | unit |
+| MISS-010 | Given the goldfish mission, then the fish-bowl texts `mission-goldfish-needs-bowl`, `mission-goldfish-bowl-empty`, `mission-goldfish-bowl-filled`, `mission-goldfish-in-bowl` and `mission-goldfish-bowl-hint-<reading_level>` (4 reading levels) exist in `de` and `en`, and the `klasse1` hint has ≤ 5 words per sentence. | unit |
+| MISS-011 | Given the riddles of levels 2 and 3, then no `klasse1`–`klasse3` riddle contains (whole word) the `kiga` word of a hiding place of another animal in the same or an earlier level (zoo-wide uniqueness, Q-083). | unit |
 | MISS-009 | Given the riddles of one animal's candidates, then a reviewer confirms that each riddle fits only its own place in the level (manual review with the level map, as Q-037). | manual |
 
 ## Open questions
@@ -329,4 +677,5 @@ Math (`mathe4`): *Im Kiosk stehen 4 Truhen mit je 250 Eis. Wie viele Eis sind es
 - Review by a primary school teacher for age-appropriate wording (Q-037).
 - Q-039 Riddles containing their place word (koala, giraffe, elephant). Q-044 Hiding places in the layout.
 - Q-064 Enclosure sign texts (`sign-<animal>`, picture on `kiga`?).
-- Q-083 Two-word `kiga` place words (*bamboo forest*, *leaf pile*) and clashes with food words (*Bambus*, *Blätter* / *leaves*). Q-081 growing bamboo in the panda enclosure.
+- Q-095 New hiding places and `kiga` words of levels 2–3 (sections 4–10); math tasks of koala, goldfish, monkey, giraffe and snow fox reworded so they no longer point at a place (Behaviour 4).
+- Q-083 (answered) Two-word `kiga` place words (*bamboo forest*, *leaf pile*) and clashes with food words (*Bambus*, *Blätter* / *leaves*). Q-081 (answered) growing bamboo in the panda enclosure.

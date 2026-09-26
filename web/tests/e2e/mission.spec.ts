@@ -3,7 +3,7 @@
 // home — with the texts of the panel taken from the Fluent files.
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { face, ftl, goto, nextFrames, shots, state, waitFrames } from './helpers';
+import { face, ftl, goto, nextFrames, shots, state, waitFrames, START_URL, approach } from './helpers';
 
 test.describe.configure({ timeout: 300_000 });
 
@@ -26,7 +26,7 @@ async function start(page: Page, lang: string | null, level: string) {
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }
@@ -69,7 +69,7 @@ async function playZebra(page: Page, lang: string, level: string, shot?: string)
   // 0.5 s of game time pass deterministically (software WebGL frames can be slow)
   await settle(page);
   await expect(page.locator('#panel')).toBeVisible();
-  await expect(page.locator('#panel-text')).toHaveText(t[`mission-zebra-riddle-${level}`]);
+  await expect(page.locator('#panel-text')).toHaveText(t[`mission-zebra-riddle-loc_river-${level}`]);
   await expect(page.locator('#panel-food .word')).toHaveText(t['food-grass']);
   // ANIM-006: riddle → food word first, then "more about the zebra" + facts
   await expect(page.locator('#panel-title .word')).toHaveText(t['animal-zebra-more']);
@@ -108,9 +108,9 @@ async function playZebra(page: Page, lang: string, level: string, shot?: string)
     await expect(page.locator('#hud-carry .word')).toHaveText(t[`food-${food}`]);
   }
 
-  // 3. The river: stand west of the zebra and face it; show the grass.
-  await goto(page, zebraSpot.x - 1.3, zebraSpot.z);
-  await face(page, 'KeyD');
+  // 3. The river: walk up to the (wandering) zebra and face it; show the grass.
+  expect(Math.hypot(zebraSpot.x - 8.5, zebraSpot.z - 32.5)).toBeLessThan(3.1); // loc_river
+  await approach(page, 'zebra');
   expect((await state(page)).target).toBe('animal:zebra');
   await page.keyboard.press('KeyE');
   await expect(page.locator('#bubble')).toHaveText(t['ui-following']);
@@ -158,9 +158,7 @@ test.describe('landscape desktop', () => {
     await face(page, 'KeyW');
     await expect(page.locator('#take')).toBeVisible(); // panel opens by itself
     await page.locator('#take').click();
-    const spot = await page.evaluate(() => ({ x: window.__zoo!.app.animal_x('zebra'), z: window.__zoo!.app.animal_z('zebra') }));
-    await goto(page, spot.x - 1.3, spot.z);
-    await face(page, 'KeyD');
+    await approach(page, 'zebra');
     await page.keyboard.press('Space');
     await expect(page.locator('#bubble')).toHaveText(t['ui-not-interested']);
     expect((await state(page)).zebra).toBe('escaped');

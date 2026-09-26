@@ -13,9 +13,10 @@ use glam::{Quat, Vec2, Vec3};
 use wasm_bindgen::prelude::*;
 use web_sys::HtmlCanvasElement;
 use zoo_assets::Model;
+use zoo_core::animals::{swim_sink_m, AnimTable};
 use zoo_core::coords::level_to_world;
 use zoo_core::game::{Interaction, Target};
-use zoo_core::level::{cell_center, ElementType};
+use zoo_core::level::ElementType;
 use zoo_core::nav::Autopilot;
 use zoo_core::player::walk_clip_rate;
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
@@ -25,8 +26,8 @@ use zoo_render::{CameraParams, CharacterDraw, FollowCamera, Instance, LevelScene
 
 /// The player character model (GAME-PLAYER §1; `player_boy` later).
 pub const PLAYER_MODEL: &str = "player_girl";
-/// Animals drawn in the PoC (PROD-POC: zebra only; hippo/panda are scenery).
-pub const SHOWN_ANIMALS: [&str; 1] = ["zebra"];
+/// Clip data of the animal models (ART-ANIMALS "Clips").
+pub const ANIMAL_ANIMS: &str = "models/animals/animal_anims.toml";
 const MARKER: &str = "__marker";
 /// Batch of flat boxes that move (animal placeholders).
 const DYN_BOX: &str = "__dyn_box";
@@ -40,9 +41,18 @@ pub fn animal_model_path(animal: &str) -> String {
     format!("models/animals/{animal}.glb")
 }
 
+/// Animals of a level: the animal of every enclosure in scope (`[level] missions`, Q-069).
+pub fn level_animals(data: &LevelData) -> Vec<String> {
+    let scope = &data.level.missions;
+    data.elements_of(ElementType::Enclosure)
+        .filter_map(|e| e.animal.clone())
+        .filter(|a| scope.is_empty() || scope.contains(a))
+        .collect()
+}
+
 /// Asset paths (relative to the served `assets/` folder) needed for a level: palette, every
-/// model the level scene places, the player and the shown animals. Missing models become
-/// placeholders.
+/// model the level scene places, the player and every animal of the level. Missing models
+/// become placeholders.
 #[wasm_bindgen]
 pub fn required_assets(level_toml: &str) -> Result<Vec<String>, JsError> {
     let data = LevelData::from_toml_str(level_toml).map_err(|e| JsError::new(&e.to_string()))?;
@@ -61,7 +71,8 @@ pub fn required_assets(level_toml: &str) -> Result<Vec<String>, JsError> {
         }
     }
     out.push(format!("models/characters/{PLAYER_MODEL}.glb"));
-    out.extend(SHOWN_ANIMALS.iter().map(|a| animal_model_path(a)));
+    out.extend(level_animals(&data).iter().map(|a| animal_model_path(a)));
+    out.push(ANIMAL_ANIMS.to_owned());
     Ok(out)
 }
 
@@ -79,8 +90,6 @@ struct AnimalView {
     skinned: bool,
     pos: Vec2,
     yaw: f32,
-    /// Where an escaped animal looks (towards the water of its hiding place).
-    rest_yaw: f32,
     idle_time: f32,
     walk_time: f32,
     walk_blend: f32,
@@ -89,8 +98,40 @@ struct AnimalView {
     queue: VecDeque<&'static str>,
     /// Actions wait until the view reached the logic position (walking into the enclosure).
     wait_arrival: bool,
-    /// Escaped and standing: rests with `drink` instead of `idle`.
-    drinking: bool,
+    /// Resting clip (hiding-place pose, `swim` in water, else `idle`; falls back to `idle`).
+    rest: &'static str,
+    /// Locomotion clip (`swim` in water, else `walk`).
+    locomotion: &'static str,
+    /// Current depth below the land pose (m), eased (swimmers in water).
+    sink: f32,
+}
+
+impl AnimalView {
+    fn new(id: &'static str, skinned: bool) -> Self {
+        Self {
+            id,
+            skinned,
+            pos: Vec2::ZERO,
+            yaw: 0.0,
+            idle_time: 0.0,
+            walk_time: 0.0,
+            walk_blend: 0.0,
+            action: None,
+            queue: VecDeque::new(),
+            wait_arrival: false,
+            rest: "idle",
+            locomotion: "walk",
+            sink: 0.0,
+        }
+    }
+}
+
+/// Maps a clip name from the game data to a static name the renderer knows (unknown → idle).
+fn static_clip(name: &str) -> &'static str {
+    const CLIPS: [&str; 10] = [
+        "idle", "walk", "drink", "eat", "sleep", "swim", "happy", "refuse", "climb", "roll",
+    ];
+    CLIPS.iter().copied().find(|c| *c == name).unwrap_or("idle")
 }
 
 /// A running game with its renderer, owned by the host page.
@@ -115,6 +156,10 @@ pub struct App {
     carry_box: [Instance; 1],
     has_carry_model: bool,
     animals: Vec<AnimalView>,
+    /// Animal clip data (authored walk speeds).
+    anims: AnimTable,
+    /// Characters drawn this frame (reused, no per-frame allocation once grown).
+    draws: Vec<(&'static str, CharacterDraw)>,
     autopilot: Option<Autopilot>,
     outbox: Vec<String>,
     time: f64,
@@ -209,34 +254,41 @@ impl App {
             PLAYER_MODEL,
             &format!("models/characters/{PLAYER_MODEL}.glb"),
         );
+        // every animal of the level: its skinned model, else a placeholder (GAME-RESCUE §11)
         let mut animals = Vec::new();
-        for id in SHOWN_ANIMALS {
-            let Some(a) = game.animal(id) else { continue };
+        for a in &game.animals {
+            let id = a.id();
             let skinned = add_skinned(id, &animal_model_path(id));
-            let rest_yaw = facing_to_yaw(water_direction(&game, a.pos));
-            animals.push(AnimalView {
-                id,
-                skinned,
-                pos: a.pos,
-                yaw: rest_yaw,
-                rest_yaw,
-                idle_time: 0.0,
-                walk_time: 0.0,
-                walk_blend: 0.0,
-                action: None,
-                queue: VecDeque::new(),
-                wait_arrival: false,
-                drinking: true,
-            });
+            animals.push(AnimalView::new(id, skinned));
         }
+        let anims = files
+            .get(ANIMAL_ANIMS)
+            .and_then(|b| AnimTable::from_toml_str(&String::from_utf8_lossy(b)).ok())
+            .unwrap_or_default();
 
         let mut placeholders: BTreeMap<String, usize> = BTreeMap::new();
         for p in &scene.placements {
-            if !renderer.add_instance(p.model, p.pos, p.yaw) {
-                let (offset, size, color) = model_placeholder(p.model);
-                let pos = p.pos + glam::Quat::from_rotation_y(p.yaw) * offset;
-                renderer.add_box(pos, size, p.yaw, color, pos.y + size.y > 1.5);
+            if !renderer.add_instance_scaled(p.model, p.pos, p.yaw, p.scale) {
                 *placeholders.entry(p.model.to_owned()).or_default() += 1;
+                if scene.fallbacks.iter().any(|f| f.model == p.model) {
+                    continue; // drawn by its fallback geometry below
+                }
+                let (offset, size, color) = model_placeholder(p.model);
+                let size = size * p.scale;
+                let pos = p.pos + glam::Quat::from_rotation_y(p.yaw) * offset * p.scale;
+                renderer.add_box(pos, size, p.yaw, color, pos.y + size.y > 1.5);
+            }
+        }
+        // placeholder geometry of missing models (e.g. the tiled pool rim, `pool_tiled`)
+        for f in &scene.fallbacks {
+            if renderer.has_model(f.model) {
+                continue;
+            }
+            for b in &f.boxes {
+                renderer.add_box(b.pos, b.size, b.yaw, b.color, b.fadeable);
+            }
+            for p in &f.placements {
+                renderer.add_instance_scaled(p.model, p.pos, p.yaw, p.scale);
             }
         }
         for b in &scene.boxes {
@@ -337,7 +389,7 @@ impl App {
         camera.snap(start);
         let player_yaw = facing_to_yaw(game.player.facing);
 
-        Ok(App {
+        let mut app = App {
             game,
             renderer,
             camera,
@@ -357,13 +409,57 @@ impl App {
             carry_box: [Instance::model(Vec3::ZERO, 0.0, false)],
             has_carry_model,
             animals,
+            anims,
+            draws: Vec::with_capacity(8),
             autopilot: None,
             outbox: Vec::new(),
             time: 0.0,
             decals: scene.decals,
             text_textures,
             text_dirty: true,
-        })
+        };
+        app.reset_views();
+        Ok(app)
+    }
+
+    /// Starts a new game with a seed (the host passes a random one, or `?seed=` for tests)
+    /// and the hiding places of the previous game to avoid (`{"zebra":"loc_river",…}` or
+    /// empty; Q-082). Keeps the settings. Returns false if the game cannot start.
+    pub fn new_game(&mut self, seed: f64, avoid_json: &str) -> bool {
+        let seed = if seed.is_finite() && seed >= 0.0 {
+            seed as u64
+        } else {
+            1
+        };
+        let avoid: BTreeMap<String, String> = serde_json::from_str(avoid_json).unwrap_or_default();
+        let Ok(mut game) = Game::new_avoiding(self.game.level.data.clone(), seed, &avoid) else {
+            return false;
+        };
+        game.settings = self.game.settings;
+        self.game = game;
+        self.camera.snap(level_to_world(self.game.player.pos));
+        self.player_yaw = facing_to_yaw(self.game.player.facing);
+        self.autopilot = None;
+        self.outbox.clear();
+        self.reset_views();
+        true
+    }
+
+    /// Seed of the running playthrough.
+    pub fn seed(&self) -> f64 {
+        self.game.to_save().seed as f64
+    }
+
+    /// Chosen hiding place per animal as JSON (`{"zebra":"loc_river",…}`); the host keeps it
+    /// so the next new game avoids these places (Q-082).
+    pub fn picks_json(&self) -> String {
+        let m: BTreeMap<&str, &str> = self
+            .game
+            .animals
+            .iter()
+            .map(|a| (a.id(), a.hiding_place.as_str()))
+            .collect();
+        serde_json::to_string(&m).unwrap_or_default()
     }
 
     /// Canvas CSS size and device pixel ratio (render resolution is capped at 2×).
@@ -512,15 +608,11 @@ impl App {
         }
         self.camera.snap(level_to_world(self.game.player.pos));
         self.player_yaw = facing_to_yaw(self.game.player.facing);
+        self.reset_views();
         for v in &mut self.animals {
             let Some(a) = self.game.animal(v.id) else {
                 continue;
             };
-            v.pos = a.pos;
-            v.queue.clear();
-            v.action = None;
-            v.wait_arrival = false;
-            v.drinking = a.state == AnimalState::Escaped;
             if let Some(yaw) = state
                 .animals
                 .iter()
@@ -710,14 +802,14 @@ impl App {
                 .set_dynamic_instances(CARRY_BOX, &self.carry_box[..n]);
         }
 
-        // Animal placeholders (striped boxes) into the dynamic box batch.
+        // Animals: skinned models, else placeholder boxes in the dynamic box batch.
         self.dyn_boxes.clear();
-        let mut chars: [Option<(&str, CharacterDraw)>; 2] = [None, None];
+        self.draws.clear();
         for a in &self.animals {
-            let pos = level_to_world(a.pos);
+            let pos = level_to_world(a.pos) - Vec3::Y * a.sink;
             let (action, t) = a.action.map_or((None, 0.0), |(n, t, _)| (Some(n), t));
             if a.skinned {
-                chars[1] = Some((
+                self.draws.push((
                     a.id,
                     CharacterDraw {
                         pos,
@@ -725,20 +817,21 @@ impl App {
                         idle_time: a.idle_time,
                         walk_time: a.walk_time,
                         walk_blend: a.walk_blend,
-                        idle_clip: if a.drinking { "drink" } else { "idle" },
+                        idle_clip: a.rest,
+                        walk_clip: a.locomotion,
                         action: action.map(|n| (n, t)),
                         action_blend: if action.is_some() { 1.0 } else { 0.0 },
                     },
                 ));
             } else {
-                zebra_placeholder(&mut self.dyn_boxes, pos, a, action, t);
+                animal_placeholder(&mut self.dyn_boxes, pos, a, action, t);
             }
         }
         self.renderer
             .set_dynamic_instances(DYN_BOX, &self.dyn_boxes);
 
         if self.player_skinned {
-            chars[0] = Some((
+            self.draws.push((
                 PLAYER_MODEL,
                 CharacterDraw::locomotion(
                     player,
@@ -763,18 +856,7 @@ impl App {
             self.renderer.set_dynamic_instances(CAPSULE, &self.dynamic);
             self.renderer.set_dynamic_instances(MARKER, &self.marker);
         }
-        let draws: [(&str, CharacterDraw); 2] = [
-            chars[0].unwrap_or((
-                "",
-                CharacterDraw::locomotion(Vec3::ZERO, 0.0, 0.0, 0.0, 0.0),
-            )),
-            chars[1].unwrap_or((
-                "",
-                CharacterDraw::locomotion(Vec3::ZERO, 0.0, 0.0, 0.0, 0.0),
-            )),
-        ];
-        // Unknown names ("") are skipped by the renderer.
-        self.renderer.render(&self.camera, player, &draws);
+        self.renderer.render(&self.camera, player, &self.draws);
     }
 
     // ------------------------------------------------------------------ debug getters
@@ -950,6 +1032,75 @@ impl App {
 
     pub fn animal_z(&self, id: &str) -> f32 {
         self.game.animal(id).map_or(f32::NAN, |a| a.pos.y)
+    }
+
+    /// Chosen hiding place of an animal (discovery, GAME-RESCUE §1) or empty.
+    pub fn animal_hiding_place(&self, id: &str) -> String {
+        self.game
+            .animal(id)
+            .map(|a| a.hiding_place.clone())
+            .unwrap_or_default()
+    }
+
+    /// Ids of the animals of the level, one per line.
+    pub fn animal_ids(&self) -> String {
+        self.game
+            .animals
+            .iter()
+            .map(|a| a.id())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Whether an animal is walking around (wandering) right now.
+    pub fn animal_wandering(&self, id: &str) -> bool {
+        self.game.animal(id).is_some_and(|a| a.is_wandering())
+    }
+
+    /// Resting / locomotion clip the animal plays and how deep it is sunk (m), for tests.
+    pub fn animal_clip(&self, id: &str) -> String {
+        self.animals
+            .iter()
+            .find(|v| v.id == id)
+            .map(|v| format!("{}|{}|{:.2}", v.rest, v.locomotion, v.sink))
+            .unwrap_or_default()
+    }
+
+    /// Debug/e2e: a free standing point `[x, z]` next to an animal (the walkable cell centre
+    /// closest to it, at least 0.9 m away) for a scripted walk; empty if unknown.
+    pub fn debug_stand_near(&self, id: &str) -> Vec<f32> {
+        let Some(a) = self.game.animal(id) else {
+            return Vec::new();
+        };
+        let grid = self.game.level.grid();
+        let best = grid
+            .bounds()
+            .cells()
+            .filter(|&c| grid.is_passable(c, false))
+            .map(zoo_core::level::cell_center)
+            .filter(|p| p.distance(a.pos) >= 0.9)
+            .min_by(|x, y| x.distance(a.pos).total_cmp(&y.distance(a.pos)));
+        best.map(|p| vec![p.x, p.y]).unwrap_or_default()
+    }
+
+    /// Debug/e2e: turns the player towards an animal (as a short joystick tap would).
+    pub fn debug_face_animal(&mut self, id: &str) -> bool {
+        let Some(a) = self.game.animal(id) else {
+            return false;
+        };
+        let to = a.pos - self.game.player.pos;
+        if to.length() < 1e-3 {
+            return false;
+        }
+        self.game.player.facing = to.normalize();
+        true
+    }
+
+    /// Debug/e2e: the animal walks into its own enclosure as if led home (GAME-RESCUE §8).
+    pub fn debug_send_home(&mut self, id: &str) -> bool {
+        let ok = self.game.debug_send_home(id);
+        self.handle_events();
+        ok
     }
 
     pub fn mission_started(&self, id: &str) -> bool {
@@ -1167,6 +1318,25 @@ impl App {
         }
     }
 
+    /// Snaps every animal view to its logic state (start, new game, restore).
+    fn reset_views(&mut self) {
+        for v in &mut self.animals {
+            let Some(a) = self.game.animal(v.id) else {
+                continue;
+            };
+            v.pos = a.pos;
+            v.yaw = facing_to_yaw(a.facing);
+            v.queue.clear();
+            v.action = None;
+            v.wait_arrival = false;
+            v.walk_blend = 0.0;
+            let depth = self.game.water_depth(a);
+            v.sink = swim_sink_m(v.id) * depth;
+            v.rest = static_clip(self.game.rest_clip(a));
+            v.locomotion = if depth > 0.5 { "swim" } else { "walk" };
+        }
+    }
+
     fn update_animals(&mut self, dt: f32) {
         let walk_speed = self.game.move_params.walk_speed;
         for v in &mut self.animals {
@@ -1186,20 +1356,36 @@ impl App {
                 step
             };
             let speed = if dt > 0.0 { moved / dt } else { 0.0 };
-            if speed > 0.1 {
-                let target = facing_to_yaw(to);
-                v.yaw += angle_diff(target, v.yaw) * (1.0 - (-8.0 * dt).exp());
-            } else if a.state == AnimalState::Escaped {
-                v.yaw += angle_diff(v.rest_yaw, v.yaw) * (1.0 - (-4.0 * dt).exp());
-                if angle_diff(v.rest_yaw, v.yaw).abs() < 0.01 {
-                    v.yaw = v.rest_yaw;
+            // turn towards the walking direction, else to the logic facing (e.g. the player,
+            // ANIM-009, or the water it drinks from)
+            let target = if speed > 0.1 {
+                facing_to_yaw(to)
+            } else {
+                facing_to_yaw(a.facing)
+            };
+            let rate = if speed > 0.1 { 8.0 } else { 4.0 };
+            v.yaw += angle_diff(target, v.yaw) * (1.0 - (-rate * dt).exp());
+            // swimmers sink in water (only eyes, ears and back show); clips per GAME-RESCUE §11
+            let depth = self.game.water_depth(a);
+            let want_sink = swim_sink_m(v.id) * depth;
+            v.sink += (want_sink - v.sink) * (1.0 - (-3.0 * dt).exp());
+            let in_water = depth > 0.5 && a.state != AnimalState::Following;
+            v.rest = static_clip(self.game.rest_clip(a));
+            v.locomotion = if in_water { "swim" } else { "walk" };
+            if v.skinned {
+                if !self.renderer.has_clip(v.id, v.rest) {
+                    v.rest = "idle";
+                }
+                if !self.renderer.has_clip(v.id, v.locomotion) {
+                    v.locomotion = "walk";
                 }
             }
-            v.drinking = a.state == AnimalState::Escaped && speed < 0.1;
             let want = (speed / (0.5 * walk_speed)).clamp(0.0, 1.0);
             v.walk_blend += (want - v.walk_blend) * (1.0 - (-10.0 * dt).exp());
             v.idle_time += dt;
-            v.walk_time += dt * walk_clip_rate(speed);
+            // walk clip playback = speed ÷ authored speed (animal_anims.toml), clamped
+            let authored = self.anims.walk_speed(v.id);
+            v.walk_time += dt * walk_clip_rate(speed * 1.4 / authored);
             let arrived = dist < 0.05;
             if v.wait_arrival && arrived {
                 v.wait_arrival = false;
@@ -1210,6 +1396,7 @@ impl App {
             }
             if v.action.is_none() && !v.wait_arrival {
                 if let Some(next) = v.queue.pop_front() {
+                    // missing one-shot clips fall back: refuse → idle shake is skipped
                     let dur = if v.skinned {
                         self.renderer.clip_duration(v.id, next).unwrap_or(0.0)
                     } else {
@@ -1224,9 +1411,9 @@ impl App {
     }
 }
 
-/// Striped placeholder zebra (~1.3 m long) from flat boxes; `happy` hops, `refuse` shakes,
-/// `eat` lowers the head (PROD-POC "Placeholders").
-fn zebra_placeholder(
+/// Placeholder animal (~1.3 m long) from flat boxes in the animal's colours; `happy` hops,
+/// `refuse` shakes, `eat`/`drink` lower the head (PROD-POC "Placeholders").
+fn animal_placeholder(
     out: &mut Vec<Instance>,
     pos: Vec3,
     a: &AnimalView,
@@ -1235,7 +1422,14 @@ fn zebra_placeholder(
 ) {
     const WHITE: [f32; 3] = [0.96, 0.95, 0.92];
     const BLACK: [f32; 3] = [0.16, 0.15, 0.18];
+    let (body, stripe) = match a.id {
+        "zebra" => (WHITE, Some(BLACK)),
+        "hippo" => ([0.62, 0.55, 0.66], None),
+        "panda" => (WHITE, Some(BLACK)),
+        _ => ([0.80, 0.62, 0.40], None),
+    };
     let phase = t * std::f32::consts::TAU;
+    let head_low = matches!(a.rest, "drink" | "eat");
     let (hop, shake, head_down) = match action {
         Some("happy") => ((phase * 2.0).sin().abs() * 0.18, 0.0, 0.0),
         Some("refuse") => (0.0, (phase * 3.0).sin() * 0.35, 0.0),
@@ -1243,7 +1437,7 @@ fn zebra_placeholder(
         _ => (
             (a.walk_time * 8.0).sin().abs() * 0.04 * a.walk_blend,
             0.0,
-            if a.drinking { 0.35 } else { 0.0 },
+            if head_low { 0.35 } else { 0.0 },
         ),
     };
     let yaw = a.yaw + shake * 0.3;
@@ -1252,29 +1446,24 @@ fn zebra_placeholder(
     let mut push = |local: Vec3, size: Vec3, color: [f32; 3]| {
         out.push(Instance::flat(base + rot * local, yaw, size, color, false));
     };
-    // legs
+    let dark = stripe.unwrap_or(body);
     for (x, z) in [(-0.15, 0.45), (0.15, 0.45), (-0.15, -0.45), (0.15, -0.45)] {
-        push(Vec3::new(x, 0.0, z), Vec3::new(0.11, 0.62, 0.11), WHITE);
+        push(Vec3::new(x, 0.0, z), Vec3::new(0.11, 0.62, 0.11), dark);
     }
-    // body with stripes
-    push(Vec3::new(0.0, 0.6, 0.0), Vec3::new(0.46, 0.5, 1.3), WHITE);
-    for z in [-0.45, -0.15, 0.15, 0.45] {
-        push(Vec3::new(0.0, 0.58, z), Vec3::new(0.48, 0.54, 0.09), BLACK);
+    push(Vec3::new(0.0, 0.6, 0.0), Vec3::new(0.46, 0.5, 1.3), body);
+    if a.id == "zebra" {
+        for z in [-0.45, -0.15, 0.15, 0.45] {
+            push(Vec3::new(0.0, 0.58, z), Vec3::new(0.48, 0.54, 0.09), BLACK);
+        }
     }
-    // neck and head (lowered while drinking/eating)
     let hy = 1.05 - head_down;
     push(
         Vec3::new(0.0, 0.9 - head_down * 0.5, 0.62),
         Vec3::new(0.2, 0.4, 0.22),
-        WHITE,
+        body,
     );
-    push(Vec3::new(0.0, hy, 0.82), Vec3::new(0.24, 0.26, 0.42), WHITE);
-    push(
-        Vec3::new(0.0, hy + 0.2, 0.62),
-        Vec3::new(0.08, 0.18, 0.3),
-        BLACK,
-    ); // mane
-    push(Vec3::new(0.0, hy, 1.02), Vec3::new(0.25, 0.2, 0.08), BLACK); // muzzle
+    push(Vec3::new(0.0, hy, 0.82), Vec3::new(0.24, 0.26, 0.42), body);
+    push(Vec3::new(0.0, hy, 1.02), Vec3::new(0.25, 0.2, 0.08), dark); // muzzle
 }
 
 /// Texture id of a text decal (`text:<fluent key>`).
@@ -1289,22 +1478,6 @@ fn target_key(t: &Target) -> String {
         Target::Animal { animal } => format!("animal:{animal}"),
         Target::Gate { enclosure } => format!("gate:{enclosure}"),
     }
-}
-
-/// Level direction from `pos` to the nearest river/pond cell (where an escaped animal
-/// drinks); south if there is none.
-fn water_direction(game: &Game, pos: Vec2) -> Vec2 {
-    game.level
-        .data
-        .elements
-        .iter()
-        .filter(|e| {
-            e.ty == ElementType::Landmark && matches!(e.kind.as_deref(), Some("river" | "pond"))
-        })
-        .flat_map(|e| e.rect.cells())
-        .map(|c| cell_center(c) - pos)
-        .min_by(|a, b| a.length().total_cmp(&b.length()))
-        .map_or(Vec2::NEG_Y, |d| d.normalize_or_zero())
 }
 
 /// Minimal JSON string literal.
@@ -1356,7 +1529,7 @@ mod tests {
     }
 
     #[test]
-    fn required_assets_lists_props_player_and_zebra() {
+    fn required_assets_lists_props_player_and_every_animal() {
         let toml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../../assets/levels/level-1.toml"
@@ -1367,7 +1540,12 @@ mod tests {
         assert!(list.contains(&"models/props/fence_wood.glb".to_owned()));
         assert!(list.contains(&"models/props/food_box.glb".to_owned()));
         assert!(list.contains(&"models/characters/player_girl.glb".to_owned()));
-        assert!(list.contains(&"models/animals/zebra.glb".to_owned()));
+        for a in ["zebra", "hippo", "panda"] {
+            assert!(list.contains(&format!("models/animals/{a}.glb")), "{a}");
+        }
+        assert!(list.contains(&ANIMAL_ANIMS.to_owned()));
+        // the hippo pool's model (placeholder rim when missing)
+        assert!(list.contains(&"models/props/pool_tiled.glb".to_owned()));
         // AENV-011: the zebra sign silhouette is fetched (hippo/panda once they exist)
         assert!(list.contains(&"textures/signs/silhouette_zebra.png".to_owned()));
         assert!(std::path::Path::new(concat!(
@@ -1384,15 +1562,26 @@ mod tests {
     }
 
     #[test]
-    fn zebra_drinks_towards_the_river() {
+    fn zebra_at_the_river_drinks_towards_the_water() {
         let toml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../../assets/levels/level-1.toml"
         ))
         .unwrap();
-        let g = Game::new(LevelData::from_toml_str(&toml).unwrap(), 1).unwrap();
+        let data = LevelData::from_toml_str(&toml).unwrap();
+        // a seed that puts the zebra at loc_river (pose `drink`, facing the river east)
+        let g = (0..100)
+            .map(|s| Game::new(data.clone(), s).unwrap())
+            .find(|g| g.animal("zebra").unwrap().hiding_place == "loc_river")
+            .unwrap();
         let z = g.animal("zebra").unwrap();
-        let d = water_direction(&g, z.pos);
-        assert!(d.x > 0.7, "river is east of loc_river's spot: {d}");
+        assert!(
+            z.facing.x > 0.7,
+            "river is east of loc_river's spot: {}",
+            z.facing
+        );
+        assert_eq!(g.rest_clip(z), "drink");
+        assert_eq!(static_clip(g.rest_clip(z)), "drink");
+        assert_eq!(static_clip("dance"), "idle");
     }
 }

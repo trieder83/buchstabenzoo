@@ -18,10 +18,8 @@
 # between the trees; only trunks/bushes are solid — GAME-LAYOUT "Forests"); the hippo
 # enclosure has a pool covering about half of it (GAME-LEVEL-1 "Hippo enclosure pool").
 #
-# MIGRATION NOTE (GAME-LEVEL-1 "Hiding places"): the three `[[element]] type = "hiding_place"`
-# entries (loc_pond, loc_river, loc_cave) are LEGACY mirrors of their [[hiding_place]] entries,
-# kept only so the current zoo-core (which reads hiding places from [[element]]) keeps working.
-# When zoo-core reads [[hiding_place]], delete them here and in the GAME-LEVEL-1 element table.
+# MIGRATION DONE (M5a, Q-080 answered): zoo-core reads hiding places only from the
+# [[hiding_place]] list; the legacy `[[element]] type = "hiding_place"` mirrors are deleted.
 #
 # DECIDED (Q-046, user 2026-09-26): cells not covered by a solid element are walkable.
 # Surface: cells of `path` elements (incl. bridge, jetty, cave floor) = "path" (full speed);
@@ -34,6 +32,7 @@ cell_size_m = 1.0
 bounds = [-24, -2, 48, 50]   # x, z, w, d — every border cell is covered by a solid element
 ground_walkable = true       # decided Q-046
 ground_surface = "grass"     # surface of walkable cells not covered by a path element
+missions = ["zebra", "hippo", "panda"]   # missions in scope = interactable (Q-069, answered 2026-09-26: all three)
 
 [spawn]
 cell = [0, 2]                # stands on the entrance plaza, 2 m inside the gate
@@ -290,14 +289,6 @@ type = "decoration"
 kind = "bench"
 rect = [-11, 26, 2, 1]
 
-[[element]]
-id = "loc_pond"
-type = "hiding_place"        # proposal Q-044 — LEGACY mirror of [[hiding_place]] loc_pond
-animal = "hippo"
-rect = [-19, 19, 11, 10]
-animal_spot = [-13, 22]      # in the water, 2 m from the jetty tip
-features = ["still_water", "water_lilies", "frogs"]
-
 # ---------------------------------------------------------------- panda
 [[element]]
 id = "enc_panda"
@@ -418,14 +409,6 @@ kind = "side"
 rect = [13, 31, 2, 12]
 notes = "Narrow trail (2 m, stepping-stone look) from path_ne north between the river and trees_ne to the leaf pile (loc_leaves); keeps loc_leaves within 10 s of loc_meadow and the bridge."
 
-[[element]]
-id = "loc_river"
-type = "hiding_place"        # proposal Q-044 — LEGACY mirror of [[hiding_place]] loc_river
-animal = "zebra"
-rect = [6, 30, 4, 6]         # = bounding box of its wander area (GAME-LEVEL-1 "Hiding places")
-animal_spot = [8, 32]        # west bank, next to the bridge, drinking
-features = ["flowing_water", "bridge", "ducks"]
-
 # ---------------------------------------------------------------- hippo
 [[element]]
 id = "enc_hippo"
@@ -501,13 +484,6 @@ kind = "side"
 rect = [8, 8, 14, 3]
 notes = "Service path along the rock hill to barrier_east_repair."
 
-[[element]]
-id = "loc_cave"
-type = "hiding_place"        # proposal Q-044 — LEGACY mirror of [[hiding_place]] loc_cave
-animal = "panda"
-rect = [10, 5, 3, 3]
-animal_spot = [10, 5]        # asleep in the back corner on the west side of the cave (back-right as seen from the mouth)
-features = ["dark", "cool", "stone", "echo"]
 
 # ---------------------------------------------------------------- food boxes (GAME-FEED §7)
 # PoC (Q-065): the storage interior is not modelled, so the 10 boxes stand in a row in front
@@ -589,6 +565,13 @@ ramp_side = "-x"
 edge_stones = [[10.4, 21.6], [11.4, 14.4], [13.6, 14.3]]   # NW corner and south rim; never in the 1 m strips east (x 19) and north (z 22) of the pool
 model = "pool_tiled"
 notes = "Square tiled pool (light blue/white tiles, 0.4 m rim), clear still water, no plants. Seen from the path in front of the gate (8, 15-16) 3-10 m to the east. The hippo spends most of its home time in it with only eyes, ears and back showing."
+
+[[enclosure_feature]]
+id = "hippo_hut"
+enclosure = "enc_hippo"
+kind = "hut"                  # reserved building area (wooden hut, model to come); not part of the home wander area
+rect = [15, 11, 4, 4]         # x 15-18, z 11-14 (GAME-LEVEL-1 "Hippo enclosure pool": hut area reserved south of the pool)
+notes = "Wooden hippo hut (hut_wood, ~4 x 3.5 m); placeholder box until the model exists."
 
 # ================================================================ hiding places (candidates)
 # Discovery (user decision 2026-09-26, GAME-RESCUE §1): every animal has >= 3 candidate hiding

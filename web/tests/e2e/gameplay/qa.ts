@@ -2,7 +2,7 @@
 // `debug_step` (fixed 1/60 s steps with the real movement and collision), touches are real
 // CDP touch events.
 import { expect, type CDPSession, type Page } from '@playwright/test';
-import { nextFrames, waitFrames } from '../helpers';
+import { nextFrames, waitFrames, START_URL } from '../helpers';
 
 /** Starts the game with stored settings and collects console errors. */
 export async function startGame(page: Page, lang: string, level: string): Promise<string[]> {
@@ -18,7 +18,7 @@ export async function startGame(page: Page, lang: string, level: string): Promis
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }

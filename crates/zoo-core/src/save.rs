@@ -70,6 +70,14 @@ pub struct AnimalSave {
     /// Presentation yaw (radians), filled by the presentation layer.
     #[serde(default)]
     pub yaw: Option<f32>,
+    /// Logic facing (ANIM-009).
+    #[serde(default)]
+    pub facing: Option<[f32; 2]>,
+    /// Wandering (ANIM-011): pause left and remaining route cells.
+    #[serde(default)]
+    pub wander_pause_s: Option<f32>,
+    #[serde(default)]
+    pub wander_route: Vec<[i32; 2]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -183,6 +191,9 @@ impl Game {
                     path: a.path.iter().map(|c| c.to_array()).collect(),
                     path_target: a.path_target.map(|c| c.to_array()),
                     yaw: None,
+                    facing: Some(a.facing.to_array()),
+                    wander_pause_s: Some(a.wander.pause_s),
+                    wander_route: a.wander.route.iter().map(|c| c.to_array()).collect(),
                 })
                 .collect(),
             missions: self
@@ -263,7 +274,12 @@ impl Game {
                 .ok_or_else(|| SaveError::Invalid(format!("animal state {}", a.state)))?;
             let pos = v2(a.pos)?;
             let enc = g.level.data.elements[g.animals[i].enclosure].rect;
-            let place_ok = g.level.data.element(&a.hiding_place).is_some();
+            // the chosen place must still be a candidate of this animal (RESC-016)
+            let place_ok = g
+                .level
+                .data
+                .hiding_place(&a.hiding_place)
+                .is_some_and(|h| h.animal == a.id);
             let pos = match state {
                 AnimalState::InEnclosure => {
                     if enc.contains(cell_of(pos)) {
@@ -293,6 +309,30 @@ impl Game {
             an.refusing = a.refusing;
             an.path = a.path.iter().map(|&c| IVec2::from(c)).collect();
             an.path_target = a.path_target.map(IVec2::from);
+            if let Some(f) = a.facing.map(Vec2::from).filter(|f| f.is_finite()) {
+                an.facing = f;
+            }
+            if let Some(p) = a.wander_pause_s.filter(|p| p.is_finite()) {
+                an.wander.pause_s = p;
+            }
+            an.wander.route = a.wander_route.iter().map(|&c| IVec2::from(c)).collect();
+        }
+        g.refresh_areas();
+        // escaped animals stay inside their (possibly restored) place's wander area
+        for an in &mut g.animals {
+            if an.state == AnimalState::Escaped && !an.area.is_empty() {
+                if !an.area.contains(cell_of(an.pos)) {
+                    let spot = g
+                        .level
+                        .data
+                        .hiding_place(&an.hiding_place)
+                        .map_or(an.pos, |h| h.spot());
+                    an.pos = spot;
+                    an.wander.route.clear();
+                }
+                let area = an.area.clone();
+                an.wander.route.retain(|c| area.contains(*c));
+            }
         }
         g.drain_events();
         g.mark_saved();

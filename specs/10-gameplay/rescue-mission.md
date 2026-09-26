@@ -39,6 +39,12 @@ occupied again.
    over the map (the chosen places of a level's animals are ≥ 12 m apart). The chosen place
    is saved (GAME-SAVE) and does not change on reload. Every candidate place has its own
    location riddle per reading level and language (CONT-MISSIONS).
+   *Implementation (M5a):* the pick follows Q-082 (answered): seeded uniform pick, redraw
+   of the whole set while two spots are < 12 m apart (max 64, then the first valid
+   combination), and a new game avoids each animal's place of the previous game (the host
+   keeps the last picks). A new game gets a random seed; `?seed=N` in the URL fixes it
+   (tests). Only the missions in scope of the level are interactable (Q-069 answered:
+   level 1 = zebra, hippo, panda).
 2. **Reading comprehension is the core.** The info board holds a **location riddle** for the
    animal's actual hiding place. The riddle describes the place indirectly (what the animal
    does there, what is there) — it never names the place directly on `klasse1`+.
@@ -60,12 +66,20 @@ occupied again.
    (`eat`, then `happy`), the enclosure gate closes, and the mission is complete.
 9. When all missions are complete, the final celebration plays (Q-031).
 10. A mission may add a quest step (e.g. `quest_monkey_baby`, `quest_key` in GAME-QUESTS).
-11. *Presentation (PoC M4):* escaped animals play `drink` at the river (else `idle`);
-    following animals walk behind the player; events map to clips — `not_interested` and
+11. *Presentation (PoC M4, generalised in M5a):* every animal of the level is drawn with
+    its model `assets/models/animals/<id>.glb` (a placeholder box animal if it is missing or
+    fails to load). Resting clip = the hiding place's `pose` while escaped (`drink` at the
+    river, `eat`, `sleep`, `idle`), `swim` while in water (pond, pool), else `idle`;
+    locomotion = `walk`, or `swim` in water; a clip the model lacks falls back to `idle` /
+    `walk` (e.g. no `sleep` → `idle`). Walk playback = speed ÷ the authored speed of
+    `animal_anims.toml`, clamped (ART-RIG). Swimming animals sink by their water line
+    (hippo 0.9 m, `zoo_core::animals::swim_sink_m`) so only back, eyes and ears show.
+    Following animals walk behind the player; events map to clips — `not_interested` and
     `refuse` → `refuse`, `started_following` → `happy`, entering the enclosure → `eat` then
     `happy`; mission complete shows a short celebration (confetti) and
     `mission-<animal>-home`. Interacting at an enclosure gate while leading animals is the
-    same as walking into it (GAME-PLAYER §5).
+    same as walking into it (GAME-PLAYER §5). Arriving animals step onto the cell just
+    inside the gate first, then wander at home (GAME-ANIMALS).
 
 
 ## Animals that cannot walk behind the player — the goldfish bowl
@@ -112,7 +126,7 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 | RESC-011 | Given reading level `klasse1`+, then no location riddle contains the name of its hiding place, i.e. the place word shown on `kiga` for that hiding place (CONT-MISSIONS), in the same language (matching rule: Q-039). | unit |
 | RESC-012 | Given mission `zebra` not started, when the player reads the zebra info board for the first time, then mission `zebra` is started. | unit |
 | RESC-013 | Given the zebra info board has not been read, when the player shows grass to the zebras, then the zebras become `following`. | unit |
-| RESC-017 | Given level 1 as built, then every info board and animal that is interactable has its texts (location riddle for every reading level, home message) in `de` and `en` — no panel, bubble or celebration shows a raw Fluent key (proposal, Q-069; QA 2026-09-26). | unit |
+| RESC-017 | Given level 1 as built, then every info board and animal that is interactable has its texts (location riddle for every reading level, home message) in `de` and `en` — no panel, bubble or celebration shows a raw Fluent key (Q-069 answered; QA 2026-09-26). | unit |
 | RESC-014 | Given 1 000 different seeds, then every animal of level 1 is placed at each of its ≥ 3 candidate hiding places at least once, no two animals ever share a place, and chosen places of one playthrough are ≥ 12 m apart. | unit |
 | RESC-015 | Given any seed and reading level, then the info board shows the riddle of the hiding place actually chosen for that playthrough. | unit |
 | RESC-016 | Given a saved game, when it is restored, then every animal is still at (or wandering around) the same chosen hiding place. | unit |
@@ -122,6 +136,8 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 | RESC-021 | Given the fish is in the bowl, when the player puts the bowl at the goldfish home, then the fish is in its enclosure and the mission completes. | unit |
 | RESC-022 | Given a save with a carried filled bowl and the fish in it, when restored, then bowl, water and fish are unchanged. | unit |
 | RESC-023 | Given the player carries the bowl with the fish, then her speed is 0.9 × the surface speed. | unit |
+| RESC-024 | Given the last picks of the previous game (host key `zoo.picks.level-1`), when a new game starts with any seed, then no animal gets the hiding place it had in the previous game (§1 implementation note, Q-082 answered). | e2e |
+| RESC-025 | Given a level whose `[level] missions` lists only some of its enclosures' animals, then only the info boards, animals and gates of the listed missions are interactable; without the field every animal is in scope (§1, Q-069 answered, GAME-LAYOUT). | unit |
 
 ## Open questions
 
@@ -131,3 +147,4 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
 - Q-022/Q-023 How missions map to levels and barriers.
 - Q-020 Several missions active at once? Q-041 Food shown to a second group while one follows.
 - Q-036 Goldfish transport, Q-039 riddle/place-word rule, Q-040 monkey baby quest.
+- Q-097 Out-of-reach escaped animal comes towards the player (proposal, GAME-ANIMALS). Q-069 (answered) only missions in scope are interactable. Q-082 (answered) picking rule.

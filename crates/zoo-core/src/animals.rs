@@ -3,6 +3,8 @@
 use crate::food::Food;
 
 /// Static animal data (GAME-ANIMALS table / CONT-MISSIONS overview; list pending Q-002).
+/// `hiding_places` lists the candidate places (CONT-MISSIONS; levels 2–3 proposal Q-095);
+/// the level data (`[[hiding_place]]`) is the source of truth for positions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AnimalInfo {
     pub id: &'static str,
@@ -14,54 +16,121 @@ pub const ANIMALS: [AnimalInfo; 10] = [
     AnimalInfo {
         id: "zebra",
         foods: &[Food::Grass],
-        hiding_places: &["loc_river"],
+        hiding_places: &["loc_river", "loc_meadow", "loc_sand"],
     },
     AnimalInfo {
         id: "hippo",
         foods: &[Food::Melons],
-        hiding_places: &["loc_pond"],
+        hiding_places: &["loc_pond", "loc_mud", "loc_shade"],
     },
     AnimalInfo {
         id: "panda",
         foods: &[Food::Bamboo],
-        hiding_places: &["loc_cave"],
+        hiding_places: &["loc_cave", "loc_bamboo", "loc_leaves"],
     },
     AnimalInfo {
         id: "koala",
         foods: &[Food::Eucalyptus],
-        hiding_places: &["loc_tallest_tree"],
+        hiding_places: &["loc_treehouse", "loc_tallest_tree", "loc_blossom_tree"],
     },
     AnimalInfo {
         id: "elephant",
         foods: &[Food::Hay],
-        hiding_places: &["loc_mud_pool"],
+        hiding_places: &["loc_fountain", "loc_log_pile", "loc_big_ball"],
     },
     AnimalInfo {
         id: "goldfish",
         foods: &[Food::FishFood],
-        hiding_places: &["loc_fountain"],
+        hiding_places: &["loc_waterfall", "loc_water_wheel", "loc_willow"],
     },
     AnimalInfo {
         id: "monkey",
         foods: &[Food::Bananas],
-        hiding_places: &["loc_pirate_ship"],
+        hiding_places: &["loc_pirate_ship", "loc_carousel", "loc_trampoline"],
     },
     AnimalInfo {
         id: "giraffe",
         foods: &[Food::Leaves],
-        hiding_places: &["loc_playground"],
+        hiding_places: &["loc_lookout_tower", "loc_train", "loc_playground"],
     },
     AnimalInfo {
         id: "lion",
         foods: &[Food::Meat],
-        hiding_places: &["loc_sun_rocks"],
+        hiding_places: &["loc_sun_rocks", "loc_stage", "loc_deckchairs"],
     },
     AnimalInfo {
         id: "snow_fox",
         foods: &[Food::Berries],
-        hiding_places: &["loc_ice_cream_kiosk"],
+        hiding_places: &["loc_ice_cream_kiosk", "loc_sprinkler", "loc_laundry"],
     },
 ];
+
+/// How deep a swimming animal sinks in water (metres below its land pose), so only eyes,
+/// ears and back show (GAME-LEVEL-1 "Hippo enclosure pool", ART-ANIMALS hippo `swim`: the
+/// model's water line is ~0.9 m). 0 = the animal does not swim.
+pub fn swim_sink_m(animal: &str) -> f32 {
+    match animal {
+        "hippo" => 0.9,
+        _ => 0.0,
+    }
+}
+
+/// Clip data of `assets/models/animals/animal_anims.toml` (ART-ANIMALS "Clips"): per animal
+/// and clip the frame count, loop flag and authored locomotion speed.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct AnimTable {
+    clips: std::collections::BTreeMap<(String, String), ClipInfo>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ClipInfo {
+    pub frames: u32,
+    pub looping: bool,
+    /// Authored speed (m/s) of a locomotion clip.
+    pub speed: Option<f32>,
+}
+
+impl AnimTable {
+    /// Parses the TOML (unknown keys are ignored). Tables `[<animal>.<clip>]`.
+    pub fn from_toml_str(s: &str) -> Result<Self, String> {
+        let v: toml::Table = toml::from_str(s).map_err(|e| e.to_string())?;
+        let mut clips = std::collections::BTreeMap::new();
+        for (animal, t) in &v {
+            let Some(t) = t.as_table() else { continue };
+            for (clip, c) in t {
+                let Some(c) = c.as_table() else { continue };
+                let frames = c.get("frames").and_then(|f| f.as_integer()).unwrap_or(0) as u32;
+                let looping = c.get("loop").and_then(|f| f.as_bool()).unwrap_or(false);
+                let speed = c
+                    .get("speed")
+                    .and_then(|f| f.as_float().or_else(|| f.as_integer().map(|i| i as f64)));
+                clips.insert(
+                    (animal.clone(), clip.clone()),
+                    ClipInfo {
+                        frames,
+                        looping,
+                        speed: speed.map(|x| x as f32),
+                    },
+                );
+            }
+        }
+        Ok(Self { clips })
+    }
+
+    pub fn clip(&self, animal: &str, clip: &str) -> Option<ClipInfo> {
+        self.clips
+            .get(&(animal.to_owned(), clip.to_owned()))
+            .copied()
+    }
+
+    /// Authored speed of an animal's `walk` (default 1.4 m/s, ART-ANIMALS §6).
+    pub fn walk_speed(&self, animal: &str) -> f32 {
+        self.clip(animal, "walk")
+            .and_then(|c| c.speed)
+            .filter(|s| *s > 0.0)
+            .unwrap_or(crate::player::WALK_CLIP_AUTHORED_SPEED)
+    }
+}
 
 pub fn animal_info(id: &str) -> Option<&'static AnimalInfo> {
     ANIMALS.iter().find(|a| a.id == id)

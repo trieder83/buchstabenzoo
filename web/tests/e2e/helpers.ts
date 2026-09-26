@@ -9,6 +9,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const repo = path.resolve(here, '../../..');
 export const shots = path.join(repo, 'art/environment/poc');
 
+/**
+ * Start URL with a fixed seed (GAME-RESCUE §1 discovery): seed 17 puts the zebra at
+ * `loc_river`, the panda at `loc_cave` and the hippo at `loc_pond` — the classic places the
+ * scripted tests walk to. Other seeds pick other candidates (discovery.spec.ts).
+ */
+export const START_URL = '/?seed=17';
+
 /** Messages of all .ftl files of a language (simple `key = value` lines). */
 export function ftl(lang: string): Record<string, string> {
   const dir = path.join(repo, 'assets/i18n', lang);
@@ -72,4 +79,25 @@ export async function state(page: Page) {
       complete: a.mission_complete('zebra'),
     };
   });
+}
+
+/**
+ * Walks up to a (wandering) escaped animal and faces it (GAME-ANIMALS: it stops and looks at
+ * the player within 3 m; out of reach in the pond it comes closer). Repeats the walk if the
+ * animal moved meanwhile. Ends within the 2 m interaction range.
+ */
+export async function approach(page: Page, animal: string): Promise<void> {
+  for (let i = 0; i < 4; i++) {
+    const p = await page.evaluate((id) => window.__zoo!.app.debug_stand_near(id), animal);
+    expect(p.length, `stand point near ${animal}`).toBe(2);
+    await goto(page, p[0], p[1]);
+    await page.evaluate(() => window.__zoo!.app.debug_step(1.0));
+    const d = await page.evaluate((id) => {
+      const a = window.__zoo!.app;
+      return Math.hypot(a.animal_x(id) - a.player_x(), a.animal_z(id) - a.player_z());
+    }, animal);
+    if (d <= 1.95) break;
+  }
+  await page.evaluate((id) => window.__zoo!.app.debug_face_animal(id), animal);
+  await nextFrames(page, 2);
 }

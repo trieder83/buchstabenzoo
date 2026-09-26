@@ -2,7 +2,7 @@
 // in the browser. Touches are real CDP touch events (distinct touch ids → distinct pointer
 // ids), so the browser's own pointer/touch pipeline is exercised.
 import { expect, test, type CDPSession, type Page } from '@playwright/test';
-import { face, goto, nextFrames, state, waitFrames } from './helpers';
+import { face, goto, nextFrames, state, waitFrames, START_URL } from './helpers';
 
 type Pt = { x: number; y: number; id: number };
 // CDP: touchStart/touchMove list the active points; touchEnd lists the points that end
@@ -18,7 +18,7 @@ async function open(page: Page) {
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
   });
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }

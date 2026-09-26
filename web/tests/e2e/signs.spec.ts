@@ -3,7 +3,7 @@
 // `sign-food-storage`), both readable from the default camera (14 m, 55°).
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
-import { ftl, goto, shots, waitFrames } from './helpers';
+import { ftl, goto, shots, waitFrames, START_URL } from './helpers';
 
 test.describe.configure({ timeout: 180_000 });
 test.use({ viewport: { width: 1280, height: 720 } });
@@ -19,7 +19,7 @@ async function start(page: Page) {
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }

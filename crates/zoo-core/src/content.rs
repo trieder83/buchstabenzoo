@@ -66,12 +66,10 @@ pub fn default_language(_device_lang: &str) -> Language {
     Language::De
 }
 
-/// Fluent key of a location riddle (CONT-MISSIONS §1: `mission-<animal>-riddle-<level>`).
-///
-/// Every animal has one hiding place for now, so the key does not contain the hiding place;
-/// more places per animal need a key scheme with the place id (spec gap).
-pub fn riddle_key(animal: &str, _hiding_place: &str, level: ReadingLevel) -> String {
-    format!("mission-{animal}-riddle-{}", level.id())
+/// Fluent key of the location riddle of one candidate hiding place (CONT-MISSIONS
+/// Behaviour 1: `mission-<animal>-riddle-<hiding_place>-<level>`, full place id).
+pub fn riddle_key(animal: &str, hiding_place: &str, level: ReadingLevel) -> String {
+    format!("mission-{animal}-riddle-{hiding_place}-{}", level.id())
 }
 
 /// Fluent key of the facts about an animal on its info board (GAME-ANIMALS "Info board"

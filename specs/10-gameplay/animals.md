@@ -50,6 +50,14 @@ escaped ──(shown correct food)──▶ following ──(enters own enclosur
   player needs to pass, never through props), then idles/eats/drinks again. It never
   leaves the hiding area, so the riddle always stays true. When the player comes within
   3 m, it stops and looks at her (so it is easy to reach and show the food).
+  *Proposal (Q-097, M5a):* an escaped animal that is out of the player's reach (e.g. far out
+  in the pond, > 2 m from anywhere she can stand) comes towards her when she is within 5 m,
+  to the cell of its wander area nearest to her, then stops and looks at her.
+  *Implementation (M5a):* `zoo_core::wander` — wander areas as in GAME-LEVEL-1 "Hiding
+  places" (rect clip), 4-neighbour routes between cell centres, 0.5 m/s, pauses 6–15 s from
+  the game RNG; targets prefer cells whose 8 neighbours belong to the same part of the area
+  (an animal does not rest with its head through a fence or over the pool rim). Facing,
+  pause and route are saved (ANIM-011).
 - `following`: follows the player (GAME-RESCUE §6).
 - `in_enclosure`: inside, plays idle/happy animations and **wanders slowly inside its
   enclosure** the same way (pause 6–15 s, ≈ 0.5 m/s, stays inside the fence, avoids the
@@ -87,16 +95,16 @@ On `kiga` the board shows pictures (habitat, food) plus one word each; read-alou
 | ANIM-003 | Given every info board text (all levels, all languages), then the food word equals the label text of a food box with that food. | unit |
 | ANIM-004 | Given every hiding place in the data, then it references an existing location in the layout data (GAME-LAYOUT). | unit |
 | ANIM-005 | Given seed S picks hiding place H for the zebras, then the zebra info board shows the location riddle for H (at the current reading level and language). | unit |
-| ANIM-006 | Given the zebra info board at every reading level and language, then the panel shows facts text (`mission-zebra-facts-<level>`) in addition to riddle and food word. | unit |
+| ANIM-006 | Given the zebra info board at every reading level and language, then the panel shows facts text (`mission-zebra-facts-<reading_level>`) in addition to riddle and food word. | unit |
 | ANIM-007 | Given every facts text, then it contains no place word of the animal's hiding places (as RESC-011) and `klasse1` sentences have ≤ 5 words. | unit |
 | ANIM-008 | Given an escaped animal over 120 s of simulated time, then it moved at least twice, never farther than 3 m from its hiding-place spot, never onto a non-walkable cell or into a prop, and its speed never exceeded 0.6 m/s. | unit |
 | ANIM-009 | Given the player within 3 m of an escaped animal, then it stops wandering and faces the player. | unit |
 | ANIM-010 | Given an animal in its enclosure over 120 s, then it wandered inside the enclosure only and never stood on a gate cell. | unit |
-| ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (proposal Q-085). | unit |
 | ANIM-011 | Given the same seed and inputs, then wandering is identical (deterministic); after save/restore it continues identically (GAME-SAVE). | unit |
+| ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (proposal Q-085). | unit |
 
 ## Open questions
 
 - Q-002 final list, Q-004 hippos, Q-005 elephant, Q-030 herd size, Q-036 goldfish transport.
 - Q-043 Animation set per animal (hiding-place idles, reactions, koala/goldfish locomotion).
-- Q-044 How hiding places are represented in the layout data. Q-085 `home_wander_on` and enclosure pools (data shape).
+- Q-044 How hiding places are represented in the layout data. Q-085 `home_wander_on` and enclosure pools (data shape). Q-097 out-of-reach escaped animal comes towards the player (proposal).

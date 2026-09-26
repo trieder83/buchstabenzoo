@@ -111,27 +111,25 @@ for (const [name, vp] of [
   });
 }
 
-test.describe('out-of-scope enclosures', () => {
+test.describe('hippo and panda boards (in scope since M5a, Q-069)', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
   for (const [animal, stand, key] of [
     ['hippo', [7.0, 17.5], 'KeyD'],
     ['panda', [-3.5, 28.8], 'KeyW'],
   ] as const) {
-    test(`RESC-017: the ${animal} info board shows no raw text key`, async ({ page }) => {
-      test.fail(true, 'QA F1 / Q-069: hippo/panda boards are interactable but have no texts');
+    test(`RESC-017: the ${animal} info board shows its riddle, food word and facts — no raw text key`, async ({ page }) => {
       await startGame(page, 'de', 'klasse1');
       await goto(page, stand[0], stand[1]);
       await turn(page, key);
       const target = await page.evaluate(() => window.__zoo!.app.target_key());
-      if (target === `info_board:${animal}`) {
-        await ensurePanel(page, async () => {
-          await page.keyboard.press('KeyE');
-          await nextFrames(page, 2);
-        });
-        expect(await textOf(page, '#panel')).not.toMatch(RAW_KEY);
-      }
-      // Either the board is not interactable in the PoC or it shows real text (Q-069).
-      expect(target === '' || !(await textOf(page, '#panel')).match(RAW_KEY)).toBe(true);
+      expect(target).toBe(`info_board:${animal}`);
+      await ensurePanel(page, async () => {
+        await page.keyboard.press('KeyE');
+        await nextFrames(page, 2);
+      });
+      const text = await textOf(page, '#panel');
+      expect(text).not.toMatch(RAW_KEY);
+      expect(text.length).toBeGreaterThan(40);
     });
   }
 });

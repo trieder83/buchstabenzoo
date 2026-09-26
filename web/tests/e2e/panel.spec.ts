@@ -2,7 +2,7 @@
 // stands in front of an info board and faces it, close by themselves when she walks away,
 // never block walking and never cover the player on screen.
 import { expect, test, type Page } from '@playwright/test';
-import { face, goto, nextFrames, waitFrames } from './helpers';
+import { face, goto, nextFrames, waitFrames, START_URL } from './helpers';
 
 test.describe.configure({ timeout: 180_000 });
 
@@ -18,7 +18,7 @@ async function start(page: Page, level = 'klasse1') {
     if (m.type() === 'error') errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }

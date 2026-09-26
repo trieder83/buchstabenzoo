@@ -58,16 +58,6 @@ fn idle(g: &mut Game, seconds: f32) {
     }
 }
 
-fn spot(g: &Game, animal: &str) -> IVec2 {
-    let a = g.animal(animal).unwrap();
-    g.level
-        .data
-        .element(&a.hiding_place)
-        .unwrap()
-        .animal_spot_cell()
-        .unwrap()
-}
-
 fn gate(g: &Game, enclosure: &str) -> Vec<IVec2> {
     g.level
         .data
@@ -79,15 +69,15 @@ fn gate(g: &Game, enclosure: &str) -> Vec<IVec2> {
         .collect()
 }
 
-/// Walkable cell (outside gates) within 2 m of the animal's spot, closest to the spawn side.
+/// The walkable cell (outside gates) closest to the animal (it wanders around its spot).
 fn cell_near_spot(g: &Game, animal: &str) -> IVec2 {
-    let s = cell_center(spot(g, animal));
+    let s = g.animal(animal).unwrap().pos;
     g.level
         .data
         .level
         .bounds
         .cells()
-        .filter(|&c| g.level.grid().is_walkable(c, false) && cell_center(c).distance(s) <= 2.0)
+        .filter(|&c| g.level.grid().is_passable(c, false))
         .min_by(|a, b| {
             cell_center(*a)
                 .distance(s)
@@ -117,17 +107,33 @@ fn get_food(g: &mut Game, food: Food) {
     g.take_food(food).unwrap();
 }
 
+/// Walks up to a (wandering) escaped animal until it is within interaction range.
+fn reach_animal(g: &mut Game, animal: &str) {
+    for _ in 0..6 {
+        walk_to(g, cell_near_spot(g, animal), 120.0);
+        // step up to the animal as far as the ground allows; it stops (or comes closer)
+        // when the player is near (ANIM-009)
+        for _ in 0..120 {
+            let to = g.animal(animal).unwrap().pos - g.player.pos;
+            if to.length() < 1.7 {
+                break;
+            }
+            g.update(DT, to.normalize());
+        }
+        if g.animal(animal).unwrap().pos.distance(g.player.pos) <= 2.0 {
+            return;
+        }
+        idle(g, 1.0);
+        if g.animal(animal).unwrap().pos.distance(g.player.pos) <= 2.0 {
+            return;
+        }
+    }
+    panic!("could not reach the {animal}");
+}
+
 fn make_follow(g: &mut Game, animal: &str, food: Food) {
     get_food(g, food);
-    walk_to(g, cell_near_spot(g, animal), 120.0);
-    // step up to the animal as far as the ground allows
-    for _ in 0..60 {
-        let to = g.animal(animal).unwrap().pos - g.player.pos;
-        if to.length() < 1.8 {
-            break;
-        }
-        g.update(DT, to.normalize());
-    }
+    reach_animal(g, animal);
     g.show_food(animal).unwrap();
     assert_eq!(g.animal(animal).unwrap().state, AnimalState::Following);
 }
@@ -161,40 +167,28 @@ fn resc_001_new_game_enclosures_empty_animals_hidden() {
     assert_eq!(g.animals.len(), 3);
     for a in &g.animals {
         assert_eq!(a.state, AnimalState::Escaped);
-        let h = g.level.data.element(&a.hiding_place).unwrap();
-        assert_eq!(h.ty, ElementType::HidingPlace);
-        assert_eq!(h.animal.as_deref(), Some(a.id()));
-        assert_eq!(a.pos, cell_center(h.animal_spot_cell().unwrap()));
+        let h = g.level.data.hiding_place(&a.hiding_place).unwrap();
+        assert_eq!(h.animal, a.id());
+        assert_eq!(a.pos, h.spot());
     }
-}
-
-/// Level 1 with a second (synthetic) zebra hiding place, so the seeded choice matters.
-fn level_with_two_zebra_places() -> zoo_core::LevelData {
-    let mut data = common::level1();
-    let mut extra = data.element("loc_river").unwrap().clone();
-    extra.id = "loc_test".into();
-    extra.animal_spot = Some([-21, 3]);
-    data.elements.push(extra);
-    data
 }
 
 // RESC-002
 #[test]
 fn resc_002_same_seed_same_hiding_place() {
     let pick = |seed| {
-        Game::new(level_with_two_zebra_places(), seed)
-            .unwrap()
-            .animal("zebra")
-            .unwrap()
-            .hiding_place
-            .clone()
+        let g = common::game(seed);
+        g.animals
+            .iter()
+            .map(|a| a.hiding_place.clone())
+            .collect::<Vec<_>>()
     };
     let mut seen = std::collections::BTreeSet::new();
     for seed in 0..40 {
         assert_eq!(pick(seed), pick(seed));
-        seen.insert(pick(seed));
+        seen.insert(pick(seed)[0].clone());
     }
-    assert_eq!(seen.len(), 2, "both places are chosen for some seed");
+    assert_eq!(seen.len(), 3, "every zebra place is chosen for some seed");
 }
 
 // RESC-004, FEED-004
@@ -315,7 +309,11 @@ fn resc_008_zebra_mission_end_to_end() {
     g.settings.reading_level = ReadingLevel::Klasse1;
     walk_to(&mut g, IVec2::new(-8, 14), 60.0); // next to board_zebra
     let board = g.read_info_board("zebra").unwrap();
-    assert_eq!(board.riddle_key, "mission-zebra-riddle-klasse1");
+    let place = g.animal("zebra").unwrap().hiding_place.clone();
+    assert_eq!(
+        board.riddle_key,
+        format!("mission-zebra-riddle-{place}-klasse1")
+    );
     assert_eq!(board.food_key, "food-grass");
     make_follow(&mut g, "zebra", Food::Grass);
     g.drain_events();
@@ -447,7 +445,10 @@ fn anim_002_in_enclosure_is_final() {
     g.player.pos = cell_center(IVec2::new(-8, 14));
     idle(&mut g, 20.0);
     let z = g.animal("zebra").unwrap();
-    assert_eq!((z.state, z.pos), (AnimalState::InEnclosure, pos));
+    assert_eq!(z.state, AnimalState::InEnclosure);
+    // it wanders at home (ANIM-010) but never leaves the enclosure
+    let enc = g.level.data.element("enc_zebra").unwrap().rect;
+    assert!(enc.contains(cell_of(z.pos)), "{}", z.pos);
 }
 
 // ANIM-003 (for the missions with texts: zebra)
@@ -467,33 +468,38 @@ fn anim_003_board_food_word_equals_box_label() {
     }
 }
 
-// ANIM-004 (animals of level 1; the other 7 hiding places are not in any layout data yet)
+// ANIM-004 (animals of level 1; levels 2/3 are covered once their files are loaded)
 #[test]
 fn anim_004_hiding_places_exist_in_layout() {
     let data = common::level1();
     for enc in data.elements_of(ElementType::Enclosure) {
         let a = zoo_core::animals::animal_info(enc.animal.as_deref().unwrap()).unwrap();
+        let ids: Vec<&str> = data.hiding_places_of(a.id).map(|h| h.id.as_str()).collect();
+        assert!(ids.len() >= 3, "{}: {ids:?}", a.id);
         for h in a.hiding_places {
-            let e = data.element(h).unwrap_or_else(|| panic!("{h} missing"));
-            assert_eq!(e.ty, ElementType::HidingPlace);
-            assert_eq!(e.animal.as_deref(), Some(a.id));
+            assert!(ids.contains(h), "{h} of {} missing in the layout", a.id);
+        }
+        for id in &ids {
+            assert!(a.hiding_places.contains(id), "{id} not in the animal data");
         }
     }
 }
 
-// ANIM-005
+// ANIM-005, RESC-015
 #[test]
-fn anim_005_board_shows_riddle_for_chosen_place() {
-    for seed in 0..10 {
-        let mut g = Game::new(level_with_two_zebra_places(), seed).unwrap();
-        let hp = g.animal("zebra").unwrap().hiding_place.clone();
-        for level in ReadingLevel::ALL {
-            g.settings.reading_level = level;
-            let b = g.info_board("zebra").unwrap();
-            assert_eq!(b.riddle_key, riddle_key("zebra", &hp, level));
-            assert_eq!(b.picture.is_some(), level == ReadingLevel::Kiga);
-            if let Some(p) = b.picture {
-                assert_eq!(p, hp);
+fn anim_005_resc_015_board_shows_riddle_for_chosen_place() {
+    for seed in 0..40 {
+        let mut g = common::game(seed);
+        for animal in ["zebra", "hippo", "panda"] {
+            let hp = g.animal(animal).unwrap().hiding_place.clone();
+            for level in ReadingLevel::ALL {
+                g.settings.reading_level = level;
+                let b = g.info_board(animal).unwrap();
+                assert_eq!(b.riddle_key, riddle_key(animal, &hp, level));
+                assert_eq!(b.picture.is_some(), level == ReadingLevel::Kiga);
+                if let Some(p) = b.picture {
+                    assert_eq!(p, hp);
+                }
             }
         }
     }
@@ -503,17 +509,18 @@ fn anim_005_board_shows_riddle_for_chosen_place() {
 #[test]
 fn read_003_level_change_applies_to_next_label() {
     let mut g = common::game(1);
+    let hp = g.animal("zebra").unwrap().hiding_place.clone();
     g.settings.reading_level = ReadingLevel::Kiga;
     assert!(g.food_labels().iter().all(|(_, l)| l.picture));
     assert_eq!(
         g.info_board("zebra").unwrap().riddle_key,
-        "mission-zebra-riddle-kiga"
+        format!("mission-zebra-riddle-{hp}-kiga")
     );
     g.settings.reading_level = ReadingLevel::Klasse2;
     assert!(g.food_labels().iter().all(|(_, l)| !l.picture));
     assert_eq!(
         g.info_board("zebra").unwrap().riddle_key,
-        "mission-zebra-riddle-klasse2"
+        format!("mission-zebra-riddle-{hp}-klasse2")
     );
 }
 
@@ -661,4 +668,21 @@ fn autopilot_reaches_targets_with_collision() {
             assert!(t < 60.0, "autopilot to {target} stuck at {}", g.player.pos);
         }
     }
+}
+
+// GAME-RESCUE §11 / ART-ANIMALS "Clips": the clip table of animal_anims.toml is read; every
+// level-1 animal walks at its authored speed (1.4 m/s), the hippo has `swim`.
+#[test]
+fn animal_clip_table_is_read() {
+    let t = zoo_core::animals::AnimTable::from_toml_str(&common::read(
+        "assets/models/animals/animal_anims.toml",
+    ))
+    .unwrap();
+    for a in ["zebra", "hippo", "panda"] {
+        assert!((t.walk_speed(a) - 1.4).abs() < 1e-6, "{a}");
+        assert!(t.clip(a, "idle").is_some_and(|c| c.looping), "{a}");
+    }
+    assert!(t.clip("hippo", "swim").is_some());
+    assert!(t.clip("zebra", "drink").is_some());
+    assert!(zoo_core::animals::swim_sink_m("hippo") > 0.5);
 }

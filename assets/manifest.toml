@@ -55,14 +55,14 @@ id = "goldfish"
 kind = "animals"
 spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["swim", "eat"]
+animations = ["swim", "idle", "eat", "happy", "refuse"]
 
 [[asset]]
 id = "monkey"
 kind = "animals"
 spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "climb", "eat", "happy"]
+animations = ["idle", "walk", "climb", "eat", "happy", "refuse", "wave"]
 
 [[asset]]
 id = "giraffe"
@@ -193,6 +193,224 @@ animations = []
 
 [[asset]]
 id = "loc_leaves"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+# Levels 2 and 3 (GAME-LEVEL-2 / GAME-LEVEL-3): overviews, enclosures, zookeeper house and the 21 candidate hiding places
+[[asset]]
+id = "env_level2_overview"
+kind = "environment"
+spec = "GAME-LEVEL-2"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_level3_overview"
+kind = "environment"
+spec = "GAME-LEVEL-3"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_koala"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_elephant"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_giraffe"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_lion"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_monkey"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_goldfish"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_snow_fox"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_zookeeper_house"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_treehouse"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_tallest_tree"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_blossom_tree"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_fountain"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_log_pile"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_big_ball"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_lookout_tower"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_train"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_playground"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_sun_rocks"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_stage"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_deckchairs"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_pirate_ship"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_carousel"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_trampoline"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_waterfall"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_water_wheel"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_willow"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_ice_cream_kiosk"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_sprinkler"
+kind = "environment"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "loc_laundry"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
 concept_approved = false

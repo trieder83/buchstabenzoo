@@ -175,7 +175,7 @@ every type except `path` and `hiding_place`. The level has no legacy `[[element]
 | `path_l2_e` | path (side) | 67, 27, 3, 4 | Short path from path_l2_se north to the giant tree east of the elephant enclosure. |
 | `path_l2_north` | path (side) | 36, 42, 3, 10 | Side path north from the ring to the construction fence (level 3). |
 | `path_l2_nw` | path (side) | 26, 52, 13, 3 | Leads west to barrier_l2_construction. |
-| `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30). Second food storage (proposal Q-085): all 10 food boxes, row in front of the west facade facing the arriving child. |
+| `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30). Second food storage (proposal Q-089): all 10 food boxes, row in front of the west facade facing the arriving child. |
 | `grove_l2_center` | decoration (tree_grove) | 45, 27, 6, 12 | density `dense`.  |
 | `trees_l2_center_n` | decoration (trees) | 39, 35, 6, 4 | density `dense`.  |
 | `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter, feeding trough (GAME-FAMILY). No tree taller than the others, no blossoms, no tree house (riddle guards). |

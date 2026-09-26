@@ -24,44 +24,40 @@ pub enum LocalShape {
     Box { x: f32, z: f32, hx: f32, hz: f32 },
 }
 
-/// Ground footprint of a prop model. Models not listed (tiles, fences, hedges and walls on
-/// solid cells, ground decoration such as grass tufts, lily pads, flower beds, reeds, ducks)
-/// have none. Sizes follow `tools/blender/props/README_kits_3_6.md`.
+/// Ground footprint of a prop model (GAME-LAYOUT "Collision footprints", values measured
+/// from the `.glb` cross-section 0.05–1.4 m, proposal Q-087; LAYOUT-018). Models not listed
+/// (tiles, fences, hedges and walls on solid cells, ground decoration such as grass tufts,
+/// lily pads, flower beds, reeds, ducks) have none.
 pub fn footprint(model: &str) -> &'static [LocalShape] {
     use LocalShape::{Box as B, Circle as C};
     match model {
         // single post, panel tilted back (towards -Z)
         "info_board" => &[B {
             x: 0.0,
-            z: -0.05,
-            hx: 0.5,
-            hz: 0.25,
+            z: -0.06,
+            hx: 0.51,
+            hz: 0.32,
         }],
-        // two posts at x = ±1.09; the gate opening between them stays free
+        // two posts at x = ±1.09; the gate opening between them stays free (Q-086: the
+        // panel becomes a gate arch)
         "enclosure_sign" => &[
             C {
                 x: -1.09,
-                z: 0.0,
+                z: -0.05,
                 r: 0.12,
             },
             C {
                 x: 1.09,
-                z: 0.0,
+                z: -0.05,
                 r: 0.12,
             },
         ],
-        "map_board" => &[
-            C {
-                x: -1.0,
-                z: 0.0,
-                r: 0.14,
-            },
-            C {
-                x: 1.0,
-                z: 0.0,
-                r: 0.14,
-            },
-        ],
+        "map_board" => &[B {
+            x: 0.0,
+            z: 0.04,
+            hx: 1.08,
+            hz: 0.19,
+        }],
         "food_box" => &[B {
             x: 0.0,
             z: 0.0,
@@ -74,47 +70,80 @@ pub fn footprint(model: &str) -> &'static [LocalShape] {
             hx: 0.65,
             hz: 0.37,
         }],
-        "tree_round" | "tree_grove" | "tree_eucalyptus" => &[C {
+        "tree_round" => &[C {
+            x: 0.0,
+            z: 0.0,
+            r: 0.45,
+        }],
+        "tree_grove" => &[C {
             x: 0.0,
             z: 0.0,
             r: 0.35,
         }],
+        "tree_eucalyptus" => &[C {
+            x: 0.0,
+            z: 0.0,
+            r: 0.20,
+        }],
         "bush" => &[C {
             x: 0.0,
-            z: 0.0,
-            r: 0.55,
+            z: 0.05,
+            r: 0.67,
         }],
-        "rock" => &[C {
-            x: 0.0,
-            z: 0.0,
-            r: 0.5,
-        }],
-        "bamboo" => &[C {
-            x: 0.0,
-            z: 0.0,
-            r: 0.6,
+        "rock" => &[
+            C {
+                x: -0.14,
+                z: 0.03,
+                r: 0.49,
+            },
+            C {
+                x: 0.37,
+                z: 0.03,
+                r: 0.49,
+            },
+        ],
+        // box on the leaf extents (−0.46…+0.67; −0.87…+0.72): a circle would reach 0.24 m
+        // beyond the mesh (LAYOUT-018)
+        "bamboo" => &[B {
+            x: 0.105,
+            z: -0.075,
+            hx: 0.575,
+            hz: 0.80,
         }],
         "road_block" => &[B {
             x: 0.0,
             z: 0.0,
             hx: 1.05,
-            hz: 0.2,
+            hz: 0.42,
         }],
-        "repair_sign" => &[C {
+        "repair_sign" => &[B {
             x: 0.0,
             z: 0.0,
-            r: 0.15,
+            hx: 0.38,
+            hz: 0.12,
         }],
         "zookeeper_cart" => &[B {
-            x: 0.0,
+            x: 0.22,
             z: 0.0,
-            hx: 1.15,
-            hz: 0.56,
+            hx: 1.17,
+            hz: 0.57,
         }],
         "traffic_cone" => &[C {
             x: 0.0,
             z: 0.0,
             r: 0.2,
+        }],
+        "gate_zoo_closed" => &[B {
+            x: 0.0,
+            z: 0.0,
+            hx: 1.56,
+            hz: 0.36,
+        }],
+        "fallen_tree" => &[B {
+            x: -0.04,
+            z: -0.32,
+            hx: 1.22,
+            hz: 2.14,
         }],
         // handrails along both deck edges (deck along X, 2.5 m wide)
         "bridge_wood" => &[
@@ -163,6 +192,24 @@ impl Shape {
 
     /// Places a model-space shape with a model's world position and yaw.
     pub fn place(local: LocalShape, pos: Vec3, yaw: f32) -> Shape {
+        Self::place_scaled(local, pos, yaw, 1.0)
+    }
+
+    /// [`Shape::place`] for a uniformly scaled model.
+    pub fn place_scaled(local: LocalShape, pos: Vec3, yaw: f32, scale: f32) -> Shape {
+        let local = match local {
+            LocalShape::Circle { x, z, r } => LocalShape::Circle {
+                x: x * scale,
+                z: z * scale,
+                r: r * scale,
+            },
+            LocalShape::Box { x, z, hx, hz } => LocalShape::Box {
+                x: x * scale,
+                z: z * scale,
+                hx: hx * scale,
+                hz: hz * scale,
+            },
+        };
         // Model x axis and z axis expressed in level coordinates (world z is flipped).
         let (s, c) = yaw.sin_cos();
         let ax = Vec2::new(c, s);
@@ -252,7 +299,7 @@ impl Colliders {
         let mut shapes = Vec::new();
         for p in placements {
             for &l in footprint(p.model) {
-                shapes.push(Shape::place(l, p.pos, p.yaw));
+                shapes.push(Shape::place_scaled(l, p.pos, p.yaw, p.scale));
             }
         }
         Self::from_shapes(shapes, bounds)

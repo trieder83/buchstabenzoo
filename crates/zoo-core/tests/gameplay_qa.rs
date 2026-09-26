@@ -253,6 +253,10 @@ fn resc_006_follower_walks_around_obstacles() {
                 a.pos
             );
         }
+        // the player stops at the target; the zebra catches up (keeps 1.5 m)
+        for _ in 0..90 {
+            g.update(DT, Vec2::ZERO);
+        }
         let a = g.animal("zebra").unwrap();
         assert_eq!(a.state, AnimalState::Following);
         assert!(!a.waiting, "zebra fell behind on the way to {target}");
@@ -264,16 +268,15 @@ fn resc_006_follower_walks_around_obstacles() {
     }
 }
 
-// RESC-017: every animal and info board that level 1 makes interactable has its texts
-// (location riddle for every reading level, home message) in de and en, so no panel,
-// bubble or celebration ever shows a raw Fluent key.
-// Fails for `hippo` and `panda` (interactable in the PoC, texts missing) — QA finding F1,
-// open question Q-069.
+// RESC-017, RESC-025 (only missions in `[level] missions` are interactable): every animal and info board that level 1 makes interactable has its texts
+// (location riddle for every reading level, home message, name, facts) in de and en, so no
+// panel, bubble or celebration ever shows a raw Fluent key (Q-069 answered: all three
+// level-1 missions are in scope). Checked for every candidate place (any seed).
 #[test]
-#[ignore = "QA F1 / Q-069: hippo and panda are interactable but have no texts"]
 fn resc_017_every_interactable_has_texts() {
     let g = common::game(1);
     let c = common::content();
+    assert_eq!(g.animals.len(), 3, "zebra, hippo and panda are in scope");
     let mut animals: Vec<&str> = g
         .interactables()
         .iter()
@@ -285,14 +288,29 @@ fn resc_017_every_interactable_has_texts() {
     animals.sort_unstable();
     animals.dedup();
     let mut missing = Vec::new();
+    assert_eq!(animals, ["hippo", "panda", "zebra"]);
     for animal in animals {
-        let place = g.animal(animal).unwrap().hiding_place.clone();
+        let places: Vec<String> = g
+            .level
+            .data
+            .hiding_places_of(animal)
+            .map(|h| h.id.clone())
+            .collect();
         for lang in Language::ALL {
-            let mut keys: Vec<String> = ReadingLevel::ALL
+            let mut keys: Vec<String> = places
                 .iter()
-                .map(|&l| riddle_key(animal, &place, l))
+                .flat_map(|p| {
+                    ReadingLevel::ALL
+                        .iter()
+                        .map(move |&l| riddle_key(animal, p, l))
+                })
                 .collect();
             keys.push(format!("mission-{animal}-home"));
+            keys.push(format!("animal-{animal}"));
+            keys.push(format!("animal-{animal}-more"));
+            for l in ReadingLevel::ALL {
+                keys.push(zoo_core::content::facts_key(animal, l));
+            }
             for k in keys {
                 if c.text(lang, &k).is_none_or(|t| t.trim().is_empty()) {
                     missing.push(format!("{}:{k}", lang.id()));

@@ -17,3 +17,7 @@ gltf = { version = "1.4.1", default-features = false, features = ["utils", "name
 regex = { version = "1.13.1", optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.6"
+
+[dev-dependencies]
+# asset tests that check zoo-core's collision footprints against the exported meshes
+zoo-core = { path = "../zoo-core" }

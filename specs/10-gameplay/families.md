@@ -50,6 +50,12 @@ Other species stay single until decided (Q-073).
 8. **Art:** each pair needs a male and a female variant and a baby model (turnaround
    sheets first — ART-PIPELINE). The baby uses the same rig as its parents, scaled (~45 %).
 
+## Implementation status (M5a, 2026-09-26)
+
+The pair logic is **not implemented yet**: there is no female zebra model (only
+`zebra.glb`), so level 1 has one zebra (one animal group, as before). FAM-001…006 stay
+open until the female and baby models exist (ART-ANIMALS, Q-074).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |

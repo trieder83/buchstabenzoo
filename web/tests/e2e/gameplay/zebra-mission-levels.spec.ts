@@ -3,7 +3,7 @@
 // (RESC-007), walks away until the zebra waits and comes back (RESC-006), then leads it home
 // (RESC-008). Every panel and bubble must show real text — never a raw Fluent key.
 import { expect, test, type Page } from '@playwright/test';
-import { ftl, goto, nextFrames, state } from '../helpers';
+import { ftl, goto, nextFrames, state, approach } from '../helpers';
 import { ensurePanel, hold, norm, RAW_KEY, startGame, teleport, textOf, turn, wait, zebra } from './qa';
 
 test.describe.configure({ timeout: 300_000 });
@@ -30,8 +30,8 @@ for (const lang of LANGS) {
       const spot = await zebra(page);
 
       // No food yet: the zebra says it is hungry (gentle feedback, no dead end).
-      await goto(page, spot.x - 1.3, spot.z);
-      await turn(page, 'KeyD');
+      expect(Math.hypot(spot.x - 8.5, spot.z - 32.5)).toBeLessThan(3.1); // loc_river (seed 17)
+      await approach(page, 'zebra');
       expect((await state(page)).target).toBe('animal:zebra');
       await pressE(page);
       await expect.poll(() => bubble(page)).toBe(norm(t['ui-no-food']));
@@ -42,7 +42,7 @@ for (const lang of LANGS) {
       expect((await state(page)).target).toBe('info_board:zebra');
       await ensurePanel(page, () => pressE(page));
       const board = await textOf(page, '#panel');
-      expect(board).toContain(norm(t[`mission-zebra-riddle-${level}`]));
+      expect(board).toContain(norm(t[`mission-zebra-riddle-loc_river-${level}`]));
       expect(board).toContain(norm(t['food-grass']));
       expect(board).not.toMatch(RAW_KEY);
       expect((await state(page)).started).toBe(true);
@@ -62,8 +62,7 @@ for (const lang of LANGS) {
         await page.locator('#take').click();
         await expect(page.locator('#panel')).toBeHidden();
         expect((await state(page)).carry).toBe(food);
-        await goto(page, spot.x - 1.3, spot.z);
-        await turn(page, 'KeyD');
+        await approach(page, 'zebra');
         await pressE(page);
         const said = await bubble(page);
         expect(said).not.toMatch(RAW_KEY);

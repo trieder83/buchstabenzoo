@@ -53,18 +53,19 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 |---|---|---|
 | Food storage lock | Unlocked from the start, no `quest_key` in level 1. | Q-033 |
 | Hiding places in layout data | New element type `hiding_place` (overlay rectangle, not solid, with `animal`, `animal_spot`, `features`); GAME-LAYOUT marks it as proposal. | Q-044 |
-| Candidate hiding places and scenery | All 9 candidates are listed in `[[hiding_place]]` (with `wander_radius_m`, `wander_on`, `features`, `scenery`, `pose`); non-solid ground dressing (tall grass, sand, mud, tree shade, leaf pile) in `[[scenery]]`. The three `[[element]] type = "hiding_place"` entries stay as legacy mirrors until zoo-core reads `[[hiding_place]]`. | Q-080 |
-| Growing bamboo | Growing bamboo stands only at `loc_bamboo`; the panda enclosure shows cut bamboo on a feeding rack instead of live clumps, so the `loc_bamboo` riddle cannot point at the own enclosure. | Q-081 |
-| Picking hiding places | Uniform seeded pick per animal, re-drawn on a conflict (see "Hiding places"); no memory of earlier playthroughs. | Q-082 |
+| Candidate hiding places and scenery | *Answered (Q-080):* all 9 candidates are listed in `[[hiding_place]]` (with `wander_radius_m`, `wander_on`, `features`, `scenery`, `pose`); non-solid ground dressing (tall grass, sand, mud, tree shade, leaf pile) in `[[scenery]]`. zoo-core reads only these lists since M5a; the legacy `[[element]] type = "hiding_place"` mirrors are deleted. | Q-080 |
+| Growing bamboo | *Answered (Q-081):* growing bamboo stands only at `loc_bamboo`; the panda enclosure shows cut bamboo on a feeding rack instead of live clumps, so the `loc_bamboo` riddle cannot point at the own enclosure. | Q-081 |
+| Picking hiding places | *Answered (Q-082):* uniform seeded pick per animal, re-drawn on a conflict; a new game avoids each animal's place of the previous game (see "Hiding places"). | Q-082 |
+| Missions in scope | *Answered (Q-069):* all three level-1 missions are in scope (`[level] missions = ["zebra", "hippo", "panda"]`); only missions in scope are interactable. | Q-069 |
 | Sight test data | Solid elements carry `blocks_view` (and `height_m` for the mockups). | Q-044 |
 | Barrier unlock | `barrier_ne_tree` opens when all three level-1 animals are home; the other two barriers belong to later levels. | Q-022, Q-023 |
 | Food boxes in level 1 | All 10 food boxes stand in the storage (natural distractors). | Q-047 |
 | Food box positions (PoC) | The storage interior is not modelled yet: the 10 boxes stand in a row in front of the storage's south facade (box centres z = 10.66, x = −3.6 … 3.6 every 0.8 m, labels facing south), on the north row of `path_ring_s`. Order west → east: melons, hay, bananas, bamboo, **grass**, meat, leaves, fish food, berries, eucalyptus. Data: `[[food_box]]` in `level-1.toml`. | Q-065 |
-| Walking speed | 1.75 m/s on paths; grass 0.56 × = 0.98 m/s (GAME-PLAYER §6, user decision 2026-09-26). | Q-024 |
+| Walking speed | 1.93 m/s on paths; grass 0.98 m/s (GAME-PLAYER §6, user decisions 2026-09-26). | Q-024 |
 | Panda spot and cave view | Panda lies near the cave mouth so its head is visible from the high camera (see "High-angle camera" below). | — (level design) |
-| Hippo pool data | `hippo_pool` is an `[[enclosure_feature]]` (not an element) at x 11–18, z 15–21 with a west ramp; `enc_hippo.home_wander_on = ["grass", "water"]`; water and grass connect only over the ramp; the hippo picks a water target 7 of 10 times (see "Hippo enclosure pool"). | Q-085 |
-| Tree areas | `grove_center` `dense` with a bush border; `trees_nw`, `trees_ne` `sparse` with explicit tree/bush positions (see "Woods"); wander areas of hiding places clipped to their `rect`. | Q-085 |
-| Collision footprints, invisible walls | Footprint values and fixes of GAME-LAYOUT "Collision footprints"; exceptions for this level in "Woods" and "Collision and billboards". | Q-087 |
+| Hippo pool data | `hippo_pool` is an `[[enclosure_feature]]` (not an element) at x 11–18, z 15–21 with a west ramp; `enc_hippo.home_wander_on = ["grass", "water"]`; water and grass connect only over the ramp; the hippo picks a water target 7 of 10 times; the hut area is the `[[enclosure_feature]]` `hippo_hut` (`kind = "hut"`, x 15–18, z 11–14) (see "Hippo enclosure pool"). Implemented in M5a as proposed (data-driven). | Q-085, Q-098 |
+| Tree areas | `grove_center` `dense` with a bush border; `trees_nw`, `trees_ne` `sparse` with explicit tree/bush positions (see "Woods"); wander areas of hiding places clipped to their `rect`. Implemented in M5a as proposed. | Q-085 |
+| Collision footprints, invisible walls | Footprint values and fixes of GAME-LAYOUT "Collision footprints"; exceptions for this level in "Woods" and "Collision and billboards". Implemented in M5a as proposed (deviations noted there). | Q-087 |
 | Enclosure signs | The sign in front of each gate becomes a gate arch (panel bottom ≥ 2.1 m) so the player never passes through its panel. | Q-086 |
 
 ## Spawn and camera
@@ -201,7 +202,6 @@ Solid = every type except `path` and `hiding_place`.
 | `pond_water` | landmark (pond) | -19, 20, 8, 8 | Still pond: water lilies, frogs, reeds. |
 | `jetty_pond` | path (jetty) | -11, 22, 3, 2 | Wooden jetty from the ring path to the pond edge. |
 | `bench_pond` | decoration (bench) | -11, 26, 2, 1 | Bench on the pond shore. |
-| `loc_pond` | hiding_place *(proposal)* | -19, 19, 11, 10 | Hiding place of `hippo`; animal spot (-13, 22) in the water, 2 m from the jetty tip. Legacy mirror of `[[hiding_place]]` `loc_pond` (Q-080). |
 | `enc_panda` | enclosure | -6, 32, 12, 10 | Panda enclosure; gate (-1, 32, 2, 1) on the south fence; cut bamboo on a feeding rack (proposal Q-081 — no growing bamboo clumps), wooden platform and shelter, **no stone/cave**. |
 | `board_panda` | decoration (info_board) | -4, 30, 1, 1 | Info board of `enc_panda`, next to the gate. |
 | `path_north` | path | -9, 30, 3, 16 | Side path to `barrier_north_gate`. |
@@ -214,7 +214,6 @@ Solid = every type except `path` and `hiding_place`.
 | `path_ne` | path | 13, 28, 9, 3 | Path behind the bridge to `barrier_ne_tree`. |
 | `trees_ne` | decoration (trees) | 15, 34, 6, 9 | Open wood east of the river, `density = "sparse"`: walkable between 6 `tree_round` and 1 bush (positions in "Woods"); `loc_meadow` lies south of it, `loc_leaves` north of it (rake leans on the tree at (16.0, 41.3)). Not solid as an element. |
 | `path_ne_trail` | path (side) | 13, 31, 2, 12 | Narrow trail from `path_ne` north between the river and `trees_ne` to the leaf pile (`loc_leaves`). |
-| `loc_river` | hiding_place *(proposal)* | 6, 30, 4, 6 | Hiding place of `zebra`; animal spot (8, 32) on the west bank next to the bridge. Rect = bounding box of its wander area. Legacy mirror of `[[hiding_place]]` `loc_river` (Q-080). |
 | `enc_hippo` | enclosure | 9, 11, 11, 12 | Hippo enclosure; gate (9, 15, 1, 2) on the west fence; square tiled pool `hippo_pool` (x 11–18, z 15–21, `[[enclosure_feature]]`, see "Hippo enclosure pool"), wooden hut (area x 15–18, z 11–14 reserved), edge stones; `home_wander_on = ["grass", "water"]`. |
 | `hedge_hippo_nw` | decoration (hedge) | 8, 19, 1, 4 | Tall hedge left of the hippo gate (sight blocker for the cave). |
 | `hedge_hippo_sw` | decoration (hedge) | 8, 11, 1, 4 | Tall hedge right of the hippo gate (sight blocker for the cave). |
@@ -224,29 +223,29 @@ Solid = every type except `path` and `hiding_place`.
 | `rock_hill_e` | landmark (rock_hill) | 13, 0, 9, 8 | Rock hill, main mass east of the cave. |
 | `path_cave_floor` | path (cave) | 10, 5, 3, 3 | Cave floor under the rock roof (walkable, dark). |
 | `path_cave` | path | 8, 8, 14, 3 | Service path along the rock hill; cave mouth; ends at `barrier_east_repair`. |
-| `loc_cave` | hiding_place *(proposal)* | 10, 5, 3, 3 | Hiding place of `panda`; animal spot (10, 5) in the back corner on the west side of the cave. Legacy mirror of `[[hiding_place]]` `loc_cave` (Q-080). |
 
 ## Hiding places (candidates)
 
 Discovery (user decision 2026-09-26, GAME-RESCUE §1, GAME-ANIMALS "Animal states"): 3
 candidates per animal. Data: `[[hiding_place]]` in `level-1.toml` (fields explained there;
-proposal Q-080). Riddle keys: `mission-<animal>-riddle-<id>-<reading_level>` (CONT-MISSIONS).
+Q-080 answered). Riddle keys: `mission-<animal>-riddle-<id>-<reading_level>` (CONT-MISSIONS).
 The `kiga` board shows the picture of the chosen place (`loc_*` picture id).
 
 | Id | Animal | Area rect (x, z, w, d) | Animal spot | Wander on | Wander cells | Features (riddle details) | Scenery | Spot → own info board | Own board → spot (fastest walk) |
 |---|---|---|---|---|---|---|---|---|---|
-| `loc_river` | zebra | 6, 30, 4, 6 | (8, 32) | grass | 19 | flowing_water, bridge, ducks | `river_n`, `bridge_river` | 24.8 m | 16.6 s |
-| `loc_meadow` | zebra | 15, 31, 7, 3 | (17, 32) | grass | 16 | tall_grass, wildflowers, butterflies, big_trees_behind | `tall_grass_ne`, `trees_ne` | 31.6 m | 21.4 s |
-| `loc_sand` | zebra | -1, 42, 7, 4 | (2, 44) | grass | 22 | sand, dry, yellow_ground, no_grass | `sand_n` | 32.0 m | 23.9 s |
-| `loc_pond` | hippo | -19, 19, 11, 10 | (-13, 22) | water | 22 | still_water, water_lilies, frogs | `pond_water`, `jetty_pond` | 21.6 m | 16.8 s |
-| `loc_mud` | hippo | -20, 42, 7, 4 | (-17, 44) | grass | 22 | mud, brown_ground, wet, splashing | `mud_nw` | 36.8 m | 27.3 s |
-| `loc_shade` | hippo | -22, 33, 2, 7 | (-22, 36) | grass | 12 | shade, big_trees, zoo_wall, dry_grass | `shade_w`, `trees_nw`, `wall_west` | 35.5 m | 30.6 s |
-| `loc_cave` | panda | 10, 5, 3, 3 | (10, 5) | cave | 9 | dark, cool, stone, echo | `path_cave_floor`, `rock_hill_back` | 28.7 m | 17.7 s |
-| `loc_bamboo` | panda | -22, 0, 8, 6 | (-18, 2) | grass | 21 | bamboo_thicket, green_stalks, taller_than_wall, rattling | `bamboo_sw`, `wall_west`, `wall_south_w` | 31.3 m | 23.9 s |
-| `loc_leaves` | panda | 14, 43, 7, 3 | (17, 44) | grass | 17 | leaf_pile, red_yellow_leaves, rake, under_trees | `leaf_pile_ne`, `trees_ne` | 25.2 m | 18.4 s |
+| `loc_river` | zebra | 6, 30, 4, 6 | (8, 32) | grass | 19 | flowing_water, bridge, ducks | `river_n`, `bridge_river` | 24.8 m | 15.1 s |
+| `loc_meadow` | zebra | 15, 31, 7, 3 | (17, 32) | grass | 16 | tall_grass, wildflowers, butterflies, big_trees_behind | `tall_grass_ne`, `trees_ne` | 31.6 m | 19.5 s |
+| `loc_sand` | zebra | -1, 42, 7, 4 | (2, 44) | grass | 22 | sand, dry, yellow_ground, no_grass | `sand_n` | 32.0 m | 22.4 s |
+| `loc_pond` | hippo | -19, 19, 11, 10 | (-13, 22) | water | 22 | still_water, water_lilies, frogs | `pond_water`, `jetty_pond` | 21.6 m | 15.3 s |
+| `loc_mud` | hippo | -20, 42, 7, 4 | (-17, 44) | grass | 22 | mud, brown_ground, wet, splashing | `mud_nw` | 36.8 m | 25.3 s |
+| `loc_shade` | hippo | -22, 33, 2, 7 | (-22, 36) | grass | 12 | shade, big_trees, zoo_wall, dry_grass | `shade_w`, `trees_nw`, `wall_west` | 35.5 m | 26.5 s |
+| `loc_cave` | panda | 10, 5, 3, 3 | (10, 5) | cave | 9 | dark, cool, stone, echo | `path_cave_floor`, `rock_hill_back` | 28.7 m | 16.8 s |
+| `loc_bamboo` | panda | -22, 0, 8, 6 | (-18, 2) | grass | 21 | bamboo_thicket, green_stalks, taller_than_wall, rattling | `bamboo_sw`, `wall_west`, `wall_south_w` | 31.3 m | 22.7 s |
+| `loc_leaves` | panda | 14, 43, 7, 3 | (17, 44) | grass | 17 | leaf_pile, red_yellow_leaves, rake, under_trees | `leaf_pile_ne`, `trees_ne` | 25.2 m | 17.5 s |
 
 "Spot → own info board" = straight distance between the spot and the info-board cell
-centres; walking times with 1.75 m/s on paths and 0.98 m/s on grass (as "Walking distances").
+centres; walking times with 1.93 m/s on paths and 0.98 m/s on grass (as "Walking distances";
+M5a, woods open — printed by the LAYOUT-L1-018 test).
 
 **Wander area** (GAME-ANIMALS "Animal states"; *proposal, level design*): the cells whose
 centre is within `wander_radius_m` (3 m) of the spot centre, whose surface matches
@@ -273,16 +272,20 @@ three chosen spots ≥ 12 m apart:
 | `loc_bamboo` | 20.6 | 42.0 | 34.2 | — | — | — |
 | `loc_leaves` | 37.2 | 34.0 | 39.8 | — | — | — |
 
-**Picking rule** (*proposal, Q-082*): with the seeded RNG, pick one candidate per animal
+**Picking rule** (*answered, Q-082*): with the seeded RNG, pick one candidate per animal
 uniformly (animals in the order of their enclosures in the level data); if two chosen spots
 are < 12 m apart, draw the whole set again (at most 64 draws), then fall back to the first
-valid combination in data order. The chosen place ids are saved (GAME-SAVE). In level 1 the
-first draw is always valid.
+valid combination in data order. A **new game avoids each animal's place of the previous
+game** (the host remembers the last picks, `zoo.picks.level-1`; 2 of 3 candidates remain).
+The chosen place ids are saved (GAME-SAVE). In level 1 the first draw is always valid.
+Implementation: `zoo_core::game::pick_hiding_places`; a new game gets a random seed from the
+host (`?seed=N` in the page URL fixes it for tests; seed 17 = river, pond, cave).
 
-**Nearest neighbour of each new place** (fastest walk, ≤ 10 s — "Walking distances" rule):
-`loc_meadow` → bridge 2.5 s; `loc_sand` → `barrier_north_gate` (end of `path_north`) 7.2 s;
-`loc_mud` → `barrier_north_gate` 6.2 s; `loc_shade` → `loc_mud` 7.4 s; `loc_bamboo` →
-`map_board` 8.6 s; `loc_leaves` → `loc_meadow` 8.5 s (via `path_ne_trail`).
+**Nearest neighbour of each new place** (fastest walk, ≤ 10 s — "Walking distances" rule;
+1.93 m/s paths, woods open, M5a): `loc_meadow` → bridge 1.8 s; `loc_sand` →
+`barrier_north_gate` (end of `path_north`) 7.2 s; `loc_mud` → `barrier_north_gate` 6.2 s;
+`loc_shade` → `loc_mud` 6.8 s; `loc_bamboo` → `map_board` 8.6 s; `loc_leaves` → `loc_meadow`
+7.8 s.
 
 **Sight test.** For every candidate, no cell of its wander area (0.5 m above ground) is on
 screen while the player stands next to its own info board or enclosure gate, for every
@@ -336,30 +339,29 @@ under the east hedge and enters from under the north hedge (water is not walkabl
 
 ## Walking distances
 
-Fastest walking time over walkable cells (8-neighbour, diagonal = √2), with **1.75 m/s on
-`path` cells and 0.98 m/s on `grass`** (0.56 ×, GAME-PLAYER §6, user decision 2026-09-26;
-before: 1.4 m/s path, 0.7 ×), i.e. the child mostly uses
-the paths. Measured from the spawn cell, the cell in front of the storage door, the cells
+Fastest walking time over walkable cells (8-neighbour, diagonal = √2), with **1.93 m/s on
+`path` cells and 0.98 m/s on `grass`** (GAME-PLAYER §6, user decisions 2026-09-26; before:
+1.75 m/s, and 1.4 m/s path / 0.7 × at first), i.e. the child mostly uses the paths. Measured from the spawn cell, the cell in front of the storage door, the cells
 next to an info board, and the cells within interaction range (2 m, GAME-PLAYER) of an
 animal spot. Shortest distance (any surface) given for reference.
 
 | From → to (neighbours along the ring) | Shortest distance | Fastest time |
 |---|---|---|
-| spawn → food storage door | 8.0 m | 4.6 s |
-| food storage → zebra info board | 10.2 m | 6.2 s |
-| zebra info board → pond (hippo) | 7.8 m | 5.9 s |
-| pond → panda info board | 9.9 m | 6.0 s |
-| panda info board → river (zebra) | 10.4 m | 7.1 s |
-| river → hippo info board | 13.4 m | 7.7 s |
-| hippo info board → cave (panda) | 11.2 m | 6.7 s |
-| cave → food storage door | 10.1 m | 6.8 s |
-| hippo info board → food storage door | 12.2 m | 7.3 s |
-| spawn → map board | 6.4 m | 3.9 s |
+| spawn → food storage door | 8.0 m | 4.1 s |
+| food storage → zebra info board | 10.2 m | 5.6 s |
+| zebra info board → pond (hippo) | 7.8 m | 5.4 s |
+| pond → panda info board | 9.9 m | 5.4 s |
+| panda info board → river (zebra) | 10.4 m | 6.4 s |
+| river → hippo info board | 13.4 m | 7.0 s |
+| hippo info board → cave (panda) | 11.2 m | 6.1 s |
+| cave → food storage door | 10.1 m | 6.1 s |
+| hippo info board → food storage door | 12.2 m | 6.6 s |
+| spawn → map board | 6.4 m | 3.6 s |
 
-All neighbour pairs are ≤ 10 s (longest: river → hippo info board 7.7 s, was 9.6 s). Not
-neighbours (for information): panda info board → food storage 14.8 s (was 18.4 s); zebra
-board → panda board 9.5 s (was 11.7 s — now also under 10 s); hippo board → zebra board
-13.5 s (was 16.5 s). The
+All neighbour pairs are ≤ 10 s (longest: river → hippo info board 7.0 s; 7.7 s at 1.75 m/s).
+Not neighbours (for information): panda info board → food storage 13.4 s (14.8 s at
+1.75 m/s); zebra board → panda board 8.6 s (9.5 s); hippo board → zebra board 12.3 s
+(13.5 s). The
 panda mission is therefore the longest round trip — intentionally the third mission a child
 will usually do.
 
@@ -398,7 +400,7 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
    closed no walkable cell outside the bounds can be reached.
 5. No two solid elements overlap, and no path cell lies under a solid element.
 6. Walking time between neighbouring points of interest (table above) is ≤ 10 s with
-   1.75 m/s on paths and 0.98 m/s on grass.
+   1.93 m/s on paths and 0.98 m/s on grass.
 7. For each level-1 mission and **each of its candidate hiding places**, while the player
    stands at its info board or enclosure gate, every cell of the place's wander area (the
    animal spot included) is **off-screen** for every allowed camera rotation (45° steps)
@@ -470,11 +472,16 @@ at the default rotation (looking north), 14 m: 98–100 %. In portrait with the 
 north the pool is beside the screen — intrinsic to the narrow portrait view, not a layout
 problem.
 
-**For the implementer (zoo-core):** read `[[enclosure_feature]]` and `home_wander_on`; place
-`pool_tiled` (placeholder: water tiles in the pond look inside a tiled-rim box) at the rect,
-the ramp on its west side and the edge stones; replace the current hippo
-`enclosure_dressing` (its rock at (16.7, 14.6) lies in the hut area, the rock at
-(11.75, 20.0) and the bush at (17.8, 20.6) lie in the pool).
+**Implemented (M5a):** zoo-core reads `[[enclosure_feature]]` and `home_wander_on`
+(`zoo_core::wander::home_area`); the scene places pond-look water tiles on the pool cells
+(not the ramp), the `pool_tiled` model at the rect centre with a placeholder fallback (tiled
+rim 0.4 m, flat striped ramp) while the model is missing, and the edge stones (`rock`,
+scale 0.5, solid for the animal). The hut area is data: `[[enclosure_feature]]` `hippo_hut`
+(`kind = "hut"`, rect 15, 11, 4, 4 — *proposal, Q-098*), drawn as a wooden placeholder
+box. The old hippo `enclosure_dressing` is removed. Animals at home walk to cells whose 8
+neighbours are in the same part of the area where possible (away from fences and the rim).
+The hippo is sunk 0.9 m (its model's water line) in the pool and in the pond and plays
+`swim` there.
 
 ## Woods (user decision 2026-09-26: dense vs. walkable)
 
@@ -528,6 +535,22 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 - **Invisible walls:** wall and hedge bands 0.5–0.7 m (F7), both barriers 0.6–0.7 m, the
   open entrance arch (F8), the edges of `grove_center`; accepted: info board fronts
   (0.26 m) and the back strip of `map_board` (0.36 m). Fixes in GAME-LAYOUT.
+- **Implemented (M5a, Q-087 as proposed):** bands on the walkable-side row, bush border of
+  `grove_center`, closed turnstiles in the entrance arch, footprint values of GAME-LAYOUT,
+  the fallen tree 0.3 m further east with its footprint (removed with the barrier).
+  Deviations found by the mesh tests (LAYOUT-018/019): the road block's bar and the closed
+  gate's leaf are thin, so they stand 0.30 m / 0.25 m behind the walkable edge (not on the
+  row centre; the road block's feet reach 0.12 m onto `path_cave`, the gate's pillars
+  0.11 m onto `path_north` — both solid by their footprints, `gate_zoo_closed` got
+  B(0, 0, 1.56, 0.36)); `bamboo` gets a box footprint B(+0.105, −0.075, 0.575, 0.80) on its
+  leaf extents (the proposed circle reached 0.24 m beyond the mesh), and the thicket's
+  clumps are turned 0°/180° only and inset 0.75 m / 0.6 m from its walkable sides.
+- **Accepted invisible walls (LAYOUT-019 exceptions, Q-099):** the back of `map_board` (the
+  0.36 m deep board cannot fill both sides of its 1 m cell) and the fallen tree
+  `barrier_ne_tree` (its trunk lies in the middle of the 2 m band, the crown reaches the
+  edge only in places; removed with the level-2 transition).
+- **Enclosure signs** remain the one billboard violation until Q-086 is decided (the
+  LAYOUT-017 test reports it).
 
 ## Test cases
 
@@ -537,7 +560,7 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 | LAYOUT-L1-002 | Given `level-1.toml` with all barriers closed, then every border cell of the bounds is solid and the flood fill from the spawn never leaves the bounds. | unit |
 | LAYOUT-L1-003 | Given `level-1.toml`, then no two solid elements share a cell and no `path` cell is covered by a solid element. | unit |
 | LAYOUT-L1-004 | Given this spec's element table and `level-1.toml`, then both list the same ids, types and rectangles (instance of LAYOUT-005). | unit |
-| LAYOUT-L1-005 | Given `level-1.toml` with path speed 1.75 m/s and grass speed 0.98 m/s, then each neighbour pair of the walking-distance table has a fastest walking time ≤ 10 s. | unit |
+| LAYOUT-L1-005 | Given `level-1.toml` with path speed 1.93 m/s and grass speed 0.98 m/s, then each neighbour pair of the walking-distance table has a fastest walking time ≤ 10 s. | unit |
 | LAYOUT-L1-006 | Given missions `zebra`, `hippo`, `panda`, **every candidate hiding place of the mission** (`[[hiding_place]]`), the player on each walkable cell next to the info board or the enclosure gate, and the camera of GAME-PLAYER §2 at every 45° rotation and at 10, 14 and 20 m distance on a 1080×2340 viewport, then the animal spot and every cell centre of its wander area (0.5 m above ground) lie outside the view frustum (depends on Q-052). | unit |
 | LAYOUT-L1-007 | Given the hiding places of level 1, then their `features` contain the CONT-MISSIONS details (river: flowing_water, bridge, ducks; pond: still_water, water_lilies, frogs; cave: dark, cool, stone, echo; meadow: tall_grass, wildflowers, butterflies; sand: sand, dry, yellow_ground; mud: mud, brown_ground, wet; shade: shade, big_trees, zoo_wall; bamboo: bamboo_thicket, green_stalks, taller_than_wall; leaves: leaf_pile, red_yellow_leaves, rake), a `bridge` path lies within 4 m of the river animal spot, no bridge/river cell lies inside `loc_pond`, and every `scenery` id a hiding place names exists (`[[scenery]]` or `[[element]]`). | unit |
 | LAYOUT-L1-008 | Given `level-1.toml`, then the only water elements are `river_*` and `pond_water`, the only other water is the `hippo_pool` enclosure feature inside `enc_hippo` (no lily/frog/reed/duck props on it), and the only `bridge` is `bridge_river`. | unit |
@@ -549,8 +572,8 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 | LAYOUT-L1-014 | Given each `[[hiding_place]]` of level 1, when its wander area is computed (cells within `wander_radius_m` = 3 m of the spot centre, surface = `wander_on`, 4-connected to the spot), then it contains the spot, has ≥ 9 cells and a cell ≥ 2 m from the spot, contains no solid cell and no `path` cell except kind `cave`, lies inside the place's `rect`, and wander areas and `rect`s of places of different animals are disjoint. | unit |
 | LAYOUT-L1-015 | Given the `[[hiding_place]]` list of level 1, then every animal with an enclosure has ≥ 3 candidates, and for every candidate there is a combination (one candidate per animal) that contains it and has all spots pairwise ≥ 12 m apart; in level 1 all 27 combinations do (RESC-014). | unit |
 | LAYOUT-L1-016 | Given the `[[scenery]]` list, then no scenery rect overlaps a solid element or a `path` cell, each lies inside the `rect` of its `hiding_place`, and each scenery `kind` occurs once in level 1. | unit |
-| LAYOUT-L1-017 | Given the legacy `[[element]] type = "hiding_place"` entries (while they exist, Q-080), then each has a `[[hiding_place]]` with the same id, animal, rect, animal spot and features. | unit |
-| LAYOUT-L1-018 | Given `level-1.toml` with path speed 1.75 m/s and grass speed 0.98 m/s, then `loc_meadow`, `loc_sand`, `loc_mud`, `loc_shade`, `loc_bamboo` and `loc_leaves` (cells within 2 m of the spot) are each ≤ 10 s fastest walk from the neighbour listed in "Hiding places". | unit |
+| LAYOUT-L1-017 | Given `level-1.toml`, then no legacy `[[element]] type = "hiding_place"` entry exists any more (Q-080 answered: deleted when zoo-core read `[[hiding_place]]`, M5a) and the `[[hiding_place]]` list has the 9 candidates. | unit |
+| LAYOUT-L1-018 | Given `level-1.toml` with path speed 1.93 m/s and grass speed 0.98 m/s, then `loc_meadow`, `loc_sand`, `loc_mud`, `loc_shade`, `loc_bamboo` and `loc_leaves` (cells within 2 m of the spot) are each ≤ 10 s fastest walk from the neighbour listed in "Hiding places". | unit |
 | LAYOUT-L1-019 | Given the approved mockups of `loc_meadow`, `loc_sand`, `loc_mud`, `loc_shade`, `loc_bamboo`, `loc_leaves`, then a reviewer can name each place's riddle details without text, `loc_mud` does not look like water, `loc_leaves` does not look dark (not like the cave), and `env_panda` shows no growing bamboo (Q-081). | manual |
 | LAYOUT-L1-020 | Given the level data, then `enc_hippo` contains a `hippo_pool` water area of 35–60 % of its inner cells (enclosure cells minus gate cells; level 1: 56 / 130 = 43 %), fully inside the fence and not adjacent (8-neighbourhood) to the gate cells, with its `ramp` inside the pool rect; `enc_hippo.home_wander_on` contains `water`, and the home wander area (GAME-LAYOUT LAYOUT-020) includes the pool cells and is connected from the grass cell next to the gate. | unit |
 | LAYOUT-L1-021 | Given the player on (8, 15) or (8, 16) in front of the hippo gate, the camera of GAME-PLAYER §2 at 14 m, then with the camera looking east on a 1080×2340 viewport ≥ 25 % of the pool cell centres (water height 0) incl. ≥ 2 ramp cells are on screen, and looking north on a 2340×1080 viewport ≥ 90 % are. | unit |
@@ -562,11 +585,12 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 ## Open questions
 
 - Q-022 barrier unlock conditions, Q-023 number of levels and their areas.
-- Q-085 data shape for woods, hippo pool and home wandering (`density`, `trees`, `edge`, `[[enclosure_feature]]`, `home_wander_on`, wander clip to `rect`, 7/10 water targets). Q-086 enclosure sign as a gate arch. Q-087 collision footprint values and invisible-wall fixes.
+- Q-085 data shape for woods, hippo pool and home wandering (`density`, `trees`, `edge`, `[[enclosure_feature]]`, `home_wander_on`, wander clip to `rect`, 7/10 water targets) — implemented as proposed in M5a. Q-086 enclosure sign as a gate arch. Q-087 collision footprint values and invisible-wall fixes — implemented as proposed in M5a. Q-097 animals out of reach come to the player. Q-098 `hut` enclosure feature. Q-099 accepted invisible walls (map board back, fallen tree).
+- Q-069 answered: all three level-1 missions in scope.
 - Q-033 food storage lock (level 1 assumes unlocked).
-- Q-044 `hiding_place` element type and `blocks_view` data. Q-080 `[[hiding_place]]` / `[[scenery]]` lists and `wander_on`. Q-081 growing bamboo only at `loc_bamboo`. Q-082 picking rule for hiding places. Q-083 two-word `kiga` place words and food-word clashes. Q-043 poses at the new places.
+- Q-044 `hiding_place` element type and `blocks_view` data. Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists and `wander_on`. Q-081 (answered) growing bamboo only at `loc_bamboo`. Q-082 (answered) picking rule for hiding places. Q-083 (answered) two-word `kiga` place words and food-word clashes. Q-043 poses at the new places.
 - Q-046 answered: grass walkable, slower than paths.
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2; section above). Q-052 answered: 35° vertical FOV; level 1 starts at maximum zoom-out (LAYOUT-L1-011).
 - Q-047 which food boxes stand in the storage in level 1.
-- Q-024 walking speed (answered by GAME-PLAYER §6: 1.75 m/s path, 0.98 m/s grass).
+- Q-024 walking speed (answered by GAME-PLAYER §6: 1.93 m/s path, 0.98 m/s grass).
 - Q-056 answered (axes: level x east / z north, world = (x, 0, −z)). Q-057 answered (fences, hedges, walls: 2 m + 1 m segments, bands as one row on the centre line — GAME-LAYOUT "Modular edges", LAYOUT-013). Q-059 band joins, Q-060 fence/band placement (proposals).

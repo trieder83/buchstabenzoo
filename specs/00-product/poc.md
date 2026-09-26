@@ -1,6 +1,6 @@
 ---
 id: PROD-POC
-title: Proof of concept — zebra mission on level 1
+title: Proof of concept — level-1 rescue missions
 aspect: product
 module: poc
 status: draft
@@ -9,11 +9,12 @@ test_prefix: POC
 updated: 2026-09-26
 ---
 
-# Proof of concept — zebra mission on level 1
+# Proof of concept — level-1 rescue missions
 
 ## Goal
 
-Prove the whole stack end to end with **one playable rescue mission** (zebra) on level 1,
+Prove the whole stack end to end with **one playable rescue mission** (zebra) on level 1 — since M5a all three level-1
+missions (zebra, hippo, panda; Q-069 answered) —
 in a desktop and a mobile browser: Rust/WASM game logic, raw WebGL2 comic renderer with
 the high camera, glTF assets from scripted Blender, data-driven level, reading panel in
 German and English. Scope is deliberately small; everything else is out.
@@ -26,14 +27,14 @@ German and English. Scope is deliberately small; everything else is out.
 | Player | `player_girl` only (boy later), walk with joystick / WASD, idle + walk animation | GAME-PLAYER, ART-RIG |
 | Camera | High-angle follow camera: 55°, 35° vertical FOV, zoom 10–20 m, 45° rotation steps | GAME-PLAYER §2 |
 | Rendering | WebGL2, 2-tone cel shading, outline pass, flat-colour textures | ART-DIRECTION, TECH-ARCH §7 |
-| Mission | Zebra: info board riddle (panel) → food storage → pick `Gras` box → zebra at `loc_river` → show food → follows → enclosure → `happy` | GAME-RESCUE, GAME-FEED, CONT-MISSIONS §1 |
+| Mission | Zebra: info board riddle (panel) → food storage → pick `Gras` box → zebra at `loc_river` → show food → follows → enclosure → `happy`. *M5a:* hippo (`Melonen`, pond/mud/shade, home into its pool) and panda (`Bambus`, cave/bamboo/leaves) the same way; discovery (one of 3 places per animal, seeded) and wandering animals | GAME-RESCUE, GAME-FEED, GAME-ANIMALS, CONT-MISSIONS §1–§3 |
 | Reading | Text panel with the zebra riddle and food labels, reading level selectable (`kiga`–`klasse3`), `de` + `en` via Fluent | CONT-READING, CONT-L10N |
 | Saving | Progress and positions survive a reload (local save) | GAME-SAVE |
-| Assets | Kits 1–6 (only props used by level 1), zebra, girl; buildings as simple block-outs | ART-PIPELINE |
+| Assets | Kits 1–6 (only props used by level 1), zebra, hippo, panda, girl; buildings as simple block-outs | ART-PIPELINE |
 
 ## Out of scope (PoC)
 
-Hippo and panda missions (their enclosures and hiding places exist as scenery only), boy,
+Boy,
 map (GAME-MAP), math tasks, visitors/quests, audio/read-aloud, mobile packaging
 (Capacitor), final building models, level transitions.
 
@@ -51,6 +52,7 @@ Placeholders are logged as warnings and must be gone for POC-004.
 | M2 | Assets v1 | Ground/fence/sign kits, trees, water, bridge, zebra, girl exported as `.glb`; asset tests green (APIPE-001…010) |
 | M3 | Renderer | Level 1 renders in the browser with the high camera, cel shading and outlines; placeholder boxes allowed |
 | M4 | Playable | The zebra mission can be played end to end with keyboard and touch |
+| M5a | All level-1 animals | Hippo and panda missions playable like the zebra, discovery (RESC-014…016), wandering (ANIM-008…012), speeds 1.93/0.98 m/s, hippo pool, sparse woods, collision footprints (LAYOUT-015…020) |
 | M5 | PoC done | All POC tests green on desktop Chrome/Firefox and a mid-range phone |
 
 ## Test cases
@@ -80,3 +82,4 @@ Placeholders are logged as warnings and must be gone for POC-004.
 ## Open questions
 
 - Q-013 Reference device for POC-005.
+- Q-069 answered: all three level-1 missions (zebra, hippo, panda) are in scope (M5a).

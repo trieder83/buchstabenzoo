@@ -49,9 +49,9 @@ fn play_005_path_speed() {
     assert_eq!(level.grid().surface(cell_of(start)), Some(Surface::Path));
     walk(&level, &mut p, &params, Vec2::X, 1.0);
     let d = p.pos.distance(start);
-    // GAME-PLAYER §6 (user decision 2026-09-26): 1.75 m/s on paths
-    assert!((params.walk_speed - 1.75).abs() < 1e-6);
-    assert!((d - 1.75).abs() <= 1.75 * 0.05, "moved {d} m");
+    // GAME-PLAYER §6 (user decisions 2026-09-26): 1.93 m/s on paths (1.75 + 10 %)
+    assert!((params.walk_speed - 1.93).abs() < 1e-6);
+    assert!((d - 1.93).abs() <= 1.93 * 0.05, "moved {d} m");
     assert_eq!(level.grid().surface(cell_of(p.pos)), Some(Surface::Path));
 }
 
@@ -63,22 +63,24 @@ fn play_006_grass_speed() {
     assert_eq!(level.grid().surface(cell_of(start)), Some(Surface::Grass));
     walk(&level, &mut p, &params, Vec2::X, 1.0);
     let d = p.pos.distance(start);
-    // GAME-PLAYER §6: grass stays 0.98 m/s (factor 0.56)
+    // GAME-PLAYER §6: grass stays 0.98 m/s (factor ≈ 0.51)
     let expected = params.walk_speed * params.grass_speed_factor;
     assert!((expected - 0.98).abs() < 1e-4, "grass speed {expected}");
     assert!((d - 0.98).abs() <= 0.98 * 0.05, "moved {d} m");
 }
 
-// GAME-PLAYER §6 / ART-RIG §4.7: walk clip playback = speed ÷ 1.4, clamped to [0.8, 1.25]
+// GAME-PLAYER §6 / ART-RIG §4.7 (RIG-016): walk clip playback = speed ÷ 1.4, clamped to
+// [0.8, 1.4] — 1.93 m/s on paths plays at ≈ 1.38
 #[test]
 fn play_005_006_walk_clip_rate_matches_speed() {
     use zoo_core::player::walk_clip_rate;
     let params = MoveParams::default();
-    assert!((walk_clip_rate(params.speed_on(Surface::Path)) - 1.25).abs() < 1e-5);
+    assert!((walk_clip_rate(params.speed_on(Surface::Path)) - 1.93 / 1.4).abs() < 1e-5);
+    assert!((walk_clip_rate(1.93) - 1.38).abs() < 0.005);
     // grass 0.98 / 1.4 = 0.7 → clamped to 0.8
     assert!((walk_clip_rate(params.speed_on(Surface::Grass)) - 0.8).abs() < 1e-5);
     assert!((walk_clip_rate(1.2) - 1.2 / 1.4).abs() < 1e-5);
-    assert!((walk_clip_rate(2.0) - 1.25).abs() < 1e-5);
+    assert!((walk_clip_rate(2.2) - 1.4).abs() < 1e-5);
 }
 
 // PLAY-007
@@ -258,15 +260,11 @@ fn play_019_props_are_solid_and_player_slides() {
     assert!(end2.x > end.x + 0.5, "no slide along the bench: {end2}");
 
     // A tree on open ground (trunk circle): the player is stopped and slides around it.
-    let tree = Placement {
-        model: "tree_round",
-        pos: level_to_world(Vec2::new(-2.0, 5.0)),
-        yaw: 0.0,
-    };
+    let tree = Placement::new("tree_round", level_to_world(Vec2::new(-2.0, 5.0)), 0.0);
     let trees = Colliders::from_placements(&[tree], level.data.level.bounds);
     let mut p = player_at(Vec2::new(-2.0, 3.5));
     let end = walk_checked(&level, &trees, &mut p, Vec2::Y, 2.0);
-    assert!(end.y < 5.0 - 0.35 - PLAYER_RADIUS_M + 0.01, "{end}");
+    assert!(end.y < 5.0 - 0.45 - PLAYER_RADIUS_M + 0.01, "{end}");
     let mut p = player_at(Vec2::new(-2.1, 3.5));
     let end = walk_checked(&level, &trees, &mut p, Vec2::Y, 3.0);
     assert!(end.y > 5.5, "did not slide around the trunk: {end}");
@@ -351,11 +349,7 @@ fn play_022_ground_decoration_does_not_block() {
     let deco: Vec<Placement> = [(-2.0, 4.0), (-2.0, 5.0), (-2.2, 6.0)]
         .into_iter()
         .zip(["grass_tuft", "lily_pad", "flower_bed"])
-        .map(|((x, z), model)| Placement {
-            model,
-            pos: level_to_world(Vec2::new(x, z)),
-            yaw: 0.0,
-        })
+        .map(|((x, z), model)| Placement::new(model, level_to_world(Vec2::new(x, z)), 0.0))
         .collect();
     let col = Colliders::from_placements(&deco, level.data.level.bounds);
     assert!(col.shapes().is_empty());

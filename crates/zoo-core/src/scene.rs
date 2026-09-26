@@ -37,12 +37,34 @@ pub mod colors {
 }
 
 /// A model instance: `pos` is the model origin in world space, `yaw` the rotation about +Y
-/// (positive = counter-clockwise seen from above).
+/// (positive = counter-clockwise seen from above), `scale` a uniform scale (footprints scale
+/// with it).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Placement {
     pub model: &'static str,
     pub pos: Vec3,
     pub yaw: f32,
+    pub scale: f32,
+}
+
+impl Placement {
+    pub fn new(model: &'static str, pos: Vec3, yaw: f32) -> Self {
+        Self {
+            model,
+            pos,
+            yaw,
+            scale: 1.0,
+        }
+    }
+}
+
+/// Placeholder geometry drawn only when a model is missing (e.g. the tiled rim of
+/// `pool_tiled`, GAME-LEVEL-1 "Hippo enclosure pool").
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Fallback {
+    pub model: &'static str,
+    pub boxes: Vec<BoxPlacement>,
+    pub placements: Vec<Placement>,
 }
 
 /// A placeholder box: `pos` = centre of its bottom face in world space, `size` = extent
@@ -130,6 +152,11 @@ pub struct LevelScene {
     pub boxes: Vec<BoxPlacement>,
     /// Silhouettes and sign texts drawn on top of models (ART-ENVIRONMENT 6, 7).
     pub decals: Vec<Decal>,
+    /// Placeholders for models that may be missing (drawn by the host only then).
+    pub fallbacks: Vec<Fallback>,
+    /// Placements (index ranges) that belong to a barrier element and disappear with it
+    /// (e.g. the fallen tree and its collider).
+    pub barrier_parts: Vec<(String, std::ops::Range<usize>)>,
 }
 
 /// Direction names in level space and their clockwise order.
@@ -304,6 +331,76 @@ fn dir_away(from: Rect, to: Vec2) -> Dir {
     }
 }
 
+/// Moves a band run (hedge, wall) onto the row of the band next to its walkable side, so the
+/// visible pieces stand at the edge the player walks along (Q-087, LAYOUT-019). One-cell
+/// bands and bands with walkable ground on both or no side keep the centre line.
+pub fn walkable_side_row(run: Run, rect: Rect, grid: &Grid) -> Run {
+    let count = |cells: &mut dyn Iterator<Item = IVec2>| {
+        cells.filter(|&c| grid.is_walkable(c, true)).count()
+    };
+    let mut out = run;
+    match run.axis {
+        RunAxis::X if rect.d == 2 => {
+            let south = count(&mut (rect.x..rect.x + rect.w).map(|x| IVec2::new(x, rect.z - 1)));
+            let north =
+                count(&mut (rect.x..rect.x + rect.w).map(|x| IVec2::new(x, rect.z + rect.d)));
+            if north > south {
+                out.start.y = (rect.z + rect.d) as f32 - 0.5;
+            } else if south > north {
+                out.start.y = rect.z as f32 + 0.5;
+            }
+        }
+        RunAxis::Z if rect.w == 2 => {
+            let west = count(&mut (rect.z..rect.z + rect.d).map(|z| IVec2::new(rect.x - 1, z)));
+            let east =
+                count(&mut (rect.z..rect.z + rect.d).map(|z| IVec2::new(rect.x + rect.w, z)));
+            if east > west {
+                out.start.x = (rect.x + rect.w) as f32 - 0.5;
+            } else if west > east {
+                out.start.x = rect.x as f32 + 0.5;
+            }
+        }
+        _ => {}
+    }
+    out
+}
+
+/// Centre of the row of `rect` next to its most walkable side (barrier models, Q-087).
+pub fn walkable_row_center(rect: Rect, grid: &Grid) -> Vec2 {
+    let c = rect_center(rect);
+    let walk = |cells: Vec<IVec2>| {
+        cells
+            .into_iter()
+            .filter(|&x| grid.is_walkable(x, true))
+            .count()
+    };
+    let xs: Vec<i32> = (rect.x..rect.x + rect.w).collect();
+    let zs: Vec<i32> = (rect.z..rect.z + rect.d).collect();
+    let sides = [
+        (
+            walk(xs.iter().map(|&x| IVec2::new(x, rect.z - 1)).collect()),
+            Vec2::new(c.x, rect.z as f32 + 0.5),
+        ),
+        (
+            walk(xs.iter().map(|&x| IVec2::new(x, rect.z + rect.d)).collect()),
+            Vec2::new(c.x, (rect.z + rect.d) as f32 - 0.5),
+        ),
+        (
+            walk(zs.iter().map(|&z| IVec2::new(rect.x - 1, z)).collect()),
+            Vec2::new(rect.x as f32 + 0.5, c.y),
+        ),
+        (
+            walk(zs.iter().map(|&z| IVec2::new(rect.x + rect.w, z)).collect()),
+            Vec2::new((rect.x + rect.w) as f32 - 0.5, c.y),
+        ),
+    ];
+    sides
+        .iter()
+        .filter(|(n, _)| *n > 0)
+        .max_by_key(|(n, _)| *n)
+        .map_or(c, |(_, p)| *p)
+}
+
 /// Position (level) and readable-side direction of an info board element: at the rect
 /// centre, facing away from its enclosure (GAME-PLAYER §5 uses the same pose).
 pub fn info_board_pose(e: &Element, data: &LevelData) -> (Vec2, Dir) {
@@ -362,6 +459,12 @@ impl LevelScene {
                 .iter()
                 .any(|e| e.kind.as_deref() == Some("jetty") && e.rect.contains(c))
         };
+        // pool water cells of enclosure features (not the ramp)
+        let pool_water = |c: IVec2| {
+            data.enclosure_features
+                .iter()
+                .any(|f| f.is_pool() && f.rect.contains(c) && !f.is_ramp(c))
+        };
         for c in b.cells() {
             let i = idx(c);
             let pos = level_to_world(cell_center(c));
@@ -381,30 +484,20 @@ impl LevelScene {
                     Vec::new()
                 };
                 let (model, k) = water_tile(body == 1, &conn, &dry_diag, flow_x[i]);
-                s.placements.push(Placement {
-                    model,
-                    pos,
-                    yaw: quarter_turns_cw_to_yaw(k),
-                });
+                s.placements
+                    .push(Placement::new(model, pos, quarter_turns_cw_to_yaw(k)));
                 continue;
             }
             if plaza[i] {
-                s.placements.push(Placement {
-                    model: "plaza_tile",
-                    pos,
-                    yaw: 0.0,
-                });
+                s.placements.push(Placement::new("plaza_tile", pos, 0.0));
             } else if path_at(c) && !jetty(c) {
                 let conn: Vec<Dir> = Dir::ALL
                     .into_iter()
                     .filter(|d| path_at(c + d.offset()))
                     .collect();
                 let (model, k) = path_tile(&conn);
-                s.placements.push(Placement {
-                    model,
-                    pos,
-                    yaw: quarter_turns_cw_to_yaw(k),
-                });
+                s.placements
+                    .push(Placement::new(model, pos, quarter_turns_cw_to_yaw(k)));
                 // Edging stones on the grass margin of every unconnected side.
                 for d in Dir::ALL.into_iter().filter(|d| !conn.contains(d)) {
                     let off = d.offset().as_vec2() * 0.43;
@@ -413,23 +506,44 @@ impl LevelScene {
                     } else {
                         quarter_turns_cw_to_yaw(1)
                     };
-                    s.placements.push(Placement {
-                        model: "path_edge",
-                        pos: level_to_world(cell_center(c) + off),
+                    s.placements.push(Placement::new(
+                        "path_edge",
+                        level_to_world(cell_center(c) + off),
                         yaw,
-                    });
+                    ));
                 }
+            } else if pool_water(c) {
+                // pool water (pond look, TECH-WATER); the rim/ramp come from `pool_tiled`
+                let conn: Vec<Dir> = Dir::ALL
+                    .into_iter()
+                    .filter(|d| pool_water(c + d.offset()))
+                    .collect();
+                let (model, k) = water_tile(false, &conn, &[], false);
+                s.placements
+                    .push(Placement::new(model, pos, quarter_turns_cw_to_yaw(k)));
             } else {
-                s.placements.push(Placement {
-                    model: "grass_tile",
-                    pos,
-                    yaw: 0.0,
-                });
+                let sand = data
+                    .scenery
+                    .iter()
+                    .any(|sc| sc.kind == "sand_patch" && sc.rect.contains(c));
+                let tile = if sand { "sand_tile" } else { "grass_tile" };
+                s.placements.push(Placement::new(tile, pos, 0.0));
             }
         }
 
         for e in &data.elements {
-            s.add_element(e, data);
+            let first = s.placements.len();
+            s.add_element(e, data, &grid);
+            if e.ty == ElementType::Barrier {
+                s.barrier_parts
+                    .push((e.id.clone(), first..s.placements.len()));
+            }
+        }
+        for f in &data.enclosure_features {
+            s.enclosure_feature(f);
+        }
+        for sc in &data.scenery {
+            s.scenery(sc);
         }
         // Food boxes (GAME-FEED §7): label plate (model front) towards the box facing.
         for b in &data.food_boxes {
@@ -497,20 +611,324 @@ impl LevelScene {
     fn run_pieces(&mut self, run: &Run, two: &'static str, one: &'static str) {
         let yaw = run_yaw(run.axis);
         for seg in run.segments() {
-            self.placements.push(Placement {
-                model: if seg.length_m == 2 { two } else { one },
-                pos: level_to_world(run.segment_center(seg)),
+            self.placements.push(Placement::new(
+                if seg.length_m == 2 { two } else { one },
+                level_to_world(run.segment_center(seg)),
                 yaw,
-            });
+            ));
         }
     }
 
     fn model_at(&mut self, model: &'static str, p: Vec2, yaw: f32) {
+        self.placements
+            .push(Placement::new(model, level_to_world(p), yaw));
+    }
+
+    fn model_scaled(&mut self, model: &'static str, p: Vec2, yaw: f32, scale: f32) {
         self.placements.push(Placement {
             model,
             pos: level_to_world(p),
             yaw,
+            scale,
         });
+    }
+
+    /// Flat non-solid ground box (scenery dressing).
+    fn flat(&mut self, source: &str, c: Vec2, size: Vec3, y0: f32, color: [f32; 3]) {
+        self.boxes.push(BoxPlacement {
+            pos: level_to_world_at(c, y0),
+            size,
+            yaw: 0.0,
+            color,
+            fadeable: false,
+            source: source.to_owned(),
+        });
+    }
+
+    /// Sparse tree area (GAME-LAYOUT "Forests", Q-085): the listed trees and bushes, each
+    /// with its own collider (the element itself is not solid).
+    fn sparse_trees(&mut self, e: &Element) {
+        for (i, t) in e.trees.iter().enumerate() {
+            let model = match t.model.as_str() {
+                "bush" => "bush",
+                "tree_grove" => "tree_grove",
+                "tree_eucalyptus" => "tree_eucalyptus",
+                _ => "tree_round",
+            };
+            let yaw = hash01(i as i32 + e.rect.x * 7, e.rect.z) * std::f32::consts::TAU;
+            self.model_at(model, t.pos(), yaw);
+        }
+    }
+
+    /// Bush border on the walkable sides of a dense tree area (`edge = "bushes"`, Q-085):
+    /// a bush about every 1.3 m, centred 0.6 m inside the edge, so the solid edge is never
+    /// an invisible wall (LAYOUT-019).
+    fn bush_border(&mut self, e: &Element, grid: &Grid) {
+        let r = e.rect;
+        let (x0, z0, x1, z1) = (r.x, r.z, r.x + r.w, r.z + r.d);
+        let walk = |c: IVec2| grid.is_walkable(c, false);
+        // per side: first outside cell, step along the side, bush line start, length
+        let sides = [
+            (
+                IVec2::new(x0, z0 - 1),
+                IVec2::X,
+                Vec2::new(x0 as f32, z0 as f32 + 0.6),
+                r.w,
+            ),
+            (
+                IVec2::new(x0, z1),
+                IVec2::X,
+                Vec2::new(x0 as f32, z1 as f32 - 0.6),
+                r.w,
+            ),
+            (
+                IVec2::new(x0 - 1, z0),
+                IVec2::Y,
+                Vec2::new(x0 as f32 + 0.6, z0 as f32),
+                r.d,
+            ),
+            (
+                IVec2::new(x1, z0),
+                IVec2::Y,
+                Vec2::new(x1 as f32 - 0.6, z0 as f32),
+                r.d,
+            ),
+        ];
+        for (k, (out0, step_c, start, len)) in sides.into_iter().enumerate() {
+            let len = len as f32;
+            let n = (len / 1.3).round().max(1.0) as i32;
+            let step = len / n as f32;
+            for i in 0..n {
+                let t = step * (i as f32 + 0.5);
+                if !walk(out0 + step_c * t as i32) {
+                    continue;
+                }
+                let yaw = hash01(i + k as i32 * 31, r.x + r.z) * std::f32::consts::TAU;
+                self.model_at("bush", start + step_c.as_vec2() * t, yaw);
+            }
+        }
+    }
+
+    /// Hippo pool and other enclosure features (GAME-LEVEL-1 "Hippo enclosure pool"): the
+    /// water tiles come from the ground pass; the `pool_tiled` model (tiled rim + ramp) has a
+    /// placeholder fallback; edge stones are small rocks; a `hut` is a wooden hut box.
+    fn enclosure_feature(&mut self, f: &crate::level::EnclosureFeature) {
+        let r = f.rect;
+        let c = rect_center(r);
+        match f.kind.as_str() {
+            "pool" => {
+                let model: &'static str = match f.model.as_deref() {
+                    Some("pool_tiled") | None => "pool_tiled",
+                    Some(_) => "pool_tiled",
+                };
+                self.model_at(model, c, 0.0);
+                let mut fb = Fallback {
+                    model,
+                    ..Fallback::default()
+                };
+                const TILE: [f32; 3] = [0.86, 0.93, 0.97];
+                const TILE_DARK: [f32; 3] = [0.55, 0.78, 0.90];
+                let rim = 0.18;
+                let h = 0.4;
+                let (x0, z0) = (r.x as f32, r.z as f32);
+                let (x1, z1) = (x0 + r.w as f32, z0 + r.d as f32);
+                let mut rim_box = |a: Vec2, b: Vec2| {
+                    let size = Vec3::new((b.x - a.x).abs().max(rim), h, (b.y - a.y).abs().max(rim));
+                    fb.boxes.push(BoxPlacement {
+                        pos: level_to_world_at((a + b) / 2.0, 0.0),
+                        size,
+                        yaw: 0.0,
+                        color: TILE,
+                        fadeable: false,
+                        source: format!("{}:rim", f.id),
+                    });
+                };
+                // rim along the four sides, open where the ramp meets the rim
+                let ramp = f.ramp;
+                let side = f.ramp_side.as_deref().unwrap_or("-x");
+                let open = |axis_lo: f32, axis_hi: f32| -> Vec<(f32, f32)> {
+                    match ramp {
+                        Some(rp) => {
+                            let (a, b) = if side == "-x" || side == "+x" {
+                                (rp.z as f32, (rp.z + rp.d) as f32)
+                            } else {
+                                (rp.x as f32, (rp.x + rp.w) as f32)
+                            };
+                            vec![(axis_lo, a), (b, axis_hi)]
+                        }
+                        None => vec![(axis_lo, axis_hi)],
+                    }
+                };
+                let south = if side == "-z" {
+                    open(x0, x1)
+                } else {
+                    vec![(x0, x1)]
+                };
+                let north = if side == "+z" {
+                    open(x0, x1)
+                } else {
+                    vec![(x0, x1)]
+                };
+                let west = if side == "-x" {
+                    open(z0, z1)
+                } else {
+                    vec![(z0, z1)]
+                };
+                let east = if side == "+x" {
+                    open(z0, z1)
+                } else {
+                    vec![(z0, z1)]
+                };
+                for (a, b) in south {
+                    rim_box(Vec2::new(a, z0 + rim / 2.0), Vec2::new(b, z0 + rim / 2.0));
+                }
+                for (a, b) in north {
+                    rim_box(Vec2::new(a, z1 - rim / 2.0), Vec2::new(b, z1 - rim / 2.0));
+                }
+                for (a, b) in west {
+                    rim_box(Vec2::new(x0 + rim / 2.0, a), Vec2::new(x0 + rim / 2.0, b));
+                }
+                for (a, b) in east {
+                    rim_box(Vec2::new(x1 - rim / 2.0, a), Vec2::new(x1 - rim / 2.0, b));
+                }
+                if let Some(rp) = ramp {
+                    // shallow tiled ramp (flat placeholder) with darker stripes
+                    fb.boxes.push(BoxPlacement {
+                        pos: level_to_world_at(rect_center(rp), 0.0),
+                        size: Vec3::new(rp.w as f32 - 0.04, 0.06, rp.d as f32 - 0.04),
+                        yaw: 0.0,
+                        color: TILE,
+                        fadeable: false,
+                        source: format!("{}:ramp", f.id),
+                    });
+                    for k in 0..(rp.d.max(rp.w) * 2) {
+                        let t = k as f32 * 0.5 + 0.25;
+                        let (pos, size) = if side == "-x" || side == "+x" {
+                            (
+                                Vec2::new(rect_center(rp).x, rp.z as f32 + t),
+                                Vec3::new(rp.w as f32 - 0.1, 0.07, 0.06),
+                            )
+                        } else {
+                            (
+                                Vec2::new(rp.x as f32 + t, rect_center(rp).y),
+                                Vec3::new(0.06, 0.07, rp.d as f32 - 0.1),
+                            )
+                        };
+                        fb.boxes.push(BoxPlacement {
+                            pos: level_to_world_at(pos, 0.0),
+                            size,
+                            yaw: 0.0,
+                            color: TILE_DARK,
+                            fadeable: false,
+                            source: format!("{}:ramp", f.id),
+                        });
+                    }
+                }
+                self.fallbacks.push(fb);
+                for (i, st) in f.edge_stones.iter().enumerate() {
+                    let yaw = hash01(i as i32, r.x) * std::f32::consts::TAU;
+                    self.model_scaled("rock", Vec2::from(*st), yaw, 0.5);
+                }
+            }
+            "hut" => {
+                // wooden hut placeholder (area reserved in the layout, model to come)
+                let size = Vec3::new(r.w as f32 - 0.6, 2.0, r.d as f32 - 0.8);
+                self.push_box(&f.id, c, 0.0, size, colors::WOOD);
+                let roof = Vec3::new(r.w as f32 - 0.3, 0.6, r.d as f32 - 0.5);
+                self.push_box(&f.id, c, 2.0, roof, colors::ROOF);
+            }
+            _ => {}
+        }
+    }
+
+    /// Non-solid riddle dressing (`[[scenery]]`, Q-080): tall grass with flowers, mud,
+    /// tree shade, a leaf pile with a rake. Sand is a ground tile (ground pass).
+    fn scenery(&mut self, sc: &crate::level::SceneryData) {
+        let r = sc.rect;
+        let id = sc.id.as_str();
+        match sc.kind.as_str() {
+            "tall_grass" => {
+                const FLOWERS: [[f32; 3]; 3] =
+                    [[0.93, 0.30, 0.30], [0.98, 0.85, 0.25], [0.97, 0.97, 0.95]];
+                for c in r.cells() {
+                    for k in 0..3 {
+                        let h = hash01(c.x * 3 + k, c.y * 5 - k);
+                        let p =
+                            cell_center(c) + Vec2::new(h - 0.5, hash01(c.y, c.x + k) - 0.5) * 0.8;
+                        self.model_scaled("grass_tuft", p, h * 6.0, 3.0);
+                    }
+                    let h = hash01(c.x, c.y * 7);
+                    let p = cell_center(c) + Vec2::new(0.3 - h * 0.6, h * 0.5 - 0.25);
+                    self.flat(
+                        id,
+                        p,
+                        Vec3::new(0.16, 0.1, 0.16),
+                        0.55,
+                        FLOWERS[(c.x + c.y).rem_euclid(3) as usize],
+                    );
+                }
+            }
+            "mud_puddle" => {
+                const MUD: [f32; 3] = [0.47, 0.33, 0.20];
+                const WET: [f32; 3] = [0.60, 0.45, 0.30];
+                self.flat(
+                    id,
+                    rect_center(r),
+                    Vec3::new(r.w as f32 - 0.5, 0.16, r.d as f32 - 0.5),
+                    0.0,
+                    MUD,
+                );
+                for c in r.cells().filter(|c| (c.x + c.y) % 3 == 0) {
+                    let h = hash01(c.x, c.y);
+                    self.flat(
+                        id,
+                        cell_center(c) + Vec2::splat(h - 0.5) * 0.4,
+                        Vec3::new(0.35, 0.17, 0.2),
+                        0.0,
+                        WET,
+                    );
+                }
+            }
+            "tree_shade" => {
+                const SHADE: [f32; 3] = [0.33, 0.50, 0.24];
+                self.flat(
+                    id,
+                    rect_center(r),
+                    Vec3::new(r.w as f32, 0.15, r.d as f32 - 0.2),
+                    0.0,
+                    SHADE,
+                );
+            }
+            "leaf_pile" => {
+                const LEAVES: [[f32; 3]; 3] =
+                    [[0.88, 0.36, 0.18], [0.95, 0.72, 0.20], [0.66, 0.40, 0.20]];
+                let c = rect_center(r);
+                for k in 0..7 {
+                    let h = hash01(k, r.x);
+                    let p = c + Vec2::new(
+                        (h - 0.5) * (r.w as f32 - 1.0),
+                        (hash01(r.z, k) - 0.5) * (r.d as f32 - 0.8),
+                    );
+                    let s = 0.7 + h * 0.5;
+                    self.flat(
+                        id,
+                        p,
+                        Vec3::new(s, 0.28 + h * 0.2, s * 0.8),
+                        0.0,
+                        LEAVES[(k % 3) as usize],
+                    );
+                }
+                // rake leaning on the nearest tree north-west of the pile (placeholder)
+                self.flat(
+                    id,
+                    Vec2::new(r.x as f32 + 1.0, r.z as f32 - 1.3),
+                    Vec3::new(0.06, 1.4, 0.06),
+                    0.0,
+                    colors::WOOD,
+                );
+            }
+            _ => {}
+        }
     }
 
     /// Trees on a grid of about `spacing` metres inside a rectangle, jittered and turned
@@ -529,6 +947,56 @@ impl LevelScene {
                     r.z as f32 + cd * (j as f32 + 0.5) + (0.5 - h) * 0.5,
                 );
                 self.model_at(model, c, h * std::f32::consts::TAU);
+            }
+        }
+    }
+
+    /// Dense bamboo thicket (`bamboo_sw`, `loc_bamboo`): clumps inside the solid rect,
+    /// turned 0° or 180° only, inset 0.75 m (north/south) / 0.6 m (east/west) on walkable
+    /// sides: the leaves stand at the edge (no invisible wall, LAYOUT-019) and the colliders
+    /// reach at most 0.13 m past it, never onto a walkable cell centre.
+    fn bamboo_thicket(&mut self, e: &Element, grid: &Grid) {
+        let r = e.rect;
+        let walk = |c: IVec2| grid.is_walkable(c, false);
+        let side = |cells: &mut dyn Iterator<Item = IVec2>, open: f32| {
+            if cells.filter(|&c| walk(c)).count() > 0 {
+                open
+            } else {
+                0.4
+            }
+        };
+        let w = side(&mut (r.z..r.z + r.d).map(|z| IVec2::new(r.x - 1, z)), 0.6);
+        let east = side(&mut (r.z..r.z + r.d).map(|z| IVec2::new(r.x + r.w, z)), 0.6);
+        let s = side(&mut (r.x..r.x + r.w).map(|x| IVec2::new(x, r.z - 1)), 0.75);
+        let n = side(
+            &mut (r.x..r.x + r.w).map(|x| IVec2::new(x, r.z + r.d)),
+            0.75,
+        );
+        let (x0, x1) = (r.x as f32 + w, (r.x + r.w) as f32 - east);
+        let (z0, z1) = (r.z as f32 + s, (r.z + r.d) as f32 - n);
+        let cols = ((x1 - x0) / 0.9).round().max(0.0) as i32 + 1;
+        let rows = ((z1 - z0) / 0.9).round().max(0.0) as i32 + 1;
+        for j in 0..rows {
+            for i in 0..cols {
+                let fx = if cols > 1 {
+                    i as f32 / (cols - 1) as f32
+                } else {
+                    0.5
+                };
+                let fz = if rows > 1 {
+                    j as f32 / (rows - 1) as f32
+                } else {
+                    0.5
+                };
+                let p = Vec2::new(x0 + (x1 - x0) * fx, z0 + (z1 - z0) * fz);
+                // the outer clumps keep yaw 0 (longest leaves north/east), the others alternate
+                let edge = i == cols - 1 || j == rows - 1;
+                let yaw = if edge || (i + j) % 2 == 0 {
+                    0.0
+                } else {
+                    std::f32::consts::PI
+                };
+                self.model_at("bamboo", p, yaw);
             }
         }
     }
@@ -583,20 +1051,30 @@ impl LevelScene {
         let at = |fx: f32, fz: f32| {
             Vec2::new(r.x as f32 + fx * r.w as f32, r.z as f32 + fz * r.d as f32)
         };
+        if e.animal.as_deref() == Some("panda") {
+            // cut bamboo on a wooden feeding rack, no growing bamboo (Q-081)
+            let rack = at(0.75, 0.75);
+            self.push_box(&e.id, rack, 0.0, Vec3::new(2.0, 0.9, 0.7), colors::WOOD);
+            for k in 0..5 {
+                let dz = -0.24 + k as f32 * 0.12;
+                self.push_box(
+                    &e.id,
+                    rack + Vec2::new(0.0, dz),
+                    0.9,
+                    Vec3::new(2.2, 0.08, 0.08),
+                    [0.45, 0.70, 0.30],
+                );
+            }
+        }
         let list: &[(&'static str, f32, f32)] = match e.animal.as_deref() {
-            Some("panda") => &[
-                ("bamboo", 0.2, 0.75),
-                ("bamboo", 0.75, 0.8),
-                ("bamboo", 0.8, 0.35),
-                ("bush", 0.3, 0.3),
-            ],
+            Some("panda") => &[("bush", 0.3, 0.3), ("bush", 0.2, 0.8)],
             Some("zebra") => &[
                 ("bush", 0.25, 0.8),
                 ("bush", 0.6, 0.25),
                 ("rock", 0.3, 0.4),
                 ("grass_tuft", 0.55, 0.6),
             ],
-            Some("hippo") => &[("rock", 0.7, 0.3), ("rock", 0.25, 0.75), ("bush", 0.8, 0.8)],
+            // hippo: pool, hut and edge stones come from [[enclosure_feature]] (Q-085)
             _ => &[],
         };
         for (i, (m, fx, fz)) in list.iter().enumerate() {
@@ -608,7 +1086,7 @@ impl LevelScene {
         }
     }
 
-    fn add_element(&mut self, e: &Element, data: &LevelData) {
+    fn add_element(&mut self, e: &Element, data: &LevelData, grid: &Grid) {
         let kind = e.kind.as_deref().unwrap_or("");
         let h = e.height_m;
         match (e.ty, kind) {
@@ -623,11 +1101,11 @@ impl LevelScene {
             }
             (ElementType::Landmark, "map_board") => {
                 let to_spawn = cell_center(data.spawn.cell());
-                self.placements.push(Placement {
-                    model: "map_board",
-                    pos: level_to_world(rect_center(e.rect)),
-                    yaw: facing_yaw(dir_away(e.rect, to_spawn)),
-                });
+                self.model_at(
+                    "map_board",
+                    rect_center(e.rect),
+                    facing_yaw(dir_away(e.rect, to_spawn)),
+                );
             }
             (ElementType::Decoration | ElementType::Boundary, "hedge" | "zoo_wall") => {
                 let (two, one) = if kind == "hedge" {
@@ -636,20 +1114,30 @@ impl LevelScene {
                     ("zoo_wall", "zoo_wall_1m")
                 };
                 match band_run(e.rect, data.level.bounds) {
-                    Some(run) => self.run_pieces(&run, two, one),
+                    Some(run) => self.run_pieces(&walkable_side_row(run, e.rect, grid), two, one),
                     None => self.rect_box(e, 0.0, h.unwrap_or(3.0), colors::HEDGE),
                 }
             }
-            (ElementType::Decoration, "tree_grove") => self.trees(e, "tree_grove", 2.5),
-            (ElementType::Decoration, "trees") => self.trees(e, "tree_round", 3.0),
+            (ElementType::Decoration, "tree_grove" | "trees") if e.is_sparse() => {
+                self.sparse_trees(e)
+            }
+            (ElementType::Decoration, "tree_grove") => {
+                self.trees(e, "tree_grove", 2.5);
+                if e.edge.as_deref() == Some("bushes") {
+                    self.bush_border(e, grid);
+                }
+            }
+            (ElementType::Decoration, "trees") => {
+                self.trees(e, "tree_round", 3.0);
+                if e.edge.as_deref() == Some("bushes") {
+                    self.bush_border(e, grid);
+                }
+            }
+            (ElementType::Decoration, "bamboo") => self.bamboo_thicket(e, grid),
             (ElementType::Decoration, "bench") => self.rect_box(e, 0.0, 0.5, colors::WOOD),
             (ElementType::Decoration, "info_board") => {
                 let (pos, dir) = info_board_pose(e, data);
-                self.placements.push(Placement {
-                    model: "info_board",
-                    pos: level_to_world(pos),
-                    yaw: facing_yaw(dir),
-                });
+                self.model_at("info_board", pos, facing_yaw(dir));
             }
             (ElementType::Enclosure, _) => self.enclosure(e),
             (ElementType::Building, "entrance") => {
@@ -663,6 +1151,34 @@ impl LevelScene {
                 self.push_box(&e.id, c + Vec2::X * dx, 0.0, pillar, colors::STONE);
                 let beam = Vec3::new(r.w as f32, 0.7, 0.8);
                 self.push_box(&e.id, c, height - 0.7, beam, colors::ROOF);
+                // closed turnstiles in the arch on the plaza side (QA F8: no invisible wall)
+                let row = Vec2::new(c.x, r.z as f32 + r.d as f32 - 0.5);
+                let open_w = r.w as f32 - 2.4;
+                let n = (open_w / 1.2).round().max(1.0) as i32;
+                for i in 0..n {
+                    let x = r.x as f32 + 1.2 + open_w * (i as f32 + 0.5) / n as f32;
+                    self.push_box(
+                        &e.id,
+                        Vec2::new(x, row.y),
+                        0.0,
+                        Vec3::new(0.12, 1.0, 0.12),
+                        [0.55, 0.57, 0.62],
+                    );
+                    self.push_box(
+                        &e.id,
+                        Vec2::new(x, row.y),
+                        0.55,
+                        Vec3::new(open_w / n as f32 - 0.1, 0.08, 0.5),
+                        [0.70, 0.72, 0.76],
+                    );
+                }
+                self.push_box(
+                    &e.id,
+                    row,
+                    0.95,
+                    Vec3::new(open_w, 0.1, 0.12),
+                    [0.70, 0.72, 0.76],
+                );
             }
             (ElementType::Building, _) => {
                 let height = h.unwrap_or(4.0);
@@ -675,24 +1191,35 @@ impl LevelScene {
                 self.push_box(&e.id, rect_center(r), height * 0.7, roof, colors::ROOF);
             }
             (ElementType::Barrier, "fallen_tree") => {
-                self.model_at("fallen_tree", rect_center(e.rect), 0.0)
+                // 0.3 m east of the rect centre so the crown stays out of the walkable
+                // column of path_ne (GAME-LEVEL-1 "Collision and billboards")
+                self.model_at("fallen_tree", rect_center(e.rect) + Vec2::X * 0.3, 0.0)
             }
             (ElementType::Barrier, "closed_gate") => {
-                self.model_at("gate_zoo_closed", rect_center(e.rect), 0.0)
+                // on the walkable side of the band (Q-087): the gate leaf 0.25 m behind the
+                // edge (its pillars reach 0.11 m out, solid by the footprint; LAYOUT-019)
+                let row = walkable_row_center(e.rect, grid);
+                let c = rect_center(e.rect);
+                let c = c + (row - c).normalize_or_zero() * ((row - c).length() + 0.25);
+                self.model_at("gate_zoo_closed", c, 0.0)
             }
             (ElementType::Barrier, "road_block") => {
-                // Road block across the path (faces west), sign in front, cart and cones.
+                // Road block across the path (faces west) on the walkable-side row: its bar
+                // 0.3 m behind the edge (the feet reach 0.12 m onto the path; Q-087, LAYOUT-019);
+                // sign, cart and cones behind it.
                 let c = rect_center(e.rect);
+                let r = e.rect;
                 let west = facing_yaw(Dir::W);
-                self.model_at("road_block", c, west);
+                let block = Vec2::new(r.x as f32 + 0.3, c.y);
+                self.model_at("road_block", block, west);
                 self.model_at(
                     "repair_sign",
-                    c + Vec2::new(-0.7, -1.1),
+                    block + Vec2::new(0.85, -0.75),
                     (-35f32).to_radians(),
                 );
-                self.model_at("zookeeper_cart", c + Vec2::new(0.55, 0.9), west);
-                self.model_at("traffic_cone", c + Vec2::new(-0.6, 1.2), 0.0);
-                self.model_at("traffic_cone", c + Vec2::new(-0.4, -1.3), 0.0);
+                self.model_at("zookeeper_cart", block + Vec2::new(1.1, 0.95), west);
+                self.model_at("traffic_cone", block + Vec2::new(0.7, 0.35), 0.0);
+                self.model_at("traffic_cone", block + Vec2::new(1.25, -1.2), 0.0);
             }
             (ElementType::Barrier, _) => self.rect_box(e, 0.0, h.unwrap_or(1.2), colors::BARRIER),
             _ => self.rect_box(e, 0.0, h.unwrap_or(1.0), colors::DEFAULT),
@@ -709,32 +1236,29 @@ impl LevelScene {
             }
         };
         for (corner, k) in fence.corners.iter().zip(CORNER_TURNS) {
-            self.placements.push(Placement {
-                model: "fence_wood_corner",
-                pos: level_to_world(*corner),
-                yaw: quarter_turns_cw_to_yaw(k),
-            });
+            self.placements.push(Placement::new(
+                "fence_wood_corner",
+                level_to_world(*corner),
+                quarter_turns_cw_to_yaw(k),
+            ));
         }
         for run in &fence.runs {
             self.run_pieces(run, "fence_wood", "fence_wood_1m");
         }
         if let Some(gate) = fence.gate {
             let dir = gate.axis.dir();
-            self.placements.push(Placement {
-                model: "gate_wood",
-                pos: level_to_world(gate.start + dir * 0.09),
-                yaw: run_yaw(gate.axis),
-            });
+            self.placements.push(Placement::new(
+                "gate_wood",
+                level_to_world(gate.start + dir * 0.09),
+                run_yaw(gate.axis),
+            ));
             // Enclosure sign just outside the gate, reading outwards.
             let mid = gate.start + dir * 1.0;
             let out = dir_away(e.rect, mid + (mid - rect_center(e.rect)).normalize() * 0.01);
             let pos = mid + out.offset().as_vec2() * 0.35;
             let yaw = facing_yaw(out);
-            self.placements.push(Placement {
-                model: "enclosure_sign",
-                pos: level_to_world(pos),
-                yaw,
-            });
+            self.placements
+                .push(Placement::new("enclosure_sign", level_to_world(pos), yaw));
             // Silhouette of the enclosure's animal on the sign panel (ART-ENVIRONMENT 6).
             if let Some(animal) = &e.animal {
                 self.decals
@@ -826,7 +1350,8 @@ mod tests {
             .filter(|p| p.model.starts_with("water_"))
             .count();
         // river_n 3x17 + river_mid 3x1 + river_e 14x3 + bridge 3x3 + pond 8x8
-        assert_eq!(water, 51 + 3 + 42 + 9 + 64);
+        // + hippo_pool 8x7 without its 3 ramp cells (GAME-LEVEL-1 "Hippo enclosure pool")
+        assert_eq!(water, 51 + 3 + 42 + 9 + 64 + 53);
         assert_eq!(
             water_tile(false, &[Dir::E, Dir::S], &[], false),
             ("water_pond_corner", 0)

@@ -4,6 +4,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
+import { START_URL } from './helpers';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const shots = path.resolve(here, '../../../art/environment/poc');
@@ -24,7 +25,7 @@ test('POC-001 / ARCH-003: level 1 renders with WebGL2, player walks, no console 
   });
   page.on('pageerror', (e) => errors.push(String(e)));
 
-  await page.goto('/');
+  await page.goto(START_URL);
   await waitFrames(page, 5);
   const hasGl2 = await page.evaluate(() => {
     const c = document.getElementById('game') as HTMLCanvasElement;

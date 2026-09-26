@@ -35,7 +35,7 @@ Q-089), a map board at the entry, and a second entry path to the level-1 north g
 (proposal Q-090).
 
 **Goldfish mission** (GAME-RESCUE "goldfish bowl"): read the board (it says a bowl is
-needed, `mission-goldfish-bowl-hint-<level>`) → take the bowl in the zookeeper house (5.7 s
+needed, `mission-goldfish-bowl-hint-<reading_level>`) → take the bowl in the zookeeper house (5.7 s
 from the storage) → fill it at the tap next to the door or at any stream bank → take fish
 food from storage 3 (pocket, Q-084) → find the goldfish in the stream where the riddle
 points → feed it from the bank → it jumps into the bowl → carry the bowl to `enc_goldfish`

@@ -42,11 +42,18 @@ fn layout_001_l1_001_everything_reachable_from_spawn() {
             | ElementType::Landmark
             | ElementType::Barrier
             | ElementType::HidingPlace => true,
+            // sparse woods are walkable: every free cell of them (LAYOUT-L1-022)
+            ElementType::Decoration if e.is_sparse() => true,
             // hedges and walls need not be reachable (GAME-LEVEL-1 §3)
             _ => false,
         };
         if must && !reachable_near(grid, &reach, e.rect) {
             missing.push(e.id.clone());
+        }
+    }
+    for h in &data.hiding_places {
+        if !reachable_near(grid, &reach, h.rect) {
+            missing.push(h.id.clone());
         }
     }
     assert!(missing.is_empty(), "not reachable from spawn: {missing:?}");
@@ -293,7 +300,7 @@ fn layout_l1_005_walking_times_between_neighbours() {
     let level = Level::new(data.clone());
     let grid = level.grid();
     let rect = |id: &str| data.element(id).unwrap().rect;
-    let spot = |id: &str| data.element(id).unwrap().animal_spot_cell().unwrap();
+    let spot = |id: &str| data.hiding_place(id).unwrap().spot_cell();
     let spawn = vec![data.spawn.cell()];
     let door_cell = data.element("food_storage").unwrap().door_cell().unwrap();
     let door = vec![door_cell - IVec2::Y]; // the cell in front of the south door
@@ -309,80 +316,81 @@ fn layout_l1_005_walking_times_between_neighbours() {
             spawn.clone(),
             door.clone(),
             8.0,
-            4.6,
+            4.1,
         ),
         (
             "food storage -> zebra info board",
             door.clone(),
             board("board_zebra"),
             10.2,
-            6.2,
+            5.6,
         ),
         (
             "zebra info board -> pond",
             board("board_zebra"),
             pond.clone(),
             7.8,
-            5.9,
+            5.4,
         ),
         (
             "pond -> panda info board",
             pond.clone(),
             board("board_panda"),
             9.9,
-            6.0,
+            5.4,
         ),
         (
             "panda info board -> river",
             board("board_panda"),
             river.clone(),
             10.4,
-            7.1,
+            6.4,
         ),
         (
             "river -> hippo info board",
             river.clone(),
             board("board_hippo"),
             13.4,
-            7.7,
+            7.0,
         ),
         (
             "hippo info board -> cave",
             board("board_hippo"),
             cave.clone(),
             11.2,
-            6.7,
+            6.1,
         ),
         (
             "cave -> food storage door",
             cave.clone(),
             door.clone(),
             10.1,
-            6.8,
+            6.1,
         ),
         (
             "hippo info board -> food storage door",
             board("board_hippo"),
             door.clone(),
             12.2,
-            7.3,
+            6.6,
         ),
         (
             "spawn -> map board",
             spawn.clone(),
             board("map_board"),
             6.4,
-            3.9,
+            3.6,
         ),
     ];
-    // GAME-PLAYER §6 (2026-09-26): path 1.75 m/s, grass 0.98 m/s
+    // GAME-PLAYER §6 (2026-09-26): path 1.93 m/s, grass 0.98 m/s
     let mp = zoo_core::player::MoveParams::default();
     let time = Cost::Time {
         path_speed: mp.speed_on(zoo_core::level::Surface::Path),
         grass_speed: mp.speed_on(zoo_core::level::Surface::Grass),
     };
-    assert!((mp.walk_speed - 1.75).abs() < 1e-6);
+    assert!((mp.walk_speed - 1.93).abs() < 1e-6);
     let mut too_slow = Vec::new();
+    let mut drifted = Vec::new();
     for (name, from, to, spec_m, spec_s) in &pairs {
         assert!(
             !from.is_empty() && !to.is_empty(),
@@ -392,14 +400,34 @@ fn layout_l1_005_walking_times_between_neighbours() {
         let t = min_cost(grid, from, to, time);
         println!("{name}: {d:.1} m (spec {spec_m}), {t:.1} s (spec {spec_s})");
         // the numbers in the GAME-LEVEL-1 table are reproduced by this cost model
-        assert!(
-            (d - spec_m).abs() <= 0.1 && (t - spec_s).abs() <= 0.1,
-            "{name}: table drifted"
-        );
+        if (d - spec_m).abs() > 0.1 || (t - spec_s).abs() > 0.1 {
+            drifted.push(format!("{name}: {d:.1} m, {t:.1} s"));
+        }
         if t > 10.0 {
             too_slow.push((name.to_string(), t));
         }
     }
+    // not neighbours (for information in the spec)
+    for (name, from, to) in [
+        (
+            "panda info board -> food storage",
+            board("board_panda"),
+            door.clone(),
+        ),
+        (
+            "zebra board -> panda board",
+            board("board_zebra"),
+            board("board_panda"),
+        ),
+        (
+            "hippo board -> zebra board",
+            board("board_hippo"),
+            board("board_zebra"),
+        ),
+    ] {
+        println!("{name}: {:.1} s", min_cost(grid, &from, &to, time));
+    }
+    assert!(drifted.is_empty(), "table drifted: {drifted:#?}");
     assert!(
         too_slow.is_empty(),
         "neighbour pairs over 10 s: {too_slow:?}"
@@ -414,25 +442,42 @@ fn layout_l1_007_hiding_place_features() {
         ("loc_river", &["flowing_water", "bridge", "ducks"][..]),
         ("loc_pond", &["still_water", "water_lilies", "frogs"][..]),
         ("loc_cave", &["dark", "cool", "stone", "echo"][..]),
+        (
+            "loc_meadow",
+            &["tall_grass", "wildflowers", "butterflies"][..],
+        ),
+        ("loc_sand", &["sand", "dry", "yellow_ground"][..]),
+        ("loc_mud", &["mud", "brown_ground", "wet"][..]),
+        ("loc_shade", &["shade", "big_trees", "zoo_wall"][..]),
+        (
+            "loc_bamboo",
+            &["bamboo_thicket", "green_stalks", "taller_than_wall"][..],
+        ),
+        (
+            "loc_leaves",
+            &["leaf_pile", "red_yellow_leaves", "rake"][..],
+        ),
     ];
     for (id, feats) in expect {
-        let e = data.element(id).unwrap();
+        let e = data.hiding_place(id).unwrap();
         for f in feats {
             assert!(e.features.iter().any(|x| x == f), "{id} lacks {f}");
         }
+        // every scenery id the place names exists
+        for sc in &e.scenery {
+            assert!(
+                data.scenery.iter().any(|x| &x.id == sc) || data.element(sc).is_some(),
+                "{id}: scenery {sc} missing"
+            );
+        }
     }
-    let spot = cell_center(
-        data.element("loc_river")
-            .unwrap()
-            .animal_spot_cell()
-            .unwrap(),
-    );
+    let spot = data.hiding_place("loc_river").unwrap().spot();
     let bridges: Vec<_> = data
         .elements_of(ElementType::Path)
         .filter(|e| e.kind.as_deref() == Some("bridge"))
         .collect();
     assert!(bridges.iter().any(|b| b.rect.distance_to(spot) <= 4.0));
-    let pond = data.element("loc_pond").unwrap().rect;
+    let pond = data.hiding_place("loc_pond").unwrap().rect;
     for e in &data.elements {
         let water_or_bridge =
             e.kind.as_deref() == Some("bridge") || e.kind.as_deref() == Some("river");
@@ -476,8 +521,8 @@ fn layout_l1_008_only_river_and_pond_water_one_bridge() {
 fn layout_l1_009_animal_spots_within_range_of_walkable_cell() {
     let data = common::level1();
     let grid = Level::new(data.clone()).grid().clone();
-    for h in data.elements_of(ElementType::HidingPlace) {
-        let spot = h.animal_spot_cell().unwrap();
+    for h in &data.hiding_places {
+        let spot = h.spot_cell();
         assert!(
             !near_spot(&grid, spot).is_empty(),
             "{} unreachable spot",
@@ -492,7 +537,7 @@ fn grid_bounds_cover_all_solid_types() {
     let data = common::level1();
     let grid = Level::new(data.clone()).grid().clone();
     for ty in solid_types() {
-        for e in data.elements_of(ty) {
+        for e in data.elements_of(ty).filter(|e| e.is_solid()) {
             let c = IVec2::new(e.rect.x, e.rect.z);
             let gate = e.gate.is_some_and(|g| g.contains(c));
             if !gate && data.level.bounds.contains(c) {
@@ -530,6 +575,517 @@ fn layout_l1_013_food_boxes_in_front_of_storage_reachable() {
             zoo_core::nav::find_path(grid, spawn, front, false).is_some(),
             "{}: front cell not reachable",
             b.food
+        );
+    }
+}
+
+/// Walking-time cost model of GAME-PLAYER §6 (path 1.93 m/s, grass 0.98 m/s).
+fn time_cost() -> Cost {
+    let mp = zoo_core::player::MoveParams::default();
+    Cost::Time {
+        path_speed: mp.speed_on(Surface::Path),
+        grass_speed: mp.speed_on(Surface::Grass),
+    }
+}
+
+// LAYOUT-L1-018 (and the "Own board → spot" column of GAME-LEVEL-1 "Hiding places"): every
+// new candidate is ≤ 10 s from its listed neighbour.
+#[test]
+fn layout_l1_018_new_hiding_places_near_a_neighbour() {
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let grid = level.grid();
+    let near = |id: &str| near_spot(grid, data.hiding_place(id).unwrap().spot_cell());
+    let adj = |id: &str| walkable_adjacent(grid, data.element(id).unwrap().rect);
+    let pairs: Vec<(&str, Vec<IVec2>, Vec<IVec2>)> = vec![
+        (
+            "loc_meadow -> bridge",
+            near("loc_meadow"),
+            adj("bridge_river"),
+        ),
+        (
+            "loc_sand -> barrier_north_gate",
+            near("loc_sand"),
+            adj("barrier_north_gate"),
+        ),
+        (
+            "loc_mud -> barrier_north_gate",
+            near("loc_mud"),
+            adj("barrier_north_gate"),
+        ),
+        ("loc_shade -> loc_mud", near("loc_shade"), near("loc_mud")),
+        (
+            "loc_bamboo -> map_board",
+            near("loc_bamboo"),
+            adj("map_board"),
+        ),
+        (
+            "loc_leaves -> loc_meadow",
+            near("loc_leaves"),
+            near("loc_meadow"),
+        ),
+    ];
+    let mut slow = Vec::new();
+    for (name, from, to) in pairs {
+        assert!(!from.is_empty() && !to.is_empty(), "{name}");
+        let t = min_cost(grid, &from, &to, time_cost());
+        println!("{name}: {t:.1} s");
+        if t > 10.0 {
+            slow.push((name, t));
+        }
+    }
+    // own info board → spot (information for the spec table)
+    for h in &data.hiding_places {
+        let board = data
+            .elements
+            .iter()
+            .find(|e| {
+                e.kind.as_deref() == Some("info_board")
+                    && e.enclosure.as_deref() == Some(&format!("enc_{}", h.animal))
+            })
+            .unwrap();
+        let t = min_cost(grid, &adj(&board.id), &near(&h.id), time_cost());
+        let d = cell_center(h.spot_cell())
+            .distance(cell_center(IVec2::new(board.rect.x, board.rect.z)));
+        println!("board -> {}: {d:.1} m straight, {t:.1} s", h.id);
+    }
+    assert!(slow.is_empty(), "over 10 s: {slow:?}");
+}
+
+// LAYOUT-L1-014, LAYOUT-L1-024, LAYOUT-014: wander areas of the 9 candidates (rect clip,
+// Q-085) — spot inside, ≥ 9 cells, a cell ≥ 2 m from the spot, no solid cell, no path cell
+// except the cave floor, inside the rect, disjoint between animals, the cell counts of the
+// GAME-LEVEL-1 table and no tree/bush collider inside.
+#[test]
+fn layout_l1_014_024_wander_areas() {
+    use zoo_core::wander::hiding_area;
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let grid = level.grid();
+    let expected = [
+        ("loc_river", 19),
+        ("loc_meadow", 16),
+        ("loc_sand", 22),
+        ("loc_pond", 22),
+        ("loc_mud", 22),
+        ("loc_shade", 12),
+        ("loc_cave", 9),
+        ("loc_bamboo", 21),
+        ("loc_leaves", 17),
+    ];
+    let mut areas = Vec::new();
+    for (id, n) in expected {
+        let h = data.hiding_place(id).unwrap();
+        let area = hiding_area(&level, h);
+        let cells: Vec<IVec2> = area.cells().map(|(c, _)| c).collect();
+        assert_eq!(cells.len(), n, "{id}: {} cells", cells.len());
+        assert!(area.contains(h.spot_cell()), "{id}: spot");
+        assert!(cells.len() >= 9);
+        assert!(
+            cells
+                .iter()
+                .any(|&c| cell_center(c).distance(h.spot()) >= 2.0),
+            "{id}: no cell 2 m from the spot"
+        );
+        let cave = |c: IVec2| {
+            data.elements.iter().any(|e| {
+                e.ty == ElementType::Path && e.kind.as_deref() == Some("cave") && e.rect.contains(c)
+            })
+        };
+        for &c in &cells {
+            assert!(h.rect.contains(c), "{id}: {c} outside its rect");
+            if h.wander_on != "water" {
+                assert!(grid.is_walkable(c, false), "{id}: solid cell {c}");
+            }
+            assert!(!grid.has_path(c) || cave(c), "{id}: path cell {c}");
+            // no tree or bush collider in the cell
+            let tree = level
+                .colliders()
+                .shapes()
+                .iter()
+                .any(|s| s.overlaps(cell_center(c), 0.3));
+            assert!(!tree, "{id}: a collider in {c}");
+        }
+        areas.push((h.animal.clone(), h.id.clone(), h.rect, cells));
+    }
+    for (i, a) in areas.iter().enumerate() {
+        for b in &areas[i + 1..] {
+            if a.0 == b.0 {
+                continue;
+            }
+            assert!(
+                !a.3.iter().any(|c| b.3.contains(c)),
+                "{} and {} share wander cells",
+                a.1,
+                b.1
+            );
+            assert!(
+                !a.2.cells().any(|c| b.2.contains(c)),
+                "rects of {} and {} overlap",
+                a.1,
+                b.1
+            );
+        }
+    }
+}
+
+// LAYOUT-L1-015, LAYOUT-014: ≥ 3 candidates per animal; all 27 combinations keep the spots
+// pairwise ≥ 12 m apart.
+#[test]
+fn layout_l1_015_every_combination_spread() {
+    let data = common::level1();
+    let per: Vec<Vec<_>> = ["zebra", "hippo", "panda"]
+        .iter()
+        .map(|a| data.hiding_places_of(a).collect::<Vec<_>>())
+        .collect();
+    for p in &per {
+        assert!(p.len() >= 3);
+    }
+    let mut n = 0;
+    for a in &per[0] {
+        for b in &per[1] {
+            for c in &per[2] {
+                for (x, y) in [(a, b), (a, c), (b, c)] {
+                    let d = x.spot().distance(y.spot());
+                    assert!(d >= 12.0 - 1e-4, "{} – {}: {d:.1}", x.id, y.id);
+                }
+                n += 1;
+            }
+        }
+    }
+    assert_eq!(n, 27);
+}
+
+// LAYOUT-L1-016: scenery is not solid, overlaps no solid element and no path, lies inside
+// its hiding place's rect, and each kind occurs once.
+#[test]
+fn layout_l1_016_scenery() {
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let mut kinds = BTreeSet::new();
+    for sc in &data.scenery {
+        assert!(kinds.insert(sc.kind.clone()), "{} twice", sc.kind);
+        for c in sc.rect.cells() {
+            assert!(level.grid().is_walkable(c, false), "{}: solid {c}", sc.id);
+            assert!(!level.grid().has_path(c), "{}: path {c}", sc.id);
+        }
+        let h = data
+            .hiding_place(sc.hiding_place.as_deref().unwrap())
+            .unwrap();
+        assert!(
+            sc.rect.cells().all(|c| h.rect.contains(c)),
+            "{} outside {}",
+            sc.id,
+            h.id
+        );
+    }
+    assert_eq!(kinds.len(), 5);
+}
+
+// LAYOUT-L1-017: the legacy `[[element]] type = "hiding_place"` mirrors are gone (Q-080
+// answered: deleted when zoo-core migrated to `[[hiding_place]]`).
+#[test]
+fn layout_l1_017_no_legacy_hiding_place_elements() {
+    let data = common::level1();
+    assert_eq!(data.elements_of(ElementType::HidingPlace).count(), 0);
+    assert_eq!(data.hiding_places.len(), 9);
+}
+
+// LAYOUT-L1-020, LAYOUT-020: the hippo pool (35–60 % of the inner cells, inside the fence,
+// not next to the gate, ramp inside), `home_wander_on` with water, and the home wander area
+// (≥ 9 cells per surface, no gate cell, water not next to the gate, water and grass joined
+// only over the ramp, connected from the grass cell inside the gate).
+#[test]
+fn layout_l1_020_layout_020_hippo_pool_and_home_area() {
+    use zoo_core::wander::{home_area, home_entry, AreaCell};
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let (ei, enc) = data
+        .elements
+        .iter()
+        .enumerate()
+        .find(|(_, e)| e.id == "enc_hippo")
+        .unwrap();
+    let gate = enc.gate.unwrap();
+    let pool = data
+        .features_of("enc_hippo")
+        .find(|f| f.is_pool())
+        .expect("hippo_pool");
+    let inner = enc.rect.cells().filter(|c| !gate.contains(*c)).count();
+    let pool_cells = pool.rect.cells().count();
+    let share = pool_cells as f32 / inner as f32;
+    assert_eq!((pool_cells, inner), (56, 130));
+    assert!((0.35..=0.60).contains(&share), "{share}");
+    assert!(pool.rect.cells().all(|c| enc.rect.contains(c)));
+    assert!(pool
+        .rect
+        .cells()
+        .all(|c| !gate.cells().any(|g| (g - c).abs().max_element() <= 1)));
+    let ramp = pool.ramp.unwrap();
+    assert!(ramp.cells().all(|c| pool.rect.contains(c)));
+    assert!(enc.home_surfaces().contains(&"water"));
+    // home area of every enclosure (LAYOUT-020)
+    for (i, e) in data.elements.iter().enumerate() {
+        if e.ty != ElementType::Enclosure {
+            continue;
+        }
+        let area = home_area(&level, i);
+        let g = e.gate.unwrap();
+        let land = area.cells().filter(|(_, k)| *k == AreaCell::Land).count();
+        let water = area.cells().filter(|(_, k)| *k != AreaCell::Land).count();
+        assert!(land >= 9, "{}: {land} grass cells", e.id);
+        if e.home_surfaces().contains(&"water") {
+            assert!(water >= 9, "{}: {water} water cells", e.id);
+        }
+        for (c, k) in area.cells() {
+            assert!(!g.contains(c), "{}: gate cell {c}", e.id);
+            if k != AreaCell::Land {
+                assert!(
+                    !g.cells().any(|x| (x - c).abs().max_element() <= 1),
+                    "{}: water next to the gate",
+                    e.id
+                );
+            }
+        }
+        let entry = home_entry(&level, i).unwrap();
+        assert!(
+            area.contains(entry),
+            "{}: entry {entry} not in the area",
+            e.id
+        );
+        // connected from the entry cell; the way from grass into the water always leads
+        // over a ramp cell (the rim is 0.4 m high)
+        for (c, k) in area.cells() {
+            let route = area
+                .route(entry, c)
+                .unwrap_or_else(|| panic!("{}: {c} not connected", e.id));
+            if k == AreaCell::Water {
+                assert!(
+                    route.iter().any(|r| area.class(*r) == Some(AreaCell::Ramp)),
+                    "{}: {c} reached without the ramp",
+                    e.id
+                );
+            }
+        }
+    }
+    let area = home_area(&level, ei);
+    let land = area.cells().filter(|(_, k)| *k == AreaCell::Land).count();
+    let water = area.cells().filter(|(_, k)| *k != AreaCell::Land).count();
+    assert_eq!(
+        (land, water),
+        (55, 56),
+        "GAME-LEVEL-1: 55 grass + 56 pool cells"
+    );
+    assert!(pool.rect.cells().all(|c| area.contains(c)));
+}
+
+// LAYOUT-L1-022, LAYOUT-015: sparse woods — colliders inside the rect and outside paths,
+// scenery and hiding-place rects; clear gap ≥ 1.8 m between obstacles (touching colliders
+// form one obstacle); the player can cross west–east and south–north; every free cell
+// centre is reachable from the spawn.
+#[test]
+fn layout_l1_022_layout_015_sparse_woods() {
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let grid = level.grid();
+    let reach = flood_fill(grid, data.spawn.cell(), false);
+    for id in ["trees_nw", "trees_ne"] {
+        let e = data.element(id).unwrap();
+        assert!(e.is_sparse() && !e.is_solid());
+        let r = e.rect;
+        let (lo, hi) = (
+            glam::Vec2::new(r.x as f32, r.z as f32),
+            glam::Vec2::new((r.x + r.w) as f32, (r.z + r.d) as f32),
+        );
+        // spec radii (GAME-LEVEL-1 "Woods"): tree_round 0.45, bush 0.70
+        let obs: Vec<(glam::Vec2, f32)> = e
+            .trees
+            .iter()
+            .map(|t| (t.pos(), if t.model == "bush" { 0.70 } else { 0.45 }))
+            .collect();
+        for (p, rad) in &obs {
+            assert!(
+                p.x - rad >= lo.x && p.x + rad <= hi.x && p.y - rad >= lo.y && p.y + rad <= hi.y,
+                "{id}: collider at {p} leaves the rect"
+            );
+            let cell = zoo_core::level::cell_of(*p);
+            assert!(!grid.has_path(cell), "{id}: tree on a path");
+            for h in &data.hiding_places {
+                assert!(!h.rect.contains(cell), "{id}: tree in {}", h.id);
+            }
+            for sc in &data.scenery {
+                assert!(!sc.rect.contains(cell), "{id}: tree in {}", sc.id);
+            }
+        }
+        // clusters of touching colliders
+        let n = obs.len();
+        let mut group: Vec<usize> = (0..n).collect();
+        fn root(g: &mut Vec<usize>, i: usize) -> usize {
+            if g[i] != i {
+                let r = root(g, g[i]);
+                g[i] = r;
+            }
+            g[i]
+        }
+        for i in 0..n {
+            for j in i + 1..n {
+                let gap = obs[i].0.distance(obs[j].0) - obs[i].1 - obs[j].1;
+                if gap <= 0.05 {
+                    let (a, b) = (root(&mut group, i), root(&mut group, j));
+                    group[a] = b;
+                }
+            }
+        }
+        for i in 0..n {
+            for j in i + 1..n {
+                if root(&mut group, i) == root(&mut group, j) {
+                    continue;
+                }
+                let gap = obs[i].0.distance(obs[j].0) - obs[i].1 - obs[j].1;
+                assert!(gap >= 1.8 - 1e-3, "{id}: gap {gap:.2} m");
+            }
+        }
+        // free cell centres reachable from the spawn
+        for c in r.cells() {
+            if grid.is_passable(c, false) {
+                assert!(reach[grid.index(c).unwrap()], "{id}: {c} not reachable");
+            }
+        }
+        // crossing: a scripted player walks along each middle row / column
+        let params = zoo_core::player::MoveParams::default();
+        let mid = glam::Vec2::new((lo.x + hi.x) / 2.0, (lo.y + hi.y) / 2.0);
+        for (from, to) in [
+            (
+                glam::Vec2::new(lo.x - 0.5, mid.y),
+                glam::Vec2::new(hi.x + 0.5, mid.y),
+            ),
+            (
+                glam::Vec2::new(mid.x, lo.y - 0.5),
+                glam::Vec2::new(mid.x, hi.y + 0.5),
+            ),
+        ] {
+            let from = zoo_core::level::cell_center(zoo_core::level::cell_of(from));
+            let to = zoo_core::level::cell_center(zoo_core::level::cell_of(to));
+            let path = zoo_core::nav::find_path(
+                grid,
+                zoo_core::level::cell_of(from),
+                zoo_core::level::cell_of(to),
+                false,
+            );
+            assert!(path.is_some(), "{id}: no way across {from} → {to}");
+            let mut p = zoo_core::Player::new(from, glam::Vec2::X, &params);
+            let mut ap = zoo_core::nav::Autopilot::new(to);
+            let mut t = 0.0;
+            while let Some(dir) = ap.input(grid, p.pos, false) {
+                p.step_with(grid, level.colliders(), &params, dir, 1.0 / 60.0, false);
+                t += 1.0 / 60.0;
+                assert!(t < 60.0, "{id}: stuck crossing at {}", p.pos);
+            }
+        }
+    }
+}
+
+// LAYOUT-L1-023, LAYOUT-016: the dense grove is never entered and has a bush border on every
+// walkable side (LAYOUT-019).
+#[test]
+fn layout_l1_023_layout_016_dense_grove() {
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let grid = level.grid();
+    let e = data.element("grove_center").unwrap();
+    assert_eq!(e.density.as_deref(), Some("dense"));
+    let reach = flood_fill(grid, data.spawn.cell(), true);
+    for c in e.rect.cells() {
+        assert!(!reach[grid.index(c).unwrap()], "grove cell {c} reachable");
+    }
+    let scene = zoo_core::scene::LevelScene::build(&data);
+    let bushes: Vec<glam::Vec2> = scene
+        .placements
+        .iter()
+        .filter(|p| p.model == "bush")
+        .map(|p| zoo_core::coords::world_to_level(p.pos))
+        .collect();
+    let r = e.rect;
+    // walkable sides: west (x = -6), east (x = 5), north (z = 27); every metre of them has a
+    // bush within 1.0 m
+    for z in r.z..r.z + r.d {
+        for (x_edge, x_out) in [(r.x as f32, r.x - 1), ((r.x + r.w) as f32, r.x + r.w)] {
+            if !grid.is_walkable(IVec2::new(x_out, z), false) {
+                continue;
+            }
+            let p = glam::Vec2::new(x_edge, z as f32 + 0.5);
+            assert!(
+                bushes.iter().any(|b| b.distance(p) <= 1.0),
+                "no border bush near {p}"
+            );
+        }
+    }
+    for x in r.x..r.x + r.w {
+        let z_out = r.z + r.d;
+        if grid.is_walkable(IVec2::new(x, z_out), false) {
+            let p = glam::Vec2::new(x as f32 + 0.5, (r.z + r.d) as f32);
+            assert!(
+                bushes.iter().any(|b| b.distance(p) <= 1.0),
+                "no border bush near {p}"
+            );
+        }
+    }
+}
+
+/// Share of level points (y = 0) inside the view of the GAME-PLAYER §2 camera (pitch 55°,
+/// 35° vertical FOV, look-at 0.7 m above the player's feet) looking along `forward`.
+fn on_screen(
+    player: glam::Vec2,
+    forward: glam::Vec2,
+    dist: f32,
+    aspect: f32,
+    pts: &[glam::Vec2],
+) -> Vec<bool> {
+    use glam::camera::rh::{proj::opengl, view::look_at_mat4};
+    use zoo_core::coords::{level_to_world, WORLD_UP};
+    let target = level_to_world(player) + WORLD_UP * 0.7;
+    let fwd = level_to_world(forward).normalize();
+    let pitch = 55f32.to_radians();
+    let eye = target - fwd * dist * pitch.cos() + WORLD_UP * dist * pitch.sin();
+    let vp = opengl::perspective(35f32.to_radians(), aspect, 0.1, 200.0)
+        * look_at_mat4(eye, target, WORLD_UP);
+    pts.iter()
+        .map(|p| {
+            let c = vp * level_to_world(*p).extend(1.0);
+            c.w > 0.0 && (c.x / c.w).abs() <= 1.0 && (c.y / c.w).abs() <= 1.0
+        })
+        .collect()
+}
+
+// LAYOUT-L1-021: the pool is visible from the path in front of the hippo gate.
+#[test]
+fn layout_l1_021_pool_visible_from_the_gate() {
+    let data = common::level1();
+    let pool = data.features_of("enc_hippo").find(|f| f.is_pool()).unwrap();
+    let cells: Vec<IVec2> = pool.rect.cells().collect();
+    let pts: Vec<glam::Vec2> = cells.iter().map(|&c| cell_center(c)).collect();
+    let ramp = pool.ramp.unwrap();
+    for stand in [IVec2::new(8, 15), IVec2::new(8, 16)] {
+        let p = cell_center(stand);
+        let seen = on_screen(p, glam::Vec2::X, 14.0, 1080.0 / 2340.0, &pts);
+        let n = seen.iter().filter(|s| **s).count();
+        let ramps = cells
+            .iter()
+            .zip(&seen)
+            .filter(|(c, s)| **s && ramp.contains(**c))
+            .count();
+        assert!(
+            n as f32 >= 0.25 * pts.len() as f32,
+            "portrait east from {stand}: {n}/{}",
+            pts.len()
+        );
+        assert!(ramps >= 2, "portrait east from {stand}: {ramps} ramp cells");
+        let seen = on_screen(p, glam::Vec2::Y, 14.0, 2340.0 / 1080.0, &pts);
+        let n = seen.iter().filter(|s| **s).count();
+        assert!(
+            n as f32 >= 0.9 * pts.len() as f32,
+            "landscape north from {stand}: {n}/{}",
+            pts.len()
         );
     }
 }

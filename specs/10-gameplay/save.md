@@ -24,10 +24,11 @@ progress **and** the last positions of the player and the animals (user decision
 | Game | save format version, level id, RNG seed and RNG state, play time |
 | Player | position (level coordinates), facing, carried food, current surface |
 | Camera | yaw step, zoom distance |
-| Animals | per animal: state (`escaped` / `following` / `in_enclosure`), position, facing, waiting flag |
+| Animals | per animal: state (`escaped` / `following` / `in_enclosure`), chosen hiding place, position, facing, waiting flag, wandering (pause left, route) |
 | Missions | per mission: started, info board read, completed; celebration already shown |
 | World | opened barriers, gates, explored map cells (GAME-MAP), panels manually closed (not needed — transient) |
 | Settings | language, reading level (already stored, CONT-L10N §6) |
+| Last picks | hiding place per animal of the last new game (`zoo.picks.level-1`, kept when the save is deleted, so the next new game avoids them — Q-082) |
 
 Transient things are **not** saved: an open text panel, running one-shot animations,
 feedback bubbles, confetti. After a restore, idle/walk animations start from their pose.

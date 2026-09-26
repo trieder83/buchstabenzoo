@@ -169,6 +169,8 @@ pub struct CharacterDraw {
     /// Clip used as the resting loop (e.g. `drink` for an animal at the river); falls back
     /// to `idle` when the model has no such clip.
     pub idle_clip: &'static str,
+    /// Locomotion clip (e.g. `swim` for a hippo in the water); falls back to `walk`.
+    pub walk_clip: &'static str,
     /// One-shot action clip (`eat`, `happy`, `refuse`, …) and seconds into it.
     pub action: Option<(&'static str, f32)>,
     /// Weight of the action over the idle/walk pose (0…1).
@@ -191,6 +193,7 @@ impl CharacterDraw {
             walk_time,
             walk_blend,
             idle_clip: "idle",
+            walk_clip: "walk",
             action: None,
             action_blend: 0.0,
         }
@@ -584,6 +587,11 @@ impl Renderer {
             .map(|c| c.duration)
     }
 
+    /// Whether a skinned model has a clip of that name.
+    pub fn has_clip(&self, model: &str, clip: &str) -> bool {
+        self.clip_duration(model, clip).is_some()
+    }
+
     pub fn has_skinned(&self, name: &str) -> bool {
         self.skinned.contains_key(name)
     }
@@ -652,11 +660,20 @@ impl Renderer {
 
     /// Adds a model instance; returns `false` if the model is unknown.
     pub fn add_instance(&mut self, name: &str, pos: Vec3, yaw: f32) -> bool {
+        self.add_instance_scaled(name, pos, yaw, 1.0)
+    }
+
+    /// Adds a uniformly scaled model instance; returns `false` if the model is unknown.
+    pub fn add_instance_scaled(&mut self, name: &str, pos: Vec3, yaw: f32, scale: f32) -> bool {
         let Some(&i) = self.batch_index.get(name) else {
             return false;
         };
         let b = &mut self.batches[i];
-        b.instances.push(Instance::model(pos, yaw, b.height > 1.5));
+        let mut inst = Instance::model(pos, yaw, b.height * scale > 1.5);
+        inst.scale_fade[0] = scale;
+        inst.scale_fade[1] = scale;
+        inst.scale_fade[2] = scale;
+        b.instances.push(inst);
         b.uploaded = usize::MAX;
         true
     }
@@ -1049,7 +1066,12 @@ fn pose_character(sm: &mut SkinnedModel, d: &CharacterDraw) {
         .iter()
         .position(|c| c.name == d.idle_clip)
         .or(sm.idle);
-    match (idle, sm.walk) {
+    let walk = sm
+        .clips
+        .iter()
+        .position(|c| c.name == d.walk_clip)
+        .or(sm.walk);
+    match (idle, walk) {
         (Some(i), Some(k)) => {
             skel.sample(&sm.clips[i], d.idle_time, &mut sm.pose_idle);
             skel.sample(&sm.clips[k], d.walk_time, &mut sm.pose_walk);

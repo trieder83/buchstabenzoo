@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buchstabenzoo Art Review</title>
+<style>
+  :root {
+    --bg: #f6f4ee; --surface: #ffffff; --text: #22221f; --muted: #6b6a63; --line: #e2dfd5;
+    --accent: #3f7d3a;
+    --s-reference: #6b6a63; --s-planned: #8f8c80; --s-brief: #8a6d1d; --s-in-review: #1f5fa8;
+    --s-changes-requested: #b3401f; --s-approved: #2e7d32;
+    --missing-bg: repeating-linear-gradient(45deg, #efece3 0 10px, #e7e3d8 10px 20px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #171714; --surface: #212120; --text: #ecebe6; --muted: #a09f97; --line: #34332f;
+      --accent: #7cc373;
+      --s-reference: #a09f97; --s-planned: #7d7b72; --s-brief: #d8b24a; --s-in-review: #6fa8e8;
+      --s-changes-requested: #ef7b5a; --s-approved: #6cc070;
+      --missing-bg: repeating-linear-gradient(45deg, #26261f 0 10px, #2c2c26 10px 20px);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 24px 16px 8px; max-width: 1200px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .sub { color: var(--muted); margin: 0; }
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .bar-inner { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 999px;
+          padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .chip .n { color: var(--muted); margin-left: 4px; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 13px; margin-right: 12px; }
+  nav a:hover { color: var(--text); }
+  .spacer { flex: 1; }
+  main { max-width: 1200px; margin: 0 auto; padding: 8px 16px 64px; }
+  section { margin-top: 32px; }
+  h2 { font-size: 19px; margin: 0 0 2px; }
+  .intro { color: var(--muted); margin: 0 0 14px; }
+  .empty { color: var(--muted); font-style: italic; padding: 16px; border: 1px dashed var(--line); border-radius: 10px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  .card-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+  .card h3 { margin: 0; font-size: 17px; }
+  .id { font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); }
+  .status { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; }
+  .meta { font-size: 13px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+  .meta a { color: var(--accent); }
+  .desc { margin: 8px 0 12px; }
+  .notes { font-size: 13px; background: var(--bg); border-left: 3px solid var(--accent); padding: 6px 10px; margin: 0 0 12px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .gallery.single { grid-template-columns: minmax(0, 360px); }
+  figure { margin: 0; }
+  .thumb { display: block; width: 100%; aspect-ratio: 3 / 4; border-radius: 8px; border: 1px solid var(--line);
+           object-fit: contain; background: var(--bg); cursor: zoom-in; padding: 0; }
+  .missing { display: grid; place-items: center; text-align: center; cursor: default;
+             background: var(--missing-bg); color: var(--muted); font-size: 12px; padding: 8px; }
+  figcaption { font-size: 12px; color: var(--muted); margin-top: 4px; text-align: center; }
+  figcaption .req { color: var(--s-changes-requested); }
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: none; place-items: center; z-index: 10; padding: 16px; }
+  .lightbox.open { display: grid; }
+  .lightbox img { max-width: 100%; max-height: calc(100vh - 80px); border-radius: 8px; }
+  .lightbox p { color: #eee; text-align: center; margin: 8px 0 0; font-size: 14px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Buchstabenzoo — Art Review</h1>
+  <p class="sub">Turnarounds, mockups and references. Pipeline and approval rules: <code>specs/30-art/asset-pipeline.md</code>. Catalog updated <span id="updated"></span>.</p>
+</header>
+<div class="bar"><div class="bar-inner">
+  <nav id="nav"></nav>
+  <span class="spacer"></span>
+  <div id="filters"></div>
+</div></div>
+<main id="main"></main>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true"><div><img id="lb-img" alt=""><p id="lb-cap"></p></div></div>
+
+<script src="catalog.js"></script>
+<script>
+(function () {
+  const cat = window.ART_CATALOG;
+  const main = document.getElementById("main");
+  if (!cat) { main.textContent = "catalog.js could not be loaded."; return; }
+  document.getElementById("updated").textContent = cat.updated;
+
+  const STATUS = ["reference", "planned", "brief", "in-review", "changes-requested", "approved"];
+  const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const specFile = id => ({
+    "ART-DIRECTION": "art-direction.md", "ART-PIPELINE": "asset-pipeline.md", "ART-CHARACTERS": "characters.md",
+    "ART-ANIMALS": "animals.md", "ART-ENVIRONMENT": "environment.md", "ART-RIG": "character-rig-and-animation.md",
+  }[id]);
+
+  const counts = {};
+  cat.sections.forEach(s => s.items.forEach(i => counts[i.status] = (counts[i.status] || 0) + 1));
+
+  document.getElementById("nav").innerHTML = cat.sections
+    .map(s => `<a href="#${esc(s.id)}">${esc(s.title)} (${s.items.length})</a>`).join("");
+
+  let active = null;
+  const filters = document.getElementById("filters");
+  function renderFilters() {
+    filters.innerHTML = [`<button class="chip" data-s="" aria-pressed="${active === null}">all</button>`]
+      .concat(STATUS.filter(s => counts[s]).map(s =>
+        `<button class="chip" data-s="${s}" aria-pressed="${active === s}" style="${active === s ? `color:var(--s-${s});border-color:var(--s-${s})` : ""}">${s}<span class="n">${counts[s]}</span></button>`))
+      .join(" ");
+  }
+  filters.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    active = b.dataset.s || null; renderFilters(); applyFilter();
+  });
+
+  function card(item) {
+    const spec = item.spec ? (specFile(item.spec)
+      ? `<a href="../specs/30-art/${specFile(item.spec)}">${esc(item.spec)}</a>` : esc(item.spec)) : "";
+    const brief = item.brief ? `<a href="${esc(item.brief)}">brief.md</a>` : "";
+    const layout = item.layout ? `<a href="${esc(item.layout)}">layout.md</a>` : "";
+    const imgs = item.images || [];
+    const figs = imgs.map(im => `
+      <figure>
+        <img class="thumb" src="${esc(im.file)}" alt="${esc(item.title)} — ${esc(im.label)}" loading="lazy"
+             data-label="${esc(im.label)}" data-file="${esc(im.file)}" data-required="${im.required ? 1 : 0}">
+        <figcaption>${esc(im.label)}</figcaption>
+      </figure>`).join("");
+    return `<article class="card" data-status="${esc(item.status)}" id="item-${esc(item.id)}">
+      <div class="card-head">
+        <h3>${esc(item.title)}</h3><span class="id">${esc(item.id)}</span>
+        <span class="status" style="color:var(--s-${esc(item.status)})">${esc(item.status)}</span>
+      </div>
+      <div class="meta">${[spec && "spec: " + spec, brief, layout].filter(Boolean).join("")}</div>
+      <p class="desc">${esc(item.description)}</p>
+      ${item.notes ? `<p class="notes">${esc(item.notes)}</p>` : ""}
+      <div class="gallery ${imgs.length === 1 ? "single" : ""}">${figs}</div>
+    </article>`;
+  }
+
+  main.innerHTML = cat.sections.map(s => `
+    <section id="${esc(s.id)}">
+      <h2>${esc(s.title)}</h2>
+      <p class="intro">${esc(s.intro)}</p>
+      ${s.items.length ? s.items.map(card).join("") : `<div class="empty">Nothing here yet.</div>`}
+    </section>`).join("");
+
+  // Missing files become visible placeholders, so reviewers see what is still to do.
+  main.querySelectorAll("img.thumb").forEach(img => img.addEventListener("error", () => {
+    const d = document.createElement("div");
+    d.className = "thumb missing";
+    d.innerHTML = `<span>missing${img.dataset.required === "1" ? " <b>(required)</b>" : ""}<br><code>${esc(img.dataset.file.split("/").pop())}</code></span>`;
+    img.replaceWith(d);
+  }));
+
+  function applyFilter() {
+    main.querySelectorAll(".card").forEach(c => c.classList.toggle("hidden", active !== null && c.dataset.status !== active));
+  }
+
+  const lb = document.getElementById("lightbox"), lbImg = document.getElementById("lb-img"), lbCap = document.getElementById("lb-cap");
+  main.addEventListener("click", e => {
+    const img = e.target.closest("img.thumb"); if (!img) return;
+    lbImg.src = img.src; lbImg.alt = img.alt; lbCap.textContent = img.alt; lb.classList.add("open");
+  });
+  lb.addEventListener("click", () => lb.classList.remove("open"));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") lb.classList.remove("open"); });
+
+  renderFilters();
+})();
+</script>
+</body>
+</html>

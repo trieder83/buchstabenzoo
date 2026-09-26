@@ -1,0 +1,16 @@
+# Asset manifest — see specs/30-art/asset-pipeline.md (ART-PIPELINE).
+# concept_approved is set to true only by a human after reviewing the turnaround / mockup.
+
+[[asset]]
+id = "player_girl"
+kind = "characters"
+spec = "ART-CHARACTERS"
+concept_approved = false
+animations = ["idle", "walk", "run", "pick_up", "give", "talk", "cheer", "wave", "carry"]
+
+[[asset]]
+id = "player_boy"
+kind = "characters"
+spec = "ART-CHARACTERS"
+concept_approved = false
+animations = ["idle", "walk", "run", "pick_up", "give", "talk", "cheer", "wave", "carry"]

@@ -23,12 +23,26 @@ dev and preview, writes them to `dist/assets/` on build, and publishes
 files the level needs, and fetches only those that exist; a missing model becomes a
 placeholder box (PROD-POC "Placeholders", logged as a console warning).
 
-**Controls:** WASD/arrows walk (camera-relative), Q/E or mouse/one-finger drag rotate the
-camera in 45° steps, wheel / pinch / +− zoom (10–20 m). Touch screens show a joystick
-bottom-left.
+**Controls (GAME-PLAYER §3):**
+- Desktop: WASD/arrows walk (camera-relative), `Q`/`R` or mouse drag rotate the camera in
+  45° steps, wheel / `+` `-` zoom (10–20 m), `E` / Space / Enter interact (a key hint shows
+  when something is in reach; it can be clicked), Escape closes the panel.
+- Touch (only after the first touch, never for mouse only): left half = floating joystick
+  under the thumb (radius 60 px, dead zone 10 %), right half = swipe ≥ 40 px rotates one
+  step, two fingers pinch-zoom, round button bottom-right interacts. Both thumbs at once.
+- Gear button (top right): language (flags) and reading level (🧸 1 2 3), stored in
+  `localStorage` (`zoo.language`, `zoo.readingLevel`).
 
-**Debug handle:** `window.__zoo = { app, frames, frameMs, intervalMs }`; `app` exposes
-`player_x/z`, `camera_distance`, `draw_calls`, `instances`, `triangles`, `placeholders`,
-`player_is_model`, `debug_teleport(x, z)`.
+**Overlays** (`src/ui.ts`): interact button/hint, text panel (riddle / food box label + take
+button), carried food HUD, feedback bubble, mission celebration. What is interactable and all
+texts come from WASM (`target_kind`, `interact`, `take_food`, `poll_events`, `t`); icons are
+emoji placeholders.
+
+**Debug handle:** `window.__zoo = { app, ui, frames, frameMs, intervalMs }`; `app` exposes
+`player_x/z`, `player_speed`, `surface_speed`, `camera_distance`, `camera_target_yaw_deg`,
+`draw_calls`, `instances`, `triangles`, `placeholders`, `player_is_model`,
+`animal_is_model`, `animal_state/x/z`, `mission_started/complete`, `debug_teleport(x, z)`,
+`debug_goto(x, z)` + `debug_step(seconds)` (scripted walk with real movement/collision,
+simulated without rendering).
 
 E2E screenshots go to `art/environment/poc/`.

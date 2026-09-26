@@ -53,5 +53,6 @@ language for player-facing text.
 | `map` | Karte | map | Full-screen zoo map opened from the HUD; shows only explored areas (GAME-MAP). |
 | `explored` | erkundet | explored | A map cell the player has been close to; shown on the map, never hidden again. |
 | `fog` | Nebel | fog | How unexplored cells are drawn on the map. |
+| `water_field` | Wasserfeld | water field | Per-level texture baked by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
 
 † German term is a proposal until confirmed (Q-045).

@@ -1,13 +1,16 @@
 // Buchstabenzoo host shell (TECH-ARCH): loads the WASM game, owns the canvas, fetches the
-// asset files and forwards input. All game logic and rendering live in Rust (zoo-web).
+// asset files, forwards input and shows the HTML overlays. All game logic, what is
+// interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
-import { attachInput } from './input';
+import { attachInput, type StickView } from './input';
+import { loadSettings, Ui } from './ui';
 
 const LEVEL = 'levels/level-1.toml';
 
-/** Debug handle for e2e tests (read-only use). */
+/** Debug handle for e2e tests. */
 export interface ZooDebug {
   app: App;
+  ui: Ui;
   frames: number;
   /** Average CPU time of `app.frame()` in ms (exponential moving average). */
   frameMs: number;
@@ -26,6 +29,33 @@ async function fetchBytes(path: string): Promise<Uint8Array | null> {
   const res = await fetch(`assets/${path}`);
   if (!res.ok) return null;
   return new Uint8Array(await res.arrayBuffer());
+}
+
+function storage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function stickView(): StickView {
+  const stick = document.getElementById('stick')!;
+  const knob = document.getElementById('knob')!;
+  return {
+    show(ox, oy, kx, ky) {
+      stick.classList.add('active');
+      stick.style.left = `${ox}px`;
+      stick.style.top = `${oy}px`;
+      knob.style.transform = `translate(${kx - ox}px, ${ky - oy}px)`;
+    },
+    hide() {
+      stick.classList.remove('active');
+      stick.style.left = '';
+      stick.style.top = '';
+      knob.style.transform = '';
+    },
+  };
 }
 
 async function main(): Promise<void> {
@@ -51,15 +81,27 @@ async function main(): Promise<void> {
 
   const canvas = document.getElementById('game') as HTMLCanvasElement;
   const app = new App(canvas, LEVEL, files);
+  const store = storage();
+  const settings = loadSettings(store, App.default_language(navigator.language || 'de'));
+  app.set_language(settings.language);
+  app.set_reading_level(settings.readingLevel);
+
   const resize = () => app.resize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio || 1);
   resize();
   new ResizeObserver(resize).observe(canvas);
   window.addEventListener('orientationchange', resize);
 
-  attachInput(app, canvas, document.getElementById('stick')!, document.getElementById('knob')!);
+  const ui = new Ui(app, store);
+  attachInput(app, {
+    canvas,
+    stickView: stickView(),
+    onFirstTouch: () => ui.setTouch(),
+    onInteract: () => ui.interact(),
+    onEscape: () => ui.escape(),
+  });
   canvas.focus();
 
-  const debug: ZooDebug = { app, frames: 0, frameMs: 0, intervalMs: 0 };
+  const debug: ZooDebug = { app, ui, frames: 0, frameMs: 0, intervalMs: 0 };
   window.__zoo = debug;
   let last = performance.now();
   const loop = (now: number) => {
@@ -67,6 +109,7 @@ async function main(): Promise<void> {
     last = now;
     const t0 = performance.now();
     app.frame(dt);
+    ui.update();
     const ms = performance.now() - t0;
     debug.frames += 1;
     debug.frameMs = debug.frames === 1 ? ms : debug.frameMs * 0.95 + ms * 0.05;

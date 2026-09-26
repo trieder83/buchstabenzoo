@@ -23,6 +23,10 @@ impl ReadingLevel {
         ReadingLevel::Klasse3,
     ];
 
+    pub fn from_id(id: &str) -> Option<ReadingLevel> {
+        ReadingLevel::ALL.into_iter().find(|l| l.id() == id)
+    }
+
     pub fn id(self) -> &'static str {
         match self {
             ReadingLevel::Kiga => "kiga",

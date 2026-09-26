@@ -13,10 +13,10 @@
 //! All level → world conversions go through `zoo_core::coords` (Q-056); models are only
 //! rotated about +Y, never mirrored.
 
+use crate::coords::{level_to_world, level_to_world_at, quarter_turns_cw_to_yaw};
+use crate::level::{band_run, cell_center, enclosure_fence, Element, Grid, Run, RunAxis};
+use crate::level::{ElementType, LevelData, Rect};
 use glam::{IVec2, Vec2, Vec3};
-use zoo_core::coords::{level_to_world, level_to_world_at, quarter_turns_cw_to_yaw};
-use zoo_core::level::{band_run, cell_center, enclosure_fence, Element, Grid, Run, RunAxis};
-use zoo_core::{ElementType, LevelData, Rect};
 
 /// Placeholder colours (sRGB, flat) per element kind.
 pub mod colors {
@@ -90,6 +90,21 @@ impl Dir {
     /// `k` clockwise quarter turns.
     pub fn turn_cw(self, k: i32) -> Dir {
         Dir::ALL[(self.index() + k).rem_euclid(4) as usize]
+    }
+
+    /// Nearest axis direction of a level vector.
+    pub fn from_vec(v: Vec2) -> Dir {
+        if v.x.abs() >= v.y.abs() {
+            if v.x >= 0.0 {
+                Dir::E
+            } else {
+                Dir::W
+            }
+        } else if v.y >= 0.0 {
+            Dir::N
+        } else {
+            Dir::S
+        }
     }
 
     pub fn offset(self) -> IVec2 {
@@ -223,6 +238,18 @@ fn dir_away(from: Rect, to: Vec2) -> Dir {
     }
 }
 
+/// Position (level) and readable-side direction of an info board element: at the rect
+/// centre, facing away from its enclosure (GAME-PLAYER §5 uses the same pose).
+pub fn info_board_pose(e: &Element, data: &LevelData) -> (Vec2, Dir) {
+    let dir = e
+        .enclosure
+        .as_deref()
+        .and_then(|id| data.element(id))
+        .map(|enc| dir_away(enc.rect, rect_center(e.rect)))
+        .unwrap_or(Dir::S);
+    (rect_center(e.rect), dir)
+}
+
 impl LevelScene {
     /// Assembles the static scene of a level (all barriers closed).
     pub fn build(data: &LevelData) -> Self {
@@ -337,6 +364,10 @@ impl LevelScene {
 
         for e in &data.elements {
             s.add_element(e, data);
+        }
+        // Food boxes (GAME-FEED §7): label plate (model front) towards the box facing.
+        for b in &data.food_boxes {
+            s.model_at("food_box", b.pos(), facing_yaw(Dir::from_vec(b.facing())));
         }
         s
     }
@@ -509,16 +540,11 @@ impl LevelScene {
             (ElementType::Decoration, "trees") => self.trees(e, "tree_round", 3.0),
             (ElementType::Decoration, "bench") => self.rect_box(e, 0.0, 0.5, colors::WOOD),
             (ElementType::Decoration, "info_board") => {
-                let enc = e
-                    .enclosure
-                    .as_deref()
-                    .and_then(|id| data.element(id))
-                    .map(|enc| dir_away(enc.rect, rect_center(e.rect)))
-                    .unwrap_or(Dir::S);
+                let (pos, dir) = info_board_pose(e, data);
                 self.placements.push(Placement {
                     model: "info_board",
-                    pos: level_to_world(rect_center(e.rect)),
-                    yaw: facing_yaw(enc),
+                    pos: level_to_world(pos),
+                    yaw: facing_yaw(dir),
                 });
             }
             (ElementType::Enclosure, _) => self.enclosure(e),
@@ -637,7 +663,7 @@ pub fn model_placeholder(model: &str) -> (Vec3, Vec3, [f32; 3]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zoo_core::coords::world_to_level;
+    use crate::coords::world_to_level;
 
     fn level1() -> LevelData {
         let s = std::fs::read_to_string(concat!(

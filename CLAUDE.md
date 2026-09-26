@@ -80,6 +80,7 @@ Conventions (structure, frontmatter, test IDs) are in `specs/README.md`;
 | `spec-manager` | Owns `specs/`: regenerates `INDEX.md`, checks structure, glossary naming, contradictions, gaps, missing tests; records open questions; cleans up outdated specs; logs every resolved problem in `specs/fixes/FIX-NNN-*.md`. |
 | `zoo-level-designer` | Zoo map: enclosures, buildings, paths, landmarks, and barriers (road blocks, stones, gates) that limit each level. Owns GAME-LAYOUT, `specs/10-gameplay/levels/`, `assets/levels/`, environment mockup briefs. |
 | `character-artist` | Human characters only: briefs/turnarounds, Blender model, rig, skinning, animation, `.glb` export. Owns ART-RIG and ART-CHARACTERS. |
+| `gameplay-qa` | Plays the game automatically (desktop + touch) and verifies gameplay quality: movement, collision, interaction prompts, camera, touch controls, mission flow. Reports findings in `qa/reports/`, adds regression tests. Run after gameplay/renderer changes and before a milestone is done. |
 
 Agents never decide game design silently — they add open questions and report them.
 

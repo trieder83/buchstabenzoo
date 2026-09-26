@@ -11,7 +11,7 @@ use serde::Deserialize;
 
 /// Grid rectangle `[x, z, w, d]` (south-west corner + size), covering cells
 /// `x .. x+w-1`, `z .. z+d-1`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
 #[serde(from = "[i32; 4]")]
 pub struct Rect {
     pub x: i32,
@@ -175,6 +175,41 @@ impl Spawn {
     }
 }
 
+/// Level direction from a facing string of the layout data (`+z` north, `-z` south, `+x`
+/// east, `-x` west); unknown strings face north.
+pub fn facing_vec(s: &str) -> Vec2 {
+    match s {
+        "-z" => Vec2::NEG_Y,
+        "+x" => Vec2::X,
+        "-x" => Vec2::NEG_X,
+        _ => Vec2::Y,
+    }
+}
+
+fn default_south() -> String {
+    "-z".to_owned()
+}
+
+/// A food box prop (GAME-FEED §7): which food, where its centre stands (level `(x, z)`) and
+/// which way its label faces.
+#[derive(Debug, Clone, Deserialize)]
+pub struct FoodBoxData {
+    pub food: String,
+    pub pos: [f32; 2],
+    #[serde(default = "default_south")]
+    pub facing: String,
+}
+
+impl FoodBoxData {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::new(self.pos[0], self.pos[1])
+    }
+
+    pub fn facing(&self) -> Vec2 {
+        facing_vec(&self.facing)
+    }
+}
+
 /// Parsed `assets/levels/level-<N>.toml`.
 #[derive(Debug, Clone, Deserialize)]
 pub struct LevelData {
@@ -182,6 +217,9 @@ pub struct LevelData {
     pub spawn: Spawn,
     #[serde(rename = "element")]
     pub elements: Vec<Element>,
+    /// Food boxes (GAME-FEED §7); optional.
+    #[serde(default, rename = "food_box")]
+    pub food_boxes: Vec<FoodBoxData>,
 }
 
 #[derive(Debug)]
@@ -214,6 +252,11 @@ impl LevelData {
             }
             if e.rect.w <= 0 || e.rect.d <= 0 {
                 return Err(LevelError::Invalid(format!("empty rect for {}", e.id)));
+            }
+        }
+        for b in &data.food_boxes {
+            if crate::food::Food::from_id(&b.food).is_none() {
+                return Err(LevelError::Invalid(format!("unknown food {}", b.food)));
             }
         }
         if !data.level.ground_walkable {
@@ -264,6 +307,8 @@ struct CellInfo {
     solid: Option<u16>,
     path: bool,
     gate: Option<u16>,
+    /// The player circle cannot stand on the cell centre because of a prop (GAME-PLAYER §7).
+    prop_blocked: bool,
 }
 
 /// Walkable grid of a level.
@@ -367,6 +412,26 @@ impl Grid {
         }
     }
 
+    /// Marks cells whose centre is blocked by props (used by grid paths, not by the cell
+    /// collision itself).
+    pub fn set_prop_blocked(&mut self, colliders: &crate::collision::Colliders) {
+        for k in 0..self.cells.len() {
+            let c = self.cell_at(k);
+            self.cells[k].prop_blocked =
+                colliders.overlaps(cell_center(c), crate::collision::PLAYER_RADIUS_M);
+        }
+    }
+
+    /// Whether a prop blocks the cell centre.
+    pub fn is_prop_blocked(&self, c: IVec2) -> bool {
+        self.index(c).is_some_and(|k| self.cells[k].prop_blocked)
+    }
+
+    /// Walkable and not blocked by a prop at the cell centre (grid paths, GAME-PLAYER §7).
+    pub fn is_passable(&self, c: IVec2, allow_gates: bool) -> bool {
+        self.is_walkable(c, allow_gates) && !self.is_prop_blocked(c)
+    }
+
     pub fn is_walkable(&self, c: IVec2, allow_gates: bool) -> bool {
         match self.kind(c) {
             CellKind::Walkable(_) => true,
@@ -382,21 +447,32 @@ pub struct Level {
     pub data: LevelData,
     open_barriers: BTreeSet<String>,
     grid: Grid,
+    colliders: crate::collision::Colliders,
 }
 
 impl Level {
     pub fn new(data: LevelData) -> Self {
         let open_barriers = BTreeSet::new();
-        let grid = Grid::build(&data, &open_barriers);
+        let mut grid = Grid::build(&data, &open_barriers);
+        let scene = crate::scene::LevelScene::build(&data);
+        let colliders =
+            crate::collision::Colliders::from_placements(&scene.placements, data.level.bounds);
+        grid.set_prop_blocked(&colliders);
         Self {
             data,
             open_barriers,
             grid,
+            colliders,
         }
     }
 
     pub fn grid(&self) -> &Grid {
         &self.grid
+    }
+
+    /// Prop collision shapes (GAME-PLAYER §7).
+    pub fn colliders(&self) -> &crate::collision::Colliders {
+        &self.colliders
     }
 
     pub fn is_barrier_open(&self, id: &str) -> bool {
@@ -414,6 +490,7 @@ impl Level {
             return false;
         }
         self.grid = Grid::build(&self.data, &self.open_barriers);
+        self.grid.set_prop_blocked(&self.colliders);
         true
     }
 

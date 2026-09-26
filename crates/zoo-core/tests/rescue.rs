@@ -106,18 +106,14 @@ fn before_gate(g: &Game, enclosure: &str) -> IVec2 {
         .unwrap()
 }
 
-fn door_front(g: &Game) -> IVec2 {
-    g.level
-        .data
-        .element("food_storage")
-        .unwrap()
-        .door_cell()
-        .unwrap()
-        - IVec2::Y
+/// Walkable cell in front of a food box's label (GAME-FEED §7).
+fn box_front(g: &Game, food: Food) -> IVec2 {
+    let &(_, pos, facing) = g.food_boxes.iter().find(|b| b.0 == food).unwrap();
+    cell_of(pos + facing * 1.1)
 }
 
 fn get_food(g: &mut Game, food: Food) {
-    walk_to(g, door_front(g), 120.0);
+    walk_to(g, box_front(g, food), 120.0);
     g.take_food(food).unwrap();
 }
 
@@ -595,4 +591,74 @@ fn whole_mission_is_deterministic() {
         (g.player.pos, g.animal("zebra").unwrap().pos)
     };
     assert_eq!(run(), run());
+}
+
+// FEED-007
+#[test]
+fn feed_007_interact_with_box_shows_label_then_take() {
+    let mut g = common::game(1);
+    let front = box_front(&g, Food::Grass);
+    walk_to(&mut g, front, 60.0);
+    g.player.facing = Vec2::Y;
+    let it = g.interact().expect("grass box available");
+    assert_eq!(
+        it,
+        zoo_core::Interaction::FoodBox {
+            food: Food::Grass,
+            label: zoo_core::food::FoodLabel {
+                word_key: "food-grass".into(),
+                picture: false
+            }
+        }
+    );
+    assert_eq!(g.carry.food(), None, "interacting alone takes nothing");
+    g.take_food(Food::Grass).unwrap();
+    assert_eq!(g.carry.food(), Some(Food::Grass));
+}
+
+// FEED-008
+#[test]
+fn feed_008_one_box_per_food_next_to_storage() {
+    let g = common::game(1);
+    let storage = g.level.data.element("food_storage").unwrap().rect;
+    for f in Food::ALL {
+        assert_eq!(g.food_boxes.iter().filter(|b| b.0 == f).count(), 1, "{f:?}");
+    }
+    let grid = g.level.grid();
+    for &(f, pos, facing) in &g.food_boxes {
+        assert!(
+            grid.is_walkable(cell_of(pos), false),
+            "{f:?} not on walkable ground"
+        );
+        assert!(
+            storage.distance_to(pos) <= 1.0,
+            "{f:?} not next to the storage"
+        );
+        let stand = g.level.data.level.bounds.cells().find(|&c| {
+            let to = cell_center(c) - pos;
+            grid.is_passable(c, false)
+                && to.length() <= 2.0
+                && to.normalize().dot(facing) >= 60f32.to_radians().cos()
+        });
+        assert!(stand.is_some(), "{f:?}: no standing point in front");
+    }
+}
+
+// Scripted player (PROD-POC M4 e2e helper) reaches the zebra board and the grass box.
+#[test]
+fn autopilot_reaches_targets_with_collision() {
+    let mut g = common::game(1);
+    for target in [
+        Vec2::new(-7.5, 14.5),
+        Vec2::new(-0.4, 9.5),
+        Vec2::new(8.0, 30.0),
+    ] {
+        let mut ap = nav::Autopilot::new(target);
+        let mut t = 0.0;
+        while let Some(dir) = ap.input(g.level.grid(), g.player.pos, g.is_leading()) {
+            g.update(DT, dir);
+            t += DT;
+            assert!(t < 60.0, "autopilot to {target} stuck at {}", g.player.pos);
+        }
+    }
 }

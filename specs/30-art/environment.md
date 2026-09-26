@@ -107,6 +107,21 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 4. Straight edge pieces (`fence_wood`, `hedge`, `zoo_wall`) exist as 2 m and 1 m variants
    of the same look; ground tiles are 1 m (one per cell). Models use the world axes of
    GAME-LAYOUT (north = −Z) and are never mirrored (Q-056, Q-057).
+5. **Living water** (user request 2026-09-26): all water is animated so the zoo feels
+   lively — always in the comic style (flat colour bands, hard edges, bold shapes; no
+   realistic reflections, refraction or noisy normal maps).
+   - **River (flowing):** clearly visible flow along the river direction — scrolling
+     light streaks/foam bands, small white foam at banks, bridge posts and rocks, gentle
+     bobbing of ducks. Flow speed reads as "moving water" (≈ 0.5–1 m/s visual speed).
+   - **Pond (still, but alive):** slow gentle ripples/rings and soft shimmer bands, lily
+     pads and the frog bob slightly; no directional flow. The river must stay clearly
+     "flowing" and the pond clearly "still" — this difference is a riddle clue (zebra vs.
+     hippo, CONT-MISSIONS).
+   - **Shoreline:** a thin animated foam/wave line where water meets the bank.
+   - Animation is done in the renderer (shader time + UV/vertex motion, TECH-ARCH), not by
+     animated meshes; it loops seamlessly, is independent of frame rate, and costs no
+     extra draw calls per tile. The same motion must be visible from the 55° game camera at
+     every zoom (10–20 m).
 
 ## Test cases
 
@@ -118,6 +133,10 @@ Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_b
 | AENV-004 | Given every hiding place id in CONT-MISSIONS, then at least one approved mockup's `layout.md` lists it. | asset |
 | AENV-005 | Given the exported `kit_fences` models, then `fence_wood`, `hedge` and `zoo_wall` each exist as a 2 m and a 1 m (`_1m`) straight piece with the same height and thickness, and `tools/blender/check_glb.py` passes for all of them (sizes, budget, Y-up, origin on the ground). | asset |
 | AENV-006 | Given the exported `kit_ground` tiles, then every tile is 1 m × 1 m (one per grid cell) and `tools/blender/check_glb.py` passes. | asset |
+| AENV-007 | Given the river and the pond on screen, when two screenshots are taken 0.5 s apart, then pixels of both water areas differ (water is animated), and the river's dominant motion vector points along the river direction while the pond has no dominant direction. | e2e |
+| AENV-008 | Given the water shader, then the animation is a function of time only (same image for the same time regardless of frame rate) and loops seamlessly. | unit |
+| AENV-009 | Given the style frame and an in-game screenshot of river and pond, then reviewers confirm the water motion looks cartoon-like (flat bands, hard edges) and river vs. pond read as flowing vs. still. | manual |
+| AENV-010 | Given level 1 on a mid-range phone, then enabling water animation costs ≤ 1 ms GPU time per frame and no extra draw calls. | manual |
 
 ## Open questions
 

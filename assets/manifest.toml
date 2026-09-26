@@ -20,7 +20,7 @@ id = "zebra"
 kind = "animals"
 spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 
 [[asset]]
 id = "hippo"

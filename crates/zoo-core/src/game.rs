@@ -7,10 +7,13 @@ use glam::{IVec2, Vec2};
 use crate::animals::{animal_info, AnimalInfo, AnimalState};
 use crate::content::{riddle_key, Language, ReadingLevel};
 use crate::food::{Carry, Food, FoodBox, FoodLabel, FoodStorage};
-use crate::level::{cell_center, cell_of, CellKind, ElementType, Level, LevelData, Surface};
+use crate::level::{
+    cell_center, cell_of, facing_vec, CellKind, ElementType, Level, LevelData, Surface,
+};
 use crate::nav;
 use crate::player::{in_interaction_range, MoveParams, Player};
 use crate::rng::Pcg32;
+use crate::scene::info_board_pose;
 
 /// Follow behaviour (GAME-RESCUE §6).
 #[derive(Debug, Clone, Copy)]
@@ -75,6 +78,71 @@ pub enum GameEvent {
     BarrierOpened {
         id: String,
     },
+}
+
+/// Readable side tolerance (GAME-PLAYER §5).
+pub const READABLE_SIDE_DEG: f32 = 60.0;
+/// Player facing tolerance (GAME-PLAYER §5).
+pub const FACING_DEG: f32 = 75.0;
+
+fn angle_deg(a: Vec2, b: Vec2) -> f32 {
+    let (a, b) = (a.normalize_or_zero(), b.normalize_or_zero());
+    a.dot(b).clamp(-1.0, 1.0).acos().to_degrees()
+}
+
+/// Something the player can interact with (GAME-PLAYER §4/§5).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Target {
+    InfoBoard {
+        animal: &'static str,
+    },
+    FoodBox {
+        food: Food,
+    },
+    Animal {
+        animal: &'static str,
+    },
+    /// Enclosure gate (only while leading animals).
+    Gate {
+        enclosure: String,
+    },
+}
+
+impl Target {
+    /// Short id for the host UI (button icon).
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Target::InfoBoard { .. } => "info_board",
+            Target::FoodBox { .. } => "food_box",
+            Target::Animal { .. } => "animal",
+            Target::Gate { .. } => "gate",
+        }
+    }
+}
+
+/// An interactable with its interaction point (level) and readable-side direction.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Interactable {
+    pub target: Target,
+    pub point: Vec2,
+    pub readable: Option<Vec2>,
+}
+
+/// Result of [`Game::interact`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Interaction {
+    /// Open the text panel with the riddle (starts the mission, RESC-012).
+    InfoBoard(InfoBoard),
+    /// Open the text panel with the box label and a take button (GAME-FEED §6).
+    FoodBox { food: Food, label: FoodLabel },
+    /// Food shown to an animal; `accepted` = it follows now.
+    ShowFood {
+        animal: &'static str,
+        accepted: bool,
+        carried: Option<Food>,
+    },
+    /// Leading animals into an enclosure gate.
+    Gate { enclosure: String, entered: bool },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -164,6 +232,8 @@ pub struct Game {
     pub player: Player,
     pub carry: Carry,
     pub storage: FoodStorage,
+    /// Food box props from the level data (GAME-FEED §7): food, centre, label facing.
+    pub food_boxes: Vec<(Food, Vec2, Vec2)>,
     pub animals: Vec<Animal>,
     pub missions: Vec<Mission>,
     pub settings: Settings,
@@ -211,12 +281,12 @@ impl Game {
             });
         }
         let move_params = MoveParams::default();
-        let facing = match data.spawn.facing.as_str() {
-            "-z" => Vec2::NEG_Y,
-            "+x" => Vec2::X,
-            "-x" => Vec2::NEG_X,
-            _ => Vec2::Y,
-        };
+        let facing = facing_vec(&data.spawn.facing);
+        let food_boxes = data
+            .food_boxes
+            .iter()
+            .filter_map(|b| Food::from_id(&b.food).map(|f| (f, b.pos(), b.facing())))
+            .collect();
         let player = Player::new(cell_center(data.spawn.cell()), facing, &move_params);
         let missions = vec![Mission::default(); animals.len()];
         Ok(Self {
@@ -224,6 +294,7 @@ impl Game {
             player,
             carry: Carry::default(),
             storage: FoodStorage::default(),
+            food_boxes,
             animals,
             missions,
             settings: Settings::default(),
@@ -342,9 +413,16 @@ impl Game {
 
     /// Takes food from a box in the storage (GAME-FEED §3).
     pub fn take_food(&mut self, food: Food) -> Result<(), InteractError> {
-        let d = self
-            .storage_distance()
-            .ok_or(InteractError::UnknownTarget)?;
+        // With food box props the player must stand at that box; otherwise at the door.
+        let d = if self.food_boxes.is_empty() {
+            self.storage_distance()
+        } else {
+            self.food_boxes
+                .iter()
+                .find(|b| b.0 == food)
+                .map(|b| b.1.distance(self.player.pos))
+        }
+        .ok_or(InteractError::UnknownTarget)?;
         if !in_interaction_range(d) {
             return Err(InteractError::OutOfRange);
         }
@@ -390,12 +468,166 @@ impl Game {
         Ok(())
     }
 
+    /// Everything the player can interact with right now, with interaction point and — for
+    /// boards and boxes — the readable side (GAME-PLAYER §5).
+    pub fn interactables(&self) -> Vec<Interactable> {
+        let mut out = Vec::new();
+        let data = &self.level.data;
+        for e in &data.elements {
+            if e.kind.as_deref() != Some("info_board") {
+                continue;
+            }
+            let Some(enc) = e.enclosure.as_deref() else {
+                continue;
+            };
+            let Some(a) = self
+                .animals
+                .iter()
+                .find(|a| data.elements[a.enclosure].id == enc)
+            else {
+                continue;
+            };
+            let (point, dir) = info_board_pose(e, data);
+            out.push(Interactable {
+                target: Target::InfoBoard { animal: a.id() },
+                point,
+                readable: Some(dir.offset().as_vec2()),
+            });
+        }
+        for &(food, point, facing) in &self.food_boxes {
+            out.push(Interactable {
+                target: Target::FoodBox { food },
+                point,
+                readable: Some(facing),
+            });
+        }
+        for a in &self.animals {
+            if a.state == AnimalState::Escaped {
+                out.push(Interactable {
+                    target: Target::Animal { animal: a.id() },
+                    point: a.pos,
+                    readable: None,
+                });
+            }
+        }
+        if self.is_leading() {
+            for e in data.elements_of(ElementType::Enclosure) {
+                if let Some(g) = e.gate {
+                    let c = Vec2::new(g.x as f32 + g.w as f32 / 2.0, g.z as f32 + g.d as f32 / 2.0);
+                    out.push(Interactable {
+                        target: Target::Gate {
+                            enclosure: e.id.clone(),
+                        },
+                        point: c,
+                        readable: None,
+                    });
+                }
+            }
+        }
+        out
+    }
+
+    /// GAME-PLAYER §5: within 2 m of the interaction point, on the readable side (±60°) if
+    /// the target has one, and facing it (±75°).
+    pub fn is_available(&self, it: &Interactable) -> bool {
+        let p = self.player.pos;
+        let to_player = p - it.point;
+        let dist = to_player.length();
+        if !in_interaction_range(dist) {
+            return false;
+        }
+        if dist < 1e-3 {
+            return true;
+        }
+        if let Some(f) = it.readable {
+            if angle_deg(f, to_player) > READABLE_SIDE_DEG {
+                return false;
+            }
+        }
+        angle_deg(self.player.facing, -to_player) <= FACING_DEG
+    }
+
+    /// The nearest available interactable (PLAY-021), if any.
+    pub fn available_target(&self) -> Option<Target> {
+        let p = self.player.pos;
+        self.interactables()
+            .into_iter()
+            .filter(|it| self.is_available(it))
+            .min_by(|a, b| a.point.distance(p).total_cmp(&b.point.distance(p)))
+            .map(|it| it.target)
+    }
+
+    /// Interacts with the available target (GAME-PLAYER §4/§5). Reading targets return what
+    /// the text panel shows; food boxes are only taken with [`Game::take_food`] (GAME-FEED §6).
+    pub fn interact(&mut self) -> Option<Interaction> {
+        match self.available_target()? {
+            Target::InfoBoard { animal } => self
+                .read_info_board(animal)
+                .ok()
+                .map(Interaction::InfoBoard),
+            Target::FoodBox { food } => Some(Interaction::FoodBox {
+                food,
+                label: FoodBox { food }.label(self.settings.reading_level),
+            }),
+            Target::Animal { animal } => {
+                self.show_food(animal).ok()?;
+                let accepted = self
+                    .animal(animal)
+                    .is_some_and(|a| a.state == AnimalState::Following);
+                Some(Interaction::ShowFood {
+                    animal,
+                    accepted,
+                    carried: self.carry.food(),
+                })
+            }
+            Target::Gate { enclosure } => {
+                let i = self
+                    .level
+                    .data
+                    .elements
+                    .iter()
+                    .position(|e| e.id == enclosure)?;
+                let entered = self.lead_into(i, true);
+                Some(Interaction::Gate { enclosure, entered })
+            }
+        }
+    }
+
+    /// The leading group enters enclosure element `enc` if it is theirs, else refuses
+    /// (GAME-RESCUE §7/§8). Returns whether they entered.
+    fn lead_into(&mut self, enc: usize, announce_refuse: bool) -> bool {
+        let leader = self
+            .animals
+            .iter()
+            .position(|a| a.state == AnimalState::Following && !a.waiting);
+        let Some(i) = leader else { return false };
+        if self.animals[i].enclosure == enc {
+            self.enter_enclosure(i);
+            true
+        } else {
+            self.animals[i].refusing = true;
+            if announce_refuse {
+                self.events.push(GameEvent::Refuse {
+                    animal: self.animals[i].id().to_owned(),
+                    enclosure: self.level.data.elements[enc].id.clone(),
+                });
+            }
+            false
+        }
+    }
+
     /// Advances the simulation by `dt` seconds with the joystick `input` (level
     /// coordinates `(x, z)`).
     pub fn update(&mut self, dt: f32, input: Vec2) {
         let leading = self.is_leading();
-        self.player
-            .step(self.level.grid(), &self.move_params, input, dt, leading);
+        self.player.step_with(
+            self.level.grid(),
+            self.level.colliders(),
+            &self.move_params,
+            input,
+            dt,
+            leading,
+        );
         self.check_gate();
         self.update_followers(dt);
     }
@@ -411,23 +643,7 @@ impl Game {
             a.refusing = false;
         }
         let Some(enc) = gate else { return };
-        let enc_id = self.level.data.elements[enc].id.clone();
-        let leader = self
-            .animals
-            .iter()
-            .position(|a| a.state == AnimalState::Following && !a.waiting);
-        let Some(i) = leader else { return };
-        if self.animals[i].enclosure == enc {
-            self.enter_enclosure(i);
-        } else {
-            self.animals[i].refusing = true;
-            if entered {
-                self.events.push(GameEvent::Refuse {
-                    animal: self.animals[i].id().to_owned(),
-                    enclosure: enc_id,
-                });
-            }
-        }
+        self.lead_into(enc, entered);
     }
 
     /// GAME-RESCUE §8 / §9.

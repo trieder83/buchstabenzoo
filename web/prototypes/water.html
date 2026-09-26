@@ -1,0 +1,567 @@
+<!doctype html>
+<!--
+  Buchstabenzoo — animated cartoon water PROTOTYPE (TECH-WATER). Not part of the game build.
+  Raw WebGL2, plain JS, no libraries. Open directly (file://) or via any static server.
+
+  URL params:  ?t=3.2      freeze time (s)           ?mode=0|1|2  shader variant
+               ?dist=14    camera distance 10–20 m   ?noui        hide the label
+  Keys: 1/2/3 switch variant, space pauses.
+  Variants: 0 = RECOMMENDED river-coordinate streaks (baked water field) + pond rings
+            1 = alt (b): world-space bands, constant flow per cell (seam at the bend)
+            2 = alt (a): per-tile scroll of the baked streak layout (1 m repeat, tile seams)
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Water prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #8FBE56; overflow: hidden; }
+  canvas { width: 100vw; height: 100vh; display: block; }
+  #ui { position: fixed; left: 8px; top: 8px; font: 14px sans-serif; color: #4A2A22;
+        background: #fffd; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui"></div>
+<script>
+"use strict";
+const Q = new URLSearchParams(location.search);
+const FROZEN = Q.has("t") ? parseFloat(Q.get("t")) : null;
+let mode = parseInt(Q.get("mode") || "0", 10);
+const DIST = Math.min(20, Math.max(10, parseFloat(Q.get("dist") || "14")));
+const LOOP = 16.0;                       // every animation is periodic in 16 s (AENV-008)
+const MODES = ["0: recommended (river coords + rings)", "1: world bands (alt b)", "2: tile scroll (alt a)"];
+
+// ---- palette (tools/blender/palette.toml, copied by hand)
+const hex = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16) / 255);
+const PAL = {
+  grass: hex("#8FBE56"), grass_dark: hex("#5E9A3C"), soil: hex("#9A5E3C"),
+  path_mortar: hex("#E9C27F"), path_stone: hex("#F2E4CE"), edge_stone: hex("#ABA6AD"),
+  wood: hex("#B97A48"), wood_light: hex("#C98C56"), wood_dark: hex("#8E5A36"),
+  rock: hex("#A8A6AE"), outline: hex("#4A2A22"),
+  water_river: hex("#5BB2E0"), water_river_light: hex("#A2D8F2"), water_foam: hex("#F4FAFD"),
+  water_pond: hex("#3F74B0"), water_pond_light: hex("#7AA6D6"),
+  lily_pad: hex("#5FA646"), lily_pink: hex("#F2A0C0"), lily_center: hex("#F7D34A"),
+  duck: hex("#FBF3D6"), duck_beak: hex("#F5A623"), frog: hex("#6DB344"), eye_dark: hex("#2E2220"),
+};
+const SHADOW = [0.70, 0.66, 0.82];       // cel shadow multiplier (shadow_tint-ish)
+const SUN = norm([-0.55, 0.8, 0.3]);     // = zoo-render SUN_DIR
+
+// ---- scene layout (world: +X east, +Y up, north = -Z; camera looks north)
+const ZB = 1.0;          // river bend block z in [ZB, ZB+3], x in [1, 4]
+const INSET = 0.34;      // bank grass strip 0.22 + slope 0.12 (kit_water)
+const POND = { cx: -4.3, cz: 2.2, hx: 2.75, hz: 2.75, r: 1.9 };
+const ROCK = { x: 2.05, z: -0.3, r: 0.22 };
+
+// Signed distance to the river water (negative = water). Two rounded rects + smooth union at the inner corner.
+function sdRoundBox(px, pz, cx, cz, hx, hz, r) {
+  const qx = Math.abs(px - cx) - hx + r, qz = Math.abs(pz - cz) - hz + r;
+  return Math.hypot(Math.max(qx, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qz), 0) - r;
+}
+function smin(a, b, k) { const h = Math.max(k - Math.abs(a - b), 0) / k; return Math.min(a, b) - h * h * k * 0.25; }
+function sdRiver(x, z) {
+  const a = sdRoundBox(x, z, 2.5, (-40 + ZB + 3 - INSET) / 2, 1.5 - INSET, (ZB + 3 - INSET + 40) / 2, 0.66);
+  const b = sdRoundBox(x, z, (1 + INSET + 40) / 2, ZB + 1.5, (40 - 1 - INSET) / 2, 1.5 - INSET, 0.66);
+  return smin(a, b, 0.5);
+}
+function sdPond(x, z) { return sdRoundBox(x, z, POND.cx, POND.cz, POND.hx - INSET, POND.hz - INSET, POND.r); }
+
+// River coordinates: s = distance along the flow (m), c = signed cross offset from the centreline
+// (+ towards the inside of the bend). Straight south, 90° arc around the inner corner (4, ZB), straight east.
+const S0 = -14;
+function riverCoords(x, z) {
+  if (z < ZB) return [z - S0, x - 2.5];
+  if (x > 4) return [ZB - S0 + 1.5 * Math.PI / 2 + (x - 4), (ZB + 1.5) - z];
+  const th = Math.atan2(z - ZB, 4 - x);      // 0 at the entry row, pi/2 at the exit column
+  const r = Math.hypot(4 - x, z - ZB);
+  return [ZB - S0 + 1.5 * Math.max(0, Math.min(Math.PI / 2, th)), 1.5 - r];
+}
+
+// ---- water field bake (what zoo-render's level assembly would do once per level)
+const F = { x0: -12, z0: -14, w: 28, d: 24, tpm: 4 };
+function bakeField() {
+  const W = F.w * F.tpm, H = F.d * F.tpm, data = new Float32Array(W * H * 4);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const x = F.x0 + (i + 0.5) / F.tpm, z = F.z0 + (j + 0.5) / F.tpm;
+    const dr = sdRiver(x, z), dp = sdPond(x, z), river = dr < dp;
+    const [s, c] = river ? riverCoords(x, z) : [0, 0];
+    const o = (j * W + i) * 4;
+    data[o] = s; data[o + 1] = c; data[o + 2] = Math.max(-1, Math.min(3, -(river ? dr : dp)));
+    data[o + 3] = river ? 1 : 0;
+  }
+  return { W, H, data };
+}
+
+// ---- math
+function norm(v) { const l = Math.hypot(...v); return v.map(a => a / l); }
+function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+function sub(a, b) { return a.map((x, i) => x - b[i]); }
+function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function mul(a, b) { const r = new Float32Array(16);
+  for (let c = 0; c < 4; c++) for (let rr = 0; rr < 4; rr++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + rr] * b[c * 4 + k]; r[c * 4 + rr] = s; } return r; }
+function perspective(fovy, asp, n, f) { const t = 1 / Math.tan(fovy / 2);
+  return new Float32Array([t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0]); }
+function lookAt(e, c, up) { const z = norm(sub(e, c)), x = norm(cross(up, z)), y = cross(z, x);
+  return new Float32Array([x[0], y[0], z[0], 0, x[1], y[1], z[1], 0, x[2], y[2], z[2], 0, -dot(x, e), -dot(y, e), -dot(z, e), 1]); }
+
+// ---- GL
+const canvas = document.getElementById("c");
+const gl = canvas.getContext("webgl2", { antialias: true, preserveDrawingBuffer: true });
+if (!gl) document.body.textContent = "WebGL2 not available";
+
+function prog(vs, fs) {
+  const p = gl.createProgram();
+  for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+    const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    gl.attachShader(p, s);
+  }
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name.replace("[0]", "")] = gl.getUniformLocation(p, a.name); }
+  return { p, u };
+}
+
+const COMMON = `
+float hash1(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
+float hash2(vec2 v) { return fract(sin(dot(v, vec2(12.9898, 78.233))) * 43758.5453); }
+const float TAU = 6.2831853;
+`;
+const AA = `float g_px = 0.01;   // pixel footprint (m) of the current fragment, set in main()
+float aastep(float edge, float v) { float w = g_px * 0.6; return smoothstep(edge - w, edge + w, v); }`;
+
+// ------------------------------------------------------------------ ground + water shader
+const GROUND_VS = `#version 300 es
+layout(location = 0) in vec3 a_pos;
+uniform mat4 u_vp;
+out vec3 v_w;
+void main() { v_w = a_pos; gl_Position = u_vp * vec4(a_pos, 1.0); }`;
+
+const GROUND_FS = `#version 300 es
+precision highp float;
+${COMMON}
+${AA}
+uniform float u_time;          // seconds, wrapped to [0, 16)
+uniform int u_mode;
+uniform sampler2D u_field;     // RGBA16F: s, c, shore distance, flow (1 river / 0 pond)
+uniform vec4 u_field_xf;       // xy = origin (world xz), zw = 1 / size (m)
+uniform vec4 u_rock;           // x, z, radius, -
+uniform vec2 u_rock_sc;        // rock in river coords
+uniform vec3 C_GRASS, C_GRASS_D, C_SOIL, C_MORTAR, C_STONE, C_EDGE, C_OUT,
+             C_RIVER, C_RIVER_L, C_FOAM, C_POND, C_POND_L;
+uniform vec4 u_pond; uniform float u_pond_r;
+in vec3 v_w;
+out vec4 o;
+
+float sdRoundBox(vec2 p, vec2 c, vec2 h, float r) {
+  vec2 q = abs(p - c) - h + r;
+  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
+}
+float smin(float a, float b, float k) { float h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
+float sdRiver(vec2 p) {
+  const float ZB = ${ZB.toFixed(2)}, I = ${INSET.toFixed(2)};
+  float a = sdRoundBox(p, vec2(2.5, (-40.0 + ZB + 3.0 - I) * 0.5), vec2(1.5 - I, (ZB + 3.0 - I + 40.0) * 0.5), 0.66);
+  float b = sdRoundBox(p, vec2((1.0 + I + 40.0) * 0.5, ZB + 1.5), vec2((40.0 - 1.0 - I) * 0.5, 1.5 - I), 0.66);
+  return smin(a, b, 0.5);
+}
+
+// ---- RECOMMENDED river: lanes across the flow, lens-shaped dashes scrolling along s.
+// Speed per lane (faster in the middle); period P = V * 2 s, so every lane loops every 2 s.
+vec3 riverStreaks(float s, float c, float shore, float t, vec3 col) {
+  const float LANE = 0.24;
+  c += 0.045 * sin(s * 2.1 + c * 1.7);                   // gentle sinuous lanes (static in river space)
+  float li = floor(c / LANE);
+  float lc = (fract(c / LANE) - 0.5) * LANE;              // m from lane centre
+  float cn = clamp(abs((li + 0.5) * LANE) / 1.16, 0.0, 1.0);
+  float V = mix(0.85, 0.5, cn * cn);                      // m/s
+  float P = V * 2.0;                                      // dash period along s (m)
+  float x = (s - V * t) / P + hash1(li + 3.1) * 8.0;
+  float cell = floor(x), u = fract(x);
+  float h = hash2(vec2(li, mod(cell, 8.0)));              // mod 8: pattern repeats after 16 s
+  float len = mix(0.28, 0.55, fract(h * 13.7));
+  float tt = clamp(u / len, 0.0, 1.0);
+  float hw = mix(0.02, 0.05, fract(h * 7.3)) * sin(3.14159 * tt) * step(u, len) * step(0.3, h);
+  float m = 1.0 - aastep(hw, abs(lc) + (hw > 0.0 ? 0.0 : 1.0));
+  col = mix(col, C_RIVER_L, m * step(0.16, shore));
+  // sparse fast white foam flecks in the middle (rapids feel)
+  const float FL = 0.45;
+  float fi = floor((c + 0.2) / FL);
+  float fc = (fract((c + 0.2) / FL) - 0.5) * FL;
+  float fx = (s - 1.0 * t) / 2.0 + hash1(fi + 9.7) * 8.0;  // 1 m/s, P 2 m: loops every 2 s
+  float fcell = floor(fx), fu = fract(fx);
+  float fh = hash2(vec2(fi + 40.0, mod(fcell, 8.0)));
+  float flen = 0.09;
+  float fhw = 0.03 * sin(3.14159 * clamp(fu / flen, 0.0, 1.0)) * step(fu, flen) * step(0.72, fh);
+  float fm = 1.0 - aastep(fhw, abs(fc) + (fhw > 0.0 ? 0.0 : 1.0));
+  col = mix(col, C_FOAM, fm * step(0.4, shore));
+  return col;
+}
+
+// Foam at the shore: a wobbling solid band that travels with the flow + a dashed second line.
+vec3 riverShore(float s, float shore, float t, vec3 col) {
+  float wob = 0.5 + 0.5 * sin(TAU * (s / 1.4 - t / 2.0)) * 0.7 + 0.3 * sin(TAU * (s / 0.7 - t));
+  float w = 0.035 + 0.05 * wob;
+  col = mix(col, C_FOAM, 1.0 - aastep(w, shore));
+  float dash = step(0.55, fract((s - 0.7 * t) / 0.7 + 0.3));
+  float l2 = (1.0 - aastep(0.028, abs(shore - (w + 0.07)))) * dash;
+  col = mix(col, C_FOAM, l2);
+  return col;
+}
+
+// Obstacle foam: ring around the rock + a dashed V wake downstream (in river coords).
+vec3 rockFoam(vec2 p, float s, float c, float t, vec3 col) {
+  vec2 d = p - u_rock.xy;
+  float a = atan(d.y, d.x);
+  float ring = u_rock.z + 0.06 + 0.03 * sin(3.0 * a - TAU * t);
+  col = mix(col, C_FOAM, 1.0 - aastep(ring, length(d)));
+  float ds = s - u_rock_sc.x, dc = abs(c - u_rock_sc.y);
+  float arm = u_rock.z * 0.8 + ds * 0.22;
+  float wake = (1.0 - aastep(0.022, abs(dc - arm))) * step(0.0, ds) * (1.0 - step(1.6, ds))
+             * step(0.45, fract((ds - 0.7 * t) / 0.35));
+  return mix(col, C_FOAM, wake);
+}
+
+// ---- pond: still but alive. Expanding rings (one source per 2.5 m world cell, 4 s cycle)
+// and twinkling light dashes that grow and shrink in place (no net direction).
+vec3 pondWater(vec2 p, float shore, float t) {
+  vec3 col = C_POND;
+  // shimmer dashes on rotated lanes
+  vec2 q = mat2(0.87, 0.5, -0.5, 0.87) * p;
+  const float LANE = 0.42;
+  float li = floor(q.y / LANE);
+  float lc = (fract(q.y / LANE) - 0.5) * LANE;
+  float x = q.x / 1.1 + hash1(li) * 5.0;
+  float h = hash2(vec2(li, floor(x)));
+  float u = fract(x);
+  float pulse = max(0.0, sin(TAU * (t / 4.0 + h)));
+  float hw = 0.045 * pulse * sin(3.14159 * clamp(u / 0.4, 0.0, 1.0)) * step(u, 0.4) * step(0.45, h);
+  col = mix(col, C_POND_L, (1.0 - aastep(hw, abs(lc) + (hw > 0.0 ? 0.0 : 1.0))) * step(0.3, shore));
+  // concentric rings
+  vec2 g = p / 2.5, gi = floor(g);
+  float hr = hash2(gi + 7.0);
+  vec2 ctr = (gi + 0.5 + (vec2(hash2(gi + 1.3), hash2(gi + 5.1)) - 0.5) * 0.28) * 2.5;
+  float age = fract(t / 4.0 + hr);
+  float dd = length(p - ctr);
+  float th = 0.04 * (1.0 - age) + 0.006;
+  float r1 = age * 0.95, r2 = age * 0.95 - 0.24;
+  float ring = max(1.0 - aastep(th, abs(dd - r1)), (1.0 - aastep(th, abs(dd - r2))) * step(0.0, r2));
+  col = mix(col, C_POND_L, ring * step(0.25, hr) * step(0.18, shore));
+  // comic glint: two short parallel rounded dashes per 4 m cell (sky reflection), slowly breathing
+  vec2 hg = floor(p / 4.0);
+  vec2 hc = (hg + 0.5 + (vec2(hash2(hg + 2.0), hash2(hg + 4.0)) - 0.5) * 0.4) * 4.0;
+  vec2 hd = mat2(0.87, 0.5, -0.5, 0.87) * (p - hc);
+  float grow = 0.8 + 0.2 * sin(TAU * t / 8.0 + hash2(hg) * TAU);
+  float g1 = length(vec2(max(abs(hd.x) - 0.26 * grow, 0.0), hd.y)) - 0.045;
+  vec2 hd2 = hd - vec2(0.12, -0.16);
+  float g2 = length(vec2(max(abs(hd2.x) - 0.13 * grow, 0.0), hd2.y)) - 0.04;
+  col = mix(col, C_POND_L, (1.0 - aastep(0.0, min(g1, g2))) * step(0.35, hash2(hg + 8.0)) * step(0.5, shore));
+  // soft lapping line at the bank
+  float w = 0.04 + 0.025 * sin(TAU * (t / 4.0) + (p.x - p.y) * 1.3);
+  col = mix(col, C_POND_L, 1.0 - aastep(w, shore));
+  return col;
+}
+
+// ---- alternative (b): world-space hard bands, constant flow per region (no bend field)
+vec3 riverBands(vec2 p, float shore, float t) {
+  vec2 dir = p.y < ${ZB.toFixed(2)} ? vec2(0, 1) : (p.x > 4.0 ? vec2(1, 0)
+           : ((p.x - 1.0) > (${(ZB + 3).toFixed(2)} - p.y) ? vec2(1, 0) : vec2(0, 1)));
+  float along = dot(p, dir), crs = dot(p, vec2(-dir.y, dir.x));
+  float b = sin(TAU * ((along - 0.7 * t) / 1.4) + 1.2 * sin(crs * 2.3));
+  vec3 col = mix(C_RIVER, C_RIVER_L, aastep(0.82, b));
+  return riverShore(along, shore, t, col);
+}
+
+// ---- alternative (a): the baked kit streak layout, scrolled in tile-local coords (1 m repeat)
+vec3 riverTileScroll(vec2 p, float shore, float t) {
+  vec2 dir = p.y < ${ZB.toFixed(2)} ? vec2(0, 1) : vec2(1, 0);   // scene.rs flow_x rule
+  vec2 lp = fract(p) - 0.5;
+  vec2 l = vec2(dot(lp, vec2(-dir.y, dir.x)), dot(lp, dir));
+  l.y = fract(l.y + 0.5 - 0.7 * t) - 0.5;
+  vec3 col = C_RIVER;
+  vec4 S[6] = vec4[6](vec4(-0.28, 0.22, 0.42, 0.05), vec4(0.12, -0.12, 0.5, 0.06), vec4(0.33, 0.3, 0.3, 0.04),
+                      vec4(-0.1, -0.36, 0.22, 0.035), vec4(0.36, -0.3, 0.26, 0.04), vec4(-0.34, -0.2, 0.28, 0.04));
+  for (int i = 0; i < 6; i++) {
+    float dy = l.y - S[i].y; dy -= floor(dy + 0.5);           // wrap inside the tile
+    float tt = clamp(dy / S[i].z + 0.5, 0.0, 1.0);
+    float hw = S[i].w * 0.5 * sin(3.14159 * tt) * step(abs(dy), S[i].z * 0.5);
+    col = mix(col, C_RIVER_L, (1.0 - aastep(hw, abs(l.x - S[i].x) + (hw > 0.0 ? 0.0 : 1.0))) * step(0.16, shore));
+  }
+  return riverShore(dot(p, dir), shore, t, col);
+}
+
+void main() {
+  vec2 p = v_w.xz;
+  g_px = max(length(fwidth(p)) * 0.7071, 1e-4);
+  float dR = sdRiver(p);
+  float dP = sdRoundBox(p, u_pond.xy, u_pond.zw, u_pond_r);
+  float d = min(dR, dP);
+  vec3 col;
+  if (d > 0.0) {
+    // land: grass, bank slope (soil) and a path strip leading to the bridge
+    col = C_GRASS;
+    vec2 gc = floor(p / 0.7);
+    vec2 gj = (vec2(hash2(gc), hash2(gc + 3.0)) - 0.5) * 0.4;
+    if (length(p - (gc + 0.5) * 0.7 - gj) < 0.035 && hash2(gc + 9.0) > 0.55) col = C_GRASS_D;
+    float path = abs(p.y + 3.0) - 1.5;
+    if (path < 0.0 && d > 0.25) {
+      col = C_MORTAR;
+      vec2 sc = floor(p / 0.28);
+      vec2 so = (vec2(hash2(sc), hash2(sc + 2.0)) - 0.5) * 0.08;
+      if (length(p - (sc + 0.5) * 0.28 - so) < 0.085) col = C_STONE;
+      if (path > -0.1) col = C_EDGE;
+    }
+    if (d < 0.12) col = C_SOIL;
+    // outlines at the waterline and the top of the bank slope (renderer: normal crease)
+    col = mix(col, C_OUT, 1.0 - aastep(g_px * 1.1, abs(d - 0.12)));
+    col = mix(col, C_OUT, 1.0 - aastep(g_px * 2.0, d));
+  } else {
+    vec4 F = texture(u_field, (p - u_field_xf.xy) * u_field_xf.zw);
+    float shore = F.z;
+    if (dR < dP) {
+      if (u_mode == 1) col = riverBands(p, -dR, u_time);
+      else if (u_mode == 2) col = riverTileScroll(p, -dR, u_time);
+      else {
+        col = riverStreaks(F.x, F.y, shore, u_time, C_RIVER);
+        col = riverShore(F.x, shore, u_time, col);
+        col = rockFoam(p, F.x, F.y, u_time, col);
+      }
+    } else {
+      col = pondWater(p, shore, u_time);
+    }
+    col = mix(col, C_OUT, 1.0 - aastep(g_px * 2.0, -d));
+  }
+  o = vec4(col, 1.0);
+}`;
+
+// ------------------------------------------------------------------ props (cel + inverted hull)
+const PROP_VS = `#version 300 es
+layout(location = 0) in vec3 a_pos;
+layout(location = 1) in vec3 a_n;
+layout(location = 2) in vec3 a_hn;     // smooth hull normal
+layout(location = 3) in vec3 a_col;
+uniform mat4 u_vp;
+uniform vec4 u_pos_yaw;                // instance origin (world) + yaw
+uniform vec4 u_bob;                    // amp_y (m), tilt (rad), drift radius (m), -
+uniform float u_time, u_hull;
+out vec3 v_n; out vec3 v_col;
+${COMMON}
+void main() {
+  // phase from the instance position: a frog on its pad shares the pad's phase
+  float ph = hash2(floor(u_pos_yaw.xz * 10.0)) * TAU;
+  float bob = u_bob.x * sin(TAU * u_time / 2.0 + ph);             // 2 s, loops in 16 s
+  float tilt = u_bob.y * sin(TAU * u_time / 4.0 + ph + 1.3);
+  vec2 drift = u_bob.z * vec2(cos(TAU * u_time / 16.0 + ph), sin(TAU * u_time / 16.0 + ph));
+  vec3 p = a_pos + a_hn * u_hull;
+  float ct = cos(tilt), st = sin(tilt);
+  p = vec3(p.x, ct * p.y - st * p.z, st * p.y + ct * p.z);      // roll about local X
+  vec3 n = vec3(a_n.x, ct * a_n.y - st * a_n.z, st * a_n.y + ct * a_n.z);
+  float c = cos(u_pos_yaw.w), s = sin(u_pos_yaw.w);
+  vec3 w = vec3(c * p.x + s * p.z, p.y, -s * p.x + c * p.z) + u_pos_yaw.xyz + vec3(drift.x, bob, drift.y);
+  v_n = vec3(c * n.x + s * n.z, n.y, -s * n.x + c * n.z);
+  v_col = a_col;
+  gl_Position = u_vp * vec4(w, 1.0);
+}`;
+const PROP_FS = `#version 300 es
+precision highp float;
+uniform vec3 u_sun, u_shadow, C_OUT;
+uniform float u_hull;
+in vec3 v_n; in vec3 v_col;
+out vec4 o;
+void main() {
+  if (u_hull > 0.0) { o = vec4(C_OUT, 1.0); return; }
+  float lit = step(0.12, dot(normalize(v_n), u_sun));
+  o = vec4(v_col * mix(u_shadow, vec3(1.0), lit), 1.0);
+}`;
+
+// Mesh builder: pos, flat normal, hull normal, colour.
+class Mesh {
+  constructor() { this.v = []; }
+  tri(a, b, c, col, hc) {
+    const n = norm(cross(sub(b, a), sub(c, a)));
+    for (const p of [a, b, c]) this.v.push(...p, ...n, ...norm(sub(p, hc)), ...col);
+  }
+  quad(a, b, c, d, col, hc) { this.tri(a, b, c, col, hc); this.tri(a, c, d, col, hc); }
+  box(cx, cy, cz, sx, sy, sz, col, rotZ = 0) {
+    const h = [sx / 2, sy / 2, sz / 2], P = [];
+    for (let i = 0; i < 8; i++) {
+      let x = (i & 1 ? 1 : -1) * h[0], y = (i & 2 ? 1 : -1) * h[1], z = (i & 4 ? 1 : -1) * h[2];
+      const c = Math.cos(rotZ), s = Math.sin(rotZ);
+      P.push([cx + c * x - s * y, cy + s * x + c * y, cz + z]);
+    }
+    const hc = [cx, cy, cz];
+    const F = [[0, 2, 3, 1], [4, 5, 7, 6], [0, 1, 5, 4], [2, 6, 7, 3], [0, 4, 6, 2], [1, 3, 7, 5]];
+    for (const f of F) this.quad(P[f[0]], P[f[1]], P[f[2]], P[f[3]], col, hc);
+  }
+  blob(cx, cy, cz, rx, ry, rz, col, seg = 8, rings = 6) {
+    const pt = (i, j) => { const th = Math.PI * j / rings, ph = 2 * Math.PI * i / seg;
+      return [cx + rx * Math.sin(th) * Math.cos(ph), cy + ry * Math.cos(th), cz + rz * Math.sin(th) * Math.sin(ph)]; };
+    const hc = [cx, cy, cz];
+    for (let j = 0; j < rings; j++) for (let i = 0; i < seg; i++) {
+      const a = pt(i, j), b = pt(i + 1, j), c = pt(i + 1, j + 1), d = pt(i, j + 1);
+      if (j > 0) this.tri(a, b, c, col, hc);
+      if (j < rings - 1) this.tri(a, c, d, col, hc);
+    }
+  }
+  disc(cx, cy, cz, r, h, col, seg = 10, notch = 0) {
+    const hc = [cx, cy + h / 2, cz];
+    const a0 = notch ? 0.5 : 0, a1 = 2 * Math.PI - (notch ? 0.5 : 0);
+    const P = i => { const a = a0 + (a1 - a0) * i / seg; return [cx + r * Math.cos(a), cz + r * Math.sin(a)]; };
+    for (let i = 0; i < seg; i++) {
+      const [x0, z0] = P(i), [x1, z1] = P(i + 1);
+      this.tri([cx, cy + h, cz], [x1, cy + h, z1], [x0, cy + h, z0], col, hc);
+      this.quad([x0, cy, z0], [x0, cy + h, z0], [x1, cy + h, z1], [x1, cy, z1], col, hc);
+    }
+  }
+  upload() {
+    const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.v), gl.STATIC_DRAW);
+    const st = 12 * 4;
+    [[0, 0], [1, 12], [2, 24], [3, 36]].forEach(([l, o]) => { gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, 3, gl.FLOAT, false, st, o); });
+    return { vao, n: this.v.length / 12 };
+  }
+}
+
+function duckMesh() {
+  const m = new Mesh();
+  m.blob(0, 0.06, 0, 0.14, 0.11, 0.2, PAL.duck);
+  m.blob(0, 0.13, -0.2, 0.05, 0.05, 0.08, PAL.duck);          // tail
+  m.blob(0, 0.26, 0.13, 0.095, 0.095, 0.095, PAL.duck);
+  m.box(0, 0.24, 0.24, 0.07, 0.035, 0.09, PAL.duck_beak);
+  m.blob(-0.05, 0.3, 0.2, 0.022, 0.022, 0.022, PAL.eye_dark, 6, 4);
+  m.blob(0.05, 0.3, 0.2, 0.022, 0.022, 0.022, PAL.eye_dark, 6, 4);
+  return m.upload();
+}
+function lilyMesh(withFlower) {
+  const m = new Mesh();
+  [[0, 0, 0.22], [0.34, 0.12, 0.15], [-0.3, 0.16, 0.14], [0.12, -0.33, 0.13], [-0.22, -0.26, 0.16]]
+    .forEach(([x, z, r]) => m.disc(x, -0.005, z, r, 0.025, PAL.lily_pad, 9, 1));
+  if (withFlower) { m.blob(0, 0.06, 0, 0.09, 0.05, 0.09, PAL.lily_pink, 6, 4); m.blob(0, 0.1, 0, 0.03, 0.02, 0.03, PAL.lily_center, 6, 3); }
+  return m.upload();
+}
+function frogMesh() {
+  const m = new Mesh();
+  m.disc(0, -0.005, 0, 0.22, 0.025, PAL.lily_pad, 9, 1);
+  m.blob(0, 0.1, 0, 0.11, 0.08, 0.11, PAL.frog);
+  m.blob(-0.05, 0.17, 0.05, 0.035, 0.035, 0.035, PAL.frog, 6, 4);
+  m.blob(0.05, 0.17, 0.05, 0.035, 0.035, 0.035, PAL.frog, 6, 4);
+  m.blob(-0.05, 0.18, 0.08, 0.015, 0.015, 0.015, PAL.eye_dark, 5, 3);
+  m.blob(0.05, 0.18, 0.08, 0.015, 0.015, 0.015, PAL.eye_dark, 5, 3);
+  return m.upload();
+}
+function rockMesh() { const m = new Mesh(); m.blob(0, 0.02, 0, ROCK.r, 0.14, ROCK.r * 0.9, PAL.rock, 7, 4); return m.upload(); }
+function bridgeMesh() {
+  // arched deck along X over the 3 m river, 2.5 m wide (like bridge_wood), handrails
+  const m = new Mesh(), L = 1.7, W = 1.25, n = 10, pw = 2 * L / n;
+  const y = x => 0.07 + 0.43 * (1 - (x / L) ** 2);
+  for (let i = 0; i < n; i++) {
+    const x = -L + pw * (i + 0.5), sl = Math.atan(-2 * 0.43 * x / (L * L));
+    m.box(x, y(x) - 0.035, 0, pw - 0.03, 0.07, 2 * W - 0.1, i % 2 ? PAL.wood_light : PAL.wood, sl);
+  }
+  for (const s of [-1, 1]) {
+    for (let i = 0; i < 6; i++) {
+      const x0 = -L + 0.08 + (2 * L - 0.16) * i / 6, x1 = -L + 0.08 + (2 * L - 0.16) * (i + 1) / 6, xm = (x0 + x1) / 2;
+      m.box(xm, y(xm) + 0.71, s * W, x1 - x0 + 0.01, 0.1, 0.1, PAL.wood_light, Math.atan(-2 * 0.43 * xm / (L * L)));
+    }
+    for (const x of [-L + 0.08, -0.55, 0.55, L - 0.08]) m.box(x, (y(x) + 0.82) / 2, s * W, 0.11, y(x) + 0.82, 0.11, PAL.wood);
+  }
+  return m.upload();
+}
+
+// ---- setup
+const gp = prog(GROUND_VS, GROUND_FS), pp = prog(PROP_VS, PROP_FS);
+const ground = (() => {
+  const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+  const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+  const S = 30;
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-S, 0, -S, -S, 0, S, S, 0, S, -S, 0, -S, S, 0, S, S, 0, -S]), gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 12, 0);
+  return vao;
+})();
+const field = bakeField();
+const fieldTex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, fieldTex);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, field.W, field.H, 0, gl.RGBA, gl.FLOAT, field.data);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+const M = { duck: duckMesh(), lily: lilyMesh(true), lily2: lilyMesh(false), frog: frogMesh(), rock: rockMesh(), bridge: bridgeMesh() };
+const BOB = { duck: [0.03, 0.07, 0.12], lily: [0.012, 0.04, 0.03], frog: [0.012, 0.04, 0.03], none: [0, 0, 0] };
+const P = { cx: POND.cx, cz: POND.cz };
+const PROPS = [
+  ["bridge", [2.5, 0, -3.0], 0, "none"],
+  ["rock", [ROCK.x, -0.02, ROCK.z], 0.4, "none"],
+  ["duck", [3.05, 0, -1.2], Math.PI, "duck"],       // facing downstream-ish
+  ["duck", [2.3, 0, 2.6], 2.2, "duck"],
+  ["duck", [6.2, 0, 2.2], -1.6, "duck"],
+  ["lily", [P.cx - 1.1, 0, P.cz - 0.9], 0.3, "lily"],
+  ["lily2", [P.cx + 1.0, 0, P.cz - 1.2], 1.9, "lily"],
+  ["lily", [P.cx + 0.7, 0, P.cz + 1.1], 3.1, "lily"],
+  ["frog", [P.cx - 0.8, 0, P.cz + 1.0], 0.2, "frog"],
+];
+
+function frame(now) {
+  const t = ((FROZEN ?? now / 1000) % LOOP + LOOP) % LOOP;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.round(canvas.clientWidth * dpr), h = Math.round(canvas.clientHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  gl.viewport(0, 0, w, h);
+  const pitch = 55 * Math.PI / 180, tgt = [0.2, 0, -0.2];
+  const eye = [tgt[0], DIST * Math.sin(pitch), tgt[2] + DIST * Math.cos(pitch)];
+  const vp = mul(perspective(35 * Math.PI / 180, w / h, 0.5, 120), lookAt(eye, tgt, [0, 1, 0]));
+  gl.clearColor(...PAL.grass, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+
+  gl.useProgram(gp.p);
+  gl.uniformMatrix4fv(gp.u.u_vp, false, vp);
+  gl.uniform1f(gp.u.u_time, t);
+  gl.uniform1i(gp.u.u_mode, mode);
+  gl.uniform4f(gp.u.u_field_xf, F.x0, F.z0, 1 / F.w, 1 / F.d);
+  gl.uniform4f(gp.u.u_rock, ROCK.x, ROCK.z, ROCK.r, 0);
+  gl.uniform2f(gp.u.u_rock_sc, ...riverCoords(ROCK.x, ROCK.z));
+  gl.uniform4f(gp.u.u_pond, POND.cx, POND.cz, POND.hx - INSET, POND.hz - INSET);
+  gl.uniform1f(gp.u.u_pond_r, POND.r);
+  const cu = { C_GRASS: "grass", C_GRASS_D: "grass_dark", C_SOIL: "soil", C_MORTAR: "path_mortar", C_STONE: "path_stone",
+    C_EDGE: "edge_stone", C_OUT: "outline", C_RIVER: "water_river", C_RIVER_L: "water_river_light", C_FOAM: "water_foam",
+    C_POND: "water_pond", C_POND_L: "water_pond_light" };
+  for (const k in cu) gl.uniform3fv(gp.u[k], PAL[cu[k]]);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fieldTex); gl.uniform1i(gp.u.u_field, 0);
+  gl.bindVertexArray(ground); gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+  gl.useProgram(pp.p);
+  gl.uniformMatrix4fv(pp.u.u_vp, false, vp);
+  gl.uniform1f(pp.u.u_time, t);
+  gl.uniform3fv(pp.u.u_sun, SUN); gl.uniform3fv(pp.u.u_shadow, SHADOW); gl.uniform3fv(pp.u.C_OUT, PAL.outline);
+  gl.enable(gl.CULL_FACE);
+  for (const [name, pos, yaw, bob] of PROPS) {
+    const mesh = M[name];
+    gl.bindVertexArray(mesh.vao);
+    gl.uniform4f(pp.u.u_pos_yaw, pos[0], pos[1], pos[2], yaw);
+    gl.uniform4f(pp.u.u_bob, ...BOB[bob], 0);
+    for (const hull of [0.022, 0]) {               // inverted hull outline, then the cel pass
+      gl.cullFace(hull ? gl.FRONT : gl.BACK);
+      gl.uniform1f(pp.u.u_hull, hull);
+      gl.drawArrays(gl.TRIANGLES, 0, mesh.n);
+    }
+  }
+  gl.disable(gl.CULL_FACE);
+  const ui = document.getElementById("ui");
+  if (Q.has("noui")) ui.style.display = "none"; else ui.textContent = `mode ${MODES[mode]} · t = ${t.toFixed(2)} s · keys 1/2/3, space`;
+  if (FROZEN === null && !paused) requestAnimationFrame(frame);
+}
+let paused = false;
+addEventListener("keydown", e => {
+  if (e.key >= "1" && e.key <= "3") mode = +e.key - 1;
+  const wasPaused = paused;
+  if (e.key === " ") paused = !paused;
+  if (FROZEN !== null || paused || wasPaused) frame(performance.now());
+});
+frame(performance.now());
+</script>
+</body>
+</html>

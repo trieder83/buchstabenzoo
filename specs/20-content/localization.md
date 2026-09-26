@@ -20,6 +20,10 @@ updated: 2026-09-26
    (when the reading level suffix is required is open — Q-038).
 4. Language can be switched in settings at runtime without restart.
 5. Default language = device language if supported, else `de`.
+6. UI texts (settings labels, take/close, feedback bubbles) live in `ui.ftl` (`ui-<item>`),
+   mission texts in `missions.ftl`. The PoC settings menu (icon button) switches language
+   (`de`/`en`) and reading level at runtime and stores both in the browser (`localStorage`);
+   without a stored choice the default of §5 applies.
 
 ## Test cases
 
@@ -34,3 +38,4 @@ updated: 2026-09-26
 ## Open questions
 
 - Q-008 Voice audio per language. Q-038 Key naming vs. reading level variants.
+- Q-064 Enclosure sign texts (`sign-<animal>`).

@@ -166,6 +166,35 @@ pub struct CharacterDraw {
     pub walk_time: f32,
     /// 0 = idle, 1 = walk.
     pub walk_blend: f32,
+    /// Clip used as the resting loop (e.g. `drink` for an animal at the river); falls back
+    /// to `idle` when the model has no such clip.
+    pub idle_clip: &'static str,
+    /// One-shot action clip (`eat`, `happy`, `refuse`, …) and seconds into it.
+    pub action: Option<(&'static str, f32)>,
+    /// Weight of the action over the idle/walk pose (0…1).
+    pub action_blend: f32,
+}
+
+impl CharacterDraw {
+    /// Idle/walk only.
+    pub fn locomotion(
+        pos: Vec3,
+        yaw: f32,
+        idle_time: f32,
+        walk_time: f32,
+        walk_blend: f32,
+    ) -> Self {
+        Self {
+            pos,
+            yaw,
+            idle_time,
+            walk_time,
+            walk_blend,
+            idle_clip: "idle",
+            action: None,
+            action_blend: 0.0,
+        }
+    }
 }
 
 struct GBuffer {
@@ -380,6 +409,16 @@ impl Renderer {
 
     pub fn has_model(&self, name: &str) -> bool {
         self.batch_index.contains_key(name)
+    }
+
+    /// Duration in seconds of a clip of a skinned model.
+    pub fn clip_duration(&self, model: &str, clip: &str) -> Option<f32> {
+        self.skinned
+            .get(model)?
+            .clips
+            .iter()
+            .find(|c| c.name == clip)
+            .map(|c| c.duration)
     }
 
     pub fn has_skinned(&self, name: &str) -> bool {
@@ -792,7 +831,12 @@ impl Renderer {
 fn pose_character(sm: &mut SkinnedModel, d: &CharacterDraw) {
     let skel = &sm.skeleton;
     let w = d.walk_blend.clamp(0.0, 1.0);
-    match (sm.idle, sm.walk) {
+    let idle = sm
+        .clips
+        .iter()
+        .position(|c| c.name == d.idle_clip)
+        .or(sm.idle);
+    match (idle, sm.walk) {
         (Some(i), Some(k)) => {
             skel.sample(&sm.clips[i], d.idle_time, &mut sm.pose_idle);
             skel.sample(&sm.clips[k], d.walk_time, &mut sm.pose_walk);
@@ -805,6 +849,20 @@ fn pose_character(sm: &mut SkinnedModel, d: &CharacterDraw) {
             Skeleton::blend(rest, &sm.pose_walk, w, &mut sm.pose);
         }
         (None, None) => {}
+    }
+    let action = d
+        .action
+        .and_then(|(name, t)| sm.clips.iter().position(|c| c.name == name).map(|i| (i, t)));
+    if let Some((i, t)) = action {
+        // pose_walk and pose_idle are free again: action → pose_walk, blend → pose_idle.
+        skel.sample(&sm.clips[i], t, &mut sm.pose_walk);
+        Skeleton::blend(
+            &sm.pose,
+            &sm.pose_walk,
+            d.action_blend.clamp(0.0, 1.0),
+            &mut sm.pose_idle,
+        );
+        std::mem::swap(&mut sm.pose, &mut sm.pose_idle);
     }
     skel.joint_matrices(&sm.pose, &mut sm.world, &mut sm.joints);
     for (k, m) in sm.joints.iter().enumerate() {

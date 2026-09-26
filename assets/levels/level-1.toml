@@ -445,3 +445,58 @@ animal = "panda"
 rect = [10, 5, 3, 3]
 animal_spot = [10, 5]        # asleep in the back corner on the west side of the cave (back-right as seen from the mouth)
 features = ["dark", "cool", "stone", "echo"]
+
+# ---------------------------------------------------------------- food boxes (GAME-FEED §7)
+# PoC (Q-065): the storage interior is not modelled, so the 10 boxes stand in a row in front
+# of the food storage's south facade, labels facing south (GAME-LEVEL-1 proposal table).
+# Props, not elements: they occupy no grid cell but are solid for the player (GAME-PLAYER §7).
+# pos = box centre in level coordinates (x, z).
+[[food_box]]
+food = "melons"
+pos = [-3.6, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "hay"
+pos = [-2.8, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "bananas"
+pos = [-2.0, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "bamboo"
+pos = [-1.2, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "grass"
+pos = [-0.4, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "meat"
+pos = [0.4, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "leaves"
+pos = [1.2, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "fish_food"
+pos = [2.0, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "berries"
+pos = [2.8, 10.66]
+facing = "-z"
+
+[[food_box]]
+food = "eucalyptus"
+pos = [3.6, 10.66]
+facing = "-z"

@@ -1,0 +1,56 @@
+# Animal clip data (ART-ANIMALS "Rig conventions" / "Clips") — mirrors the clip tables of
+# specs/30-art/animals.md exactly (AANI-007). Same format as human_anims.toml (ART-RIG §4.8).
+# Events are NOT stored in the .glb; zoo-core fires them from clip time.
+#
+# frames         clip length at 30 fps (duration = frames / 30 s)
+# loop           looping clip (last frame == first frame)
+# crossfade_in   seconds, linear crossfade when this clip is requested
+# events         { name = frame } fired once when playback crosses the frame
+# speed          authored locomotion speed in m/s (walk only; playback rate =
+#                actual_speed / speed, clamped like ART-RIG §4.7)
+# used_for       gameplay reactions (GAME-ANIMALS / GAME-RESCUE events) that play this clip
+#
+# One-shot clips (loop = false) play once and return to the current idle/walk/drink clip
+# with a 0.15 s crossfade (as ART-RIG §4.5).
+
+fps = 30
+
+[zebra.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[zebra.walk]
+frames = 20
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 5, footstep_hr = 10, footstep_fr = 15 }
+speed = 1.4
+
+[zebra.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[zebra.drink]
+frames = 60
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[zebra.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[zebra.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]

@@ -22,3 +22,6 @@ mission-zebra-riddle-kiga = Fluss
 mission-zebra-riddle-klasse1 = Ich habe Durst. Ich suche fließendes Wasser.
 mission-zebra-riddle-klasse2 = Die Zebras haben großen Durst. Sie trinken dort, wo das Wasser fließt und Enten schwimmen.
 mission-zebra-riddle-klasse3 = Die Zebras sind lange über die Wiese gerannt. Jetzt haben sie Durst. Sie suchen Wasser, das sich bewegt und rauscht. Dort, wo eine Brücke über das Wasser führt, trinken sie.
+
+# shown when the zebras are back in their enclosure (mission complete, GAME-RESCUE §8)
+mission-zebra-home = Super! Die Zebras sind wieder zu Hause.

@@ -63,6 +63,19 @@ Placeholders are logged as warnings and must be gone for POC-004.
 | POC-005 | Given a mid-range phone (Q-013 reference device) in Chrome, then the level renders at ≥ 30 fps while walking. | manual |
 | POC-006 | Given the PoC build, then the total download size is ≤ 30 MB (PLAT-001). | e2e |
 
+## M4 notes (2026-09-26)
+
+- Play on desktop: WASD/arrows walk, `E`/Space/Enter interact, `Q`/`R` or mouse drag rotate,
+  wheel zooms, gear button = settings (language, reading level). On touch: left thumb
+  floating joystick, right thumb swipe rotates / pinch zooms, round button bottom-right
+  interacts (GAME-PLAYER §3).
+- Food boxes stand in front of the food storage (GAME-LEVEL-1, Q-065); take = interact →
+  text panel with the label → take button (GAME-FEED §6).
+- The zebra model loads from `assets/models/animals/zebra.glb` when present, otherwise a
+  striped placeholder box is drawn (counts for POC-004).
+- e2e tests use a debug autopilot (`debug_goto`, grid path over zoo-core navigation with the
+  real movement and collision) plus real key presses for interacting.
+
 ## Open questions
 
 - Q-013 Reference device for POC-005.

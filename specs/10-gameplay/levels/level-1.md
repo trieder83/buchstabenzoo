@@ -49,6 +49,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Sight test data | Solid elements carry `blocks_view` (and `height_m` for the mockups). | Q-044 |
 | Barrier unlock | `barrier_ne_tree` opens when all three level-1 animals are home; the other two barriers belong to later levels. | Q-022, Q-023 |
 | Food boxes in level 1 | All 10 food boxes stand in the storage (natural distractors). | Q-047 |
+| Food box positions (PoC) | The storage interior is not modelled yet: the 10 boxes stand in a row in front of the storage's south facade (box centres z = 10.66, x = −3.6 … 3.6 every 0.8 m, labels facing south), on the north row of `path_ring_s`. Order west → east: melons, hay, bananas, bamboo, **grass**, meat, leaves, fish food, berries, eucalyptus. Data: `[[food_box]]` in `level-1.toml`. | Q-065 |
 | Walking speed | 1.4 m/s on paths; grass 0.7 × = 0.98 m/s (grass factor: GAME-PLAYER). | Q-024 |
 | Panda spot and cave view | Panda lies near the cave mouth so its head is visible from the high camera (see "High-angle camera" below). | — (level design) |
 
@@ -295,6 +296,9 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 10. When the unlock condition of `barrier_ne_tree` is met, its cells become walkable; the
     other two barriers stay closed.
 11. The food storage is open from the start (proposal Q-033).
+12. The food boxes (`[[food_box]]`, GAME-FEED §7) are props, not layout elements: they do not
+    occupy grid cells (LAYOUT-L1-003/004 unaffected) but are solid for the player
+    (GAME-PLAYER §7); at least 2 m of `path_ring_s` stays free in front of them.
 
 ## Test cases
 
@@ -312,6 +316,7 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 | LAYOUT-L1-010 | Given missions `zebra`, `hippo`, `panda` complete, then `barrier_ne_tree` cells are walkable, `barrier_north_gate` and `barrier_east_repair` are still solid (depends on Q-022). | unit |
 | LAYOUT-L1-011 | Given level 1 starts on a 1080×2340 viewport, then the player stands on the plaza facing north with the camera at maximum zoom-out (20 m) and the food storage is on screen. | e2e |
 | LAYOUT-L1-012 | Given the approved mockups `loc_river` and `loc_pond`, then a reviewer can tell river and pond apart without text (flow + bridge + ducks vs. still + lilies + frogs), and `env_zebra` shows no water, `env_panda` no stone cave. | manual |
+| LAYOUT-L1-013 | Given `level-1.toml`, then it has 10 `food_box` entries (one per food) in front of the food storage, and a walkable cell centre within 2 m in front of each box is reachable from the spawn. | unit |
 
 ## Open questions
 

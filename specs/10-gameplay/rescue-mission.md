@@ -53,6 +53,12 @@ occupied again.
    (`eat`, then `happy`), the enclosure gate closes, and the mission is complete.
 9. When all missions are complete, the final celebration plays (Q-031).
 10. A mission may add a quest step (e.g. `quest_monkey_baby`, `quest_key` in GAME-QUESTS).
+11. *Presentation (PoC M4):* escaped animals play `drink` at the river (else `idle`);
+    following animals walk behind the player; events map to clips — `not_interested` and
+    `refuse` → `refuse`, `started_following` → `happy`, entering the enclosure → `eat` then
+    `happy`; mission complete shows a short celebration (confetti) and
+    `mission-<animal>-home`. Interacting at an enclosure gate while leading animals is the
+    same as walking into it (GAME-PLAYER §5).
 
 ## Test cases
 

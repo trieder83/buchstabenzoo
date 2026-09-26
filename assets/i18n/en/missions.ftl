@@ -21,3 +21,6 @@ mission-zebra-riddle-kiga = river
 mission-zebra-riddle-klasse1 = I am thirsty. I look for running water.
 mission-zebra-riddle-klasse2 = The zebras are very thirsty. They drink where the water flows and ducks swim.
 mission-zebra-riddle-klasse3 = The zebras ran across the meadow for a long time. Now they are thirsty. They are looking for water that moves and rushes. They drink where a bridge crosses the water.
+
+# shown when the zebras are back in their enclosure (mission complete, GAME-RESCUE §8)
+mission-zebra-home = Great! The zebras are home again.

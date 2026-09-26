@@ -2,6 +2,7 @@
 //! (TECH-ARCH, ARCH-001). Time is passed in as `dt`; randomness comes from a seed.
 
 pub mod animals;
+pub mod collision;
 pub mod content;
 pub mod coords;
 pub mod food;
@@ -10,12 +11,13 @@ pub mod level;
 pub mod nav;
 pub mod player;
 pub mod rng;
+pub mod scene;
 
 pub use animals::{AnimalInfo, AnimalState, ANIMALS};
 pub use content::{Content, Language, ReadingLevel};
 pub use coords::{level_to_world, world_to_level};
 pub use food::{Carry, Food, FoodBox, FoodStorage};
-pub use game::{Game, GameEvent, InfoBoard};
+pub use game::{Game, GameEvent, InfoBoard, Interactable, Interaction, Target};
 pub use level::{
     segment_run, CellKind, ElementType, Grid, Level, LevelData, Rect, Run, RunAxis, Segment,
     Surface,

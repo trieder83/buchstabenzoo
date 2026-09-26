@@ -2,6 +2,7 @@
 
 use glam::Vec2;
 
+use crate::collision::{Blockers, Colliders, PLAYER_RADIUS_M};
 use crate::level::{cell_of, Grid, Surface};
 
 /// Movement tuning (GAME-PLAYER §6; values are the proposals of Q-024 / GAME-LEVEL-1).
@@ -72,13 +73,27 @@ impl Player {
         self.surface_speed
     }
 
-    /// Moves the player. `input` is the direction in level coordinates `(x, z)` (x east,
-    /// z north), length ≤ 1 (joystick deflection). The player cannot enter solid cells;
-    /// gates only with `allow_gates`.
-    /// Blocked moves slide along the blocking cell edges.
+    /// Moves the player without prop collision (cells only). See [`Player::step_with`].
     pub fn step(
         &mut self,
         grid: &Grid,
+        params: &MoveParams,
+        input: Vec2,
+        dt: f32,
+        allow_gates: bool,
+    ) {
+        self.step_with(grid, &Colliders::default(), params, input, dt, allow_gates);
+    }
+
+    /// Moves the player. `input` is the direction in level coordinates `(x, z)` (x east,
+    /// z north), length ≤ 1 (joystick deflection). The player is a circle of radius
+    /// [`PLAYER_RADIUS_M`] that cannot overlap solid cells (gates only with `allow_gates`)
+    /// or prop shapes (GAME-PLAYER §7); blocked moves slide along them. Blockers the circle
+    /// already overlaps (e.g. a gate that closed under the player) are ignored.
+    pub fn step_with(
+        &mut self,
+        grid: &Grid,
+        colliders: &Colliders,
         params: &MoveParams,
         input: Vec2,
         dt: f32,
@@ -103,19 +118,27 @@ impl Player {
         let steps = (total.length() / MAX_SUBSTEP_M).ceil().max(1.0) as usize;
         let delta = total / steps as f32;
         let start = self.pos;
+        let mut blockers = Blockers::at(grid, colliders, allow_gates, self.pos);
         for _ in 0..steps {
-            // Moving inside the current cell is always allowed, so a player standing on a gate
-            // that just closed (animals entered) can walk out again.
-            let here = cell_of(self.pos);
-            let walkable =
-                |p: Vec2| cell_of(p) == here || grid.is_walkable(cell_of(p), allow_gates);
-            let full = self.pos + delta;
-            if walkable(full) {
-                self.pos = full;
-            } else if walkable(Vec2::new(full.x, self.pos.y)) {
-                self.pos.x = full.x;
-            } else if walkable(Vec2::new(self.pos.x, full.y)) {
-                self.pos.y = full.y;
+            let r = PLAYER_RADIUS_M;
+            let tries = [
+                self.pos + delta,
+                Vec2::new(self.pos.x + delta.x, self.pos.y),
+                Vec2::new(self.pos.x, self.pos.y + delta.y),
+            ];
+            let mut moved = false;
+            for t in tries {
+                if let Some(q) = blockers.resolve(t, r) {
+                    // never move further than the requested step (no push-through jumps)
+                    if q.distance(self.pos) <= delta.length() + 1e-4 {
+                        self.pos = q;
+                        moved = true;
+                        break;
+                    }
+                }
+            }
+            if !moved {
+                break;
             }
         }
         self.last_speed = self.pos.distance(start) / dt;

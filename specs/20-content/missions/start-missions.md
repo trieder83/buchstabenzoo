@@ -56,6 +56,9 @@ distractors for each mission.
 | klasse2 | Die Zebras haben großen Durst. Sie trinken dort, wo das Wasser fließt und Enten schwimmen. | The zebras are very thirsty. They drink where the water flows and ducks swim. |
 | klasse3 | Die Zebras sind lange über die Wiese gerannt. Jetzt haben sie Durst. Sie suchen Wasser, das sich bewegt und rauscht. Dort, wo eine Brücke über das Wasser führt, trinken sie. | The zebras ran across the meadow for a long time. Now they are thirsty. They are looking for water that moves and rushes. They drink where a bridge crosses the water. |
 
+Mission complete (`mission-zebra-home`, all reading levels, PoC M4): *Super! Die Zebras sind
+wieder zu Hause.* / *Great! The zebras are home again.*
+
 Math (`mathe1`): *Am Wasser trinken 3 Zebras. 2 kommen dazu. Wie viele Zebras sind es?* /
 *3 zebras are drinking. 2 more come. How many zebras are there?* → **5**
 
@@ -175,7 +178,8 @@ Math (`mathe4`): *Im Kiosk stehen 4 Truhen mit je 250 Eis. Wie viele Eis sind es
 ## Behaviour
 
 1. Each mission's texts are stored as Fluent keys: `mission-<animal>-riddle-<level>`,
-   `food-<food_id>` (box label), `mission-<animal>-math`.
+   `food-<food_id>` (box label), `mission-<animal>-math`, `mission-<animal>-home`
+   (mission complete).
 2. Every hiding place id must exist in the layout data (GAME-LAYOUT, tested by ANIM-004);
    the zoo-level-designer places all 10 locations (representation: Q-044).
 3. Math tasks here are fixed examples; the generator in CONT-MATH may produce variants of the
@@ -197,3 +201,4 @@ Math (`mathe4`): *Im Kiosk stehen 4 Truhen mit je 250 Eis. Wie viele Eis sind es
 - Q-002 Confirm the 10 animals. Q-036 Goldfish transport (bucket?).
 - Review by a primary school teacher for age-appropriate wording (Q-037).
 - Q-039 Riddles containing their place word (koala, giraffe, elephant). Q-044 Hiding places in the layout.
+- Q-064 Enclosure sign texts (`sign-<animal>`, picture on `kiga`?).

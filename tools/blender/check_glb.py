@@ -191,8 +191,8 @@ def check(path):
 
 def main(argv):
     files = argv or sorted(glob.glob(os.path.join(REPO, "assets", "models", "**", "*.glb"), recursive=True))
-    # characters are skinned (joint transforms, 2 materials) — checked by check_character.py
-    files = [f for f in files if argv or os.sep + "characters" + os.sep not in f]
+    # skinned models are checked by check_character.py / check_animal.py
+    files = [f for f in files if argv or not any(os.sep + d + os.sep in f for d in ("characters", "animals"))]
     if not files:
         print("no .glb files found")
         return 1

@@ -498,3 +498,35 @@ fn grid_bounds_cover_all_solid_types() {
         }
     }
 }
+
+// LAYOUT-L1-013
+#[test]
+fn layout_l1_013_food_boxes_in_front_of_storage_reachable() {
+    let data = common::level1();
+    assert_eq!(data.food_boxes.len(), 10);
+    let storage = data.element("food_storage").unwrap().rect;
+    let level = Level::new(data.clone());
+    let grid = level.grid();
+    let spawn = data.spawn.cell();
+    for b in &data.food_boxes {
+        let pos = b.pos();
+        // in front of the south facade
+        assert!(
+            pos.y < storage.z as f32 && pos.y > storage.z as f32 - 1.0,
+            "{}",
+            b.food
+        );
+        assert!(pos.x > storage.x as f32 && pos.x < (storage.x + storage.w) as f32);
+        let front = zoo_core::level::cell_of(pos + b.facing() * 1.1);
+        assert!(
+            grid.is_passable(front, false),
+            "{}: front cell blocked",
+            b.food
+        );
+        assert!(
+            zoo_core::nav::find_path(grid, spawn, front, false).is_some(),
+            "{}: front cell not reachable",
+            b.food
+        );
+    }
+}

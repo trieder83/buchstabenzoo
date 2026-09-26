@@ -11,6 +11,9 @@ tools/blender/
   props/kit_ground.py   Kit 1 — ground tiles
   props/kit_fences.py   Kit 2 — fences, gate, hedges, walls
   check_glb.py          export-rule checker for every .glb (plain python3)
+  animals/quadruped_rig.py  shared quadruped skeleton, pattern-map atlas, gait/IK, clips
+  animals/zebra.py      zebra (skinned, 6 clips) -> assets/models/animals/zebra.glb
+  check_animal.py       rig/clip checker for animal .glb files (ART-ANIMALS AANI-003..008)
 ```
 
 ## Run

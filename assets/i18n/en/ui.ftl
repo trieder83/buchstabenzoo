@@ -1,0 +1,22 @@
+# User interface texts — English. Mirrors de/ui.ftl key by key.
+
+ui-settings = Settings
+ui-language = Language
+ui-reading-level = Reading level
+ui-close = Close
+ui-take = Take
+ui-interact = Look
+ui-carrying = You carry:
+ui-lang-de = Deutsch
+ui-lang-en = English
+ui-level-kiga = Kindergarten
+ui-level-klasse1 = Grade 1
+ui-level-klasse2 = Grade 2
+ui-level-klasse3 = Grade 3
+
+## Feedback when showing food / leading animals (GAME-RESCUE §5, §7)
+
+ui-not-interested = Hmm, I don't like that.
+ui-no-food = I am hungry!
+ui-following = Yay, food! I am coming.
+ui-refuse = I don't live here!

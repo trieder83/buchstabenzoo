@@ -1,11 +1,11 @@
-# Brief — `kit_fences` (Kit 2 — fences, gates, hedges, walls)
+# Brief — `kit_barriers` (Kit 6 — barriers)
 
-Spec: ART-ENVIRONMENT (modular props), GAME-LAYOUT (barrier/boundary/enclosure), GAME-LEVEL-1. Style: `art/style/style.md` (comic) — style
+Spec: ART-ENVIRONMENT (modular props), GAME-LAYOUT (barrier), GAME-LEVEL-1 (barrier_ne_tree, barrier_north_gate, barrier_east_repair). Style: `art/style/style.md` (comic) — style
 reference image: `art/environment/style_frame/style_frame.png` (approved). Status: **brief**.
 
 ## Purpose
 
-Everything that encloses an enclosure or seals the level. Fences keep animals in but must look friendly (never cages — glossary). Hedges and the outer wall form the permanent zoo boundary.
+Child-friendly barriers that close off locked parts of the zoo (never invisible walls). They must say "not yet" in a friendly way — no danger signs. Pictograms are allowed on the repair sign (shovel), no text.
 
 Props are modelled once and reused (ART-ENVIRONMENT, modular props). Budgets: props
 ≤ 500 triangles each, flat-colour textures only (ART-PIPELINE §10).
@@ -14,19 +14,16 @@ Props are modelled once and reused (ART-ENVIRONMENT, modular props). Budgets: pr
 
 | Asset id | Size (game units, 1 = 1 m) | Notes |
 |---|---|---|
-| `fence_wood` | 2 m long, 1.1 m high | post-and-rail, 3 rails |
-| `fence_wood_corner` | post | corner post |
-| `fence_wood_end` | post | end post |
-| `gate_wood_closed` | 2 m wide | enclosure gate, closed |
-| `gate_wood_open` | 2 m wide | same gate, open |
-| `hedge` | 2 m long, 3 m high | tall trimmed hedge |
-| `hedge_corner` | 2 m × 2 m, 3 m high | hedge corner |
-| `zoo_wall` | 2 m long, 2.5 m high | outer zoo wall, light stone with wooden cap |
-| `zoo_wall_corner` |  | wall corner |
+| `road_block` | ≈ 2 m wide | wooden barrier with red-and-white striped board |
+| `repair_sign` | ≈ 1 m | blank sign with a shovel pictogram |
+| `zookeeper_cart` | ≈ 2 m long | small green zookeeper cart with tools |
+| `traffic_cone` | ≈ 0.5 m | orange traffic cone |
+| `fallen_tree` | ≈ 6 m long | fallen tree lying across a path |
+| `gate_zoo_closed` | ≈ 4 m wide | large closed zoo gate between two pillars |
 
 ## Image settings
 
-- One asset sheet, **16:9, 2K**, generated with the style frame as reference image.
+- One asset sheet, **16:9, 2K**, generated with an existing prop sheet (kit_fences sheet_v2) as style reference — the style frame as reference blends its scene into the sheet.
 - Generate 2 variants (`sheet_v1`, `sheet_v2`), pick one; single props can later be cut out
   for modelling reference.
 
@@ -39,7 +36,7 @@ Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown ou
 
 Game asset sheet: the props below are laid out in a neat grid with generous empty space between them, each prop isolated and complete, nothing overlapping, nothing cropped, on a plain light grey background (#E6E6E6) with only a soft small contact shadow under each prop. Every prop is shown from the same elevated three-quarter top-down view as in a cozy zoo park simulation game (camera looking down at about 55 degrees, isometric-like, narrow field of view so vertical lines stay nearly parallel), all at the same scale.
 
-Nine props in a 3 by 3 grid: 1) a straight wooden post-and-rail fence segment, warm brown wood, three rounded horizontal rails between two chunky posts with rounded tops, about as high as a child's shoulder; 2) a single wooden corner post of the same fence; 3) a single wooden end post; 4) a closed wooden enclosure gate with a diagonal brace and a simple metal latch, same wood as the fence; 5) the same gate standing open; 6) a straight segment of a tall, neatly trimmed dark-green hedge, clearly taller than an adult, with rounded top edges; 7) a corner piece of the same hedge; 8) a straight segment of a friendly outer zoo wall made of light grey rounded stones with a warm wooden cap on top; 9) a corner piece of the same wall. No bars, no wire, no cages.
+Six props in two rows of three: 1) a friendly wooden road barrier on two legs with a red-and-white striped board; 2) a small wooden sign on a post with a simple white shovel pictogram on a blue panel and nothing else; 3) a small green zookeeper utility cart with a flat bed carrying a shovel, a rake and a wheelbarrow-like bucket; 4) an orange traffic cone with a white band; 5) a big fallen tree lying on its side, trunk with roots on one end and a leafy crown on the other, long enough to block a path; 6) a large closed double gate made of wooden planks with iron fittings, between two chunky stone pillars, clearly closed. Friendly and tidy, nothing broken or dangerous-looking.
 ```
 
 ### Negative prompt
@@ -60,7 +57,5 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
-| 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | alternative (corner rails float) |
-| 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | superseded by v3 (edit), removed — in git history |
-| 2026-09-26 | sheet_v3.jpg | gemini-3-pro-image (2K, 16:9) | — | edit: Edit this asset sheet. Keep everything exactly the same (all props, positions, c…, ref: sheet_v2.jpg | to review — chosen (edit of v2: single end post) |
-| 2026-09-26 | sheet_v4.jpg | gemini-3-pro-image (2K, 16:9) | — | edit: Edit this asset sheet. Keep everything exactly the same (all props, positions, c…, ref: sheet_v2.jpg | discarded (post too thin, deleted) |
+| 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | to review — chosen |
+| 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | alternative (root ball on the fallen tree, plainer gate) |

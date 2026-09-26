@@ -1,11 +1,11 @@
-# Brief — `kit_fences` (Kit 2 — fences, gates, hedges, walls)
+# Brief — `kit_nature` (Kit 4 — nature)
 
-Spec: ART-ENVIRONMENT (modular props), GAME-LAYOUT (barrier/boundary/enclosure), GAME-LEVEL-1. Style: `art/style/style.md` (comic) — style
+Spec: ART-ENVIRONMENT (modular props), GAME-LEVEL-1, CONT-MISSIONS (riddle clues: bamboo, eucalyptus, reed). Style: `art/style/style.md` (comic) — style
 reference image: `art/environment/style_frame/style_frame.png` (approved). Status: **brief**.
 
 ## Purpose
 
-Everything that encloses an enclosure or seals the level. Fences keep animals in but must look friendly (never cages — glossary). Hedges and the outer wall form the permanent zoo boundary.
+Vegetation that fills the zoo. Some plants are riddle clues (bamboo, eucalyptus, reed), so they must be recognisable at phone size from the high camera.
 
 Props are modelled once and reused (ART-ENVIRONMENT, modular props). Budgets: props
 ≤ 500 triangles each, flat-colour textures only (ART-PIPELINE §10).
@@ -14,19 +14,19 @@ Props are modelled once and reused (ART-ENVIRONMENT, modular props). Budgets: pr
 
 | Asset id | Size (game units, 1 = 1 m) | Notes |
 |---|---|---|
-| `fence_wood` | 2 m long, 1.1 m high | post-and-rail, 3 rails |
-| `fence_wood_corner` | post | corner post |
-| `fence_wood_end` | post | end post |
-| `gate_wood_closed` | 2 m wide | enclosure gate, closed |
-| `gate_wood_open` | 2 m wide | same gate, open |
-| `hedge` | 2 m long, 3 m high | tall trimmed hedge |
-| `hedge_corner` | 2 m × 2 m, 3 m high | hedge corner |
-| `zoo_wall` | 2 m long, 2.5 m high | outer zoo wall, light stone with wooden cap |
-| `zoo_wall_corner` |  | wall corner |
+| `tree_round` | ≈ 5 m high | round-topped deciduous tree |
+| `tree_grove` | ≈ 6 m high | dense tall tree for the hidden grove |
+| `tree_eucalyptus` | ≈ 7 m high | tall slim eucalyptus, blue-green leaves |
+| `bush` | ≈ 1.2 m | round bush |
+| `flower_bed` | 2 m × 1 m | low bed with colourful flowers |
+| `rock` | ≈ 1 m | rounded grey boulder |
+| `bamboo` | ≈ 3 m | clump of bamboo stalks |
+| `reed` | ≈ 1 m | clump of reeds (pond edge) |
+| `grass_tuft` | ≈ 0.3 m | small tuft of tall grass |
 
 ## Image settings
 
-- One asset sheet, **16:9, 2K**, generated with the style frame as reference image.
+- One asset sheet, **16:9, 2K**, generated with an existing prop sheet (kit_fences sheet_v2) as style reference — the style frame as reference blends its scene into the sheet.
 - Generate 2 variants (`sheet_v1`, `sheet_v2`), pick one; single props can later be cut out
   for modelling reference.
 
@@ -39,7 +39,7 @@ Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown ou
 
 Game asset sheet: the props below are laid out in a neat grid with generous empty space between them, each prop isolated and complete, nothing overlapping, nothing cropped, on a plain light grey background (#E6E6E6) with only a soft small contact shadow under each prop. Every prop is shown from the same elevated three-quarter top-down view as in a cozy zoo park simulation game (camera looking down at about 55 degrees, isometric-like, narrow field of view so vertical lines stay nearly parallel), all at the same scale.
 
-Nine props in a 3 by 3 grid: 1) a straight wooden post-and-rail fence segment, warm brown wood, three rounded horizontal rails between two chunky posts with rounded tops, about as high as a child's shoulder; 2) a single wooden corner post of the same fence; 3) a single wooden end post; 4) a closed wooden enclosure gate with a diagonal brace and a simple metal latch, same wood as the fence; 5) the same gate standing open; 6) a straight segment of a tall, neatly trimmed dark-green hedge, clearly taller than an adult, with rounded top edges; 7) a corner piece of the same hedge; 8) a straight segment of a friendly outer zoo wall made of light grey rounded stones with a warm wooden cap on top; 9) a corner piece of the same wall. No bars, no wire, no cages.
+Nine props in a 3 by 3 grid: 1) a round-topped leafy deciduous tree with a chunky brown trunk; 2) a taller, very dense dark-green tree with a full rounded crown (for a hidden grove); 3) a tall slim eucalyptus tree with a pale smooth trunk and blue-green leaves hanging in clusters; 4) a round green bush; 5) a low rectangular flower bed with a wooden border and bright red, yellow and purple flowers; 6) a rounded grey boulder; 7) a clump of green bamboo stalks with visible joints and narrow leaves; 8) a clump of tall reeds with brown cattail heads; 9) a small tuft of tall grass.
 ```
 
 ### Negative prompt
@@ -60,7 +60,5 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
-| 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | alternative (corner rails float) |
-| 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | superseded by v3 (edit), removed — in git history |
-| 2026-09-26 | sheet_v3.jpg | gemini-3-pro-image (2K, 16:9) | — | edit: Edit this asset sheet. Keep everything exactly the same (all props, positions, c…, ref: sheet_v2.jpg | to review — chosen (edit of v2: single end post) |
-| 2026-09-26 | sheet_v4.jpg | gemini-3-pro-image (2K, 16:9) | — | edit: Edit this asset sheet. Keep everything exactly the same (all props, positions, c…, ref: sheet_v2.jpg | discarded (post too thin, deleted) |
+| 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | to review — chosen |
+| 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | alternative (nearly identical) |

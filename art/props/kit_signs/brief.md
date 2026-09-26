@@ -59,4 +59,6 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 | 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | discarded (style-frame scene blended into the sheet) |
 | 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | discarded (style-frame scene blended into the sheet) |
 | 2026-09-26 | sheet_v3.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | alternative (extra crate, stack of four, roof on enclosure sign) |
-| 2026-09-26 | sheet_v4.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | to review — chosen (ref: kit_fences sheet_v2 instead of the style frame) |
+| 2026-09-26 | sheet_v4.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v2.jpg | superseded by v5 (edit), removed — in git history |
+| 2026-09-26 | sheet_v5.jpg | gemini-3-pro-image (2K, 16:9) | — | edit: Edit this asset sheet. Keep everything exactly the same (all props, positions, c…, ref: sheet_v4.jpg | to review — chosen (edit of v4: enclosure sign panel leans back) |
+| 2026-09-26 | sheet_v6.jpg | gemini-3-pro-image (2K, 16:9) | — | edit: Edit this asset sheet. Keep everything exactly the same (all props, positions, c…, ref: sheet_v4.jpg | discarded (edit variant, deleted) |

@@ -154,3 +154,24 @@ kind = "environment"
 spec = "ART-ENVIRONMENT"
 concept_approved = false
 animations = []
+
+[[asset]]
+id = "kit_ground"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "kit_fences"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "kit_signs"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []

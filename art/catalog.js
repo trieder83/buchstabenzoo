@@ -375,5 +375,51 @@ window.ART_CATALOG = {
         },
       ],
     },
+    {
+      id: "props",
+      title: "Props (modular kits)",
+      intro: "Modular props modelled once and reused, generated as asset sheets from the same high camera angle. Budget ≤ 500 triangles each.",
+      items: [
+        {
+          id: "kit_ground",
+          title: "Kit 1 — ground and paths",
+          status: "in-review",
+          description: "Floor tiles: path straight/curve/T/cross/end, plaza, grass, path edge, sand.",
+          spec: "ART-ENVIRONMENT",
+          brief: "props/kit_ground/brief.md",
+          notes: "Chosen v2 (correct T-junction). v1 is an alternative. Generated with gemini-3-pro-image (2K, 16:9).",
+          images: [
+            { file: "props/kit_ground/sheet_v2.jpg", label: "sheet_v2 (chosen)", required: true },
+            { file: "props/kit_ground/sheet_v1.jpg", label: "sheet_v1 (alternative)" },
+          ],
+        },
+        {
+          id: "kit_fences",
+          title: "Kit 2 — fences, gates, hedges, walls",
+          status: "in-review",
+          description: "Wooden post-and-rail fence, gate (closed/open), tall hedge, outer zoo wall — with corners.",
+          spec: "ART-ENVIRONMENT",
+          brief: "props/kit_fences/brief.md",
+          notes: "Chosen v2. Note: the end post is drawn as a short fence segment. Generated with gemini-3-pro-image (2K, 16:9).",
+          images: [
+            { file: "props/kit_fences/sheet_v2.jpg", label: "sheet_v2 (chosen)", required: true },
+            { file: "props/kit_fences/sheet_v1.jpg", label: "sheet_v1 (alternative)" },
+          ],
+        },
+        {
+          id: "kit_signs",
+          title: "Kit 3 — signs, boards, food boxes",
+          status: "in-review",
+          description: "Enclosure sign (blank, silhouette slot), info board, map board, food box, stack of food boxes — all blank.",
+          spec: "ART-ENVIRONMENT",
+          brief: "props/kit_signs/brief.md",
+          notes: "Chosen v4. First two attempts blended the style-frame scene into the sheet; v3/v4 use the fences sheet as style reference. The enclosure sign panel is not tilted back yet. Generated with gemini-3-pro-image (2K, 16:9).",
+          images: [
+            { file: "props/kit_signs/sheet_v4.jpg", label: "sheet_v4 (chosen)", required: true },
+            { file: "props/kit_signs/sheet_v3.jpg", label: "sheet_v3 (alternative)" },
+          ],
+        },
+      ],
+    },
   ],
 };

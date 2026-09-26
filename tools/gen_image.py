@@ -10,7 +10,8 @@ Usage:
       --out style_frame_v1.png style_frame_v2.png style_frame_v3.png --aspect 16:9
 
   --prompt N       N-th full prompt block in the brief (1-based; negative prompts and
-                   short fragments are skipped)
+                   short fragments are skipped); 0 = edit mode: send only --extra with the
+                   --ref image(s), e.g. to fix a detail in an existing image
   --out FILE...    one image is generated per file name (saved in the brief's folder)
   --ref IMAGE...   optional reference images (e.g. the approved style frame, the front view)
   --extra TEXT     appended to the prompt (e.g. "Same character as in the second image.")
@@ -71,13 +72,18 @@ def main():
     if not key:
         sys.exit("GEMINI_API_KEY is not set")
     prompts, negatives = read_blocks(a.brief)
-    if not 1 <= a.prompt <= len(prompts):
-        sys.exit(f"brief has {len(prompts)} full prompts, --prompt {a.prompt} is out of range")
-    prompt = prompts[a.prompt - 1]
-    if a.extra:
-        prompt += "\n\n" + a.extra
-    if negatives:  # Gemini has no negative-prompt field
-        prompt += "\n\nAvoid all of the following: " + negatives[0]
+    if a.prompt == 0:  # edit mode: only --extra, applied to the --ref image(s)
+        if not (a.extra and a.ref):
+            sys.exit("--prompt 0 (edit mode) needs --extra and --ref")
+        prompt = a.extra
+    else:
+        if not 1 <= a.prompt <= len(prompts):
+            sys.exit(f"brief has {len(prompts)} full prompts, --prompt {a.prompt} is out of range")
+        prompt = prompts[a.prompt - 1]
+        if a.extra:
+            prompt += "\n\n" + a.extra
+        if negatives:  # Gemini has no negative-prompt field
+            prompt += "\n\nAvoid all of the following: " + negatives[0]
 
     folder = os.path.dirname(a.brief)
     with concurrent.futures.ThreadPoolExecutor(len(a.out)) as pool:
@@ -100,8 +106,11 @@ def main():
     if done:
         today = datetime.date.today().isoformat()
         refs = ", ref: " + ", ".join(os.path.basename(r) for r in a.ref) if a.ref else ""
-        extra = " + extra text" if a.extra else ""
-        rows = "".join(f"| {today} | {n} | {a.model} ({a.size}, {a.aspect}) | — | prompt {a.prompt} + negative as 'Avoid'{refs}{extra} | generated, to review |\n"
+        if a.prompt == 0:
+            what = "edit: " + a.extra[:80].replace("|", "/") + "…"
+        else:
+            what = f"prompt {a.prompt} + negative as 'Avoid'" + (" + extra text" if a.extra else "")
+        rows = "".join(f"| {today} | {n} | {a.model} ({a.size}, {a.aspect}) | — | {what}{refs} | generated, to review |\n"
                        for n in sorted(done))
         with open(a.brief, "a", encoding="utf-8") as f:
             f.write(rows)

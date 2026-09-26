@@ -125,6 +125,11 @@ npm --prefix web run lint && npm --prefix web test
   `assets/manifest.toml`. Details: `specs/30-art/asset-pipeline.md`.
 - Create and edit models in Blender through the Blender MCP tools; save the source
   `.blend` in `assets/blender/` and export the `.glb` to `assets/models/` — commit both.
+- **Generating concept art:** `tools/gen_image.py <brief.md> --prompt N --out a.png b.png
+  --ref art/environment/style_frame/style_frame.png` (Gemini, `GEMINI_API_KEY`); `--prompt 0
+  --extra "..." --ref img` edits an image. Characters/animals/props: generate one **sheet**
+  with all views (consistent angles), then `tools/split_sheet.py`. Every generated image is
+  logged in its brief; record choices there and in `art/catalog.js`.
 - **One style for all prompts:** every image prompt copies the blocks from
   `art/style/style.md` verbatim (APIPE-010). Comic look: bold outlines, flat colours, one
   hard shadow tone, rounded chunky shapes. Outlines + cel shading come from the renderer,

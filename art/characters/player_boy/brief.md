@@ -141,3 +141,7 @@ Front view of two children, full body from head to toe, standing side by side at
       are clean shapes that work as a 64 × 64 px face decal.
 | 2026-09-26 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | alternative (no hair tuft) |
 | 2026-09-26 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 6 + negative as 'Avoid', ref: style_frame.png, front.png + extra text | to review — chosen, split into the four views; side view mirrored (was facing right) |
+| 2026-09-26 | side_fix_v1.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: side_before_fix.png | chosen → side.png (shoes now point left) |
+| 2026-09-26 | side_fix_v2.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: side_before_fix.png | discarded (alternative) |
+| 2026-09-26 | back_fix_v1.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: back_before_fix.png | chosen → back.png (heels visible) |
+| 2026-09-26 | back_fix_v2.jpg | gemini-3-pro-image (1K, 9:16) | — | edit: Edit this character sheet image. Keep everything exactly the same (character, po…, ref: back_before_fix.png | discarded (soles towards camera) |

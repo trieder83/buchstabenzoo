@@ -13,6 +13,7 @@ art/
   index.html                 # review page — renders catalog.js
   catalog.js                 # list of all items, their status and images (edit this)
   reference/                 # external reference images (not our assets)
+  props/<kit_id>/            # brief.md, sheet_v*.jpg (modular prop kits)
   characters/<asset_id>/     # brief.md, front.png, side.png, back.png, three_quarter.png, expressions.png
   animals/<asset_id>/        # brief.md, front.png, side.png, back.png, three_quarter.png
   environment/<asset_id>/    # brief.md, overview.png, player_view.png, layout.md

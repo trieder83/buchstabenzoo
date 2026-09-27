@@ -30,7 +30,7 @@ updated: 2026-09-27
    - **Roofs disappear inside buildings** (user decision 2026-09-26): every building the
      player can enter (food storage, zookeeper house, enclosure shelters such as the hippo
      hut, the cave) has a walkable interior and a separate **roof part** (and, where it
-     blocks the view, the upper part of the camera-facing wall). While the player is inside
+     blocks the view, the upper part of the camera-facing wall). In the zoo view and look-around (not in first person — GAME-CAMERA-VIEWS), while the player is inside
      (or in the doorway), the roof fades out within 0.3 s so the child sees what happens
      inside; it fades back in 0.3 s after she leaves. Animals inside a building are visible
      the same way when the player is inside with them.

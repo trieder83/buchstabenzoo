@@ -120,6 +120,16 @@ a hiding place is never visible from its own info board), stay comfortable for c
 - From no info board and no gate can a hiding place be seen in either close view.
 - Draw calls in both close views are below the zoo view's at maximum zoom-out at the same spot.
 
+
+## Roofs and ceilings in first person (user decision 2026-09-27)
+
+In **first person** the roof of a building the player is in stays **visible** and shows a
+**ceiling from inside** (the "roof disappears inside" rule of GAME-PLAYER §2 / PLAY-028
+applies only to the zoo view and look-around, where the camera is above or behind the
+player). Roof models therefore have a proper inner ceiling surface (not just back faces);
+the ceiling is lit by indoor lamps at night. Passing through a door in first person does
+not fade anything.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -145,6 +155,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
 | CAMV-019 | Given a touch device, then the 👓 first-person button is in the bottom-right thumb zone (above the interact button, fully inside the safe area); tapping it toggles first person on and off exactly like `V`, while the left thumb keeps walking. | e2e |
 | CAMV-020 | Given first person, then the eye button is hidden and holding `F` or the right mouse button (`look_hold(true)`) leaves the view in first person; given the zoo view, then the 👓 button is shown on desktop and on touch and not highlighted. | unit |
 | CAMV-021 | Given night (GAME-NIGHT), then the close-view sky is a dark-blue gradient (`#1E2A5A` top → `#3B4C8C` horizon), the haze equals the horizon colour and the fog end stays 16 m (shining eyes beyond it are hidden); by day the day sky colours are unchanged (rule 7, Q-126). | unit |
+| CAMV-022 | Given the player inside the zookeeper house (and the night house) in first person, then the roof is drawn and its ceiling is visible above (sky pixels absent in the upper screen area inside); switching to the zoo view hides the roof again (PLAY-028). | e2e |
 
 ## Open questions
 

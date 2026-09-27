@@ -374,6 +374,20 @@ assembly. Proposed fixes *(Q-087)*:
 | `trees_nw`, `trees_ne` | up to the whole cell | now `sparse` — only trunks and bushes are solid |
 | info boards (front), `map_board` (back strip) | 0.26 m / 0.36 m | acceptable (≤ 0.4 m, the board fills its cell's width); no change |
 
+
+## Gates and doors (user request 2026-09-27)
+
+Every opening in a fence, wall, hedge or building that the player or an animal passes
+through has a **real gate or door model** — never an empty gap or a placeholder:
+enclosure gates (`gate_wood`, 2 m), the garden gate (`garden_gate`, two leaves), the night
+house enclosure doors (`glass_door`), building doors (`door_wood`: zookeeper house, food
+storage, food hut, night house), the entrance turnstiles (`turnstile`) under the entrance
+arch, barrier gates (`gate_zoo_closed`) and the moon door (`moon_door`). Gates and doors
+**open visibly**: enclosure gates swing open when the player leads animals through (and
+close behind them), the garden gate opens when the player is within 2 m, building doors open
+while the player passes, the moon door opens at nightfall. Closed gates are solid; open gates
+are walkable only as the rules allow (enclosure gates only while leading animals — GAME-RESCUE).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -408,6 +422,7 @@ assembly. Proposed fixes *(Q-087)*:
 | LAYOUT-028 | Given a moon door (`kind = "moon_door"`), then it is closed by day and before its `unlock_after` level's nightfall, open at night afterwards (every night), closed again the next morning, never removed; and it is not opened by the Q-091 exit-barrier rule (Q-133). | unit |
 | LAYOUT-029 | Given a building with indoor enclosures (`indoor = true`), then each indoor enclosure's gate is edge-adjacent to an `interior` cell of the building, the building's `model_rect` contains the building rect and the indoor enclosures, and none of the enclosure's boards lies inside the building rect (Q-134). | unit |
 | LAYOUT-030 | Given every day level's `[[event_spot]]` list, then it has one `burglar_entry`, one `burglar_target` naming an existing building and one `burglar_hideout` of walkable grass reachable from the target, overlapping no hiding-place rect, scenery, garden or path (Q-139). | unit |
+| LAYOUT-031 | Given every gate/door opening in the joined zoo (enclosure gates, garden gate, building doors, night-house doors, entrance, barrier gates, moon door), then a gate/door model is placed that exactly fills the opening (no gap > 5 cm, no overlap with posts), and it opens/closes per the rules. | unit |
 
 ## Open questions
 

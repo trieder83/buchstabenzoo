@@ -187,6 +187,7 @@ impl Game {
         };
         let to = crate::save::nearest_walkable(self, to, false);
         self.player.pos = to;
+        self.player.y = self.level.ground_height(to);
         self.player.facing = if into { away } else { -away };
         // the following group comes along
         let behind = to - self.player.facing * self.follow_params.keep_distance_m;
@@ -259,6 +260,7 @@ impl Game {
                     self.player.pos = cell_center(self.level.data.parts[0].spawn.cell());
                 }
             }
+            self.player.y = self.level.ground_height(self.player.pos);
         }
         self.events.push(GameEvent::Morning);
     }

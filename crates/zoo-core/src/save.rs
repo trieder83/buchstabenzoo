@@ -300,6 +300,7 @@ impl Game {
             facing.normalize_or(Vec2::Y)
         };
         g.player.pos = nearest_walkable(&g, pos, leading);
+        g.player.y = g.level.ground_height(g.player.pos);
         g.player.facing = facing;
         if s.player.surface_speed.is_finite() && s.player.surface_speed > 0.0 {
             g.player.set_surface_speed(s.player.surface_speed);

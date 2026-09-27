@@ -10,6 +10,12 @@ tools/blender/
   lib/zoo_blender.py    shared helpers (scene, palette, mesh parts, export, preview)
   props/kit_ground.py   Kit 1 — ground tiles
   props/kit_fences.py   Kit 2 — fences, gate, hedges, walls
+  props/night_lib.py    multi-node assets: *_glow / glass / *_face slots, child nodes with
+                        pivots, light / socket empties, day + night preview (README_night.md)
+  props/kit_night.py, kit_bedroom.py, kit_gates.py, kit_landmarks.py, kit_garden.py
+                        night lamps + moon door, bedroom, doors/gates, night-1 landmarks, garden
+  props/kit_buildings.py  zookeeper house, night house, food storage, food hut, entrance arch
+                        -> assets/models/buildings/ (separable roof + ceiling, walls_upper)
   check_glb.py          export-rule checker for every .glb (plain python3)
   animals/quadruped_rig.py  shared quadruped skeleton, pattern-map atlas, gait/IK, clips
   animals/zebra.py      zebra (skinned, 6 clips) -> assets/models/animals/zebra.glb

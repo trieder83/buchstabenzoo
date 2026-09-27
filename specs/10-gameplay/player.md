@@ -156,6 +156,19 @@ updated: 2026-09-27
    smooth (steps ≤ 0.25 m are walked up/down; higher edges are walls).
 9. Surfaces that are **not walkable** (boxes, crates, beds, tables) are solid obstacles and
    never stood on.
+10. **Implementation (2026-09-27):** `zoo_core::ground::GroundMap` (via
+    `Level::ground_height`): tile tops grass/sand 0.05 m, path tiles 0.075 m (bed 0.065,
+    stones ≤ 0.09), plaza 0.065 m, open water 0 m (swimmers sink from there); bridge deck
+    `0.07 + 0.43·(1 − (dx/1.7)²)` along its axis, jetty deck 0.2 m (1.6 m wide, water end
+    overhangs 0.8 m); flat dressing registered by the scene as ground patches (bark mulch,
+    flat rocks, mud 0.075/0.085 m, tree shade 0.07 m, petals, trampoline, sprinkler lawn,
+    sawdust, rugs on the floor tiles). Leaf-pile heaps (0.12–0.22 m) and the brush pile
+    (0.2 m heap, branches on it) are low walkable heaps so the animals hiding there keep their
+    wander areas. Solid placeholder boxes on walkable cells: furniture (`[[prop]]` except rug
+    and window), beds, the default shelf, the sprinkler post. Height changes ≤ 3 cm per
+    update are taken at once (slopes), larger ones are eased (rate 18/s), jumps > 0.5 m
+    (teleports) snap. Following / wandering animals use the same height (0 while perched,
+    the perch height is absolute); a put-down bowl stands on the ground height.
 
 ## Test cases
 

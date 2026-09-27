@@ -540,72 +540,72 @@ animations = []
 [[asset]]
 id = "hedgehog"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "bat"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "fly", "eat", "happy", "hang"]
+animations = ["idle", "perch", "hang", "fly", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "owl"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy", "look"]
+animations = ["idle", "perch", "fly", "eat", "happy", "refuse", "sleep", "look"]
 
 [[asset]]
 id = "raccoon"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "badger"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "fennec"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "kiwi"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "porcupine"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "slow_loris"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "walk", "eat", "happy"]
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "tarsier"
 kind = "animals"
-spec = "GAME-NIGHT"
+spec = "ART-ANIMALS"
 concept_approved = true
-animations = ["idle", "hop", "eat", "happy"]
+animations = ["idle", "hop", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "style_frame_night"

@@ -66,6 +66,9 @@ const MAX_SUBSTEP_M: f32 = 0.25;
 pub struct Player {
     /// World position `(x, z)` in metres.
     pub pos: Vec2,
+    /// Height of the feet (m): follows the ground under her smoothly (GAME-PLAYER 8,
+    /// [`crate::ground::follow`]); set by [`crate::Game::update`].
+    pub y: f32,
     /// Unit facing direction `(x, z)`.
     pub facing: Vec2,
     /// Current ground speed limit in m/s (blends between surfaces, PLAY-007).
@@ -81,6 +84,7 @@ impl Player {
     pub fn new(pos: Vec2, facing: Vec2, params: &MoveParams) -> Self {
         Self {
             pos,
+            y: 0.0,
             facing,
             surface_speed: params.walk_speed,
             last_speed: 0.0,

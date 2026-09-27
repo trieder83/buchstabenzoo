@@ -149,6 +149,9 @@ struct AnimalView {
     sink: f32,
     /// Height above the ground (m): up in a perch, eased down when it follows (Q-094).
     lift: f32,
+    /// Ground height under it (m, GAME-PLAYER 8), eased (0 while perched: the perch height
+    /// is absolute).
+    ground: f32,
     /// Leap arc (goldfish into / out of the bowl): start, time, whether into the bowl.
     leap: Option<(Vec3, f32, bool)>,
     /// Drawn at all (its level is unlocked).
@@ -178,6 +181,7 @@ impl AnimalView {
             locomotion: "walk",
             sink: 0.0,
             lift: 0.0,
+            ground: 0.0,
             leap: None,
             visible: true,
             under_water: false,
@@ -676,7 +680,7 @@ impl App {
         };
         game.settings = self.game.settings;
         self.game = game;
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.camera.snap(player_feet(&self.game));
         self.player_yaw = facing_to_yaw(self.game.player.facing);
         self.autopilot = None;
         self.outbox.clear();
@@ -806,7 +810,7 @@ impl App {
             return false;
         };
         self.set_view(mode.saved());
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.camera.snap(player_feet(&self.game));
         true
     }
 
@@ -918,7 +922,7 @@ impl App {
         if let Some(c) = state.camera {
             self.camera.set_state(c.yaw_steps, c.distance_m);
         }
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.camera.snap(player_feet(&self.game));
         self.player_yaw = facing_to_yaw(self.game.player.facing);
         self.reset_views();
         for (i, v) in self.animals.iter_mut().enumerate() {
@@ -1085,7 +1089,7 @@ impl App {
         self.time += dt as f64;
         self.simulate(dt);
 
-        let player = level_to_world(self.game.player.pos);
+        let player = player_feet(&self.game);
         self.camera.update(dt, player);
         if let Some(p) = self.look_at {
             self.camera.snap(level_to_world(p));
@@ -1180,7 +1184,7 @@ impl App {
                 .is_some_and(|ga| self.game.eyes_shine(ga));
             let pos = a
                 .anchor
-                .unwrap_or_else(|| level_to_world(a.pos) - Vec3::Y * a.sink + Vec3::Y * a.lift);
+                .unwrap_or_else(|| level_to_world(a.pos) + Vec3::Y * (a.ground - a.sink + a.lift));
             let pos = match a.leap {
                 Some((from, t, _)) => {
                     let k = (t / LEAP_S).clamp(0.0, 1.0);
@@ -1479,7 +1483,7 @@ impl App {
         let (w, h) = self.renderer.size();
         let ratio = self.renderer.pixel_ratio();
         let vp = self.camera.view_proj(self.renderer.aspect());
-        let p = level_to_world(self.game.player.pos);
+        let p = player_feet(&self.game);
         let mut r = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
         for dy in [0.0, 1.3] {
             for (dx, dz) in [(-0.3, 0.0), (0.3, 0.0), (0.0, -0.3), (0.0, 0.3)] {
@@ -1608,7 +1612,8 @@ impl App {
     /// camera there.
     pub fn debug_teleport(&mut self, x: f32, z: f32) {
         self.game.player.pos = Vec2::new(x, z);
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.game.player.y = self.game.level.ground_height(self.game.player.pos);
+        self.camera.snap(player_feet(&self.game));
     }
 
     /// Debug/e2e scripted player: walks to a level position along a grid path with the
@@ -1632,8 +1637,26 @@ impl App {
                 break;
             }
         }
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.camera.snap(player_feet(&self.game));
         self.autopilot.is_none()
+    }
+
+    /// Debug/e2e (PLAY-036): height of the player's feet as drawn (m, world Y).
+    pub fn player_foot_y(&self) -> f32 {
+        self.game.player.y
+    }
+
+    /// Debug/e2e (PLAY-035/036): `ground_height` at a level position (m).
+    pub fn ground_height(&self, x: f32, z: f32) -> f32 {
+        self.game.level.ground_height(Vec2::new(x, z))
+    }
+
+    /// Debug/e2e: height of an animal's origin as drawn (m, world Y).
+    pub fn animal_foot_y(&self, id: &str) -> f32 {
+        self.animals
+            .iter()
+            .find(|v| v.id == id)
+            .map_or(f32::NAN, |v| v.ground - v.sink + v.lift)
     }
 
     /// Whether the scripted walk of [`App::debug_goto`] has ended.
@@ -1863,7 +1886,7 @@ impl App {
     pub fn debug_set_daytime(&mut self, id: &str) -> bool {
         let ok = self.game.debug_set_daytime(id);
         self.handle_events();
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.camera.snap(player_feet(&self.game));
         ok
     }
 
@@ -1873,7 +1896,7 @@ impl App {
         let _ = self.game.debug_set_daytime("night");
         let _ = self.game.debug_set_daytime("day");
         self.handle_events();
-        self.camera.snap(level_to_world(self.game.player.pos));
+        self.camera.snap(player_feet(&self.game));
     }
 
     /// Whether an animal's eyes shine now (lantern light, NIGHT-006).
@@ -2154,11 +2177,11 @@ impl App {
     /// the bowl or out of it into its pond).
     fn leap(&mut self, animal: &str, into_bowl: bool) {
         let fwd = Quat::from_rotation_y(self.player_yaw) * Vec3::Z;
-        let player = level_to_world(self.game.player.pos);
+        let player = player_feet(&self.game);
         let bowl = self.bowl_base(fwd, player);
         for v in self.animals.iter_mut().filter(|v| v.id == animal) {
             let from = if into_bowl {
-                level_to_world(v.pos) - Vec3::Y * v.sink
+                level_to_world(v.pos) + Vec3::Y * (v.ground - v.sink)
             } else {
                 // out of the bowl on the step: from the bowl's water surface
                 bowl.map_or(level_to_world(v.pos), |b| {
@@ -2278,7 +2301,7 @@ impl App {
                 GameEvent::NightFell => self.outbox.push("{\"type\":\"night\"}".to_owned()),
                 GameEvent::SleepStarted => self.outbox.push("{\"type\":\"sleep\"}".to_owned()),
                 GameEvent::Morning => {
-                    self.camera.snap(level_to_world(self.game.player.pos));
+                    self.camera.snap(player_feet(&self.game));
                     let key = format!("night-morning-{}", self.game.settings.reading_level.id());
                     let text = self.text_now(&key);
                     self.outbox.push(format!(
@@ -2289,7 +2312,7 @@ impl App {
                 }
                 GameEvent::DayStarted => self.outbox.push("{\"type\":\"day\"}".to_owned()),
                 GameEvent::MoonDoor { into_night_zoo } => {
-                    self.camera.snap(level_to_world(self.game.player.pos));
+                    self.camera.snap(player_feet(&self.game));
                     self.player_yaw = facing_to_yaw(self.game.player.facing);
                     let key = format!("night-welcome-{}", self.game.settings.reading_level.id());
                     let text = if into_night_zoo {
@@ -2331,6 +2354,11 @@ impl App {
             let depth = self.game.water_depth(a);
             v.sink = swim_sink_m(v.id) * depth;
             v.lift = self.game.perch(a).map_or(0.0, |(_, h)| h);
+            v.ground = if self.game.perch(a).is_some() {
+                0.0
+            } else {
+                self.game.level.ground_height(a.pos)
+            };
             v.rest = static_clip(self.game.rest_clip(a));
             v.locomotion = if depth > 0.5 { "swim" } else { "walk" };
             v.visible = self.game.in_scope(a);
@@ -2370,7 +2398,7 @@ impl App {
     fn update_animals(&mut self, dt: f32) {
         let walk_speed = self.game.move_params.walk_speed;
         let fwd = Quat::from_rotation_y(self.player_yaw) * Vec3::Z;
-        let player = level_to_world(self.game.player.pos);
+        let player = player_feet(&self.game);
         let bowl = self.bowl_base(fwd, player);
         for (i, v) in self.animals.iter_mut().enumerate() {
             let Some(a) = self.game.animals.get(i) else {
@@ -2438,6 +2466,13 @@ impl App {
             let depth = self.game.water_depth(a);
             let want_sink = swim_sink_m(v.id) * depth;
             v.sink += (want_sink - v.sink) * (1.0 - (-3.0 * dt).exp());
+            // feet on the surface under it (GAME-PLAYER 8); a perch height is absolute
+            let want_ground = if perch.is_some() {
+                0.0
+            } else {
+                self.game.level.ground_height(v.pos)
+            };
+            v.ground = zoo_core::ground::follow(v.ground, want_ground, dt);
             let in_water = depth > 0.5 && a.state != AnimalState::Following;
             v.under_water =
                 in_water && v.id == "goldfish" && v.leap.is_none() && v.anchor.is_none();
@@ -2500,6 +2535,11 @@ impl App {
             }
         }
     }
+}
+
+/// The player's feet in world space: level position at the ground height (GAME-PLAYER 8).
+fn player_feet(game: &Game) -> Vec3 {
+    level_to_world(game.player.pos) + Vec3::Y * game.player.y
 }
 
 /// Placeholder animal (~1.3 m long) from flat boxes in the animal's colours; `happy` hops,

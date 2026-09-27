@@ -97,3 +97,76 @@ tyre             = { index = 198, hex = "#3A3638" }
 cone_orange      = { index = 199, hex = "#F28A2E" }
 iron             = { index = 200, hex = "#4E4A50" } # gate straps, rings, padlock
 brass            = { index = 201, hex = "#E8B436" } # padlock
+# ---- night lights, moon door (kit_night sheet_lights_v2 / sheet_moon_door_v2). Glowing parts
+# sit on these cells too (their day colour); the *_glow material slot adds the night emission.
+lantern_metal    = { index = 64,  hex = "#5A3B2E" } # lantern frames, roofs, hooks
+lamp_glass       = { index = 65,  hex = "#FFF1C9" } # lamp glass / shades / cream bulbs by day
+bulb_yellow      = { index = 66,  hex = "#F7D774" } # string-light bulb by day
+bulb_orange      = { index = 67,  hex = "#F4A56A" } # string-light bulb by day
+cord             = { index = 68,  hex = "#3A2E2C" } # light cord
+lantern_red      = { index = 69,  hex = "#D9503F" } # hand lantern body
+lantern_cream    = { index = 70,  hex = "#F4E6C8" } # hand lantern caps and ring
+door_blue        = { index = 71,  hex = "#3F6BB8" } # moon door planks
+door_blue_dark   = { index = 72,  hex = "#2F4F8F" } # moon door plank grooves
+star_paint       = { index = 73,  hex = "#F6E3A0" } # painted stars
+moon_sign_bg     = { index = 74,  hex = "#26386E" } # moon sign background
+moon_cream       = { index = 75,  hex = "#FFF4C9" } # moon (sign crescent, window moon)
+# ---- bedroom and zookeeper-house furniture (kit_bedroom sheet_bedroom_v2)
+blanket_blue     = { index = 76,  hex = "#5B86CC" }
+blanket_light    = { index = 77,  hex = "#8FB0E6" } # turned-down blanket edge
+pillow           = { index = 78,  hex = "#F7F4EE" }
+sheet_white      = { index = 79,  hex = "#E4E2EE" } # mattress sheet
+rug_blue         = { index = 80,  hex = "#8FAEE0" }
+rug_cream        = { index = 81,  hex = "#F2E6CC" }
+curtain_blue     = { index = 82,  hex = "#6E95D6" }
+window_sky       = { index = 83,  hex = "#BFE0F5" } # window panes by day (window_glow at night)
+night_sky        = { index = 84,  hex = "#22306A" } # painted night sky behind window_moon
+book_red         = { index = 85,  hex = "#C0473C" }
+cup_blue         = { index = 86,  hex = "#4E7FC4" }
+plush_grey       = { index = 87,  hex = "#A9A9B8" } # plush elephant
+keybox_red       = { index = 88,  hex = "#C8453A" } # key box
+keybox_dark      = { index = 89,  hex = "#8E2F2A" } # key box inside / hinges
+paper            = { index = 90,  hex = "#FBF8EF" } # paper edges (face: note_face slot)
+# ---- buildings (kit_buildings sheet_v2, food_storage_building sheet_v2, env_night_house)
+roof_red         = { index = 91,  hex = "#9A3B3F" } # zookeeper-house shingles
+roof_red_dark    = { index = 92,  hex = "#7A2C33" }
+barn_red         = { index = 93,  hex = "#B8573A" } # food storage planks
+barn_red_dark    = { index = 94,  hex = "#974530" }
+trim_white       = { index = 95,  hex = "#F1ECE3" } # barn trim, picket fence
+roof_brown       = { index = 96,  hex = "#6E4E42" } # food storage / food hut shingles
+roof_brown_dark  = { index = 97,  hex = "#574038" }
+floor_wood       = { index = 98,  hex = "#C79A62" } # interior floor planks
+ceiling_wood     = { index = 99,  hex = "#E2C08E" } # inner ceiling (seen in first person, CAMV-022)
+grass_roof       = { index = 100, hex = "#4E8A3E" } # night-house grass roof
+grass_roof_light = { index = 101, hex = "#67A34C" }
+house_wood       = { index = 102, hex = "#A8683E" } # night-house planks
+house_wood_dark  = { index = 103, hex = "#7E4B2E" }
+porthole_blue    = { index = 104, hex = "#9CC6F2" } # night-house blue portholes by day
+porthole_red     = { index = 105, hex = "#F2A08A" } # night-house red-orange portholes by day
+earth            = { index = 106, hex = "#7A5236" } # indoor enclosure earth floor
+straw            = { index = 107, hex = "#E7C66A" }
+fern             = { index = 108, hex = "#4F9A55" }
+# ---- night-1 landmarks (env_night_overview)
+fir_dark         = { index = 109, hex = "#2F5E45" }
+fir_light        = { index = 110, hex = "#3E7556" }
+moss             = { index = 111, hex = "#6FA84A" }
+mushroom_cap     = { index = 112, hex = "#9A6A45" }
+mushroom_stem    = { index = 113, hex = "#F1E4C8" }
+clay_pot         = { index = 114, hex = "#C9683F" }
+clay_pot_dark    = { index = 115, hex = "#A9532F" }
+flower_white     = { index = 116, hex = "#FBFAF4" } # night-scented white flowers
+twig             = { index = 117, hex = "#8A6446" }
+twig_dark        = { index = 118, hex = "#6A4A33" }
+telescope_blue   = { index = 119, hex = "#3E5FA8" }
+sail_cloth       = { index = 120, hex = "#F1E9DA" } # windmill sails
+windmill_red     = { index = 121, hex = "#C8513F" }
+glass_tint       = { index = 122, hex = "#CFE8F5" } # glass (the `glass` slot uses a flat factor)
+# ---- garden (kit_garden sheet_plants_v1 / sheet_furniture_v2)
+carrot_orange    = { index = 123, hex = "#F08A2E" }
+carrot_leaf      = { index = 124, hex = "#7FC04E" }
+potato_leaf      = { index = 125, hex = "#3F7F3A" }
+barrow_yellow    = { index = 126, hex = "#F2C23E" }
+can_blue         = { index = 127, hex = "#8CC3E6" }
+potato           = { index = 202, hex = "#C49A62" }
+basket           = { index = 203, hex = "#C99A55" }
+basket_dark      = { index = 204, hex = "#A87A3E" }

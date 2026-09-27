@@ -365,6 +365,7 @@ window.ART_CATALOG = {
             { file: "animals/hedgehog/three_quarter.png", label: "¾", required: true },
             { file: "animals/hedgehog/sheet_v4_clean.jpg", label: "sheet (chosen)" },
             { file: "animals/hedgehog/sheet_v1.jpg", label: "sheet alternative" },
+            { file: "animals/hedgehog/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -382,6 +383,7 @@ window.ART_CATALOG = {
             { file: "animals/bat/three_quarter.png", label: "¾", required: true },
             { file: "animals/bat/sheet_v2.jpg", label: "sheet (chosen)" },
             { file: "animals/bat/sheet_v1.jpg", label: "sheet alternative" },
+            { file: "animals/bat/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -399,6 +401,7 @@ window.ART_CATALOG = {
             { file: "animals/owl/three_quarter.png", label: "¾", required: true },
             { file: "animals/owl/sheet_v1.jpg", label: "sheet (chosen)" },
             { file: "animals/owl/sheet_v2.jpg", label: "sheet alternative" },
+            { file: "animals/owl/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -416,6 +419,7 @@ window.ART_CATALOG = {
             { file: "animals/raccoon/three_quarter.png", label: "¾", required: true },
             { file: "animals/raccoon/sheet_v4.jpg", label: "sheet (chosen)" },
             { file: "animals/raccoon/sheet_v3.jpg", label: "sheet alternative" },
+            { file: "animals/raccoon/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -432,6 +436,7 @@ window.ART_CATALOG = {
             { file: "animals/badger/back.png", label: "back", required: true },
             { file: "animals/badger/three_quarter.png", label: "¾", required: true },
             { file: "animals/badger/sheet_v2.jpg", label: "sheet (chosen)" },
+            { file: "animals/badger/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -449,6 +454,7 @@ window.ART_CATALOG = {
             { file: "animals/fennec/three_quarter.png", label: "¾", required: true },
             { file: "animals/fennec/sheet_v2.jpg", label: "sheet (chosen)" },
             { file: "animals/fennec/sheet_v1.jpg", label: "sheet alternative" },
+            { file: "animals/fennec/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -466,6 +472,7 @@ window.ART_CATALOG = {
             { file: "animals/kiwi/three_quarter.png", label: "¾", required: true },
             { file: "animals/kiwi/sheet_v2.jpg", label: "sheet (chosen)" },
             { file: "animals/kiwi/sheet_v1.jpg", label: "sheet alternative" },
+            { file: "animals/kiwi/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -483,6 +490,7 @@ window.ART_CATALOG = {
             { file: "animals/porcupine/three_quarter.png", label: "¾", required: true },
             { file: "animals/porcupine/sheet_v1.jpg", label: "sheet (chosen)" },
             { file: "animals/porcupine/sheet_v2.jpg", label: "sheet alternative" },
+            { file: "animals/porcupine/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -500,6 +508,7 @@ window.ART_CATALOG = {
             { file: "animals/slow_loris/three_quarter.png", label: "¾", required: true },
             { file: "animals/slow_loris/sheet_v2.jpg", label: "sheet (chosen)" },
             { file: "animals/slow_loris/sheet_v1.jpg", label: "sheet alternative" },
+            { file: "animals/slow_loris/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -517,6 +526,7 @@ window.ART_CATALOG = {
             { file: "animals/tarsier/three_quarter.png", label: "¾", required: true },
             { file: "animals/tarsier/sheet_v1.jpg", label: "sheet (chosen)" },
             { file: "animals/tarsier/sheet_v2.jpg", label: "sheet alternative" },
+            { file: "animals/tarsier/model_preview.png", label: "3D model preview" },
           ],
         },
         {
@@ -842,6 +852,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_buildings/sheet_v2.jpg", label: "sheet_v2 (chosen)", required: true },
             { file: "props/kit_buildings/sheet_v1.jpg", label: "sheet_v1 (alternative)" },
+            { file: "props/kit_buildings/model_preview.png", label: "3D model preview (day / night; kit_buildings.py)" },
           ],
         },
         {
@@ -855,6 +866,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/food_storage_building/sheet_v2.jpg", label: "sheet_v2 (chosen)", required: true },
             { file: "props/food_storage_building/sheet_v1.jpg", label: "sheet_v1 (alternative)" },
+            { file: "props/kit_buildings/model_preview.png", label: "3D model preview (food_storage, kit_buildings.py)" },
           ],
         },
         {
@@ -911,6 +923,8 @@ window.ART_CATALOG = {
             { file: "props/kit_garden/sheet_furniture_v2.jpg", label: "garden furniture (chosen v2)", required: true },
             { file: "props/kit_garden/sheet_plants_v2.jpg", label: "plants v2 (alternative)" },
             { file: "props/kit_garden/sheet_furniture_v1.jpg", label: "furniture v1 (alternative)" },
+            { file: "props/kit_garden/model_preview.png", label: "3D model preview (day / night)" },
+            { file: "props/kit_gates/model_preview.png", label: "3D model preview — gates, doors, turnstile (kit_gates.py)" },
           ],
         },
       ],
@@ -936,6 +950,7 @@ window.ART_CATALOG = {
             { file: "props/kit_night/sheet_lights_v1.jpg", label: "lights v1 (alternative)" },
             { file: "props/kit_night/sheet_moon_door_v1.jpg", label: "moon door v1 (alternative)" },
             { file: "props/kit_night/sheet_moon_door_night_v2.jpg", label: "moon door at night v2 (alternative)" },
+            { file: "props/kit_night/model_preview.png", label: "3D model preview (day / night)" },
           ],
         },
         {
@@ -951,6 +966,7 @@ window.ART_CATALOG = {
             { file: "props/kit_bedroom/bedroom_night_v2.jpg", label: "bedroom at night (chosen v2)" },
             { file: "props/kit_bedroom/sheet_bedroom_v2.jpg", label: "furniture v2 (alternative)" },
             { file: "props/kit_bedroom/bedroom_night_v1.jpg", label: "bedroom at night v1 (alternative)" },
+            { file: "props/kit_bedroom/model_preview.png", label: "3D model preview (day / night)" },
           ],
         },
         {
@@ -966,6 +982,7 @@ window.ART_CATALOG = {
             { file: "environment/env_night_house/cutaway.png", label: "cut-away (chosen v2)", required: true },
             { file: "environment/env_night_house/overview_v1.jpg", label: "exterior v1 (alternative)" },
             { file: "environment/env_night_house/cutaway_v1.jpg", label: "cut-away v1 (alternative)" },
+            { file: "props/kit_buildings/model_preview.png", label: "3D model preview (night_house, kit_buildings.py)" },
           ],
         },
         {
@@ -979,6 +996,7 @@ window.ART_CATALOG = {
           images: [
             { file: "environment/env_night_overview/overview.png", label: "overview (chosen v1)", required: true },
             { file: "environment/env_night_overview/overview_v2.jpg", label: "overview v2 (alternative)" },
+            { file: "props/kit_landmarks/model_preview.png", label: "3D model preview — night-1 landmarks (kit_landmarks.py)" },
           ],
         },
       ],

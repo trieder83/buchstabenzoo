@@ -166,8 +166,10 @@ Rules for the implementation that follow from the data:
   lamps (post + glowing box), the moon door (stone pillars with lanterns, beam, moon sign;
   blue plank leaves hidden while open), bed and bedroom furniture (`[[prop]]`), the hand
   lantern (a glowing box in the left hand), night animals (hedgehog, bat, owl as coloured box
-  shapes with big eyes that shine inside the lantern radius). Day-animal models have no
-  `eye_glow` slot yet: their eyes do not shine (they sleep at night anyway).
+  shapes with big eyes that shine inside the lantern radius). Since 2026-09-27 all 10
+  night-animal models exist and every animal model (day and night) has the `eye_glow`
+  material slot (ART-ANIMALS "Rig conventions" §4 and "Night animals": `sleep`,
+  `fly`/`perch`/`hang`, `fly_height`); the renderer does not use them yet (follow-up).
 - **Host:** 🛏 / 🌙 choice icons at night, the dusk / morning / welcome / night-complete
   cut-in texts per reading level (`night-*` keys), the dream fade while sleeping.
 
@@ -200,4 +202,4 @@ Rules for the implementation that follow from the data:
 - Q-140 (open) Sleeping by day "until the evening" while a night level is unfinished (implemented as proposal).
 - Q-141 (open) Night level between level 2 and level 3 (alternation, Q-078) and where the child sleeps after level 2.
 - Q-142 (open) Eyeshine radius 2.5 m vs. the visible lantern pool ≈ 1.8 m.
-- Q-143 (open) Night animals, `sleep` clip and `eye_glow` slot missing from ART-ANIMALS.
+- Q-143 answered 2026-09-27: night animals, `sleep` and `eye_glow` are in ART-ANIMALS (models v1).

@@ -245,6 +245,12 @@ pub struct LevelScene {
     /// Water tiles, still basins, river centrelines and foam obstacles (TECH-WATER); the
     /// renderer bakes the water field from it, the ambient animals swim in it.
     pub water: crate::water::WaterScene,
+    /// Flat walkable dressing above the ground tile (mulch, flat rocks, mud, petals,
+    /// trampoline, rugs): the characters stand on its top (GAME-PLAYER 8, PLAY-035).
+    pub ground_patches: Vec<crate::ground::GroundPatch>,
+    /// Collision shapes of placeholder boxes standing on walkable cells (furniture, beds,
+    /// leaf heaps, the sprinkler post): solid, never stood on (GAME-PLAYER 9, PLAY-035).
+    pub box_colliders: Vec<crate::collision::Shape>,
 }
 
 /// Bridge piles standing in the water (`kit_water.py` `bridge_wood`, Q-068): offsets from
@@ -1030,6 +1036,27 @@ impl LevelScene {
         });
     }
 
+    /// Flat walkable dressing box on the ground: drawn and registered as ground (its top
+    /// is where the characters' feet are, GAME-PLAYER 8).
+    fn flat_walkable(&mut self, source: &str, c: Vec2, size: Vec3, y0: f32, color: [f32; 3]) {
+        self.flat(source, c, size, y0, color);
+        self.ground_patches
+            .push(crate::ground::GroundPatch::centered(
+                c,
+                Vec2::new(size.x, size.z),
+                y0 + size.y,
+            ));
+    }
+
+    /// Axis-aligned solid footprint of a placeholder box on walkable ground (GAME-PLAYER 9).
+    fn solid_footprint(&mut self, c: Vec2, size: Vec2) {
+        self.box_colliders.push(crate::collision::Shape::Box {
+            c,
+            u: Vec2::X,
+            half: size / 2.0,
+        });
+    }
+
     /// Sparse tree area (GAME-LAYOUT "Forests", Q-085): the listed trees and bushes, each
     /// with its own collider (the element itself is not solid).
     fn sparse_trees(&mut self, e: &Element) {
@@ -1270,19 +1297,21 @@ impl LevelScene {
             "mud_puddle" => {
                 const MUD: [f32; 3] = [0.47, 0.33, 0.20];
                 const WET: [f32; 3] = [0.60, 0.45, 0.30];
-                self.flat(
+                // thin puddle slabs you walk through (PLAY-035: they were 0.16 m boxes the
+                // feet sank into); the wet spots 1 cm above the mud (ARCH-005)
+                self.flat_walkable(
                     id,
                     rect_center(r),
-                    Vec3::new(r.w as f32 - 0.5, 0.16, r.d as f32 - 0.5),
+                    Vec3::new(r.w as f32 - 0.5, 0.075, r.d as f32 - 0.5),
                     0.0,
                     MUD,
                 );
                 for c in r.cells().filter(|c| (c.x + c.y) % 3 == 0) {
                     let h = hash01(c.x, c.y);
-                    self.flat(
+                    self.flat_walkable(
                         id,
                         cell_center(c) + Vec2::splat(h - 0.5) * 0.4,
-                        Vec3::new(0.35, 0.17, 0.2),
+                        Vec3::new(0.35, 0.085, 0.2),
                         0.0,
                         WET,
                     );
@@ -1292,7 +1321,7 @@ impl LevelScene {
                 // big flat light-grey slabs flush with the grass (walkable)
                 for (k, c) in r.cells().filter(|c| (c.x * 3 + c.y) % 4 != 0).enumerate() {
                     let h = hash01(c.x, c.y);
-                    self.flat(
+                    self.flat_walkable(
                         id,
                         cell_center(c) + Vec2::splat(h - 0.5) * 0.2,
                         Vec3::new(0.9 - h * 0.2, 0.08, 0.85),
@@ -1313,20 +1342,20 @@ impl LevelScene {
                                 * 0.8;
                         // tops 5 mm apart so overlapping petals never share a plane (ARCH-005)
                         let hgt = 0.06 + 0.005 * ((c.x + c.y * 3 + k) as f32).rem_euclid(5.0);
-                        self.flat(id, p, Vec3::new(0.25, hgt, 0.2), 0.0, colors::BLOSSOM);
+                        self.flat_walkable(id, p, Vec3::new(0.25, hgt, 0.2), 0.0, colors::BLOSSOM);
                     }
                 }
             }
             "trampoline" => {
                 let c = rect_center(r);
-                self.flat(
+                self.flat_walkable(
                     id,
                     c,
                     Vec3::new(r.w as f32 - 0.2, 0.12, r.d as f32 - 0.2),
                     0.0,
                     colors::ROOF,
                 );
-                self.flat(
+                self.flat_walkable(
                     id,
                     c,
                     Vec3::new(r.w as f32 - 0.6, 0.14, r.d as f32 - 0.6),
@@ -1336,14 +1365,17 @@ impl LevelScene {
             }
             "wet_lawn" => {
                 let c = rect_center(r);
-                self.flat(
+                self.flat_walkable(
                     id,
                     c,
                     Vec3::new(r.w as f32 - 0.1, 0.075, r.d as f32 - 0.1),
                     0.0,
                     colors::WET_GRASS,
                 );
+                // the sprinkler post is solid (PLAY-035: the player walked through it)
                 self.flat(id, c, Vec3::new(0.12, 0.45, 0.12), 0.0, colors::ROCK);
+                self.box_colliders
+                    .push(crate::collision::Shape::Circle { c, r: 0.08 });
                 self.flat(id, c, Vec3::new(0.5, 0.06, 0.08), 0.45, colors::ROCK);
                 for k in 0..10 {
                     let a = k as f32 * 0.63;
@@ -1371,7 +1403,7 @@ impl LevelScene {
                 }
             }
             "bark_mulch" => {
-                self.flat(
+                self.flat_walkable(
                     id,
                     rect_center(r),
                     Vec3::new(r.w as f32 - 0.1, 0.075, r.d as f32 - 0.1),
@@ -1381,34 +1413,44 @@ impl LevelScene {
             }
             "tree_shade" => {
                 const SHADE: [f32; 3] = [0.33, 0.50, 0.24];
-                self.flat(
+                // a thin dark lawn layer (PLAY-035: was a 0.15 m box the feet sank into)
+                self.flat_walkable(
                     id,
                     rect_center(r),
-                    Vec3::new(r.w as f32, 0.15, r.d as f32 - 0.2),
+                    Vec3::new(r.w as f32, 0.07, r.d as f32 - 0.2),
                     0.0,
                     SHADE,
                 );
             }
             "brush_pile" => {
+                // a low heap of brushwood with branches lying on it; walked over, feet on
+                // top (GAME-PLAYER 8, PLAY-035: the 0.35 m core with branches floating
+                // above it swallowed the feet)
+                let c = rect_center(r);
+                let core = Vec3::new(r.w as f32 - 0.6, 0.2, r.d as f32 - 0.6);
+                self.flat_walkable(id, c, core, 0.0, colors::TREE_TRUNK);
+                let (lo, hi) = (
+                    c - Vec2::new(core.x, core.z) / 2.0,
+                    c + Vec2::new(core.x, core.z) / 2.0,
+                );
                 for k in 0..6 {
                     let h = hash01(k, r.x);
-                    let p = rect_center(r)
-                        + Vec2::new((h - 0.5) * (r.w as f32 - 0.6), (hash01(r.z, k) - 0.5) * 0.8);
-                    self.flat(
-                        id,
-                        p,
-                        Vec3::new(1.2, 0.12, 0.14),
-                        0.25 + h * 0.3,
-                        colors::BARK,
-                    );
+                    let p =
+                        c + Vec2::new((h - 0.5) * (r.w as f32 - 0.6), (hash01(r.z, k) - 0.5) * 0.8);
+                    // distinct tops (ARCH-005)
+                    let size = Vec3::new(1.2, 0.05 + 0.006 * k as f32, 0.14);
+                    self.flat(id, p, size, core.y, colors::BARK);
+                    // walkable where it lies on the heap (the ends overhang the grass)
+                    let a = (p - Vec2::new(size.x, size.z) / 2.0).max(lo);
+                    let b = (p + Vec2::new(size.x, size.z) / 2.0).min(hi);
+                    if a.cmplt(b).all() {
+                        self.ground_patches.push(crate::ground::GroundPatch {
+                            min: a,
+                            max: b,
+                            top: core.y + size.y,
+                        });
+                    }
                 }
-                self.flat(
-                    id,
-                    rect_center(r),
-                    Vec3::new(r.w as f32 - 0.6, 0.35, r.d as f32 - 0.6),
-                    0.0,
-                    colors::TREE_TRUNK,
-                );
             }
             "mushroom_ring" => {
                 let c = rect_center(r);
@@ -1442,10 +1484,13 @@ impl LevelScene {
                         (hash01(r.z, k) - 0.5) * (r.d as f32 - 0.8),
                     );
                     let s = 0.7 + h * 0.5;
-                    self.flat(
+                    // low heaps (0.12–0.22 m) walked over, feet on top (GAME-PLAYER 8,
+                    // PLAY-035: the 0.28–0.48 m heaps swallowed the feet); the animal
+                    // hiding in the pile keeps its wander area
+                    self.flat_walkable(
                         id,
                         p,
-                        Vec3::new(s, 0.28 + h * 0.2, s * 0.8),
+                        Vec3::new(s, 0.12 + h * 0.1, s * 0.8),
                         0.0,
                         LEAVES[(k % 3) as usize],
                     );
@@ -2247,7 +2292,7 @@ impl LevelScene {
                         r.z as f32 - 0.5 + hash01(5, k) * 0.3,
                     );
                     let hgt = 0.06 + 0.005 * k as f32;
-                    self.part_box(id, p, 0.0, Vec3::new(0.5, hgt, 0.4), colors::SAWDUST);
+                    self.flat_walkable(id, p, Vec3::new(0.5, hgt, 0.4), 0.0, colors::SAWDUST);
                 }
             }
             "play_ball" => {
@@ -2848,23 +2893,22 @@ impl LevelScene {
         let side_door = door.is_some_and(|d| d.x < inner.x || d.x >= inner.x + inner.w);
         if furnished {
             // furniture and the bed come from the level data ([[prop]], [[item]] bed)
-        } else if side_door {
-            // door in the east / west facade: the shelf along the north wall
-            self.push_box(
-                id,
-                Vec2::new((ix0 + ix1) / 2.0 + 0.5, iz1 - 0.25),
-                0.0,
-                Vec3::new(inner.w as f32 - 1.6, 1.6, 0.4),
-                colors::WOOD,
-            );
         } else {
-            self.push_box(
-                id,
-                Vec2::new(ix0 + 0.25, (iz0 + iz1) / 2.0),
-                0.0,
-                Vec3::new(0.4, 1.6, inner.d as f32 - 0.6),
-                colors::WOOD,
-            );
+            // the shelf: along the north wall (door in the east / west facade), else along
+            // the west wall; solid (GAME-PLAYER 9, PLAY-035)
+            let (c, size) = if side_door {
+                (
+                    Vec2::new((ix0 + ix1) / 2.0 + 0.5, iz1 - 0.25),
+                    Vec3::new(inner.w as f32 - 1.6, 1.6, 0.4),
+                )
+            } else {
+                (
+                    Vec2::new(ix0 + 0.25, (iz0 + iz1) / 2.0),
+                    Vec3::new(0.4, 1.6, inner.d as f32 - 0.6),
+                )
+            };
+            self.push_box(id, c, 0.0, size, colors::WOOD);
+            self.solid_footprint(c, Vec2::new(size.x, size.z));
         }
         if let Some((c, size)) = bed_pose(e).filter(|_| !furnished) {
             self.bed_box(id, c, size);
@@ -2875,6 +2919,8 @@ impl LevelScene {
     /// the headboard at the west / south end.
     fn bed_box(&mut self, id: &str, c: Vec2, size: Vec2) {
         self.push_box(id, c, 0.0, Vec3::new(size.x, 0.4, size.y), colors::WOOD);
+        // solid: the child uses it from its side, never walks onto it (GAME-PLAYER 9)
+        self.solid_footprint(c, size);
         let head = if size.y > size.x {
             Vec2::new(0.0, -(size.y / 2.0 - 0.25))
         } else {
@@ -2901,6 +2947,15 @@ impl LevelScene {
         };
         let c = p.pos();
         let id = p.id.as_str();
+        // furniture standing on the floor is solid (GAME-PLAYER 9, PLAY-035); the rug is
+        // walked on, the moon window hangs on the wall
+        if !matches!(p.model.as_str(), "rug_round" | "window_moon") {
+            let size = match p.model.as_str() {
+                "desk" | "night_table" | "toy_chest" => Vec2::new(sx, sz),
+                _ => Vec2::new(sx.max(0.2), sz.max(0.2)),
+            };
+            self.solid_footprint(c, size);
+        }
         match p.model.as_str() {
             "desk" => {
                 self.push_box(id, c, 0.0, Vec3::new(sx, 0.72, sz), colors::WOOD);
@@ -2927,7 +2982,14 @@ impl LevelScene {
                 );
             }
             "rug_round" => {
-                self.flat(id, c, Vec3::new(1.4, 0.02, 1.0), 0.0, [0.86, 0.36, 0.36]);
+                // on the floor tiles (it was at y = 0, hidden under them; PLAY-035)
+                self.flat_walkable(
+                    id,
+                    c,
+                    Vec3::new(1.4, 0.02, 1.0),
+                    crate::ground::PATH_TOP_M,
+                    [0.86, 0.36, 0.36],
+                );
             }
             "toy_chest" => {
                 self.push_box(id, c, 0.0, Vec3::new(sx, 0.45, sz), [0.86, 0.36, 0.30]);

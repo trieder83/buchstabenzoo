@@ -10,6 +10,11 @@ Pure Python (no Blender, no dependencies). Checks per file:
   and the height (Y extent) must match the expected size, which catches a Z-up export
 - no transforms left on nodes (transforms applied), no Draco, no vertex colours,
   no extras / custom properties, NORMAL + TEXCOORD_0 present, one material (palette)
+- multi-node assets (night / building / gate kits, tools/blender/props/night_lib.py): child
+  nodes may carry a TRANSLATION (their pivot: hinge, hub, roof origin, `light` / `socket_*`
+  empties) but never rotation or scale; root nodes carry nothing. Material slots: `palette`
+  plus `*_glow` (palette texture + emissiveFactor), `glass` (alphaMode BLEND) and `*_face`
+  (blank text faces). Sizes / min Y are measured in asset space (node translations applied).
 - size (X, Y, Z extents in metres) matches EXPECTED_SIZES within tolerance
 Exit code 1 if any check fails.
 """
@@ -22,7 +27,9 @@ import sys
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-BUDGETS = {"props": 500, "characters": 3000, "animals": 3000}
+BUDGETS = {"props": 500, "buildings": 4000, "characters": 3000, "animals": 3000}
+# per-asset budgets above the kind budget (brief / README_night.md justifies each)
+BUDGET_OVERRIDES = {"moon_door": 1500, "moon_door_open": 1500}
 
 # expected extents (x, y = height, z) in metres; None = not checked. Tolerance 0.06 m.
 EXPECTED_SIZES = {
@@ -81,7 +88,63 @@ EXPECTED_SIZES = {
     "zookeeper_cart": (2.31, 1.0, 1.12),
     "traffic_cone": (0.4, 0.46, 0.4),
     "fallen_tree": (2.42, 1.58, 4.26),
-    "gate_zoo_closed": (3.12, 2.6, 0.72),}
+    "gate_zoo_closed": (3.12, 2.6, 0.72),
+    # night / bedroom / gates / landmarks / garden kits (tools/blender/props/README_night.md)
+    "lantern_post": (0.36, 2.45, 0.88),
+    "string_lights": (6.08, 2.85, 0.2),
+    "string_post": (0.16, 2.85, 0.16),
+    "wall_lamp": (0.3, 0.77, 0.47),
+    "board_lamp": (0.18, 0.31, 0.55),
+    "hand_lantern": (0.2, 0.39, 0.17),
+    "moon_door": (3.54, 4.6, 1.04),
+    "moon_door_open": (3.54, 4.6, 1.73),
+    "bed": (2.0, 1.0, 1.0),
+    "night_table": (0.5, 0.63, 0.42),
+    "bedside_lamp": (0.25, 0.36, 0.26),
+    "window_moon": (1.26, 1.04, 0.17),
+    "rug_round": (1.4, (0.01, 0.03), 1.4),
+    "toy_chest": (0.82, 0.85, 0.54),
+    "desk": (1.2, 0.9, 0.6),
+    "note_paper": (0.24, (0.0, 0.01), 0.32),
+    "key_box": (0.38, 0.47, 0.2),
+    "cart_key": (0.13, 0.16, (0.0, 0.03)),
+    "garden_gate": (2.24, 1.12, 0.14),
+    "glass_door": (1.95, 2.2, 0.14),
+    "door_wood": (0.94, 2.1, 0.2),
+    "turnstile": (1.15, 1.01, 0.58),
+    "windmill": ((1.8, 2.4), (3.8, 4.1), (1.8, 2.0)),
+    "hollow_tree": ((3.6, 4.4), (6.0, 6.4), (2.6, 3.2)),
+    "old_tree": ((4.4, 5.2), (6.0, 6.5), (3.2, 3.8)),
+    "crooked_tree": ((2.0, 2.5), (3.0, 3.4), (1.2, 1.6)),
+    "fir_tree": ((2.8, 3.2), (8.9, 9.1), (2.8, 3.2)),
+    "rock_hill": ((2.8, 3.0), (1.9, 2.1), (2.8, 3.0)),
+    "brush_pile": ((2.8, 3.1), (0.9, 1.1), (2.0, 2.6)),
+    "mushroom_patch": ((1.8, 2.0), (0.3, 0.4), (1.6, 1.9)),
+    "flower_pots": ((0.8, 0.9), (0.45, 0.55), (0.5, 0.6)),
+    "potting_bench": (1.9, 1.34, 0.62),
+    "telescope": ((0.85, 1.0), (1.5, 1.65), (0.9, 1.05)),
+    "garden_bed": (0.82, 0.25, 2.9),
+    "carrot_plant_sprout": ((0.25, 0.35), (0.1, 0.16), (0.25, 0.35)),
+    "carrot_plant_young": ((0.25, 0.35), (0.28, 0.36), (0.25, 0.35)),
+    "carrot_plant_ripe": ((0.25, 0.35), (0.42, 0.5), (0.25, 0.35)),
+    "potato_plant_sprout": ((0.3, 0.45), (0.08, 0.14), (0.3, 0.45)),
+    "potato_plant_young": ((0.5, 0.7), (0.25, 0.35), (0.5, 0.7)),
+    "potato_plant_ripe": ((0.6, 0.85), (0.4, 0.5), (0.6, 0.85)),
+    "carrot": (0.32, 0.07, 0.08),
+    "potato": (0.16, 0.06, 0.17),
+    "basket": (0.4, 0.47, 0.42),
+    "garden_fence": (2.08, 0.85, 0.09),
+    "garden_fence_1m": (1.08, 0.85, 0.09),
+    "wheelbarrow": (0.61, 0.73, 1.57),
+    "watering_can": (0.26, 0.43, 0.53),
+    "garden_sign": (0.5, 0.8, 0.17),
+    # buildings (assets/models/buildings/, kit_buildings) — footprint = level rect (+ eaves)
+    "zookeeper_house": (6.43, 4.37, 5.11),
+    "food_storage": (8.04, 4.53, 6.71),
+    "food_hut": (5.8, 3.62, 6.68),
+    "entrance_arch": (6.16, 5.0, 1.76),
+    "night_house": (17.6, 4.9, 13.6),
+}
 TOL = 0.06
 
 COMPONENTS = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}
@@ -137,22 +200,58 @@ def check(path):
         errors.append("Draco compression used")
     if has_extras(js):
         errors.append("extras / custom properties present")
-    for node in js.get("nodes", []):
+    nodes = js.get("nodes", [])
+    children = {c for n in nodes for c in n.get("children", [])}
+    for i, node in enumerate(nodes):
         for key in ("rotation", "scale", "matrix"):
             if key in node:
                 errors.append(f"node '{node.get('name')}' has {key} (transforms not applied)")
         t = node.get("translation")
-        if t and any(abs(c) > 1e-5 for c in t):
-            errors.append(f"node '{node.get('name')}' has translation {t}")
+        if t and any(abs(c) > 1e-5 for c in t) and i not in children:
+            errors.append(f"root node '{node.get('name')}' has translation {t}")
+    # world offset of every node (translations only)
+    offset = {}
+
+    def walk(i, base):
+        t = nodes[i].get("translation", [0, 0, 0])
+        o = [base[k] + t[k] for k in range(3)]
+        offset[i] = o
+        for c in nodes[i].get("children", []):
+            walk(c, o)
+
+    for i in range(len(nodes)):
+        if i not in children:
+            walk(i, [0.0, 0.0, 0.0])
     meshes = js.get("meshes", [])
-    if len(meshes) != 1:
-        errors.append(f"{len(meshes)} meshes (expected 1)")
-    if len(js.get("materials", [])) != 1:
-        errors.append(f"{len(js.get('materials', []))} materials (expected 1: palette)")
+    mesh_nodes = [i for i, n in enumerate(nodes) if "mesh" in n]
+    if not meshes:
+        errors.append("no mesh")
+    if len(meshes) > 1 and len({nodes[i].get("name") for i in mesh_nodes}) != len(mesh_nodes):
+        errors.append("mesh nodes must have unique names")
+    mats = js.get("materials", [])
+    names = [m.get("name", "") for m in mats]
+    if "palette" not in names and not (len(mats) == 1):
+        errors.append(f"materials {names}: no 'palette'")
+    for m in mats:
+        n = m.get("name", "")
+        if n == "palette" or len(mats) == 1:
+            continue
+        if n.endswith("_glow"):
+            if "emissiveFactor" not in m:
+                errors.append(f"glow slot '{n}' has no emissiveFactor")
+        elif n == "glass":
+            if m.get("alphaMode") != "BLEND":
+                errors.append("glass slot is not alphaMode BLEND")
+        elif not n.endswith("_face"):
+            errors.append(f"material '{n}' is not palette / *_glow / glass / *_face")
     tris = 0
     mn = [float("inf")] * 3
     mx = [float("-inf")] * 3
-    for mesh in meshes:
+    for ni in mesh_nodes or [None]:
+        if ni is None:
+            break
+        mesh = meshes[nodes[ni]["mesh"]]
+        off = offset.get(ni, [0.0, 0.0, 0.0])
         for prim in mesh["primitives"]:
             attrs = prim["attributes"]
             if prim.get("mode", 4) != 4:
@@ -168,10 +267,10 @@ def check(path):
                 tris += js["accessors"][attrs["POSITION"]]["count"] // 3
             for p in accessor_values(js, binchunk, attrs["POSITION"]):
                 for i in range(3):
-                    mn[i] = min(mn[i], p[i])
-                    mx[i] = max(mx[i], p[i])
+                    mn[i] = min(mn[i], p[i] + off[i])
+                    mx[i] = max(mx[i], p[i] + off[i])
     size = [mx[i] - mn[i] for i in range(3)]
-    budget = BUDGETS.get(kind)
+    budget = BUDGET_OVERRIDES.get(name, BUDGETS.get(kind))
     if budget is not None and tris > budget:
         errors.append(f"{tris} triangles > budget {budget} for {kind}")
     if abs(mn[1]) > 0.01:

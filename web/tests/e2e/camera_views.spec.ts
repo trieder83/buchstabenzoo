@@ -33,6 +33,8 @@ const cam = (page: Page) =>
       mode: a.view_mode(),
       blend: a.camera_blend(),
       eye: a.camera_eye(),
+      // feet on the ground surface (GAME-PLAYER 8): eye heights are measured from them
+      feet: a.player_foot_y(),
       pitch: a.camera_pitch_deg(),
       yaw: a.camera_view_yaw_deg(),
       zooYaw: a.camera_target_yaw_deg(),
@@ -93,9 +95,9 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   let c = await cam(page);
   expect(c.mode).toBe('first_person');
   expect(c.drawn).toBe(false);
-  expect(c.eye[1]).toBeCloseTo(1.1, 2);
+  expect(c.eye[1] - c.feet).toBeCloseTo(1.1, 2);
   expect(Math.abs(c.pitch)).toBeLessThan(0.5);
-  expect(c.fog[1]).toBeCloseTo(16, 3);
+  expect(c.fog[1]).toBeCloseTo(20.8, 3); // fog end +30 % (2026-09-27)
   await expect(page.locator('#view-btn')).toHaveAttribute('aria-pressed', 'true');
   expect(await skyFraction(page)).toBeGreaterThan(0.3);
   await page.screenshot({ path: path.join(shots, 'screenshot_camera_firstperson.png') });
@@ -106,7 +108,7 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   await page.keyboard.up('KeyW');
   const walked = await cam(page);
   expect(Math.abs(walked.x - c.x)).toBeLessThan(0.1);
-  expect(walked.eye[1]).toBeCloseTo(1.1, 2);
+  expect(walked.eye[1] - walked.feet).toBeCloseTo(1.1, 2);
   // level with the board (it is 90° to the left): not available while looking north
   await page.evaluate(() => {
     const a = window.__zoo!.app;
@@ -170,7 +172,7 @@ test('CAMV-013: look-around while F is held, back to the zoo view on release', a
   let c = await cam(page);
   expect(c.mode).toBe('look_around');
   expect(c.drawn).toBe(true);
-  expect(c.eye[1]).toBeCloseTo(1.6, 1);
+  expect(c.eye[1] - c.feet).toBeCloseTo(1.6, 1);
   const back = Math.hypot(c.eye[0] - c.x, -c.eye[2] - c.z);
   expect(back).toBeCloseTo(3.5, 1);
   expect(c.pitch).toBeCloseTo(-12, 0);

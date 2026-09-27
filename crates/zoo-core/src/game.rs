@@ -600,7 +600,7 @@ impl Game {
             .iter()
             .filter_map(|b| Food::from_id(&b.food).map(|f| (f, b.pos(), b.facing())))
             .collect();
-        let player = Player::new(cell_center(data.spawn.cell()), facing, &move_params);
+        let mut player = Player::new(cell_center(data.spawn.cell()), facing, &move_params);
         let missions = vec![Mission::default(); animals.len()];
         let bowl = data
             .items
@@ -620,6 +620,7 @@ impl Game {
                 fish: false,
             });
         let level = Level::new(data);
+        player.y = level.ground_height(player.pos);
         for a in &mut animals {
             a.area = wander_area_of(&level, a);
             a.facing = rest_facing(&level, a);
@@ -985,7 +986,7 @@ impl Game {
         };
         b.carried = false;
         b.pos = at;
-        b.lift_m = 0.0;
+        b.lift_m = self.level.ground_height(at); // on the surface (GAME-PLAYER 8)
         let id = b.id.clone();
         self.events.push(GameEvent::ItemPutDown { id });
         true
@@ -1295,7 +1296,7 @@ impl Game {
             b.pos = gate.map_or(self.player.pos, |g| {
                 Vec2::new(g.x as f32 + g.w as f32 / 2.0, g.z as f32 + g.d as f32 / 2.0)
             });
-            b.lift_m = 0.1;
+            b.lift_m = self.level.ground_height(b.pos).max(0.1);
         }
         for j in group.clone() {
             self.animals[j].pos = self.player.pos;
@@ -1351,6 +1352,9 @@ impl Game {
             dt,
             leading,
         );
+        // feet on the surface under her, smoothly (GAME-PLAYER 8, PLAY-035/036)
+        let ground = self.level.ground_height(self.player.pos);
+        self.player.y = crate::ground::follow(self.player.y, ground, dt);
         if let Some(b) = self.bowl.as_ref().filter(|b| b.carried && b.fish) {
             let animal = b.animal.clone();
             for j in self.group(&animal) {

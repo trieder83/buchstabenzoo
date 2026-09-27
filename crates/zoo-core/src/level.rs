@@ -1007,6 +1007,10 @@ pub struct Level {
     /// Scene placements (for colliders) and the placements owned by each barrier.
     placements: Vec<crate::scene::Placement>,
     barrier_parts: Vec<(String, std::ops::Range<usize>)>,
+    /// Solid placeholder boxes on walkable cells (GAME-PLAYER 9).
+    box_colliders: Vec<crate::collision::Shape>,
+    /// Ground heights (GAME-PLAYER 8).
+    ground: crate::ground::GroundMap,
 }
 
 impl Level {
@@ -1014,9 +1018,13 @@ impl Level {
         let open_barriers = BTreeSet::new();
         let mut grid = Grid::build(&data, &open_barriers);
         let scene = crate::scene::LevelScene::build(&data);
-        let colliders =
-            crate::collision::Colliders::from_placements(&scene.placements, data.level.bounds);
+        let colliders = crate::collision::Colliders::from_placements_and(
+            &scene.placements,
+            &scene.box_colliders,
+            data.level.bounds,
+        );
         grid.set_prop_blocked(&colliders);
+        let ground = crate::ground::GroundMap::build(&scene, data.level.bounds);
         Self {
             data,
             open_barriers,
@@ -1024,7 +1032,19 @@ impl Level {
             colliders,
             placements: scene.placements,
             barrier_parts: scene.barrier_parts,
+            box_colliders: scene.box_colliders,
+            ground,
         }
+    }
+
+    /// Height (m) of the visible walkable surface at level point `p` (GAME-PLAYER 8).
+    pub fn ground_height(&self, p: Vec2) -> f32 {
+        self.ground.height(p)
+    }
+
+    /// The ground height map (GAME-PLAYER 8).
+    pub fn ground(&self) -> &crate::ground::GroundMap {
+        &self.ground
     }
 
     /// Colliders of every placement except the parts of opened barriers.
@@ -1042,8 +1062,11 @@ impl Level {
             .filter(|(i, _)| !removed.iter().any(|r| r.contains(i)))
             .map(|(_, p)| p.clone())
             .collect();
-        self.colliders =
-            crate::collision::Colliders::from_placements(&kept, self.data.level.bounds);
+        self.colliders = crate::collision::Colliders::from_placements_and(
+            &kept,
+            &self.box_colliders,
+            self.data.level.bounds,
+        );
     }
 
     pub fn grid(&self) -> &Grid {

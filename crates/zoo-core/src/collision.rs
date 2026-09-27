@@ -308,12 +308,18 @@ pub struct Colliders {
 impl Colliders {
     /// Builds the shapes of every placement whose model has a footprint.
     pub fn from_placements(placements: &[Placement], bounds: Rect) -> Self {
+        Self::from_placements_and(placements, &[], bounds)
+    }
+
+    /// [`Colliders::from_placements`] plus extra level-space shapes (solid placeholder boxes).
+    pub fn from_placements_and(placements: &[Placement], extra: &[Shape], bounds: Rect) -> Self {
         let mut shapes = Vec::new();
         for p in placements {
             for &l in footprint(p.model) {
                 shapes.push(Shape::place_scaled(l, p.pos, p.yaw, p.scale));
             }
         }
+        shapes.extend_from_slice(extra);
         Self::from_shapes(shapes, bounds)
     }
 

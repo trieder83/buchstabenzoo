@@ -80,6 +80,7 @@ latest reports in `qa/reports/`.
 | Info panel only in front of a board | 2026-09-26 (user) | PLAY-020…027 |
 | Z-fighting flicker on coplanar faces (entrance arch) | 2026-09-26 (user) | ARCH-005 + strafing screenshot diff |
 | Panel text hidden / not scrollable by touch on phones | 2026-09-26 (QA F2, user) | PLAY-030, PLAY-032/033 |
+| Feet/legs sinking into (or floating above) walkable surfaces — garden, bridge, jetty, floors, platforms | 2026-09-27 (user) | PLAY-035 (whole-zoo ground-height sweep), PLAY-036 + visual check of feet on every surface type |
 
 When the user reports a new visual or gameplay bug: add a row here, a regression test, and a
 checklist item.

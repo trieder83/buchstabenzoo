@@ -142,6 +142,21 @@ updated: 2026-09-27
    Solid cells are collision boxes too. Grid paths (following animals, scripted player)
    avoid cells whose centre the 0.3 m circle cannot occupy.
 
+
+## Standing on surfaces (user report 2026-09-27)
+
+8. **Ground height:** the player, following animals, wandering animals and ambient animals
+   always stand **on the visible surface** under them — never sunk into it and never
+   floating. Every walkable cell has a ground height from the level data and the models
+   placed on it: ground tiles (≈ 0.05 m top), paths, the garden path and garden beds'
+   surroundings, plaza tiles, sand, building interiors and floors, rugs, the jetty deck, the
+   bridge deck (arched — sample its curve), stages, platforms and every placeholder a
+   character can walk onto. zoo-core provides `ground_height(x, z)` (level coordinates)
+   from this data; the renderer places feet there; movement between different heights is
+   smooth (steps ≤ 0.25 m are walked up/down; higher edges are walls).
+9. Surfaces that are **not walkable** (boxes, crates, beds, tables) are solid obstacles and
+   never stood on.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -180,6 +195,8 @@ updated: 2026-09-27
 | PLAY-032 | Given an info board panel whose facts overflow, when a finger drags upward on the riddle area of the panel (not on the scrollbar) on a touch device, then the facts scroll down by the dragged distance and the player does not move. | e2e |
 | PLAY-033 | Given a panel, when the finger taps a button without moving more than 6 px, then the button's action happens and nothing scrolls. | unit |
 | PLAY-034 | Given the desktop key table of §3, then every listed key triggers exactly the action of its row in each view and no key is bound to two different actions in the same view (`E` interacts, `Q`/`R` rotate, `F` holds look-around, `V` toggles first person, `M` map). | unit (Vitest) |
+| PLAY-035 | Given every walkable cell centre of the joined zoo (day + night levels), then `ground_height` equals the top of the visible surface there (tiles, paths, garden, floors, rugs, jetty, bridge curve, platforms) within ± 2 cm; a player placed there has her feet within ± 2 cm of that surface (no sinking, no floating). User report 2026-09-27: feet sank in the garden and on some boxes. | unit |
+| PLAY-036 | Given the player walks over the bridge, the jetty, the garden path and into a building, then her feet follow the surface smoothly (height change per frame ≤ 0.25 m, no pops). | e2e |
 
 ## Open questions
 

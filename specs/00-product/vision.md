@@ -26,7 +26,7 @@ can be part of the way.
 1. **Reading comprehension is the key mechanic** — finding an animal always requires
    understanding a riddle at the child's reading level; guessing must be slower than reading.
 2. **Math as a second subject** — optional math tasks at the child's math level (CONT-MATH).
-3. **Friendly and pressure-free** — no violence, no ads, no in-app purchases, no timers
+3. **Friendly and pressure-free** — no violence, no ads in the UI (passive in-world ad boards are under review — GAME-ADS, Q-128), no in-app purchases, no timers
    unless a spec says so.
 4. **Explorable 3D zoo** — third-person, walk around, talk to visitors, discover places
    (e.g. the pirate ship).

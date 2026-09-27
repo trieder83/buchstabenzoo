@@ -96,63 +96,63 @@ animations = []
 id = "env_level1_overview"
 kind = "environment"
 spec = "GAME-LEVEL-1"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_entrance"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_food_storage"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_zebra"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_hippo"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_panda"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "loc_river"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "loc_pond"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "loc_cave"
 kind = "environment"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 # Further level-1 candidate hiding places (discovery, user decision 2026-09-26; GAME-LEVEL-1)
@@ -469,70 +469,70 @@ animations = []
 id = "zebra_female"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 
 [[asset]]
 id = "zebra_foal"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
 
 [[asset]]
 id = "koala_female"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "climb", "eat", "happy"]
 
 [[asset]]
 id = "koala_joey"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "climb", "eat", "happy"]
 
 [[asset]]
 id = "kit_buildings"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "food_storage_building"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_enclosure_buildings"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "rock_hill_cave"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_garden"
 kind = "props"
 spec = "GAME-GARDEN"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_furniture"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 # Night animals (GAME-NIGHT) — concept briefs only; animations are proposals (Q-043)
@@ -541,77 +541,77 @@ animations = []
 id = "hedgehog"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "bat"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "fly", "eat", "happy", "hang"]
 
 [[asset]]
 id = "owl"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy", "look"]
 
 [[asset]]
 id = "raccoon"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "badger"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "fennec"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "kiwi"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "porcupine"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "slow_loris"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy"]
 
 [[asset]]
 id = "tarsier"
 kind = "animals"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "hop", "eat", "happy"]
 
 [[asset]]
 id = "style_frame_night"
 kind = "environment"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 # Night art (GAME-NIGHT, plan art/night/README.md) — concept briefs only
@@ -620,26 +620,26 @@ animations = []
 id = "kit_night"
 kind = "props"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "kit_bedroom"
 kind = "props"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_night_house"
 kind = "environment"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
 id = "env_night_overview"
 kind = "environment"
 spec = "GAME-NIGHT"
-concept_approved = false
+concept_approved = true
 animations = []

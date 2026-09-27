@@ -4,7 +4,7 @@ title: Golf carts
 aspect: gameplay
 module: golf-carts
 status: draft
-depends_on: [GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE]
+depends_on: [GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE, CONT-MATH, GAME-HINT]
 test_prefix: CART
 updated: 2026-09-27
 ---
@@ -54,6 +54,29 @@ still means walking the animal home.
     blank, 2 seats, small cargo area where carried items are visible). Concept sheet first
     (ART-PIPELINE); both player characters (`player_girl`, `player_boy`) have a `drive` sitting clip (ART-RIG).
 
+
+## The golf-cart key (user request 2026-09-27)
+
+12. **Carts need a key.** The carts are locked until the child has the **cart key**. The key
+    hangs in a **key box with a combination lock** (*Schlüsselkasten mit Zahlenschloss*) on
+    the wall of the zookeeper house (level 1, outside, next to the door).
+13. **The combination is a math task:** a **note** lies on the **desk inside the zookeeper
+    house**. It is a sheet of paper with the title **"Math Fighter"** (referring to the app of
+    that name) and one simple math task; its result is the combination (e.g. 3 digits). The
+    task follows the child's `math_level` (CONT-MATH; without a math level: `mathe1`), e.g.
+    `mathe1`: "2 + 3 = ?" → one digit, repeated or padded to the lock's digit count
+    (proposal Q-132); `mathe3`: "4 × 25 = ?" → "100". The task is generated per playthrough
+    from the seeded math templates (CONT-MATH rule 1), so the combination is not always the
+    same. Reading the note opens the reading panel (the math task in big numbers).
+14. **Opening the lock:** interact with the key box → a lock panel with big number wheels
+    (tap ▲/▼ per digit; no text needed) → the right combination opens the box, the key goes
+    into the pocket (HUD shows 🔑), all carts can be used from now on. Wrong combination:
+    gentle shake, try again, after 3 tries the note icon pulses as a hint (CONT-MATH rule 3).
+15. **Hint system:** the key box and the note are optional targets (GAME-HINT priority 4).
+16. **Art:** `key_box` (wall box with a 3-wheel combination lock, open/closed), `cart_key`,
+    `note_math_fighter` (paper with the "Math Fighter" title, drawn by the game's text path,
+    the task rendered from data), `desk` (zookeeper house interior).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -68,6 +91,10 @@ still means walking the animal home.
 | CART-008 | Given the player drives past an info board, then no reading panel opens. | unit |
 | CART-009 | Given a save while sitting in a cart, when restored, then she sits in the same cart at the same place. | unit |
 | CART-010 | Given touch controls, then driving works with the left thumb exactly like walking and the get-out button is reachable with the right thumb. | e2e |
+| CART-011 | Given a new game, then the carts cannot be entered (locked icon) until the cart key is in the pocket. | unit |
+| CART-012 | Given the note on the desk, then it shows the title "Math Fighter" and a math task for the child's math level; its result is the key-box combination; different seeds give different tasks. | unit |
+| CART-013 | Given the key box, when the right combination is entered, then the box opens, the key goes into the pocket and all unlocked-level carts can be used; a wrong combination shakes and after 3 tries the note icon pulses. | unit |
+| CART-014 | Given the key box panel on touch, then every digit wheel can be set with big ▲/▼ buttons without reading. | e2e |
 
 ## Open questions
 

@@ -146,7 +146,7 @@ window.ART_CATALOG = {
         {
           id: "zebra_female",
           title: "Zebra \u2014 female (pair)",
-          status: "in-review",
+          status: "approved",
           description: "Female partner of the zebra (GAME-FAMILY pair; the existing zebra art = the male). ~10 % smaller, soft forelock falling forward over the forehead, eyelashes.",
           spec: "GAME-FAMILY",
           brief: "animals/zebra_female/brief.md",
@@ -162,7 +162,7 @@ window.ART_CATALOG = {
         {
           id: "zebra_foal",
           title: "Zebra foal (baby)",
-          status: "in-review",
+          status: "approved",
           description: "Baby of the zebra pair (Fohlen / foal, GAME-FAMILY): long thin legs, big head and eyes, fluffy mane; ~45\u201350 % of the male.",
           spec: "GAME-FAMILY",
           brief: "animals/zebra_foal/brief.md",
@@ -178,7 +178,7 @@ window.ART_CATALOG = {
         {
           id: "koala_female",
           title: "Koala \u2014 female (pair)",
-          status: "in-review",
+          status: "approved",
           description: "Female partner of the koala (GAME-FAMILY pair; the existing koala art = the male). Slightly smaller, lighter silvery fur, eyelashes.",
           spec: "GAME-FAMILY",
           brief: "animals/koala_female/brief.md",
@@ -195,7 +195,7 @@ window.ART_CATALOG = {
         {
           id: "koala_joey",
           title: "Koala joey (baby)",
-          status: "in-review",
+          status: "approved",
           description: "Baby of the koala pair (Koalababy / joey, GAME-FAMILY): tiny body, extra big head and ears, huge eyes, on all fours; ~45 % of the male.",
           spec: "GAME-FAMILY",
           brief: "animals/koala_joey/brief.md",
@@ -212,7 +212,7 @@ window.ART_CATALOG = {
         {
           id: "zebra_family",
           title: "Zebra family lineup",
-          status: "in-review",
+          status: "approved",
           description: "Male (100 %), female (91 %) and foal (50 %) side by side, \u00be views scaled by figure height \u2014 for FAM-007 (can children tell the pair apart?).",
           spec: "GAME-FAMILY",
           notes: "Composite of the \u00be views (no generation).",
@@ -223,7 +223,7 @@ window.ART_CATALOG = {
         {
           id: "koala_family",
           title: "Koala family lineup",
-          status: "in-review",
+          status: "approved",
           description: "Male (100 %), female (92 %) and joey (46 %) side by side, \u00be views scaled by figure height \u2014 for FAM-007.",
           spec: "GAME-FAMILY",
           notes: "Composite of the \u00be views (no generation).",
@@ -342,7 +342,7 @@ window.ART_CATALOG = {
         {
           id: "animals_lineup",
           title: "Lineup — all animals + girl (size check)",
-          status: "in-review",
+          status: "approved",
           description: "Front views of all 10 animals and the player girl, scaled to their intended heights (top of head/ears): girl 1.2, zebra 2.23, hippo 1.7, panda 1.1, koala 0.65, elephant 3.0, goldfish 0.16 (0.3 long), monkey 0.9, giraffe 4.5, lion 1.5, snow fox 0.6 m.",
           spec: "ART-ANIMALS",
           notes: "Decide whether the small animals (koala, snow fox, monkey, goldfish) should be scaled up for readability from the 55° camera.",
@@ -353,7 +353,7 @@ window.ART_CATALOG = {
         {
           id: "hedgehog",
           title: "Night \u2014 Igel / hedgehog",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (night_1), food box K\u00e4fer / beetles. Look: spiky dome of big rounded spine tufts, light face. Proposed game size top of spines \u2248 0.6 m.",
           spec: "GAME-NIGHT",
           brief: "animals/hedgehog/brief.md",
@@ -370,7 +370,7 @@ window.ART_CATALOG = {
         {
           id: "bat",
           title: "Night \u2014 Fledermaus / bat (fruit bat)",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (night_1), food box Obst / fruit. Look: perched upright, wings folded like a cloak; orange fluffy collar; flight sheet optional later. Proposed game size \u2248 0.8 m perched, wingspan \u2248 1.8 m.",
           spec: "GAME-NIGHT",
           brief: "animals/bat/brief.md",
@@ -387,7 +387,7 @@ window.ART_CATALOG = {
         {
           id: "owl",
           title: "Night \u2014 Eule / owl",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (night_1), food box K\u00e4fer / beetles. Look: perched upright, giant golden eyes in a heart-shaped face disc. Proposed game size \u2248 1.0 m.",
           spec: "GAME-NIGHT",
           brief: "animals/owl/brief.md",
@@ -404,7 +404,7 @@ window.ART_CATALOG = {
         {
           id: "raccoon",
           title: "Night \u2014 Waschb\u00e4r / raccoon",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box Fisch / fish. Look: friendly mask, ringed tail. Proposed game size \u2248 0.9 m.",
           spec: "GAME-NIGHT",
           brief: "animals/raccoon/brief.md",
@@ -421,7 +421,7 @@ window.ART_CATALOG = {
         {
           id: "badger",
           title: "Night \u2014 Dachs / badger",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box W\u00fcrmer / worms. Look: white face with black stripes, low wide body. Proposed game size \u2248 0.7 m, 1.1 m long.",
           spec: "GAME-NIGHT",
           brief: "animals/badger/brief.md",
@@ -437,7 +437,7 @@ window.ART_CATALOG = {
         {
           id: "fennec",
           title: "Night \u2014 W\u00fcstenfuchs / fennec fox",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box Insekten / insects. Look: huge ears, sand colour (distinct from the snow fox). Proposed game size \u2248 0.9 m to ear tips.",
           spec: "GAME-NIGHT",
           brief: "animals/fennec/brief.md",
@@ -454,7 +454,7 @@ window.ART_CATALOG = {
         {
           id: "kiwi",
           title: "Night \u2014 Kiwi / kiwi",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box W\u00fcrmer / worms. Look: brown fluffy ball, long curved beak. Proposed game size \u2248 0.7 m.",
           spec: "GAME-NIGHT",
           brief: "animals/kiwi/brief.md",
@@ -471,7 +471,7 @@ window.ART_CATALOG = {
         {
           id: "porcupine",
           title: "Night \u2014 Stachelschwein / porcupine",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box Rinde / bark. Look: relaxed crown of black-and-white banded quills. Proposed game size \u2248 0.8 m.",
           spec: "GAME-NIGHT",
           brief: "animals/porcupine/brief.md",
@@ -488,7 +488,7 @@ window.ART_CATALOG = {
         {
           id: "slow_loris",
           title: "Night \u2014 Plumplori / slow loris",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box Nektar / nectar. Look: huge amber eyes in dark patches, on all fours. Proposed game size \u2248 0.7 m.",
           spec: "GAME-NIGHT",
           brief: "animals/slow_loris/brief.md",
@@ -505,7 +505,7 @@ window.ART_CATALOG = {
         {
           id: "tarsier",
           title: "Night \u2014 Koboldmaki / tarsier",
-          status: "in-review",
+          status: "approved",
           description: "NIGHT animal (later night level), food box Grillen / crickets. Look: giant cute eyes, upright on long legs. Proposed game size \u2248 0.7 m sitting upright.",
           spec: "GAME-NIGHT",
           brief: "animals/tarsier/brief.md",
@@ -522,7 +522,7 @@ window.ART_CATALOG = {
         {
           id: "night_lineup",
           title: "Night — lineup of the night animals + girl (size check)",
-          status: "in-review",
+          status: "approved",
           description: "Front views of the 10 night animals next to the 1.2 m player girl at their proposed game sizes (GAME-NIGHT).",
           spec: "GAME-NIGHT",
           notes: "Composite (no generation) of the chosen front views at the proposed sizes from the briefs: girl 1.2, hedgehog 0.6, bat 0.8, owl 1.0, raccoon 0.9, badger 0.7, fennec 0.9, kiwi 0.7, porcupine 0.8, slow loris 0.7, tarsier 0.7 m. Decide whether sizes are OK — most night animals are 0.6–0.9 m and similar in size.",
@@ -555,7 +555,7 @@ window.ART_CATALOG = {
         {
           id: "style_frame_night",
           title: "Style frame — night look",
-          status: "in-review",
+          status: "approved",
           description: "The approved day style frame scene (zebra enclosure, 55° camera) at night: friendly deep blue moonlight, warm lantern pools along the path, light circle around the girl with her lantern, lit info board, stars reflected on water, softly glowing eyes (GAME-NIGHT rules 1, 2, 10). Fixes the night look before night mockups.",
           spec: "GAME-NIGHT",
           brief: "environment/style_frame_night/brief.md",
@@ -568,7 +568,7 @@ window.ART_CATALOG = {
         {
           id: "env_level1_overview",
           title: "Level 1 — bird's-eye overview",
-          status: "in-review",
+          status: "approved",
           description: "Whole level 1 as a diorama: entrance, food storage, ring path around a tree grove, zebra/hippo/panda enclosures, river, pond, cave, barriers.",
           spec: "GAME-LEVEL-1",
           brief: "environment/env_level1_overview/brief.md",
@@ -583,7 +583,7 @@ window.ART_CATALOG = {
         {
           id: "env_entrance",
           title: "Zoo entrance (level 1)",
-          status: "in-review",
+          status: "approved",
           description: "Spawn point: entrance arch, plaza, picture map board, bench; food storage straight ahead, zebra fence left, rock hill right.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/env_entrance/brief.md",
@@ -598,7 +598,7 @@ window.ART_CATALOG = {
         {
           id: "env_food_storage",
           title: "Food storage (level 1)",
-          status: "in-review",
+          status: "approved",
           description: "Wooden barn in the middle of the ring with an open double door and 10 closed food boxes with blank label panels.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/env_food_storage/brief.md",
@@ -613,7 +613,7 @@ window.ART_CATALOG = {
         {
           id: "env_zebra",
           title: "Zebra enclosure (level 1)",
-          status: "in-review",
+          status: "approved",
           description: "Empty zebra enclosure: grass, bushes, stone arch shelter; gate with silhouette sign and blank info board.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/env_zebra/brief.md",
@@ -628,7 +628,7 @@ window.ART_CATALOG = {
         {
           id: "env_hippo",
           title: "Hippo enclosure (level 1)",
-          status: "in-review",
+          status: "approved",
           description: "Empty hippo enclosure: square tiled pool, stones, wooden hut; gate framed by tall hedges; river bend behind.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/env_hippo/brief.md",
@@ -643,7 +643,7 @@ window.ART_CATALOG = {
         {
           id: "env_panda",
           title: "Panda enclosure (level 1)",
-          status: "in-review",
+          status: "approved",
           description: "Empty panda enclosure: bamboo, wooden platform and shelter; side path to the closed north gate; river and bridge to the east.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/env_panda/brief.md",
@@ -658,7 +658,7 @@ window.ART_CATALOG = {
         {
           id: "loc_river",
           title: "River — zebra hiding place",
-          status: "in-review",
+          status: "approved",
           description: "Flowing river with rapids, wooden bridge, ducks; zebras drinking on the bank; fallen-tree barrier behind the bridge.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/loc_river/brief.md",
@@ -673,7 +673,7 @@ window.ART_CATALOG = {
         {
           id: "loc_pond",
           title: "Pond — hippo hiding place",
-          status: "in-review",
+          status: "approved",
           description: "Round still pond with water lilies, frogs, reeds and a jetty; hippo with only eyes and ears above water.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/loc_pond/brief.md",
@@ -688,7 +688,7 @@ window.ART_CATALOG = {
         {
           id: "loc_cave",
           title: "Cave — panda hiding place",
-          status: "in-review",
+          status: "approved",
           description: "Grey rock hill with a dark, cool cave mouth facing north; panda asleep inside; 'path under repair' barrier on the service path.",
           spec: "ART-ENVIRONMENT",
           brief: "environment/loc_cave/brief.md",
@@ -703,7 +703,7 @@ window.ART_CATALOG = {
         {
           id: "water_anim",
           title: "Animated water (prototype)",
-          status: "in-review",
+          status: "approved",
           description: "Shader prototype for living water (ART-ENVIRONMENT rule 5): 3-wide river with a bend, bridge and rock next to a round pond with lily pads, from the 55° game camera. River: hard-edged light streaks and white flecks scroll along the flow (also around the bend), foam at banks and around the rock. Pond: expanding rings, twinkling light dashes and glints in place — no direction. Ducks and lily pads bob.",
           spec: "TECH-WATER",
           notes: "Rendered headless from web/prototypes/water.html (raw WebGL2, palette colours, ?t= freezes time, ?mode=1/2 alternatives). Variants image: recommended | world bands (seam at the bend) | per-tile scroll (1 m repeat, tile seams). Review: does the river read as flowing and the pond as still? (AENV-009)",
@@ -719,7 +719,7 @@ window.ART_CATALOG = {
         {
           id: "water_ingame",
           title: "Living water in the game (TECH-WATER, GAME-AMBIENT)",
-          status: "in-review",
+          status: "approved",
           description: "The prototype look ported into the game renderer: baked water field, water shader on the water tiles (river streaks, flecks, shore foam, foam at bridge piles / stones / jetty posts / water wheel; pond shimmer, rings, glints, lapping line), animated ducks with a mother-and-ducklings line on the river, frogs on bobbing lily pads at the pond.",
           spec: "TECH-WATER",
           notes: "Captured from the real game (release build, swiftshader) with the debug clock: web/tests/e2e/water.spec.ts writes the screenshots; the GIF is 48 frames stepped at 1/12 s with debug_step (4 s; the river pattern loops every 2 s). Review: AENV-009 / WATER-011.",
@@ -782,7 +782,7 @@ window.ART_CATALOG = {
         {
           id: "sign_silhouettes",
           title: "Enclosure sign silhouettes",
-          status: "in-review",
+          status: "approved",
           description: "Solid dark (#2B2320) animal silhouettes on transparent background, drawn by the renderer as a decal on the cream enclosure_sign panel (ART-ENVIRONMENT behaviour 6, AENV-011). Zebra: side view facing left with mohawk mane, ear, tufted tail and stripe cut-outs so it reads as a zebra, not a horse.",
           spec: "ART-ENVIRONMENT",
           notes: "Generated procedurally by tools/textures/sign_silhouettes.py (source of truth, 384×256 PNG), modelled on animals/zebra/side.png. The other animals' silhouettes are derived from their concept side views by the same script.",
@@ -834,7 +834,7 @@ window.ART_CATALOG = {
         {
           id: "kit_buildings",
           title: "Buildings \u2014 entrance arch, zookeeper house",
-          status: "in-review",
+          status: "approved",
           description: "entrance_arch (stone pillars, wooden arch with blank sign, turnstiles, ticket booth) and zookeeper_house (closed + cutaway with the roof removed).",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_buildings/brief.md",
@@ -847,7 +847,7 @@ window.ART_CATALOG = {
         {
           id: "food_storage_building",
           title: "Food storage barn (closed + cutaway)",
-          status: "in-review",
+          status: "approved",
           description: "Red wooden barn, open double door, blank sign; cutaway with the roof removed showing shelves and ~10 food crates with blank labels (user decision: removable roof, GAME-PLAYER \u00a72).",
           spec: "ART-ENVIRONMENT",
           brief: "props/food_storage_building/brief.md",
@@ -860,7 +860,7 @@ window.ART_CATALOG = {
         {
           id: "kit_enclosure_buildings",
           title: "Enclosure buildings \u2014 zebra, hippo, panda",
-          status: "in-review",
+          status: "approved",
           description: "stone_arch_shelter (open both ends), hut_wood (closed + cutaway), pool_tiled; panda_shelter, panda_platform, bamboo_feeding_rack (wood only).",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_enclosure_buildings/brief.md",
@@ -875,7 +875,7 @@ window.ART_CATALOG = {
         {
           id: "rock_hill_cave",
           title: "Rock hill with cave (closed + cutaway)",
-          status: "in-review",
+          status: "approved",
           description: "Grey boulder hill with bushes and a dark cool cave mouth; cutaway with the rock roof removed (3 \u00d7 3 m stone floor, puddle).",
           spec: "ART-ENVIRONMENT",
           brief: "props/rock_hill_cave/brief.md",
@@ -888,7 +888,7 @@ window.ART_CATALOG = {
         {
           id: "kit_furniture",
           title: "Bench and feeding trough",
-          status: "in-review",
+          status: "approved",
           description: "bench (2 m, backrest) and feeding_trough for care feeding (GAME-FAMILY \u00a74) \u2014 empty and filled with hay; clearly not a water trough.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_furniture/brief.md",
@@ -901,7 +901,7 @@ window.ART_CATALOG = {
         {
           id: "kit_garden",
           title: "Vegetable garden kit",
-          status: "in-review",
+          status: "approved",
           description: "garden_bed (1 \u00d7 3 m soil bed, wooden edge), carrot_plant and potato_plant in 3 growth stages each (clearly different from above), harvested carrot and potatoes, basket with treats, low white picket garden_fence + garden_gate, wheelbarrow, watering_can, blank garden_sign (GAME-GARDEN \u00a7 Assets).",
           spec: "GAME-GARDEN",
           brief: "props/kit_garden/brief.md",
@@ -923,7 +923,7 @@ window.ART_CATALOG = {
         {
           id: "kit_night",
           title: "Night — lights and moon door",
-          status: "in-review",
+          status: "approved",
           description: "lantern_post, string_lights, hand_lantern (the player's lantern), board_lamp (small lamp on every info board, GAME-NIGHT rule 5), wall_lamp, firefly, sky_moon / sky_stars, and the moon_door (night-zoo gate) closed / opening / open. Each sheet once in sheet light (for modelling) and once at night (glow).",
           spec: "GAME-NIGHT",
           brief: "props/kit_night/brief.md",
@@ -941,7 +941,7 @@ window.ART_CATALOG = {
         {
           id: "kit_bedroom",
           title: "Night — bed and bedroom corner",
-          status: "in-review",
+          status: "approved",
           description: "bed (blue star blanket), night_table, bedside_lamp, window_moon, rug_round, toy_chest for the zookeeper house; plus the bedroom corner at night with the roof cut away (GAME-NIGHT rule 3 'Sleep').",
           spec: "GAME-NIGHT",
           brief: "props/kit_bedroom/brief.md",
@@ -956,7 +956,7 @@ window.ART_CATALOG = {
         {
           id: "env_night_house",
           title: "Night — night house (night_1)",
-          status: "in-review",
+          status: "approved",
           description: "Friendly rounded night house with a grass roof and blue / warm red-orange porthole windows; cut-away with three glass-fronted indoor enclosures in soft blue and red-orange light (GAME-NIGHT rule 4).",
           spec: "GAME-NIGHT",
           brief: "environment/env_night_house/brief.md",
@@ -971,7 +971,7 @@ window.ART_CATALOG = {
         {
           id: "env_night_overview",
           title: "Night — night level 1 mood overview",
-          status: "in-review",
+          status: "approved",
           description: "Bird's-eye mood of the night zoo night_1: open moon door, lantern-lit paths, night house, pond with stars, old trees, meadow with fireflies, small hill — no animals (GAME-NIGHT rule 4).",
           spec: "GAME-NIGHT",
           brief: "environment/env_night_overview/brief.md",

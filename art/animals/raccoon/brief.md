@@ -60,5 +60,7 @@ Turnaround sheet of one raccoon: four views of the SAME raccoon side by side in 
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
-| 2026-09-27 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | extra text also asked for 'all four paws, not upright' and 'no zebra parts'; downscaled to 2048 px; **chosen**, split → views — friendly mask, ringed tail; side and ¾ on all fours, side faces LEFT; issue: front and back views look upright (pose inconsistent between views) |
-| 2026-09-27 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | extra text also asked for 'all four paws, not upright' and 'no zebra parts'; downscaled to 2048 px; alternative — upright bipedal in all views, side faces RIGHT |
+| 2026-09-27 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | discarded 2026-09-27 (upright front/back, extra hands in ¾ — user report), deleted |
+| 2026-09-27 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | discarded 2026-09-27 (upright front/back, extra hands in ¾ — user report), deleted |
+| 2026-09-27 | sheet_v3.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, ref_side.png | alternative (side view faces right, would need mirroring) |
+| 2026-09-27 | sheet_v4.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, ref_side.png | **chosen** — all four views on four paws, no extra arms; split into front/side/back/three_quarter (user fix 2026-09-27: v1 had two extra hands in the ¾ view and upright front/back views) |

@@ -408,14 +408,14 @@ window.ART_CATALOG = {
           description: "NIGHT animal (later night level), food box Fisch / fish. Look: friendly mask, ringed tail. Proposed game size \u2248 0.9 m.",
           spec: "GAME-NIGHT",
           brief: "animals/raccoon/brief.md",
-          notes: "Chosen sheet_v1 (side and ¾ on all fours, side faces left). Issue: front and back views look upright — pose inconsistent between views. v2 alternative (upright in all views, side faces right).",
+          notes: "Regenerated 2026-09-27 (sheet v4): on all four paws in every view — v1 had two extra hands in the ¾ view and upright front/back views (user report). v3 is the alternative.",
           images: [
             { file: "animals/raccoon/front.png", label: "front", required: true },
             { file: "animals/raccoon/side.png", label: "side", required: true },
             { file: "animals/raccoon/back.png", label: "back", required: true },
             { file: "animals/raccoon/three_quarter.png", label: "¾", required: true },
-            { file: "animals/raccoon/sheet_v1.jpg", label: "sheet (chosen)" },
-            { file: "animals/raccoon/sheet_v2.jpg", label: "sheet alternative" },
+            { file: "animals/raccoon/sheet_v4.jpg", label: "sheet (chosen)" },
+            { file: "animals/raccoon/sheet_v3.jpg", label: "sheet alternative" },
           ],
         },
         {

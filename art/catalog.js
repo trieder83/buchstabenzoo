@@ -212,7 +212,7 @@ window.ART_CATALOG = {
         {
           id: "zebra_family",
           title: "Zebra family lineup",
-          status: "approved",
+          status: "reference",
           description: "Male (100 %), female (91 %) and foal (50 %) side by side, \u00be views scaled by figure height \u2014 for FAM-007 (can children tell the pair apart?).",
           spec: "GAME-FAMILY",
           notes: "Composite of the \u00be views (no generation).",
@@ -223,7 +223,7 @@ window.ART_CATALOG = {
         {
           id: "koala_family",
           title: "Koala family lineup",
-          status: "approved",
+          status: "reference",
           description: "Male (100 %), female (92 %) and joey (46 %) side by side, \u00be views scaled by figure height \u2014 for FAM-007.",
           spec: "GAME-FAMILY",
           notes: "Composite of the \u00be views (no generation).",
@@ -342,7 +342,7 @@ window.ART_CATALOG = {
         {
           id: "animals_lineup",
           title: "Lineup — all animals + girl (size check)",
-          status: "approved",
+          status: "reference",
           description: "Front views of all 10 animals and the player girl, scaled to their intended heights (top of head/ears): girl 1.2, zebra 2.23, hippo 1.7, panda 1.1, koala 0.65, elephant 3.0, goldfish 0.16 (0.3 long), monkey 0.9, giraffe 4.5, lion 1.5, snow fox 0.6 m.",
           spec: "ART-ANIMALS",
           notes: "Decide whether the small animals (koala, snow fox, monkey, goldfish) should be scaled up for readability from the 55° camera.",
@@ -522,7 +522,7 @@ window.ART_CATALOG = {
         {
           id: "night_lineup",
           title: "Night — lineup of the night animals + girl (size check)",
-          status: "approved",
+          status: "reference",
           description: "Front views of the 10 night animals next to the 1.2 m player girl at their proposed game sizes (GAME-NIGHT).",
           spec: "GAME-NIGHT",
           notes: "Composite (no generation) of the chosen front views at the proposed sizes from the briefs: girl 1.2, hedgehog 0.6, bat 0.8, owl 1.0, raccoon 0.9, badger 0.7, fennec 0.9, kiwi 0.7, porcupine 0.8, slow loris 0.7, tarsier 0.7 m. Decide whether sizes are OK — most night animals are 0.6–0.9 m and similar in size.",
@@ -703,7 +703,7 @@ window.ART_CATALOG = {
         {
           id: "water_anim",
           title: "Animated water (prototype)",
-          status: "approved",
+          status: "reference",
           description: "Shader prototype for living water (ART-ENVIRONMENT rule 5): 3-wide river with a bend, bridge and rock next to a round pond with lily pads, from the 55° game camera. River: hard-edged light streaks and white flecks scroll along the flow (also around the bend), foam at banks and around the rock. Pond: expanding rings, twinkling light dashes and glints in place — no direction. Ducks and lily pads bob.",
           spec: "TECH-WATER",
           notes: "Rendered headless from web/prototypes/water.html (raw WebGL2, palette colours, ?t= freezes time, ?mode=1/2 alternatives). Variants image: recommended | world bands (seam at the bend) | per-tile scroll (1 m repeat, tile seams). Review: does the river read as flowing and the pond as still? (AENV-009)",
@@ -719,7 +719,7 @@ window.ART_CATALOG = {
         {
           id: "water_ingame",
           title: "Living water in the game (TECH-WATER, GAME-AMBIENT)",
-          status: "approved",
+          status: "reference",
           description: "The prototype look ported into the game renderer: baked water field, water shader on the water tiles (river streaks, flecks, shore foam, foam at bridge piles / stones / jetty posts / water wheel; pond shimmer, rings, glints, lapping line), animated ducks with a mother-and-ducklings line on the river, frogs on bobbing lily pads at the pond.",
           spec: "TECH-WATER",
           notes: "Captured from the real game (release build, swiftshader) with the debug clock: web/tests/e2e/water.spec.ts writes the screenshots; the GIF is 48 frames stepped at 1/12 s with debug_step (4 s; the river pattern loops every 2 s). Review: AENV-009 / WATER-011.",
@@ -782,7 +782,7 @@ window.ART_CATALOG = {
         {
           id: "sign_silhouettes",
           title: "Enclosure sign silhouettes",
-          status: "approved",
+          status: "reference",
           description: "Solid dark (#2B2320) animal silhouettes on transparent background, drawn by the renderer as a decal on the cream enclosure_sign panel (ART-ENVIRONMENT behaviour 6, AENV-011). Zebra: side view facing left with mohawk mane, ear, tufted tail and stripe cut-outs so it reads as a zebra, not a horse.",
           spec: "ART-ENVIRONMENT",
           notes: "Generated procedurally by tools/textures/sign_silhouettes.py (source of truth, 384×256 PNG), modelled on animals/zebra/side.png. The other animals' silhouettes are derived from their concept side views by the same script.",

@@ -4,9 +4,9 @@ title: Camera views — look-around (hold) and first person (toggle)
 aspect: gameplay
 module: camera-views
 status: draft
-depends_on: [GAME-PLAYER, GAME-RESCUE, ART-DIRECTION, TECH-ARCH]
+depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-SAVE, ART-DIRECTION, TECH-ARCH]
 test_prefix: CAMV
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Camera views — look-around (hold) and first person (toggle)
@@ -16,7 +16,7 @@ updated: 2026-09-26
 Next to the high-angle **zoo view** of GAME-PLAYER §2 (the default) the child can look at the
 zoo from close up: the **look-around view** while a button is held (a quick look at the
 horizon, e.g. "where is the giraffe tower?") and the **first-person view** as a toggle (walk
-through the zoo with the girl's eyes). Both must keep the riddles fair (GAME-RESCUE rule 1:
+through the zoo with the player character's eyes). Both must keep the riddles fair (GAME-RESCUE rule 1:
 a hiding place is never visible from its own info board), stay comfortable for children
 (no motion sickness) and cost no more draw calls than the zoo view.
 
@@ -27,18 +27,25 @@ a hiding place is never visible from its own info board), stay comfortable for c
    (eased, smoothstep): eye position, view direction, field of view, near/far plane, fog and
    sky blend together — never a cut.
 2. **Look-around (hold).** While the look button is held — touch: the **eye button** 👁 next
-   to the interact button (bottom right, ≥ 64 px); desktop: hold `V` or the **right mouse
+   to the interact button (bottom right, ≥ 64 px); desktop: hold `F` or the **right mouse
    button** — the camera glides down to **3.5 m behind and 1.6 m above** the player,
    **pitch 12° down**, **vertical FOV 50°**. It starts looking in the zoo view's direction.
-   Dragging (right thumb anywhere in the right half, or the mouse while the right button is
+   Dragging (right thumb anywhere in the right half — or sliding the thumb that holds the eye
+   button (implemented, part of the Q-109 proposal) — or the mouse while the right button is
    held) turns the view **smoothly** (not in 45° steps), at most **±180°** from where it
-   started. The player can keep walking (left thumb / WASD, relative to the look-around
-   view). Releasing glides back to the zoo view (its rotation and zoom are unchanged).
-   Look-around is not offered in first person (the eye button is hidden there, `V` does
-   nothing).
-3. **First person (toggle).** A toggle — the round HUD button 👓 ("through my eyes") left of
-   the settings gear, on touch and desktop (highlighted while on); desktop also `F` — switches to the **eye height 1.1 m**
-   above the player's feet, looking in the **player's facing** direction, vertical FOV 50°.
+   started. The player can keep walking (left thumb / WASD / arrow keys, relative to the
+   look-around view; ← → still step sideways here as in the zoo view, GAME-PLAYER §3).
+   Releasing glides back to the zoo view (its rotation and zoom are unchanged).
+   Rotation (`Q`/`R`, swipe steps) and zoom (wheel, `+`/`-`, pinch) input is ignored in both
+   close views (proposal Q-123 a, CAMV-017). Look-around is not offered in first person (the
+   eye button is hidden there; `F` and the right mouse button do nothing — CAMV-020).
+3. **First person (toggle)** — controls: user decision 2026-09-27. **`V`** (desktop) or the
+   round HUD button 👓 ("through my eyes", highlighted while on) toggles first person on and
+   off. On touch the 👓 button sits **bottom right above the interact button** (≥ 64 px,
+   inside the safe area) so the right thumb reaches it while the left thumb walks; on
+   desktop the same button is shown and can be clicked. First person switches to the
+   **eye height 1.1 m** above the player's feet, looking in the **player's facing**
+   direction, vertical FOV 50°.
    - The view turns smoothly by dragging (right thumb in the right half, or the mouse with any
      button) and with the **arrow keys ← →** (↑ ↓ keep walking); **pitch** by vertical drag,
      limited to **−20° … +20°** (0° = level).
@@ -48,7 +55,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
      interaction rules of GAME-PLAYER §5 (range 2 m, readable side ±60°, facing ±75°) use
      what the child looks at; the reading panels open and close by themselves as in the zoo
      view (GAME-PLAYER §4).
-   - The girl's **body is not drawn**. What she carries (food box, fish bowl) stays drawn in
+   - The player character's **body is not drawn**. What she carries (food box, fish bowl) stays drawn in
      front of her chest, so it shows at the bottom of the screen (placeholder for hands, Q-112).
    - Toggling again glides back to the zoo view, which then looks in the zoo-view direction
      it had before (its 45° step and zoom are unchanged).
@@ -56,7 +63,8 @@ a hiding place is never visible from its own info board), stay comfortable for c
    height stays constant while walking. Turning is slow and eased (drag 0.25° per CSS px,
    keys 90°/s, easing rate 12/s — no instant snaps). FOV 50° vertical (comfortable, not
    fish-eye). The zoo view stays the default; transitions never go through the ground.
-5. **Distance fog keeps the riddles fair.** In both close views a soft **pastel comic haze**
+5. **Distance fog keeps the riddles fair.** (Distance fog / haze of the camera, not the map
+   `fog` of GAME-MAP.) In both close views a soft **pastel comic haze**
    in the sky colour starts at **9 m** from the eye and **fully hides everything from 16 m**
    on (the *visibility distance*, `FOG_END_M`). Hedges, trees and buildings still block the
    view as in the zoo view. Therefore every hiding place (animal spot and wander area, at
@@ -70,7 +78,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
    board; `loc_big_ball` 17.0 m, `loc_pond` 18.1 m); animal spots are ≥ 21.6 m. The
    margin is small — Q-110.
 6. **Draw distance = fog end.** In the close views the far plane is the fog end + 2 m
-   (18 m), and static batches whose bounds lie beyond it (or outside the view) are culled —
+   (18 m; the zoo view has no fog and a 120 m far plane), and static batches whose bounds lie beyond it (or outside the view) are culled —
    so the close views cost fewer draw calls than the zoo view at maximum zoom-out (20 m).
    *Implementation:* each static batch keeps the bounds of its instances per 8 m ground
    chunk and is drawn only when one chunk is in the frustum; decal quads and skinned
@@ -92,7 +100,8 @@ a hiding place is never visible from its own info board), stay comfortable for c
    look-around (objects between the camera and the player fade) and is off in first person.
    Roofs of enterable buildings hide while the player is inside, in every view.
 9. **Settings.** The chosen view (`zoo` or `first_person`) is stored in the host settings
-   with language and reading level and restored at start; look-around is never stored.
+   (key `zoo.view`, next to language and reading level) and restored at start; look-around
+   is never stored.
    The game save (GAME-SAVE) keeps storing only the zoo-view rotation and zoom.
 10. **Logic lives in Rust.** Poses, transitions, turn limits, fog and cull distances are
     in `zoo-render::camera` (pure, unit-tested) with constants from `zoo_core::view`; the
@@ -101,7 +110,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
 
 ## Acceptance criteria
 
-- Holding the eye button / `V` / right mouse shows the zoo from behind the girl with sky and
+- Holding the eye button / `F` / right mouse shows the zoo from behind the player with sky and
   fog within 0.4 s; releasing returns to the unchanged zoo view within 0.4 s.
 - In first person the child can walk to an info board, look at it and the riddle panel opens;
   looking away closes it.
@@ -121,23 +130,34 @@ a hiding place is never visible from its own info board), stay comfortable for c
 | CAMV-007 | Given first person looking in direction D, then stick up walks along D and stick right walks 90° clockwise of D (seen from above), and the player's yaw does not change while walking. | unit |
 | CAMV-008 | Given the joined levels 1–3 and every mission's candidates, the player on every walkable cell centre ≤ 2.5 m from the own info board or next to the own gate, then every animal spot and wander cell centre (0.5 m, animal height, perch + 1 m) is ≥ 16 m (fog end) from the close-view eye. | unit |
 | CAMV-009 | Given the look-around camera at any yaw, portrait or landscape, then every world point inside its view frustum and ≥ 3 m from the eye is at least as far from the eye as from the player's feet (horizontally), so CAMV-008's player-position bound holds. | unit |
-| CAMV-010 | Given the host input: holding `V` or the right mouse button sends look-hold on/off; `F` toggles first person; in a close view a mouse drag or a right-half touch drag sends continuous look drags (no 45° swipe steps), the left half still drives the joystick; the eye button sends look-hold while pressed. | unit (Vitest) |
+| CAMV-010 | Given the host input: holding `F` or the right mouse button sends look-hold on/off; `V` toggles first person; in a close view a mouse drag or a right-half touch drag sends continuous look drags (no 45° swipe steps), the left half still drives the joystick; the eye button sends look-hold while pressed. | unit (Vitest) |
 | CAMV-011 | Given the view setting `first_person` is stored, when the game restarts, then it starts in first person; `look_around` is never stored; invalid stored values fall back to `zoo`. | unit (Vitest) |
-| CAMV-012 | Given the game in the browser, when `F` is pressed, the player walks to the zebra info board and turns to look at it (arrow key), then the view is first person, the player's body is not drawn and the riddle panel opens; a mouse drag turns the view smoothly and looking away closes the panel; pressing `F` again returns to the zoo view. Screenshots `art/environment/poc/screenshot_camera_firstperson.png` (+ `_board`). | e2e |
-| CAMV-013 | Given the game in the browser, when `V` is held, then within 0.5 s the view is look-around (camera 1.6 m high behind the player, sky pixels in the top part of the screen) and a mouse drag turns it; on release the zoo view returns within 0.5 s with the same yaw and zoom. Screenshot `art/environment/poc/screenshot_camera_lookaround.png`. | e2e |
+| CAMV-012 | Given the game in the browser, when `V` is pressed, the player walks to the zebra info board and turns to look at it (arrow key), then the view is first person, the player's body is not drawn and the riddle panel opens; a mouse drag turns the view smoothly and looking away closes the panel; pressing `V` again returns to the zoo view. Screenshots `art/environment/poc/screenshot_camera_firstperson.png` (+ `_board`). | e2e |
+| CAMV-013 | Given the game in the browser, when `F` is held, then within 0.5 s the view is look-around (camera 1.6 m high behind the player, sky pixels in the top part of the screen) and a mouse drag turns it; on release the zoo view returns within 0.5 s with the same yaw and zoom. Screenshot `art/environment/poc/screenshot_camera_lookaround.png`. | e2e |
 | CAMV-014 | Given the same player position, then the draw calls in first person and in look-around are lower than in the zoo view at 20 m zoom. | e2e |
 | CAMV-015 | Given first person while walking for 2 s, then the eye height stays 1.1 m ± 0.001 (no head bob) and per frame the view yaw changes by at most the eased turn (no snaps). | unit |
 | CAMV-016 | Given the approved comic style frame, when a reviewer looks at the two screenshots, then the sky, clouds and haze read as the same comic style (flat colours, outlines on clouds, no photographic look) and nothing flickers while turning. | manual |
+| CAMV-017 | Given look-around, then the occluder fade is on (blockers between eye and player fade) and the body is drawn; given first person, then no occluder fade is applied and the body is hidden; rotation and zoom input in either close view leaves the zoo view's 45° step and zoom unchanged (Q-123 a). Roofs of enterable buildings hide in every view (same region logic as PLAY-028; view-independent). | unit |
+| CAMV-018 | Given every view change (zoo ↔ look-around, zoo ↔ first person, look-around → release) at any yaw and zoom, then at every frame of the glide the eye stays above the ground (eye height > 0.05 m, the close-view near plane) and moves smoothly: no 1/60 s step larger than 1.6 × the average step of the 0.4 s glide (eased, no cut, never through the ground; at 20 m zoom the peak is ≈ 1.25 m per frame). | unit |
+| CAMV-019 | Given a touch device, then the 👓 first-person button is in the bottom-right thumb zone (above the interact button, fully inside the safe area); tapping it toggles first person on and off exactly like `V`, while the left thumb keeps walking. | e2e |
+| CAMV-020 | Given first person, then the eye button is hidden and holding `F` or the right mouse button (`look_hold(true)`) leaves the view in first person; given the zoo view, then the 👓 button is shown on desktop and on touch and not highlighted. | unit |
 
 ## Open questions
 
-- Q-109 Proposal values (look-around boom 3.5 m / 1.6 m / 12°, eye 1.1 m, FOV 50°, fog 9–16 m,
-  0.4 s glides, turn speeds) and where the first-person toggle lives (HUD button vs. only in the
-  settings).
+- Q-109 partly answered (user 2026-09-27: `V` toggles first person, `F` / right mouse holds
+  look-around, 👓 bottom right above the interact button, 👁 hold button). Still open: the
+  proposal values (look-around boom 3.5 m / 1.6 m / 12°, eye 1.1 m, FOV 50°, fog 9–16 m,
+  0.4 s glides, turn speeds) and first person for `kiga`.
 - Q-110 Layout rule for the fog margin: hiding places ≥ 17 m from their board's standing points
   (currently 16.97 m minimum).
 - Q-111 Look-around camera collision (eye inside a hedge or wall).
 - Q-112 Hands in first person (carried food/bowl as the only "hands" for now).
+- Q-123 What `Q`/`R`, swipe steps, mouse wheel / `+`/`-` and pinch do in the close views
+  (rules 2 and 3 say the zoo view's step and zoom stay unchanged; the implementation still
+  changes them while a close view is shown).
+- Q-124 `V` pressed while look-around is held (implemented: switches to first person).
+- Q-125 Camera views while driving a golf cart (GAME-CART).
+- Q-126 Night colours of the comic sky and haze (GAME-NIGHT).
 
 ## Implementation (2026-09-26)
 
@@ -148,12 +168,13 @@ a hiding place is never visible from its own info board), stay comfortable for c
   `zoo_render::sky` — sky gradient, comic clouds and haze GLSL, inserted into the outline
   pass (`shaders::post_fs`).
 - `zoo-web` — `look_hold`, `toggle_first_person`, `set_view_mode`, `view_mode`,
-  `saved_view_mode`, `look_drag`; `V` / `F` / arrow keys in `key`; debug getters
+  `saved_view_mode`, `look_drag`; `F` / `V` / arrow keys in `key`; debug getters
   `camera_eye`, `camera_pitch_deg`, `camera_view_yaw_deg`, `camera_blend`, `camera_fog`,
   `player_drawn`.
 - Host — `MouseGestures` (right button = look-around), `LookButton` (touch eye button),
   right-thumb drags also sent as `look_drag`; `#view-btn` 👓 and `#look-btn` 👁️; view stored
   as `zoo.view`.
-- Tests — CAMV-001…005, 007, 009, 015 in `crates/zoo-render/src/camera.rs`; CAMV-006, 008 in
-  `crates/zoo-core/tests/camera_views.rs`; CAMV-010/011 in `web/src/{input,ui}.test.ts`;
-  CAMV-012…014 in `web/tests/e2e/camera_views.spec.ts`.
+- Tests — CAMV-001…005, 007, 009, 015, 017, 018 in `crates/zoo-render/src/camera.rs`;
+  CAMV-006, 008 in `crates/zoo-core/tests/camera_views.rs`; CAMV-010/011 in
+  `web/src/{input,ui}.test.ts`; CAMV-012…014, 019 in `web/tests/e2e/camera_views.spec.ts`.
+  Not yet covered: CAMV-016 (manual review), CAMV-020 (new 2026-09-27).

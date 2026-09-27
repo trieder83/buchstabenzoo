@@ -1,4 +1,4 @@
-//! RENDER-001: no z-fighting between placeholder boxes of the assembled scene.
+//! ARCH-005: no z-fighting between placeholder boxes of the assembled scene.
 //!
 //! Two faces that lie in the same plane, face the same way and overlap make the GPU flicker
 //! between their colours while the camera moves (user report 2026-09-26: the entrance arch
@@ -78,7 +78,7 @@ fn z_fights(boxes: &[BoxPlacement]) -> Vec<String> {
 }
 
 #[test]
-fn render_001_no_z_fighting_in_the_joined_zoo() {
+fn arch_005_no_z_fighting_in_the_joined_zoo() {
     let scene = LevelScene::build(&common::zoo());
     let mut all = scene.boxes.clone();
     for f in &scene.fallbacks {
@@ -93,7 +93,7 @@ fn render_001_no_z_fighting_in_the_joined_zoo() {
 }
 
 #[test]
-fn render_001_detector_finds_the_entrance_case() {
+fn arch_005_detector_finds_the_entrance_case() {
     // pillar 0..5 m and a beam 4.3..5 m spanning it: tops coplanar at 5.0 m and the outer
     // side faces coplanar at x = -3.0
     let b = |x: f32, y0: f32, size: Vec3| BoxPlacement {

@@ -140,12 +140,15 @@ impl FollowCamera {
 
     /// Rotates the target yaw by whole 45° steps (positive = counter-clockwise from above).
     pub fn rotate_steps(&mut self, steps: i32) {
+        if self.mode.is_close() {
+            return; // the zoo view stays unchanged in the close views (GAME-CAMERA-VIEWS 2/3)
+        }
         self.yaw_steps += steps;
     }
 
     /// Multiplies the target distance (`< 1` zooms in), clamped to the zoom range.
     pub fn zoom_by(&mut self, factor: f32) {
-        if factor.is_finite() && factor > 0.0 {
+        if factor.is_finite() && factor > 0.0 && !self.mode.is_close() {
             self.target_distance = (self.target_distance * factor)
                 .clamp(self.params.min_distance_m, self.params.max_distance_m);
         }
@@ -821,6 +824,60 @@ mod tests {
             // eased: at most rate × dt of the remaining turn per frame
             assert!(step <= 1.5 * (1.0 - (-TURN_EASE_RATE * DT).exp()) + 1e-4);
             last = cam.look_yaw();
+        }
+    }
+
+    // CAMV-017: occluder fade on in look-around, off in first person; rotation/zoom input
+    // does not change the hidden zoo view in the close views (Q-123 proposal a).
+    #[test]
+    fn camv_017_fade_per_view_and_zoo_view_untouched() {
+        let mut cam = zoo_cam();
+        let (steps, dist) = (cam.yaw_steps(), cam.target_distance());
+        cam.set_view(ViewMode::LookAround, 0.0);
+        cam.snap(Vec3::ZERO);
+        assert!(cam.occluder_fade() && !cam.hides_player());
+        cam.rotate_steps(3);
+        cam.zoom_by(0.5);
+        cam.set_view(ViewMode::FirstPerson, 0.0);
+        cam.snap(Vec3::ZERO);
+        assert!(!cam.occluder_fade() && cam.hides_player());
+        cam.rotate_steps(-1);
+        cam.zoom_by(2.0);
+        cam.set_view(ViewMode::Zoo, 0.0);
+        cam.snap(Vec3::ZERO);
+        assert_eq!((cam.yaw_steps(), cam.target_distance()), (steps, dist));
+        assert!(cam.occluder_fade() && !cam.hides_player());
+    }
+
+    // CAMV-018: during every glide the eye stays above the ground and moves smoothly (eased).
+    #[test]
+    fn camv_018_glides_stay_above_ground() {
+        for mode in [ViewMode::LookAround, ViewMode::FirstPerson] {
+            for zoom in [10.0, 20.0] {
+                let mut cam = FollowCamera::new(CameraParams::default(), zoom);
+                cam.snap(Vec3::ZERO);
+                cam.set_view(mode, 1.0);
+                for back in [false, true] {
+                    if back {
+                        cam.set_view(ViewMode::Zoo, 0.0);
+                    }
+                    let start = cam.eye();
+                    let mut steps = Vec::new();
+                    for _ in 0..40 {
+                        let before = cam.eye();
+                        cam.update(DT, Vec3::ZERO);
+                        assert!(cam.eye().y > 0.05, "{mode:?} eye {}", cam.eye());
+                        steps.push(cam.eye().distance(before));
+                    }
+                    // eased: no frame moves more than 1.6× the average of a 0.4 s glide
+                    let avg = start.distance(cam.eye()) / (TRANSITION_S / DT);
+                    let max = steps.iter().copied().fold(0.0, f32::max);
+                    assert!(
+                        max <= 1.6 * avg + 1e-3,
+                        "{mode:?} {zoom} m: step {max} > 1.6 × {avg}"
+                    );
+                }
+            }
         }
     }
 }

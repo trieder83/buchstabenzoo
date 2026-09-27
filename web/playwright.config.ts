@@ -6,7 +6,9 @@ const PORT = 4173;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // Hard limits so a stuck browser or wait can never hang a run (per test / whole run).
   timeout: 120_000,
+  globalTimeout: 5_400_000, // the full suite needs ≈ 65 min with software WebGL
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],

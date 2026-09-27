@@ -261,7 +261,11 @@ export class Ui {
       });
     }
     this.gear.addEventListener('click', () => this.toggleSettings());
-    this.viewBtn?.addEventListener('click', () => {
+    // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
+    // (CAMV-019)
+    this.viewBtn?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.app.toggle_first_person?.();
       this.update();
     });
@@ -314,7 +318,7 @@ export class Ui {
   }
 
   /**
-   * View buttons follow the game's view (also switched with `F`), and the chosen view is
+   * View buttons follow the game's view (also switched with `V`), and the chosen view is
    * stored with the settings (GAME-CAMERA-VIEWS 9).
    */
   private updateView(): void {

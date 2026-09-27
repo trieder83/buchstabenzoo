@@ -6,7 +6,7 @@ module: golf-carts
 status: draft
 depends_on: [GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE]
 test_prefix: CART
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Golf carts
@@ -23,7 +23,7 @@ still means walking the animal home.
    level 1, one at the entry of level 2, one at the entry of level 3 — a cart of a locked
    level is only usable once that level is open). Each cart has a small parking sign.
 2. **Getting in / out:** standing next to a cart (GAME-PLAYER §5 rules, the driver's side),
-   the interact button shows a cart icon; interact → the girl sits in the driver's seat.
+   the interact button shows a cart icon; interact → the player character sits in the driver's seat.
    Interact again (or a big "get out" button) → she steps out on the side, the cart stays
    exactly where it was left (it does not drive back by itself — proposal Q-119).
 3. **Driving:** the same controls as walking (left thumb / WASD): push forward = drive
@@ -39,7 +39,7 @@ still means walking the animal home.
 5. **Safety, child-friendly:** the cart slows down and stops before it would touch a
    visitor, an animal or a duck on land; nothing can be run over or pushed. No crashes, no
    damage, no timer. A friendly horn button (🔔 "tüt-tüt") is optional fun.
-6. **Animals do not follow the cart:** when the girl gets into a cart while animals are
+6. **Animals do not follow the cart:** when the player gets into a cart while animals are
    `following`, they stop and **wait** at that spot (GAME-RESCUE §6 waiting); when she comes
    back on foot within 5 m they follow again. A short feedback bubble tells the child
    ("Wir laufen lieber!" / "We'd rather walk!"). Showing food from the cart does nothing.
@@ -48,11 +48,11 @@ still means walking the animal home.
 8. **Interactions while driving:** reading panels do not open automatically while driving
    (so the ride isn't interrupted); get out to read. The map (GAME-MAP) can be opened.
 9. **Night:** carts have small headlights at night (GAME-NIGHT).
-10. **Saving:** every cart's position, yaw and whether the girl sits in it are saved
+10. **Saving:** every cart's position, yaw and whether the player sits in it are saved
     (GAME-SAVE).
 11. **Art:** a comic zoo golf cart (green-white with a striped roof, zoo logo space left
     blank, 2 seats, small cargo area where carried items are visible). Concept sheet first
-    (ART-PIPELINE); the girl has a `drive` sitting clip (ART-RIG).
+    (ART-PIPELINE); both player characters (`player_girl`, `player_boy`) have a `drive` sitting clip (ART-RIG).
 
 ## Test cases
 
@@ -73,3 +73,4 @@ still means walking the animal home.
 
 - Q-119 Where the 3 carts park, and whether a cart drives back to its parking spot by itself.
 - Q-120 Speeds (paths 4.5 m/s, grass 2.0 m/s) and whether carts may drive on grass at all.
+- Q-125 Which camera views are allowed while driving (look-around, first person — GAME-CAMERA-VIEWS).

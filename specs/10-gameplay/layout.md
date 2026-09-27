@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Zoo layout and level boundaries
@@ -143,7 +143,10 @@ interactable. Without the field every enclosure's animal is in scope.
   used for mockups/greybox). Since the high-angle camera is decided (Q-049, GAME-PLAYER §2),
   "an animal's hiding place cannot be seen from its own enclosure" is checked as a **screen
   test** per level (hiding place off-screen while the player stands at its info board or
-  enclosure gate, e.g. LAYOUT-L1-006), not as an eye-level line of sight.
+  enclosure gate, e.g. LAYOUT-L1-006), not as an eye-level line of sight. In the close
+  camera views (look-around, first person) the distance haze does this job: every hiding
+  place ≥ 16 m (`fog_end`) from the same standing points (GAME-CAMERA-VIEWS 5, CAMV-008;
+  margin rule Q-110).
 
 ## Joining levels (proposal, level design — Q-088)
 

@@ -7,7 +7,7 @@ looks **comic-like**. Every prompt in `art/**/brief.md` copies the blocks below 
 To change the style: edit the blocks here, then replace them in every brief in the same
 change (search for the old block text).
 
-Camera for all game scenes: high-angle follow camera (~55° down, isometric-like, no sky)
+Camera for all game scenes: high-angle follow camera (~55° down, isometric-like, no sky) — the zoo view; the close views (first person, look-around) add a comic sky and haze (GAME-CAMERA-VIEWS)
 — see GAME-PLAYER and the camera paragraph in each environment brief.
 
 ## STYLE — scenes (environment, style frame, mockups)

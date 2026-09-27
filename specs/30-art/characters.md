@@ -6,7 +6,7 @@ module: characters
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, ART-RIG, GAME-PLAYER]
 test_prefix: ACHAR
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Characters — concept and models
@@ -131,3 +131,4 @@ zookeeper", both get a zoo vest over the same base design.
 - Q-028 Choice of skin tone / hair beyond girl and boy.
 - Q-051 Close-up for dialogue so faces/expressions are visible.
 - Q-062 `player_girl` hair length (sheet: waist; old text: shoulder blades).
+- Q-112 Hands in first person (GAME-CAMERA-VIEWS 3): only the carried items are drawn for now; first-person hands would need an extra model/rig.

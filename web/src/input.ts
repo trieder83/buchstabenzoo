@@ -9,7 +9,8 @@
 // Camera views (GAME-CAMERA-VIEWS): right-half drags and mouse drags are also forwarded as
 // continuous `look_drag`s; the game turns a close view with them and ignores them in the zoo
 // view (and ignores the 45° swipe steps in the close views). Look-around is held with the
-// eye button, `V` (via `key`) or the right mouse button; `F` (via `key`) toggles first person.
+// eye button, `F` (via `key`) or the right mouse button; `V` (via `key`) toggles first person
+// (user decision 2026-09-27).
 
 /** The subset of the WASM `App` used for input. */
 export interface InputSink {

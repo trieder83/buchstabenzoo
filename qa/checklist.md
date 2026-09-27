@@ -77,6 +77,6 @@ Automated coverage: `crates/zoo-core/tests/gameplay_qa.rs` (sweeps) and
 
 ## Rendering artifacts
 
-- [ ] No z-fighting / flicker: `cargo test -p zoo-core --test zfight` green *(auto: RENDER-001)*
+- [ ] No z-fighting / flicker: `cargo test -p zoo-core --test zfight` green *(auto: ARCH-005)*
 - [ ] Strafe + rotate past every building, placeholder, pool rim, perch and sign; diff two consecutive screenshots — static surfaces must not change colour (entrance arch bug, 2026-09-26)
 - [ ] No outline shimmer on tile seams, no stripe shimmer on animals at small size, no gaps between ground tiles

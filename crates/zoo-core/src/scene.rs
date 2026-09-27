@@ -1082,7 +1082,7 @@ impl LevelScene {
                     rim_box(Vec2::new(a, z1 - rim / 2.0), Vec2::new(b, z1 - rim / 2.0));
                 }
                 // west / east segments run between the south and north rims (no overlapping
-                // corner blocks: coplanar tops and sides would z-fight, RENDER-001)
+                // corner blocks: coplanar tops and sides would z-fight, ARCH-005)
                 let inner = |(a, b): (f32, f32)| {
                     let (a, b) = (a.max(z0 + rim), b.min(z1 - rim));
                     (b > a + 1e-3).then_some((a, b))
@@ -1216,7 +1216,7 @@ impl LevelScene {
                         let p = cell_center(c)
                             + Vec2::new(hash01(c.x + k, c.y) - 0.5, hash01(c.y, c.x - k) - 0.5)
                                 * 0.8;
-                        // tops 5 mm apart so overlapping petals never share a plane (RENDER-001)
+                        // tops 5 mm apart so overlapping petals never share a plane (ARCH-005)
                         let hgt = 0.06 + 0.005 * ((c.x + c.y * 3 + k) as f32).rem_euclid(5.0);
                         self.flat(id, p, Vec3::new(0.25, hgt, 0.2), 0.0, colors::BLOSSOM);
                     }
@@ -1479,7 +1479,7 @@ impl LevelScene {
             Some("giraffe") => {
                 // tall feeding rack with leafy branches (4 m), no tower (riddle guard)
                 let p = at(0.7, 0.7);
-                // the pole ends inside the leafy top (no shared top face, RENDER-001)
+                // the pole ends inside the leafy top (no shared top face, ARCH-005)
                 self.push_box(id, p, 0.0, Vec3::new(0.2, 4.1, 0.2), colors::WOOD);
                 self.push_box(id, p, 3.4, Vec3::new(1.4, 0.8, 0.8), colors::TREE_CROWN);
                 self.push_box(
@@ -1632,7 +1632,7 @@ impl LevelScene {
             (ElementType::Enclosure, _) => self.enclosure(e),
             (ElementType::Building, "entrance") => {
                 // Arch: two pillars and a beam, so the player is visible through it. The
-                // pillars end under the beam: no coplanar faces (RENDER-001 — they used to
+                // pillars end under the beam: no coplanar faces (ARCH-005 — they used to
                 // share the top at `height` and flickered red/blue).
                 let r = e.rect;
                 let c = rect_center(r);
@@ -1666,7 +1666,7 @@ impl LevelScene {
                     );
                 }
                 // top rail slightly deeper than the 0.12 m posts so their faces never
-                // share a plane (RENDER-001)
+                // share a plane (ARCH-005)
                 self.push_box(
                     &e.id,
                     row,
@@ -1801,7 +1801,7 @@ impl LevelScene {
                         fall_x - 1.2 + hash01(k, 1) * 2.4,
                         r.z as f32 - 0.4 - hash01(2, k) * 1.4,
                     );
-                    let hgt = 0.1 + 0.006 * k as f32; // distinct tops (RENDER-001)
+                    let hgt = 0.1 + 0.006 * k as f32; // distinct tops (ARCH-005)
                     self.part_box(id, p, 0.0, Vec3::new(0.5, hgt, 0.4), colors::FOAM);
                 }
             }
@@ -1824,7 +1824,7 @@ impl LevelScene {
                 let wheel = Vec2::new(r.x as f32 - 1.5, c.y);
                 let axle = 1.3;
                 // hub thicker than the spokes, crossing spokes of different section, so no
-                // two faces share a plane (RENDER-001)
+                // two faces share a plane (ARCH-005)
                 self.part_box(
                     id,
                     wheel,
@@ -1924,7 +1924,7 @@ impl LevelScene {
                 let n = (r.w as f32 / 1.2).floor().max(1.0) as i32;
                 for k in 0..n {
                     let x = x0 + 0.6 + k as f32 * (x1 - x0 - 1.0) / n as f32;
-                    // neighbouring sheets overlap: alternate depth and length (RENDER-001)
+                    // neighbouring sheets overlap: alternate depth and length (ARCH-005)
                     let odd = (k % 2) as f32;
                     self.part_box(
                         id,
@@ -1945,7 +1945,7 @@ impl LevelScene {
             "treehouse" | "giant_tree" | "blossom_tree" => self.perch_tree(e, data),
             "log_pile" => {
                 // stacked rows (each shorter than the one below, logs 1 cm apart) so no two
-                // log faces share a plane (RENDER-001)
+                // log faces share a plane (ARCH-005)
                 let lz = ((d - 0.6) / 4.0).min(0.43);
                 for (row, n) in [(0, 4), (1, 3), (2, 2)] {
                     for k in 0..n {
@@ -2313,7 +2313,7 @@ impl LevelScene {
         } else {
             colors::TREE_TRUNK
         };
-        // 2 cm proud of the floor / deck it may lie on (no coplanar tops, RENDER-001)
+        // 2 cm proud of the floor / deck it may lie on (no coplanar tops, ARCH-005)
         self.push_box(&format!("{}:perch", h.id), mid, height - 0.16, size, color);
     }
 

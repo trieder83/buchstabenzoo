@@ -1,9 +1,9 @@
-// GAME-CAMERA-VIEWS: first person (toggle, `F`) and look-around (hold, `V` / right mouse)
+// GAME-CAMERA-VIEWS: first person (toggle, `V`) and look-around (hold, `F` / right mouse)
 // in the real browser — CAMV-012 (first person: walk, turn, read a board), CAMV-013
 // (look-around hold and release), CAMV-014 (draw calls per view). Review shots go to
 // art/environment/poc/screenshot_camera_{firstperson,lookaround}.png.
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type CDPSession, type Page } from '@playwright/test';
 import { goto, nextFrames, shots, waitFrames, START_URL } from './helpers';
 
 test.describe.configure({ timeout: 180_000 });
@@ -86,7 +86,7 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   expect(zoo.mode).toBe('zoo');
   expect(zoo.drawn).toBe(true);
 
-  await page.keyboard.press('KeyF');
+  await page.keyboard.press('KeyV');
   const took = await glide(page, 1);
   console.log(`first person glide ${took.toFixed(2)} s`);
   expect(took).toBeLessThanOrEqual(0.55);
@@ -147,7 +147,7 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   await page.waitForFunction(() => document.getElementById('panel')!.hidden, null, { polling: 'raf', timeout: 10_000 });
 
   // back to the zoo view: body drawn, 45° step and zoom unchanged
-  await page.keyboard.press('KeyF');
+  await page.keyboard.press('KeyV');
   await glide(page, 0);
   c = await cam(page);
   expect(c.mode).toBe('zoo');
@@ -159,11 +159,11 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   expect(errors).toEqual([]);
 });
 
-test('CAMV-013: look-around while V is held, back to the zoo view on release', async ({ page }) => {
+test('CAMV-013: look-around while F is held, back to the zoo view on release', async ({ page }) => {
   const errors = await start(page);
   await goto(page, -2.5, 20.5); // the ring path, looking north over the zoo
   const zoo = await cam(page);
-  await page.keyboard.down('KeyV');
+  await page.keyboard.down('KeyF');
   const took = await glide(page, 1);
   console.log(`look-around glide ${took.toFixed(2)} s`);
   expect(took).toBeLessThanOrEqual(0.55);
@@ -194,7 +194,7 @@ test('CAMV-013: look-around while V is held, back to the zoo view on release', a
     { polling: 'raf' },
   );
   await page.keyboard.up('KeyW');
-  await page.keyboard.up('KeyV');
+  await page.keyboard.up('KeyF');
   const back0 = await glide(page, 0);
   expect(back0).toBeLessThanOrEqual(0.55);
   c = await cam(page);
@@ -238,15 +238,15 @@ test('CAMV-014: the close views need fewer draw calls than the zoo view at 20 m'
     }, spot);
     await nextFrames(page, 3);
     const zoo = await measure();
-    await page.keyboard.press('KeyF');
+    await page.keyboard.press('KeyV');
     await glide(page, 1);
     const fp = await measure();
-    await page.keyboard.press('KeyF');
+    await page.keyboard.press('KeyV');
     await glide(page, 0);
-    await page.keyboard.down('KeyV');
+    await page.keyboard.down('KeyF');
     await glide(page, 1);
     const la = await measure();
-    await page.keyboard.up('KeyV');
+    await page.keyboard.up('KeyF');
     await glide(page, 0);
     rows.push({ spot, zoo, fp, la });
   }
@@ -260,4 +260,61 @@ test('CAMV-014: the close views need fewer draw calls than the zoo view at 20 m'
     expect(r.la.dc).toBeLessThan(r.zoo.dc);
   }
   expect(errors).toEqual([]);
+});
+
+type Pt = { x: number; y: number; id: number };
+async function touch(cdp: CDPSession, type: 'touchStart' | 'touchMove' | 'touchEnd', points: Pt[]) {
+  await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+}
+
+test.describe('touch phone portrait', () => {
+  test.use({ viewport: { width: 412, height: 892 }, deviceScaleFactor: 2.625, hasTouch: true, isMobile: true });
+
+  test('CAMV-019: the 👓 button sits in the right-thumb zone and toggles first person while the left thumb walks', async ({ page }) => {
+    const errors = await start(page);
+    await goto(page, 0.5, 4.5);
+    const cdp = await page.context().newCDPSession(page);
+    // first touch: touch controls on
+    await touch(cdp, 'touchStart', [{ x: 300, y: 300, id: 1 }]);
+    await touch(cdp, 'touchEnd', []);
+    await nextFrames(page, 2);
+    const btn = page.locator('#view-btn');
+    await expect(btn).toBeVisible();
+    const b = (await btn.boundingBox())!;
+    const act = await page.evaluate(() => {
+      const e = document.getElementById('act')!;
+      const cs = getComputedStyle(e);
+      return { right: parseFloat(cs.right), bottom: parseFloat(cs.bottom), size: parseFloat(cs.width) };
+    });
+    // bottom right, above the interact button, ≥ 64 px, on screen, in the right half
+    expect(b.width).toBeGreaterThanOrEqual(64);
+    expect(b.x).toBeGreaterThan(412 / 2);
+    expect(b.x + b.width).toBeLessThanOrEqual(412);
+    expect(b.y + b.height).toBeLessThanOrEqual(892 - act.bottom - act.size + 1); // above #act
+    expect(b.y).toBeGreaterThan(892 * 0.6); // lower part: thumb zone
+
+    // left thumb walks (hold the stick up), right thumb taps 👓: first person, still walking
+    const stick = { x: 90, y: 760, id: 2 };
+    await touch(cdp, 'touchStart', [stick]);
+    await touch(cdp, 'touchMove', [{ ...stick, y: stick.y - 50 }]);
+    await nextFrames(page, 5);
+    const tap = { x: b.x + b.width / 2, y: b.y + b.height / 2, id: 3 };
+    await touch(cdp, 'touchStart', [{ ...stick, y: stick.y - 50 }, tap]);
+    await touch(cdp, 'touchEnd', [tap]);
+    await page.waitForFunction(() => window.__zoo!.app.view_mode() === 'first_person', null, { polling: 'raf', timeout: 5_000 });
+    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    const z0 = await page.evaluate(() => window.__zoo!.app.player_z());
+    await nextFrames(page, 20);
+    const z1 = await page.evaluate(() => window.__zoo!.app.player_z());
+    expect(Math.abs(z1 - z0), 'the left thumb keeps walking').toBeGreaterThan(0.1);
+    await glide(page, 1);
+    await page.screenshot({ path: path.join(shots, 'screenshot_camera_firstperson_touch.png') });
+    // tap again: back to the zoo view, like V
+    await touch(cdp, 'touchStart', [{ ...stick, y: stick.y - 50 }, tap]);
+    await touch(cdp, 'touchEnd', [tap]);
+    await page.waitForFunction(() => window.__zoo!.app.view_mode() === 'zoo', null, { polling: 'raf', timeout: 5_000 });
+    await touch(cdp, 'touchEnd', []);
+    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    expect(errors).toEqual([]);
+  });
 });

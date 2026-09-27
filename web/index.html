@@ -150,15 +150,16 @@
         font-size: 0.8em;
         font-style: italic;
       }
-      /* Camera views (GAME-CAMERA-VIEWS): first-person toggle left of the gear; the touch
-         eye button (look-around while held) left of the interact button. */
+      /* Camera views (GAME-CAMERA-VIEWS, user decision 2026-09-27): the first-person toggle
+         sits bottom right above the interact button (right-thumb zone, also on desktop); the
+         touch eye button (look-around while held) left of the interact button. */
       #view-btn {
         position: fixed;
-        right: calc(96px + env(safe-area-inset-right));
-        top: calc(16px + env(safe-area-inset-top));
-        width: 68px;
-        height: 68px;
-        font-size: 34px;
+        right: calc(34px + env(safe-area-inset-right));
+        bottom: calc(144px + env(safe-area-inset-bottom));
+        width: 76px;
+        height: 76px;
+        font-size: 38px;
       }
       #view-btn.on {
         background: #ffd65c;

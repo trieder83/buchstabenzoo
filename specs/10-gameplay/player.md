@@ -6,7 +6,7 @@ module: player
 status: draft
 depends_on: [PROD-VISION, CONT-READING]
 test_prefix: PLAY
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Player character, camera and controls
@@ -40,10 +40,24 @@ updated: 2026-09-26
      (instantly, i.e. within 0.3 s) while the player stands on an interior or door cell and
      shown again as soon as she leaves (PLAY-028/029 e2e in `m5b.spec.ts`).
 3. **Movement and camera controls.**
-   - **Desktop:** WASD / arrow keys walk; mouse drag or `Q`/`R` rotates the camera in 45°
-     steps; mouse wheel (or `+`/`-`) zooms; `E`, Space or Enter interacts. (Fix 2026-09-26:
-     the spec listed `E` both for rotation and for interact; `E` stays interact, rotation
-     moved to `Q`/`R` — FIX-024.)
+   - **Desktop — all keys** (the one place that lists them; each key has exactly one
+     meaning; `E` interacts, rotation is `Q`/`R` — FIX-024; `V`/`F` user decision 2026-09-27):
+
+     | Input | Zoo view | Look-around | First person |
+     |---|---|---|---|
+     | `W`/`S`, ↑/↓ | walk forward/back (relative to the camera) | same | same (relative to the view) |
+     | `A`/`D` | walk sideways | same | step sideways without turning |
+     | ←/→ | walk sideways | walk sideways | turn the view smoothly |
+     | `Q`/`R` | rotate one 45° step | ignored (Q-123) | ignored (Q-123) |
+     | mouse wheel, `+`/`-` | zoom 10–20 m | ignored (Q-123) | ignored (Q-123) |
+     | mouse drag | left button: rotate in 45° steps | with the right button held: turn smoothly | any button: turn smoothly |
+     | `F` (hold), right mouse button (hold) | look-around while held | — | nothing (look-around not offered) |
+     | `V` | first person on | first person on (as implemented; Q-124) | first person off |
+     | `E`, Space, Enter | interact (§4) | same | same |
+     | `Esc` | close settings, else the open panel (§4) | same | same |
+     | `M` | open/close the map (GAME-MAP) | same | same |
+
+     Close views: GAME-CAMERA-VIEWS 2/3.
    - **Touch — two thumbs** (user decision 2026-09-26, Q-018). Touch controls exist **only
      when the device has touch**: they are hidden until the first touch input and never shown
      on devices without touch.
@@ -53,7 +67,10 @@ updated: 2026-09-26
        relative to the camera (up = away from the camera).
      - **Right thumb — camera and actions:** in the right half, a horizontal swipe (≥ 40 px)
        rotates the camera by one 45° step per swipe; a two-finger pinch zooms (10–20 m). The
-       **interact button** (§4) sits bottom-right within right-thumb reach.
+       **interact button** (§4) sits bottom-right within right-thumb reach, with the **eye
+       button** 👁 (look-around while held) next to it and the **first-person toggle** 👓
+       above it (GAME-CAMERA-VIEWS 2/3); in the close views right-half drags turn the view
+       smoothly instead of in 45° steps.
      - Both thumbs work at the same time (walk while rotating or pressing interact).
      - Controls stay inside the safe area, touch targets ≥ 64 px (CSS), work in portrait and
        landscape; the page never scrolls, zooms or selects text while playing.
@@ -137,7 +154,7 @@ updated: 2026-09-26
 | PLAY-006 | Given joystick input forward for 1 s on grass, then the player moves at walking speed × `grass_speed_factor` ± 5 %. | unit |
 | PLAY-007 | Given the player walks from a path onto grass, then the speed changes within 0.2 s (no instant jump). | unit |
 | PLAY-008 | Given the default camera, then its pitch is 55° ± 2°, its distance 14 m ± 0.5 m and its vertical FOV 35° in portrait and landscape. | unit |
-| PLAY-009 | Given the player zooms in and out to the limits, then the camera distance stays within 10 m … 20 m, and at every distance and rotation no sky is visible (the horizon is above the top screen edge). | unit |
+| PLAY-009 | Given the zoo view (`view_mode` `zoo`), when the player zooms in and out to the limits, then the camera distance stays within 10 m … 20 m, and at every distance and rotation no sky is visible (the horizon is above the top screen edge). | unit |
 | PLAY-010 | Given the player interacts with an info board, then the text panel opens and shows the riddle for the current reading level. | e2e |
 | PLAY-011 | Given the default camera, when the player drags to rotate, then the camera yaw settles on a multiple of 45° (eased, no snapping jump) and the player stays near the screen centre. | unit |
 | PLAY-012 | Given the player walks into the food storage (or the cave), then the roof above the player is cut away/hidden while the player is inside or at the entrance, and restored after leaving. | e2e |
@@ -162,6 +179,7 @@ updated: 2026-09-26
 | PLAY-029 | Given the player inside a building, then everything inside (floor, props, animals) is visible from the default camera at every 45° rotation. | e2e |
 | PLAY-032 | Given an info board panel whose facts overflow, when a finger drags upward on the riddle area of the panel (not on the scrollbar) on a touch device, then the facts scroll down by the dragged distance and the player does not move. | e2e |
 | PLAY-033 | Given a panel, when the finger taps a button without moving more than 6 px, then the button's action happens and nothing scrolls. | unit |
+| PLAY-034 | Given the desktop key table of §3, then every listed key triggers exactly the action of its row in each view and no key is bound to two different actions in the same view (`E` interacts, `Q`/`R` rotate, `F` holds look-around, `V` toggles first person, `M` map). | unit (Vitest) |
 
 ## Open questions
 
@@ -169,4 +187,5 @@ updated: 2026-09-26
 - Q-064 Enclosure sign texts (signs not interactable until decided, §5). Q-065 Food storage interior (roof cut-away, PLAY-012). Q-069 answered: only boards, animals and gates of missions in scope are interactable (§5). Q-097 out-of-reach escaped animal comes towards the player (reach, §5).
 - Q-001 Player role (affects intro).
 - Q-024 Walking/running speed (PLAY-005 needs a value). Q-025 Carrying and movement during `pick_up`/`give`. Q-028 Skin/hair choice.
+- Q-109 (partly answered: close-view keys and buttons), Q-110, Q-111, Q-112, Q-123, Q-124 close camera views (GAME-CAMERA-VIEWS).
 - Q-049 answered: high-angle follow camera (§2). Q-052 answered: 35° vertical FOV. Q-048 screen orientation. Q-051 dialogue close-up.

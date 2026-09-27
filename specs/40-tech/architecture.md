@@ -6,7 +6,7 @@ module: architecture
 status: draft
 depends_on: []
 test_prefix: ARCH
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Technical architecture
@@ -31,7 +31,8 @@ updated: 2026-09-26
    math in `zoo_render::camera` (constants in `zoo_core::view`); the sky and the distance
    haze are drawn in the outline pass from the depth buffer (no extra draw call). Static
    batches are culled per 8 m chunk of their instances, decals and skinned characters per
-   bounds, against the frustum (whose far plane is the fog end in the close views).
+   bounds, against the frustum (whose far plane is the fog end + 2 m = 18 m in the close
+   views, GAME-CAMERA-VIEWS 6). Tested by CAMV-001…005, 014, 018.
 
 ## Crates
 
@@ -48,7 +49,7 @@ updated: 2026-09-26
 Geometry built by code (placeholders, rims, perches, arches) must never place two faces in
 the same plane facing the same way: stacked parts end at each other's boundary (a pillar
 stops under the beam instead of reaching its top), rims/segments differ by ≥ 1 cm in
-height, platforms sit ≥ 1 cm above what they stand on. RENDER-001 checks this for the whole
+height, platforms sit ≥ 1 cm above what they stand on. ARCH-005 checks this for the whole
 joined zoo; models from Blender follow the same rule (no overlapping coplanar faces between
 parts of one model or between models that are meant to touch).
 
@@ -60,7 +61,7 @@ parts of one model or between models that are meant to touch).
 | ARCH-002 | Given the web build, then `node_modules` contains no three.js/babylon/playcanvas package. | unit |
 | ARCH-003 | Given a release build, when loaded in headless Chromium, then a WebGL2 context is created and the first frame renders without console errors. | e2e |
 | ARCH-004 | Given a reference scene (lit sphere + a character) rendered in headless Chromium, then every lit surface shows at most two shading tones per material and an outline in the outline colour surrounds the silhouette (screenshot comparison against an approved reference). | e2e |
-| RENDER-001 | Given the assembled scene of the joined zoo (all placeholder and fallback boxes), then no two boxes have coplanar, same-facing, overlapping faces (no z-fighting / flicker while the camera moves). User report 2026-09-26: the entrance arch top flickered red/blue. Test: `crates/zoo-core/tests/zfight.rs`. | unit |
+| ARCH-005 | Given the assembled scene of the joined zoo (all placeholder and fallback boxes), then no two boxes have coplanar, same-facing, overlapping faces (no z-fighting / flicker while the camera moves). User report 2026-09-26: the entrance arch top flickered red/blue. Test: `crates/zoo-core/tests/zfight.rs`. | unit |
 
 ## Open questions
 

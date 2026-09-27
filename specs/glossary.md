@@ -52,7 +52,7 @@ language for player-facing text.
 | `segment` | Segment | segment | One straight 2 m or 1 m piece of a run (`fence_wood`, `fence_wood_1m`, …). |
 | `map` | Karte | map | Full-screen zoo map opened from the HUD; shows only explored areas (GAME-MAP). |
 | `explored` | erkundet | explored | A map cell the player has been close to; shown on the map, never hidden again. |
-| `fog` | Nebel | fog | How unexplored cells are drawn on the map. |
+| `fog` | Nebel | fog | How unexplored cells are drawn on the map. Not the camera's distance fog/haze of the close views (`fog_end`, GAME-CAMERA-VIEWS). |
 | `water_field` | Wasserfeld | water field | Texture baked at level load by the zoo-core level assembly (`zoo_core::water`, one for the joined zoo), uploaded by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
 | `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night after all day animals are home (GAME-NIGHT). |
 | `night_zoo` | Nachtzoo | night zoo | New area with nocturnal animals, reached through the moon door (GAME-NIGHT). |

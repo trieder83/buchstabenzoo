@@ -6,7 +6,7 @@ module: night
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION]
 test_prefix: NIGHT
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Nightfall and the night zoo
@@ -111,3 +111,4 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
 ## Open questions
 
 - Q-076…Q-079 answered 2026-09-26 (animals of night level 1, owl food, what comes after, no pressure).
+- Q-126 Night colours of the close-view comic sky and haze (GAME-CAMERA-VIEWS 7) and whether the night riddles stay fair with the same 16 m haze.

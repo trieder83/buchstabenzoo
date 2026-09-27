@@ -651,14 +651,15 @@ impl App {
             "KeyD" => self.keys.right = down,
             "ArrowLeft" => self.keys.arrow_left = down,
             "ArrowRight" => self.keys.arrow_right = down,
-            // GAME-CAMERA-VIEWS 2/3: hold V to look around, F toggles first person
-            "KeyV" => {
+            // GAME-CAMERA-VIEWS 2/3 (user decision 2026-09-27): hold F to look around, V
+            // toggles first person
+            "KeyF" => {
                 self.look_hold(down);
             }
-            "KeyF" if down => {
+            "KeyV" if down => {
                 self.toggle_first_person();
             }
-            "KeyF" => {}
+            "KeyV" => {}
             // FIX-024: E interacts, so rotation is Q (left) / R (right).
             "KeyQ" if down => self.camera.rotate_steps(-1),
             "KeyR" if down => self.camera.rotate_steps(1),
@@ -705,7 +706,7 @@ impl App {
 
     // ------------------------------------------------------------------ camera views
 
-    /// Look-around held (`true`) or released (GAME-CAMERA-VIEWS 2): eye button, `V`, right
+    /// Look-around held (`true`) or released (GAME-CAMERA-VIEWS 2): eye button, `F`, right
     /// mouse button. Only from the zoo view; returns whether look-around is now active.
     pub fn look_hold(&mut self, on: bool) -> bool {
         let facing = views::level_to_yaw(self.game.player.facing);
@@ -721,7 +722,7 @@ impl App {
         self.camera.mode() == ViewMode::LookAround
     }
 
-    /// Toggles first person (GAME-CAMERA-VIEWS 3; `F`, HUD button). Returns the new view id.
+    /// Toggles first person (GAME-CAMERA-VIEWS 3; `V`, 👓 button). Returns the new view id.
     pub fn toggle_first_person(&mut self) -> String {
         let next = if self.camera.mode() == ViewMode::FirstPerson {
             ViewMode::Zoo

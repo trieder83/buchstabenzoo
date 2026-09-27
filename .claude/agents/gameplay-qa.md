@@ -52,7 +52,7 @@ latest reports in `qa/reports/`.
    - **Rendering artifacts:** flicker / z-fighting (two surfaces fighting, colours
      alternating while the camera moves — e.g. the entrance arch top flickered red/blue on
      2026-09-26 because pillar tops and roof beam were coplanar). Check: `cargo test -p
-     zoo-core --test zfight` (RENDER-001, all code-built boxes of the joined zoo) is green;
+     zoo-core --test zfight` (ARCH-005, all code-built boxes of the joined zoo) is green;
      and visually: walk and rotate the camera past every building, placeholder, pool rim,
      perch and sign; take 2 screenshots of the same view 1 frame apart while strafing and
      diff them — a static surface whose colour changes between frames is z-fighting.
@@ -78,7 +78,7 @@ latest reports in `qa/reports/`.
 |---|---|---|
 | Walking into billboards / props | 2026-09-26 (user) | PLAY-019, PLAY-031, LAYOUT-017 |
 | Info panel only in front of a board | 2026-09-26 (user) | PLAY-020…027 |
-| Z-fighting flicker on coplanar faces (entrance arch) | 2026-09-26 (user) | RENDER-001 + strafing screenshot diff |
+| Z-fighting flicker on coplanar faces (entrance arch) | 2026-09-26 (user) | ARCH-005 + strafing screenshot diff |
 | Panel text hidden / not scrollable by touch on phones | 2026-09-26 (QA F2, user) | PLAY-030, PLAY-032/033 |
 
 When the user reports a new visual or gameplay bug: add a row here, a regression test, and a

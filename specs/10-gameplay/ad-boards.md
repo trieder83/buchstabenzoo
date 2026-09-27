@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION]
 test_prefix: ADS
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Ad billboards (in-world)
@@ -38,10 +38,12 @@ request 2026-09-27). Up to **3 campaigns** run at the same time; each campaign i
    food/sweets marketing to children, no gambling, no in-app purchase hints (to be confirmed
    legally).
 5. At night, boards are lit softly like other signs (GAME-NIGHT, category b).
+6. **First campaigns** (Q-128 answered, user 2026-09-27): own cross-promotion (e.g.
+   "Math Fighter"); a legal/child-safety check is required before any third-party ad.
 
-> **Conflict to resolve:** PROD-VISION pillar 3 and CLAUDE.md say "no ads". This spec
-> introduces passive in-world ad boards by user decision (2026-09-27); PROD-VISION and
-> CLAUDE.md must be updated once Q-128 (legal/child-safety check) is answered.
+> **Note:** PROD-VISION pillar 3 is updated (passive in-world boards only). CLAUDE.md
+> ("Child-friendly UX: … no ads/external links") still says "no ads" and must be updated by
+> the user (agents do not edit CLAUDE.md).
 
 ## Test cases
 
@@ -52,8 +54,9 @@ request 2026-09-27). Up to **3 campaigns** run at the same time; each campaign i
 | ADS-003 | Given the placeholder campaigns, then boards show "Deine Werbung 1/2/3" (de) / "Your ad 1/2/3" (en) from Fluent. | e2e |
 | ADS-004 | Given an ad board, then it is not interactable and the game makes no network request for ads. | e2e |
 | ADS-005 | Given two play sessions with different seeds, then the campaign-to-board assignment differs, with the same seed it is identical. | unit |
+| ADS-006 | Given the campaign table, then every active campaign is a placeholder or own cross-promotion (e.g. "Math Fighter") unless a legal/child-safety check is recorded for it (rule 6, Q-128). | manual |
 
 ## Open questions
 
-- Q-128 Ads in a game for 4–9 year olds: legal/child-safety check (e.g. EU AVMSD/DSA, German
-  JMStV, COPPA, app-store kids-category rules) — which ad content is allowed at all?
+- Q-128 answered 2026-09-27: passive boards only (no links, no tracking, no network), own
+  cross-promotion first, legal/child-safety check before any third-party ad (rules 4, 6).

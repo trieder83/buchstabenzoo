@@ -6,7 +6,7 @@ module: hints
 status: draft
 depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS]
 test_prefix: HINT
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Next-target hint
@@ -34,8 +34,10 @@ settings gear** shows **one next possible target** and where to walk.
    1. an active **event** target (GAME-EVENTS) — e.g. burglars, broken fence,
    2. the **current mission's next step**: carrying the right food and the animal not yet
       found → the animal's hiding area (only the *area*, never closer than the riddle allows —
-      see rule 4); animal following → its gate; food missing → the food storage; board not
-      read yet → the nearest unread info board,
+      see rule 4); animal following → its gate; food missing → the food storage (or a
+      lying item the mission needs, "pick up" — GAME-FEED §13; for bamboo, after the panda
+      board was read, also the nearest ripe cut spot — GAME-FEED §16); board not read yet →
+      the nearest unread info board,
    3. an **unstarted mission**: the nearest unread info board,
    4. **optional activities**: garden (if the basket has room and plants are ripe), treats for
       animals at home, the golf-cart key box, the map board,
@@ -48,8 +50,9 @@ settings gear** shows **one next possible target** and where to walk.
    hiding area** (a circle ≥ 6 m wide around it), not the animal.
 5. **Reading level:** on `kiga` the hint may also play the target's name via read-aloud later
    (Q-008). No text is required to use the hint.
-6. **Idle nudge (optional):** if the child does nothing useful for 90 s, the 🧭 button pulses
-   gently once (no forced popup).
+6. **Idle nudge** (Q-127 answered: yes): if the child does nothing useful for 90 s, the 🧭
+   button pulses gently once (no forced popup). The hiding-area edge hint of rule 4 comes after
+   60 s (Q-127 answered).
 7. The hint logic lives in zoo-core (deterministic, testable); the host only draws the
    indicator and the button.
 
@@ -66,7 +69,8 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-007 | Given the target off-screen, then an edge arrow points at it; given it on-screen, an indicator bounces above it, visible through trees. | e2e |
 | HINT-008 | Given any reachable game state (fuzz over 1 000 seeded states), then the hint always returns a target (the game is never stuck). | unit |
 | HINT-009 | Given touch, then the 🧭 button is directly below the gear, ≥ 64 px, and works; desktop `H` does the same. | e2e |
+| HINT-010 | Given 90 s without a useful action (no interaction, no new cell explored), then the 🧭 button pulses once and no popup opens; any useful action restarts the 90 s (rule 6, Q-127). | unit |
 
 ## Open questions
 
-- Q-127 Idle nudge after 90 s — yes/no? Hint area-edge after 60 s — right timing?
+- Q-127 answered 2026-09-27: idle nudge yes (90 s); hiding-area edge after 60 s.

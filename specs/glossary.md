@@ -6,7 +6,7 @@ module: glossary
 status: draft
 depends_on: []
 test_prefix: GLOS
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Glossary
@@ -56,16 +56,18 @@ language for player-facing text.
 | `water_field` | Wasserfeld | water field | Texture baked at level load by the zoo-core level assembly (`zoo_core::water`, one for the joined zoo), uploaded by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
 | `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night (dusk) after all animals of a day level are home — once per completed day level (GAME-NIGHT). |
 | `night_zoo` | Nachtzoo | night zoo | New area with nocturnal animals, reached through the moon door (GAME-NIGHT). |
+| `level_gate` (model `gate_zoo`) | Zootor † | level gate | Big double gate across every `[[entry]]` between two levels: closed and solid behind the story barrier while the next level is locked, open for good after unlocking (GAME-LAYOUT "Gates between the levels", LAYOUT-036). |
 | `moon_door` | Mondtor | moon door | Gate of the day zoo that opens at nightfall and leads to the night zoo. |
 | `lantern` | Laterne | lantern | Light the player carries at night; makes the animals' eyes shine. |
 | `nocturnal_animal` | nachtaktives Tier | nocturnal animal | Animal that is active at night (hedgehog, bat, owl, …). |
 | `daytime` (phases `day`, `dusk`, `night`, `sleeping`, `morning`) | Tageszeit † | time of day | Saved day/night state of the zoo (`zoo_core::daytime`, GAME-NIGHT "Implementation", GAME-SAVE). Not "level". |
 | `night_level` (data `[level] time = "night"`, id `night_<N>`) | Nachtlevel † | night level | A level of the night zoo, reached only through a moon door (GAME-LAYOUT "Moon door and night levels", GAME-LEVEL-NIGHT-1). |
-| `night_house` / `indoor_enclosure` (data `indoor = true`) | Nachthaus / Innengehege † | night house / indoor enclosure | Enterable building of a night level whose dim indoor enclosures open into its visitor hall (GAME-LEVEL-NIGHT-1, proposal Q-134). |
+| `night_house` / `indoor_enclosure` (data `indoor = true`) | Nachthaus / Innengehege † | night house / indoor enclosure | Enterable building of a night level whose dim indoor enclosures open into its visitor hall (GAME-LEVEL-NIGHT-1, Q-134 answered). |
 | `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (proposal Q-093). |
 | `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (proposal Q-093). |
 | `level_entry` (data `[[entry]]`) | Levelzugang † | level entry | Cells of a level directly behind a barrier of an earlier level; the only walkable border cells of a level (GAME-LAYOUT "Joining levels", proposal Q-088). |
-| `lying_item` | abgelegter Gegenstand † | item lying on the ground | A food or the fish bowl the child put down; stays where it was put, saved, at most 8 in the zoo (GAME-FEED §8–11). |
+| `lying_item` | abgelegter Gegenstand † | item lying on the ground | An item the child put down (a food or the fish bowl; basket and honey pot: Q-172); stays where it was put, saved, at most 8 in the zoo (GAME-FEED §8–11). |
+| `bamboo_forest` (data `decoration` kind `bamboo`, `harvestable = true`) | Bambuswald | bamboo forest | Dense bamboo thicket; when harvestable, bamboo is cut there at its cut spots as a second source of the food `bamboo` (GAME-FEED §14–17). Also the panda's `kiga` place word (CONT-MISSIONS). |
 | `cut_spot` (data `[[cut_spot]]`) | Schneidestelle † | cut spot | Place at the edge of a harvestable bamboo forest where a stalk is snapped off with the hands; regrows stump → young shoot → full stalk (GAME-FEED §14–15). |
 | `pocket` | Tasche † | pocket | Second carry slot for one food while the player carries the fish bowl (GAME-RESCUE goldfish bowl, proposal Q-084). |
 | `unlocked_level` / `locked_level` | freigeschaltetes / gesperrtes Level † | unlocked / locked level | A level of the joined zoo is unlocked when one of its `[[entry]]` barriers is open; a locked level is sealed, its animals are hidden and asleep (GAME-LAYOUT "Joining levels", proposal Q-088). |

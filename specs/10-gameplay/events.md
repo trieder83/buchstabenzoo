@@ -6,7 +6,7 @@ module: events
 status: draft
 depends_on: [GAME-RESCUE, GAME-NIGHT, GAME-FAMILY, GAME-GARDEN, GAME-HINT, GAME-SAVE]
 test_prefix: EVT
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Zoo events
@@ -21,7 +21,7 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 
 1. At most **one event at a time**; events start only when no animal is following the player
    and not during the first play session (the core loop comes first). Timing is seeded; the
-   minimum gap between events is 10 minutes of play time (proposal Q-129).
+   minimum gap between events is 10 minutes of play time (Q-129 answered).
 2. An event starts with a short friendly cut-in (icon + sound + one-line text per reading
    level, Fluent), then a ❗ indicator appears in the HUD and in the world.
 3. Nothing is lost when an event is not solved: at worst it ends by itself (e.g. the police
@@ -53,7 +53,7 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
    discovery rules — riddles on the boards update).
 10. **Repair and rescue:** the broken fence parts are marked; the child brings the animals
     back like a normal mission. The zookeeper repairs a fence when its animals are back (no
-    tool gameplay needed — proposal; Q-130). The storm never hits enclosures with a
+    tool gameplay needed — Q-130 answered: automatic for now). The storm never hits enclosures with a
     following/unfinished mission.
 
 ## Event 3 — Bees and honey
@@ -67,7 +67,8 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 13. **Honey for the bears:** honey is a treat (GAME-GARDEN basket) that **bears** love.
     Feeding the bear pair honey counts as care feeding (GAME-FAMILY) → the bears may get a
     baby. **Bears are a new species** (not in the current animal list) — they need a
-    concept, a mission and an enclosure (Q-131).
+    concept, a mission and an enclosure (Q-131 answered: yes, as a new animal pair; level and
+    species spec: Q-174).
 
 ## Test cases
 
@@ -86,6 +87,7 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 
 ## Open questions
 
-- Q-129 Event timing (gap 10 min, not in the first session, burglar window 3 min).
-- Q-130 Storm repair: automatic by the zookeeper or a small repair task for the child?
-- Q-131 Bears: add bears as a new species (pair, enclosure, mission, level)?
+- Q-129 answered 2026-09-27: event timing (gap 10 min, not in the first session, burglar window 3 min).
+- Q-130 answered 2026-09-27: the zookeeper repairs the fences automatically (rule 10).
+- Q-131 answered 2026-09-27: bears are added as a new animal pair; Q-174 which level, and the species is not yet in GAME-ANIMALS / ART-ANIMALS / CONT-MISSIONS.
+- Q-172 honey pot / basket as hand items that can be put down (GAME-FEED §8)?

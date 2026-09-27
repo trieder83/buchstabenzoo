@@ -6,7 +6,7 @@ module: camera-views
 status: draft
 depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-SAVE, ART-DIRECTION, TECH-ARCH]
 test_prefix: CAMV
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Camera views — look-around (hold) and first person (toggle)
@@ -31,14 +31,18 @@ a hiding place is never visible from its own info board), stay comfortable for c
    button** — the camera glides down to **3.5 m behind and 1.6 m above** the player,
    **pitch 12° down**, **vertical FOV 50°**. It starts looking in the zoo view's direction.
    Dragging (right thumb anywhere in the right half — or sliding the thumb that holds the eye
-   button (implemented, part of the Q-109 proposal) — or the mouse while the right button is
+   button (implemented, Q-109 answered) — or the mouse while the right button is
    held) turns the view **smoothly** (not in 45° steps), at most **±180°** from where it
    started. The player can keep walking (left thumb / WASD / arrow keys, relative to the
    look-around view; ← → still step sideways here as in the zoo view, GAME-PLAYER §3).
    Releasing glides back to the zoo view (its rotation and zoom are unchanged).
    Rotation (`Q`/`R`, swipe steps) and zoom (wheel, `+`/`-`, pinch) input is ignored in both
-   close views (proposal Q-123 a, CAMV-017). Look-around is not offered in first person (the
+   close views (Q-123 answered: option a, CAMV-017). Look-around is not offered in first person (the
    eye button is hidden there; `F` and the right mouse button do nothing — CAMV-020).
+   Pressing `V` / 👓 while look-around is held glides straight to first person; releasing the
+   look button afterwards does nothing (Q-124 answered, CAMV-023). The look-around eye may end
+   up inside a hedge or wall — accepted for the PoC; the next camera iteration pulls the eye in
+   along the boom when a solid cell/prop is between player and eye (min 1.2 m; Q-111 answered).
 3. **First person (toggle)** — controls: user decision 2026-09-27. **`V`** (desktop) or the
    round HUD button 👓 ("through my eyes", highlighted while on) toggles first person on and
    off. On touch the 👓 button sits **bottom right above the interact button** (≥ 64 px,
@@ -56,7 +60,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
      what the child looks at; the reading panels open and close by themselves as in the zoo
      view (GAME-PLAYER §4).
    - The player character's **body is not drawn**. What she carries (food box, fish bowl) stays drawn in
-     front of her chest, so it shows at the bottom of the screen (placeholder for hands, Q-112).
+     front of her chest, so it shows at the bottom of the screen (placeholder for hands, Q-112 answered: kept for the PoC).
    - Toggling again glides back to the zoo view, which then looks in the zoo-view direction
      it had before (its 45° step and zoom are unchanged).
 4. **Kids' comfort (motion sickness care).** No head bob, no camera shake, no roll; the eye
@@ -78,7 +82,8 @@ a hiding place is never visible from its own info board), stay comfortable for c
    monkey board) — Q-110 added the layout margin (GAME-LAYOUT "Sight": ≥ 22 m planar since
    the fog end grew to 20.8 m). *Measured 2026-09-27 after FIX-056:* nearest wander cell
    22.01 m from the close-view eye (`loc_big_ball` from the elephant gate's corner cell); every
-   level (1–3 and `night_1`) keeps ≥ 22.0 m planar (LAYOUT-N1-006 checks `night_1`).
+   level (1–3 and `night_1`) kept ≥ 22.0 m planar (LAYOUT-N1-006 checks `night_1`) until the
+   Q-157 move of `board_zebra`: `loc_river` is now 21.26 m from a zebra standing point (Q-171).
 6. **Draw distance = fog end.** In the close views the far plane is the fog end + 2 m
    (22.8 m = fog end + 2 m; the zoo view has no fog and a 120 m far plane), and static batches whose bounds lie beyond it (or outside the view) are culled —
    so the close views cost fewer draw calls than the zoo view at maximum zoom-out (20 m).
@@ -112,6 +117,9 @@ a hiding place is never visible from its own info board), stay comfortable for c
     in `zoo-render::camera` (pure, unit-tested) with constants from `zoo_core::view`; the
     facing lock in `zoo_core::player`; the host only maps buttons, keys and drags to
     `look_hold`, `toggle_first_person`, `look_drag`, `set_view_mode`.
+11. **Golf carts** (Q-125 answered): while driving a golf cart (GAME-CART) only the zoo view
+    is available — the 👓 and 👁 buttons are hidden, `V`, `F` and the right mouse button are
+    ignored; a stored first-person view returns when the child gets out.
 
 ## Acceptance criteria
 
@@ -162,23 +170,25 @@ render region, a building's name board with its roof.
 | CAMV-020 | Given first person, then the eye button is hidden and holding `F` or the right mouse button (`look_hold(true)`) leaves the view in first person; given the zoo view, then the 👓 button is shown on desktop and on touch and not highlighted. | unit |
 | CAMV-021 | Given night (GAME-NIGHT), then the close-view sky is a dark-blue gradient (`#1E2A5A` top → `#3B4C8C` horizon), the haze equals the horizon colour and the fog end stays the day fog end (20.8 m, `FOG_END_M`; shining eyes beyond it are hidden); by day the day sky colours are unchanged (rule 7, Q-126). | unit |
 | CAMV-022 | Given the player inside the zookeeper house (and the night house) in first person, then the roof is drawn and its ceiling is visible above (sky pixels absent in the upper screen area inside); switching to the zoo view hides the roof again (PLAY-028). | e2e |
+| CAMV-023 | Given look-around held, when `V` (or 👓) is pressed, then the view glides to first person within 0.4 s; releasing `F` / the eye button afterwards keeps first person (rule 2, Q-124). | unit |
+| CAMV-024 | Given first person stored and the player gets into a golf cart, then the zoo view is shown, 👓/👁 are hidden and `V`/`F` do nothing while driving; when she gets out, first person returns (rule 11, Q-125). | unit |
 
 ## Open questions
 
-- Q-109 partly answered (user 2026-09-27: `V` toggles first person, `F` / right mouse holds
-  look-around, 👓 bottom right above the interact button, 👁 hold button). Still open: the
-  proposal values (look-around boom 3.5 m / 1.6 m / 12°, eye 1.1 m, FOV 50°, fog 9–16 m,
-  0.4 s glides, turn speeds) and first person for `kiga`.
-- Q-110 Layout rule for the fog margin: hiding places ≥ 17 m from their board's standing points
-  (currently 16.97 m minimum).
-- Q-111 Look-around camera collision (eye inside a hedge or wall).
-- Q-112 Hands in first person (carried food/bowl as the only "hands" for now).
-- Q-123 What `Q`/`R`, swipe steps, mouse wheel / `+`/`-` and pinch do in the close views
-  (rules 2 and 3 say the zoo view's step and zoom stay unchanged; the implementation still
-  changes them while a close view is shown).
-- Q-124 `V` pressed while look-around is held (implemented: switches to first person).
-- Q-125 Camera views while driving a golf cart (GAME-CART).
+- Q-109 answered 2026-09-27: `V` toggles first person, `F` / right mouse holds look-around,
+  👓 bottom right above the interact button, 👁 hold button; the proposal values (look-around
+  boom 3.5 m / 1.6 m / 12°, eye 1.1 m, FOV 50°, 0.4 s glides, turn speeds) are accepted, the
+  HUD toggle is offered on every reading level (the zoo view stays the default).
+- Q-110 answered 2026-09-27: fog margin as a layout rule (GAME-LAYOUT "Sight"; now ≥ 22 m since
+  the fog end grew to 20.8 m).
+- Q-111 answered 2026-09-27: look-around eye inside a hedge or wall accepted for the PoC; pull
+  in (min 1.2 m) in the next camera iteration (rule 2).
+- Q-112 answered 2026-09-27: carried food/bowl are the only "hands" in first person for the PoC.
+- Q-123 answered 2026-09-27: rotation and zoom input is ignored in the close views (rule 2, CAMV-017).
+- Q-124 answered 2026-09-27: `V` while look-around is held switches to first person (rule 2, CAMV-023).
+- Q-125 answered 2026-09-27: only the zoo view while driving a golf cart (rule 11, CAMV-024).
 - Q-126 (answered 2026-09-27, as recommended) Night colours of the comic sky and haze (GAME-NIGHT).
+- Q-171 CAMV-008 checks only the 20.8 m fog end; the ≥ 22 m planar margin of the level data is untested for levels 1–3 and `loc_river` is now 21.26 m from a zebra standing point.
 
 ## Implementation (2026-09-26)
 

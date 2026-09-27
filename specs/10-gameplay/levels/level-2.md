@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L2
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Level 2 — koala, elephant, giraffe, lion (behind the fallen tree)
@@ -423,7 +423,7 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
 12. `barrier_l2_construction` opens only under its unlock condition; `barrier_ne_tree` never
     closes again.
 
-## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118 answered, proposals Q-137, Q-139)
+## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118, Q-137, Q-139 answered)
 
 `[[light]]` in `level-2.toml` (night-only): 10 lantern posts along the entry path and the ring
 (≈ 10 m, 0.25 m inside the path edge: (28.5, 28.25) (moved out of the level gate lane, LAYOUT-036), (35.0, 30.75), (37.0, 24.25), (48.5, 24.25),
@@ -488,8 +488,8 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 
 ## Open questions
 
-- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
-- Q-137 `[[light]]` data shape, Q-139 burglar event spots.
+- Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
+- Q-137 `[[light]]` data shape, Q-139 burglar event spots (both answered 2026-09-27).
 
 - Q-022 barrier unlock timing (Q-091 answered: the next morning); Q-141 (answered) night level between
   level 2 and level 3, and the bed after level 2; Q-088 joining levels; Q-089 own food
@@ -499,3 +499,4 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 - Q-096 where the child sleeps after level 2 (zookeeper house of level 3 is still closed) —
   answered by Q-141 (b): `bed_l2` at the food storage; Q-152 shelter over `bed_l2`.
 - Q-150 answered: the food-box row of `food_storage_2` leaves a gap ≥ 1.2 m in front of the door.
+- Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).

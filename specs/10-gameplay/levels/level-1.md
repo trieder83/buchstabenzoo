@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS]
 test_prefix: LAYOUT-L1
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Level 1 — entrance, zebra, hippo, panda
@@ -225,7 +225,7 @@ Solid = every type except `path` and `hiding_place`.
 | `pond_water` | landmark (pond) | -19, 20, 8, 8 | Still pond: water lilies, frogs, reeds. Six `lily_pad` groups; the two frogs (animated ambient animals, GAME-AMBIENT) start on the pads at (−12.2, 21.5) — within 2 m of the jetty end — and (−16.0, 21.0) near the south bank. |
 | `jetty_pond` | path (jetty) | -11, 22, 3, 2 | Wooden jetty from the ring path to the pond edge. |
 | `bench_pond` | decoration (bench) | -11, 26, 2, 1 | Bench on the pond shore. |
-| `enc_panda` | enclosure | -6, 32, 12, 10 | Panda enclosure; gate (-1, 32, 2, 1) on the south fence; cut bamboo on a feeding rack (proposal Q-081 — no growing bamboo clumps), wooden platform and shelter, **no stone/cave**. |
+| `enc_panda` | enclosure | -6, 32, 12, 10 | Panda enclosure; gate (-1, 32, 2, 1) on the south fence; cut bamboo on a feeding rack (Q-081 answered — no growing bamboo clumps), wooden platform and shelter, **no stone/cave**. |
 | `board_panda` | decoration (info_board) | -4, 30, 1, 1 | Info board of `enc_panda`, next to the gate. |
 | `path_moon` | path | -22, 29, 13, 2 | Side path from `path_north` / the ring west along the pond to the moon door. |
 | `path_north` | path | -9, 30, 3, 16 | Side path to `barrier_north_gate`. |
@@ -370,8 +370,8 @@ Riddle guards (so the riddle points to exactly one place):
 
 | Id | Kind | Cells (x, z, w, d) | Unlock condition — **proposal (Q-022)** | In-world explanation |
 |---|---|---|---|---|
-| `barrier_ne_tree` | fallen tree | 22, 28, 2, 3 | Level 1 → level 2: **the morning after `night_1` is complete** (GAME-NIGHT rule 7, Q-078 answered; `unlock_after = "night_1"`, `opens_at = "morning"`, proposal Q-133). | A storm knocked the tree over. In the morning after the night zoo, a zookeeper has sawn it up and carted the logs away (GAME-LAYOUT §3). |
-| `moon_door` | closed gate (moon door) | -24, 29, 2, 2 | Level 1 → `night_1` (`transition = "level_1->night_1"`): **open during every night** once level 1's nightfall has happened (all level-1 missions complete, GAME-NIGHT rules 1, 3, 7; Q-079: every night until the night zoo is done — and afterwards too, proposal Q-133); **closed by day**. Unlike the other barriers it never disappears: the leaves swing open and shut. | Big wooden moon door in the zoo wall; by day its moon sign is dark. At nightfall the sign glows, the lanterns on its pillars light up and the leaves swing open. |
+| `barrier_ne_tree` | fallen tree | 22, 28, 2, 3 | Level 1 → level 2: **the morning after `night_1` is complete** (GAME-NIGHT rule 7, Q-078 answered; `unlock_after = "night_1"`, `opens_at = "morning"`, Q-133 answered). | A storm knocked the tree over. In the morning after the night zoo, a zookeeper has sawn it up and carted the logs away (GAME-LAYOUT §3). |
+| `moon_door` | closed gate (moon door) | -24, 29, 2, 2 | Level 1 → `night_1` (`transition = "level_1->night_1"`): **open during every night** once level 1's nightfall has happened (all level-1 missions complete, GAME-NIGHT rules 1, 3, 7; Q-079: every night until the night zoo is done — and afterwards too, Q-133 answered); **closed by day**. Unlike the other barriers it never disappears: the leaves swing open and shut. | Big wooden moon door in the zoo wall; by day its moon sign is dark. At nightfall the sign glows, the lanterns on its pillars light up and the leaves swing open. |
 | `barrier_north_gate` | closed gate | -9, 46, 3, 2 | Second entry of level 3 (proposal Q-090, implemented in M5b): opens together with `barrier_l2_construction` the morning after level 2 is complete (Q-091 answered). | Wooden gate with a padlock and a "closed" icon sign (no text). |
 | `barrier_east_repair` | road block | 22, 8, 2, 3 | Later level (to be defined with Q-023). | "Path under repair": striped road block, blank sign with a shovel icon, zookeeper cart with traffic cones. |
 
@@ -593,7 +593,7 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
 - **Enclosure signs (billboard violation):** each `enclosure_sign` stands 0.35 m outside its
   gate across the whole 2 m opening; only its two posts are solid and its panel starts at
   0.99 m, so the 1.20 m player walks **through** the panel (zebra: from the grass column
-  x = −9 or on the way to the gate). A full box would block the gate. Proposal (Q-086): make
+  x = −9 or on the way to the gate). A full box would block the gate. First proposal (Q-086, not chosen): make
   it a **gate arch** — posts beside the opening, panel bottom ≥ 2.1 m; beside the gate there
   is no room at the hippo gate (hedges `hedge_hippo_sw/nw` and `board_hippo` fill x = 8).
   **Decided 2026-09-27 (user, option (b), LAYOUT-033):** the sign stands **beside** the gate,
@@ -746,7 +746,7 @@ disappear while the player is inside (PLAY-028).
 
 Free floor cells: (-12, 2), (-11, 1), (-11, 2), (-10, 1), (-10, 2), (-12, 3) partly — the bed is
 reached from (-12, 2)/(-11, 1), the desk from (-11, 2)/(-10, 2). Furniture colliders are props
-(`[[prop]]` with `size_m`, proposal Q-137), not grid cells.
+(`[[prop]]` with `size_m`, Q-137 answered), not grid cells.
 
 **Why here.** The only free field near the plaza that is no hiding place, scenery, wander area
 or path (x −14…−6, z 0…6 between `loc_bamboo` and the plaza). The house blocks the direct grass
@@ -756,7 +756,7 @@ hiding place moved). Riddle guard: the house is wood with a red roof — no bamb
 than the thicket (4 m house vs. `loc_bamboo` "taller than the wall" still holds: the bamboo is
 3 m, the wall 2.5 m; the house stands 5 m east of the thicket).
 
-## Moon door (GAME-NIGHT rules 3, 7; proposal Q-133)
+## Moon door (GAME-NIGHT rules 3, 7; Q-133 answered)
 
 The **moon door** `moon_door` sits in the **west zoo wall** at x −24…−23, z 29…30 (the wall
 is split into `wall_west_s` and `wall_west`). On the level-1 side `path_moon` (x −22…−10,
@@ -768,7 +768,7 @@ are edge-adjacent to the door's cells (LAYOUT-021).
   (sign glows, leaves swing west into the night zoo), open at night (glowing sign, lanterns on
   both pillars, soft blue sparkle). Its cells are walkable while open; the model never
   disappears (unlike the other barriers).
-- **Data** (proposal Q-133): `kind = "moon_door"`, `transition = "level_1->night_1"`,
+- **Data** (Q-133 answered): `kind = "moon_door"`, `transition = "level_1->night_1"`,
   `unlock_after = "level_1"`, `opens_at = "night"`. It is **not** an exit barrier in the sense
   of the Q-091 rule (barriers open the next morning): it opens at nightfall and closes again in
   the morning.
@@ -781,7 +781,7 @@ are edge-adjacent to the door's cells (LAYOUT-021).
 - **Riddle guards:** `loc_shade` keeps its "big trees at the zoo wall" (the door has no trees);
   the moon door is the only gate in the wall — its lanterns are night-only.
 
-## Night lights (GAME-NIGHT rule 1; Q-118 answered; data shape proposal Q-137)
+## Night lights (GAME-NIGHT rule 1; Q-118 answered; data shape Q-137 answered)
 
 `[[light]]` in `level-1.toml` (night-only props; hidden by day):
 
@@ -800,7 +800,7 @@ inside a path edge (or on grass beside a gate), never in a hiding-place rect, sc
 garden, never on a gate's leading cells; collider C(0, 0, 0.12) while visible. 11 posts + 2
 strings — within the Q-114 budget (point lights for the nearest ≤ 8, decals for the rest).
 
-## Burglar event (GAME-EVENTS rules 4–7; proposal Q-139)
+## Burglar event (GAME-EVENTS rules 4–7; Q-139 answered)
 
 `[[event_spot]]` in `level-1.toml`: the two burglars climb in over a **ladder** on the inside of
 `wall_west_s` at (−21.6, 24.0), take a food box from the row in front of the **food storage**
@@ -846,7 +846,7 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 | LAYOUT-L1-030 | Given each `[[garden_bed]]`, then it has a sign with `sign_key` `garden-carrot` / `garden-potato` matching its `plant`, the key exists in every locale (L10N), and the sign's readable side faces an adjacent `path_garden` cell. | unit |
 | LAYOUT-L1-031 | Given an animal following the player and the player inside the garden, then the animal's grid path never enters a garden cell (it waits outside the gate), and no wander area contains a garden cell (proposal Q-102). | unit |
 | LAYOUT-L1-033 | Given `level-1.toml`, then `zookeeper_house_1` has `interior` (-13, 1, 4, 3) and `door` (-9, 2) (LAYOUT-023), its door is reachable from the spawn in ≤ 10 s, and the `[[item]]`s `bed_l1`, `note_math_fighter` and `key_box_l1` each have a reachable `stand` cell ≤ 2 m from their `pos` (the bed and note inside the house, the key box on `path_house`); `loc_bamboo` → `map_board` stays ≤ 10 s. | unit |
-| LAYOUT-L1-034 | Given `level-1.toml` by day, then `moon_door` is solid and no cell of `night_1` is reachable; at night after nightfall its cells are walkable and `entry_n1_moon` is reachable from the spawn; in the morning it is solid again (NIGHT-002, proposal Q-133). | unit |
+| LAYOUT-L1-034 | Given `level-1.toml` by day, then `moon_door` is solid and no cell of `night_1` is reachable; at night after nightfall its cells are walkable and `entry_n1_moon` is reachable from the spawn; in the morning it is solid again (NIGHT-002, Q-133 answered). | unit |
 | LAYOUT-L1-035 | Given the level-1 changes of 2026-09-27 (house, moon door, `path_moon`, `path_house`, `path_house_n`), then all 9 wander areas keep their cell counts (LAYOUT-L1-024), LAYOUT-L1-006 and CAMV-008 still hold, and every border cell except the moon door's is solid. | unit |
 | LAYOUT-L1-036 | Given the `[[light]]` list, then every `lantern_post` / string-light end stands on a walkable cell outside every hiding-place `rect`, scenery rect and the garden, ≥ 0.7 m from every food box; every info board and the map board has one `board_lamp` whose `attach` names it; every `attach` id exists. | unit |
 | LAYOUT-L1-037 | Given the `[[event_spot]]` list, then `l1_burglar_hideout` is walkable grass reachable from `l1_burglar_target` with all barriers closed, and overlaps no hiding-place rect, scenery, garden or path. | unit |
@@ -854,11 +854,11 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 
 ## Open questions
 
-- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
+- Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours). Q-171: after the Q-157 `board_zebra` move `loc_river` is 21.26 m from a zebra standing point (< 22 m).
 - Q-022 barrier unlock conditions, Q-023 number of levels and their areas.
-- Q-096 answered (bed in a level-1 zookeeper house). Q-133 moon door data and opening rule (`opens_at`, `unlock_after`; open every night, also after the night zoo is done). Q-137 `[[item]]` / `[[prop]]` / `[[light]]` data shape. Q-139 burglar event spots.
+- Q-096 answered (bed in a level-1 zookeeper house). Answered 2026-09-27: Q-133 moon door data and opening rule (`opens_at`, `unlock_after`; open every night, also after the night zoo is done), Q-137 `[[item]]` / `[[prop]]` / `[[light]]` data shape, Q-139 burglar event spots.
 - Q-102 vegetable garden data shape (`[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]`, fence as prop colliders + blocked cell edges, self-opening gate, animals never enter). Q-103 garden sign texts per reading level. Q-100, Q-101 treats (GAME-GARDEN).
-- Q-085 data shape for woods, hippo pool and home wandering (`density`, `trees`, `edge`, `[[enclosure_feature]]`, `home_wander_on`, wander clip to `rect`, 7/10 water targets) — implemented as proposed in M5a. Q-086 enclosure sign as a gate arch. Q-087 collision footprint values and invisible-wall fixes — implemented as proposed in M5a. Q-097 animals out of reach come to the player. Q-098 `hut` enclosure feature. Q-099 accepted invisible walls (map board back, fallen tree).
+- Q-085 data shape for woods, hippo pool and home wandering (`density`, `trees`, `edge`, `[[enclosure_feature]]`, `home_wander_on`, wander clip to `rect`, 7/10 water targets) — implemented as proposed in M5a. Q-086 answered 2026-09-27: (b) enclosure sign beside the gate, not a gate arch (LAYOUT-033). Q-087 collision footprint values and invisible-wall fixes — implemented as proposed in M5a. Q-097 animals out of reach come to the player. Q-098 `hut` enclosure feature. Q-099 accepted invisible walls (map board back, fallen tree).
 - Q-069 answered: all three level-1 missions in scope.
 - Q-033 food storage lock (level 1 assumes unlocked).
 - Q-044 `hiding_place` element type and `blocks_view` data. Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists and `wander_on`. Q-081 (answered) growing bamboo only at `loc_bamboo`. Q-082 (answered) picking rule for hiding places. Q-083 (answered) two-word `kiga` place words and food-word clashes. Q-043 poses at the new places.
@@ -867,4 +867,5 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 - Q-047 which food boxes stand in the storage in level 1.
 - Q-024 walking speed (answered by GAME-PLAYER §6: 1.93 m/s path, 0.98 m/s grass).
 - Q-056 answered (axes: level x east / z north, world = (x, 0, −z)). Q-057 answered (fences, hedges, walls: 2 m + 1 m segments, bands as one row on the centre line — GAME-LAYOUT "Modular edges", LAYOUT-013). Q-059 band joins, Q-060 fence/band placement (proposals).
-- Q-147 string-light spans (≤ 6 m, stretched model); Q-148 entrance arch name board text (`sign-zoo-entrance`); Q-150 answered (the food-box row leaves a gap ≥ 1.2 m in front of the storage door); Q-157 answered (no pocket beside a gate: `board_zebra` → (−9, 15), the enclosure signs ≥ 0.9 m from the gate posts, `board_hippo` → (8, 21), LAYOUT-038).
+- Q-147 string-light spans (≤ 6 m, stretched model); Q-148 answered (`sign-zoo-entrance` = de *Buchstaben Zoo*, en *Letter Zoo*); Q-150 answered (the food-box row leaves a gap ≥ 1.2 m in front of the storage door); Q-157 answered (no pocket beside a gate: `board_zebra` → (−9, 15), the enclosure signs ≥ 0.9 m from the gate posts, `board_hippo` → (8, 21), LAYOUT-038).
+- Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).

@@ -6,7 +6,7 @@ module: water-rendering
 status: implemented
 depends_on: [ART-ENVIRONMENT, TECH-ARCH, GAME-LAYOUT]
 test_prefix: WATER
-updated: 2026-09-26
+updated: 2026-09-28
 ---
 
 # Animated cartoon water (rendering)
@@ -321,7 +321,7 @@ rivers of other widths exist (Q-066).
 
 ### Level data / assembly
 
-- River elements get an explicit flow direction (proposal in Q-066:
+- River elements get an explicit flow direction (Q-066 answered:
   `flow = "S"` on `river_n`, `"E"` on `river_e`; `river_mid` inherits), so the centreline
   order and direction are data, not inferred from `notes`.
 - Obstacles: rocks placed on river cells (e.g. "small rapids with stones" of `river_n`)

@@ -6,7 +6,7 @@ module: missions
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-FEED, CONT-READING, CONT-MATH, CONT-L10N]
 test_prefix: MISS
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Start missions — 10 animals
@@ -644,7 +644,7 @@ Night missions follow the same rules as the day missions (GAME-NIGHT rule 9; rid
 spec). Riddles use **night clues** — moonlight, sounds, smells (GAME-NIGHT rule 5). Places: GAME-LEVEL-NIGHT-1
 "Hiding places". Fluent file: `assets/i18n/{de,en}/night.ftl` (same key scheme as `missions.ftl`).
 Night riddles avoid every `kiga` place word of the day levels too (zoo-wide, as MISS-011), although the night
-zoo is a riddle scope of its own for scenery kinds (*proposal Q-136*). The owl's `kiga` word *Teich* / *pond*
+zoo is a riddle scope of its own for scenery kinds (*Q-136 answered*). The owl's `kiga` word *Teich* / *pond*
 equals the hippo's (`loc_pond`) — allowed because the two riddles are never active at the same time (Q-136).
 
 | # | Animal id | Food box (de / en) | Hiding place id | Place (for designers only) |
@@ -653,7 +653,7 @@ equals the hippo's (`loc_pond`) — allowed because the two riddles are never ac
 | N2 | `bat` | Obst / fruit | `loc_windmill`, `loc_fireflies`, `loc_hollow_tree` | little wooden garden windmill, four sails turning, soft whirring · low meadow with many fireflies (the only firefly place, Q-115), small crooked tree · very thick old tree with a big round knothole at 2.5 m |
 | N3 | `owl` | Käfer / beetles | `loc_moon_pond`, `loc_hilltop`, `loc_fir` | small still pond mirroring the moon and stars, reeds, owl on a wooden post at the shore · small grassy hill with a big round stone on top, no trees, brightest moonlight · the one tall dark pointed fir tree with cones |
 
-**Night food storage** (`food_storage_n1`, proposal Q-135): four boxes — *Käfer* / *beetles* (hedgehog **and** owl:
+**Night food storage** (`food_storage_n1`, Q-135 answered): four boxes — *Käfer* / *beetles* (hedgehog **and** owl:
 two animals share one food, so the child takes a beetle box twice), *Obst* / *fruit* (bat), and two distractors for
 later night levels, *Würmer* / *worms* and *Nektar* / *nectar*. Keys `food-beetles`, `food-fruit`, `food-worms`,
 `food-nectar`. MISS-004 extends to all 14 food words (distinct).
@@ -961,8 +961,8 @@ Night-house sign `sign-night-house`: *Nachttierhaus* / *Night house*.
 
 ## Open questions
 
-- Q-002 Confirm the 10 animals. Q-036 Goldfish transport (bucket?).
-- Night level 1: Q-135 night foods (hedgehog and owl share *Käfer*), Q-136 riddle scope of night levels (owl `kiga` *Teich* = hippo's), Q-139 burglar note places; teacher review of the night riddles with Q-037.
+- Q-002 Confirm the 10 animals. Q-036 answered: goldfish bowl, not a bucket (GAME-RESCUE).
+- Night level 1 (Q-135, Q-136, Q-139 answered 2026-09-27): night foods (hedgehog and owl share *Käfer*), own riddle scope of night levels (owl `kiga` *Teich* = hippo's), burglar note places; teacher review of the night riddles with Q-037.
 - Review by a primary school teacher for age-appropriate wording (Q-037).
 - Q-039 Riddles containing their place word (koala, giraffe, elephant). Q-044 Hiding places in the layout.
 - Q-064 Enclosure sign texts (`sign-<animal>`, picture on `kiga`?).

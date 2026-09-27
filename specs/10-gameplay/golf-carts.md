@@ -6,7 +6,7 @@ module: golf-carts
 status: draft
 depends_on: [GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE, CONT-MATH, GAME-HINT]
 test_prefix: CART
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Golf carts
@@ -19,18 +19,19 @@ still means walking the animal home.
 
 ## Behaviour
 
-1. **Three carts** stand at parking spots (proposal Q-119: one at the entrance plaza of
+1. **Three carts** stand at parking spots (Q-119 answered: one at the entrance plaza of
    level 1, one at the entry of level 2, one at the entry of level 3 — a cart of a locked
    level is only usable once that level is open). Each cart has a small parking sign.
 2. **Getting in / out:** standing next to a cart (GAME-PLAYER §5 rules, the driver's side),
    the interact button shows a cart icon; interact → the player character sits in the driver's seat.
    Interact again (or a big "get out" button) → she steps out on the side, the cart stays
-   exactly where it was left (it does not drive back by itself — proposal Q-119).
+   exactly where it was left (it does not drive back by itself — Q-119 answered).
 3. **Driving:** the same controls as walking (left thumb / WASD): push forward = drive
    forward, steer by the joystick direction relative to the camera; smooth acceleration and
    braking, no reversing needed (proposal: slow reverse when pulling back). Speed on paths
-   **4.5 m/s** (≈ 2.3× walking), on grass 2.0 m/s (proposal Q-120). The camera zooms out a
-   little (+3 m) while driving and follows smoothly.
+   **4.5 m/s** (≈ 2.3× walking), on grass 2.0 m/s (Q-120 answered). The camera zooms out a
+   little (+3 m) while driving and follows smoothly; only the zoo view is available while
+   driving (GAME-CAMERA-VIEWS rule 11, Q-125 answered).
 4. **Where carts can go:** only walkable cells of unlocked levels — paths and grass; never
    through barriers, fences, gates into enclosures, the garden gate, buildings, water
    (bridges are fine if at least 2 m wide), sparse woods (trunks too close) or props. The
@@ -65,7 +66,7 @@ still means walking the animal home.
     that name) and one simple math task; its result is the combination (e.g. 3 digits). The
     task follows the child's `math_level` (CONT-MATH; without a math level: `mathe1`), e.g.
     `mathe1`: "2 + 3 = ?" → one digit, repeated or padded to the lock's digit count
-    (proposal Q-132); `mathe3`: "4 × 25 = ?" → "100". The task is generated per playthrough
+    (Q-132 answered); `mathe3`: "4 × 25 = ?" → "100". The task is generated per playthrough
     from the seeded math templates (CONT-MATH rule 1), so the combination is not always the
     same. Reading the note opens the reading panel (the math task in big numbers).
 14. **Opening the lock:** interact with the key box → a lock panel with big number wheels
@@ -98,6 +99,6 @@ still means walking the animal home.
 
 ## Open questions
 
-- Q-119 Where the 3 carts park, and whether a cart drives back to its parking spot by itself.
-- Q-120 Speeds (paths 4.5 m/s, grass 2.0 m/s) and whether carts may drive on grass at all.
-- Q-125 Which camera views are allowed while driving (look-around, first person — GAME-CAMERA-VIEWS).
+- Q-119 answered 2026-09-27: parking spots as in rule 1; a cart stays where it was left.
+- Q-120 answered 2026-09-27: paths 4.5 m/s, grass 2.0 m/s (carts may drive on grass).
+- Q-125 answered 2026-09-27: zoo view only while driving (GAME-CAMERA-VIEWS rule 11, CAMV-024).

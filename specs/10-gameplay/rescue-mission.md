@@ -6,7 +6,7 @@ module: rescue-mission
 status: draft
 depends_on: [PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH]
 test_prefix: RESC
-updated: 2026-09-26
+updated: 2026-09-28
 ---
 
 # Rescue mission — core loop
@@ -59,7 +59,8 @@ occupied again.
    is shown to a second group meanwhile is open (Q-041).
 6. Following animals keep a short distance behind the player, walk around obstacles, and wait
    if the player gets too far away (> 15 m); they follow again when the player is back
-   within 5 m — they never get lost again.
+   within 5 m — they never get lost again. Putting their food down does not stop them
+   (GAME-FEED §12, Q-155 answered).
 7. Leading following animals into the **wrong** enclosure: they stop at the gate and refuse;
    the correct enclosure's sign is not revealed — the child has to read.
 8. When the animals enter their own enclosure, the carried food is used up, they eat
@@ -114,7 +115,7 @@ its rescue has extra steps with a **big glass bowl** (*Goldfischglas*, `fish_bow
    × 0.9, careful — proposal, Q-084) and puts it at the goldfish's home (aquarium/pond
    enclosure): interact → the fish jumps in, `happy`, mission complete.
 7. The bowl, its water and the fish in it are part of the save (GAME-SAVE). Putting the bowl
-   down anywhere (interact on free ground) is allowed; the fish stays safe in it.
+   down anywhere is allowed (put-down button / `G`, GAME-FEED §8–11); the fish stays safe in it.
 8. The mechanic is generic (`carry container` + `fill` + `animal enters container`) so later
    swimming animals can reuse it; data per animal says which container it needs.
 
@@ -197,5 +198,5 @@ children who walk off in another direction still know the goal.
 - Q-022/Q-023 How missions map to levels and barriers.
 - Q-094 perches (§12), Q-084/Q-093 goldfish bowl (implemented as proposed, open).
 - Q-020 Several missions active at once? Q-041 Food shown to a second group while one follows.
-- Q-036 Goldfish transport, Q-039 riddle/place-word rule, Q-040 monkey baby quest.
+- Q-036 answered (goldfish bowl, see above), Q-039 riddle/place-word rule, Q-040 monkey baby quest.
 - Q-097 Out-of-reach escaped animal comes towards the player (proposal, GAME-ANIMALS). Q-069 (answered) only missions in scope are interactable. Q-082 (answered) picking rule.

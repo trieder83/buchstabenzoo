@@ -158,7 +158,7 @@ npm --prefix web run lint && npm --prefix web test
   CONT-MATH). Gameplay code must not assume one level. "Level" alone means a map level
   (GAME-LAYOUT).
 - **Child-friendly UX:** large touch targets, no reading required to navigate menus
-  (icons + audio), no time pressure unless a spec says so, no ads/external links.
+  (icons + audio), no time pressure unless a spec says so, no external links; ads only as passive in-world boards (GAME-ADS, Q-128: no links, no tracking, no network).
 - **Performance:** target 60 fps on mid-range phones — batch static meshes, minimise
   draw calls, avoid per-frame allocations in the render loop.
 - **Code/identifiers/comments in English;** game content in German/English via i18n.

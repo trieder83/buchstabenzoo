@@ -6,7 +6,7 @@ module: environment
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS]
 test_prefix: AENV
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Environment — mockups and models
@@ -28,7 +28,7 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_entrance` | Zoo entrance / start | gate, map board, first visitors |
 | `env_enclosure_row` | Enclosure paths | paths, fences, enclosure signs, benches |
 | `env_hippo` | Hippo enclosure | square tiled pool (no lilies/frogs — must not look like `loc_pond`), stones, wooden hut (cf. `art/props/kit_enclosure_buildings/sheet_zebra_hippo_v3.jpg`) |
-| `env_panda` | Panda enclosure | cut bamboo on a feeding rack (no growing bamboo clumps — proposal Q-081, must not look like `loc_bamboo`), wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
+| `env_panda` | Panda enclosure | cut bamboo on a feeding rack (no growing bamboo clumps — Q-081 answered, must not look like `loc_bamboo`), wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
 | `env_zebra` | Zebra enclosure | bushes, grass, leaves, stone-arch shelter — no water (riddle points to the river) |
 | `env_koala` | Koala enclosure, level 2 (GAME-LEVEL-2, west) | eucalyptus trees of normal height, climbing trunk, small wooden shelter, feeding trough; the koala pair — **no** tree taller than the others, no blossoms, no tree house (riddle guards) |
 | `env_elephant` | Elephant enclosure, level 2 (east) | tiled bathing pool `elephant_pool` with a ramp (like the hippo pool), hay rack, one boulder — **no** jet or coins in the water, no logs, no ball (riddle guards; Q-005 bridge not used) |
@@ -130,8 +130,7 @@ cropped from the approved mockup.
 
 Added for level 1 (proposal, zoo-level-designer — review together with the level-1
 mockups): `hedge` (tall, 3 m), `water_river_*` tiles of `kit_water` (river; the flow is drawn by the water shader, TECH-WATER —
-formerly `water_tile_flowing`), `bridge_wood`, `jetty_wood`, `lily_pad`, `reed`, `duck`, `frog`
-(M6: animated ambient animals, ART-ANIMALS "Ambient animals" — no longer static props), `bamboo`, `map_board`, `gate_wood`,
+formerly `water_tile_flowing`), `bridge_wood`, `jetty_wood`, `lily_pad`, `reed` (`duck`, `frog`: removed from the kit — animated ambient animals since M6, ART-ANIMALS "Ambient animals", Q-122 answered), `bamboo`, `map_board`, `gate_wood`,
 `road_block`, `repair_sign` (blank, shovel icon), `zookeeper_cart`, `traffic_cone`,
 `fallen_tree`, `flower_bed`.
 
@@ -302,5 +301,5 @@ tints them with blue moonlight and adds lamp point lights and emissive areas.
 - Q-033 Food storage locked? Q-044 Hiding places in layout and mockups. Q-080 (answered) scenery data, Q-081 (answered) bamboo in the panda enclosure. Q-098 `hut_wood` area of the hippo enclosure (`kind = "hut"`). Q-099 remaining invisible walls (`map_board`, fallen tree).
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2). Q-048 screen orientation. Q-052 FOV axis.
 - Q-056 answered: axes (model north = −Z, never mirrored). Q-057 answered: 1 m segment variants, fill rule. Q-059 band joins, Q-060 fence/band placement, Q-061 front direction of props (open).
-- Q-147 `string_lights` stretched to spans ≤ 6 m; Q-148 entrance arch board text; Q-149 `rock_hill` height vs. `loc_hilltop` perch; Q-151 `food_hut` "Futter" board; Q-152 shelter prop over `bed_l2`.
+- Q-147 `string_lights` stretched to spans ≤ 6 m; Q-148 answered (entrance arch board: de *Buchstaben Zoo*, en *Letter Zoo*); Q-149 `rock_hill` height vs. `loc_hilltop` perch; Q-151 `food_hut` "Futter" board; Q-152 shelter prop over `bed_l2`.
 - Q-153 `food_storage` (model) vs. `food_storage_building` (id here), kind `buildings`. Q-154 models not listed here yet (`door_wood`, `glass_door`, `turnstile`, `string_post`, `food_hut`, bedroom items, `kit_landmarks`, garden items).

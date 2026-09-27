@@ -4,9 +4,9 @@ title: Food boxes, bamboo forest, carrying and putting down items
 aspect: gameplay
 module: feeding
 status: draft
-depends_on: [GAME-WORLD, CONT-READING, GAME-RESCUE, GAME-SAVE, GAME-HINT, GAME-PLAYER]
+depends_on: [GAME-WORLD, CONT-READING, GAME-PLAYER]
 test_prefix: FEED
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Food boxes and carrying food
@@ -154,6 +154,9 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 | FEED-021 | Given cut spots in different growth stages, when saved and restored, then every spot keeps its stage and remaining regrowth time. | unit |
 | FEED-022 | Given every harvestable bamboo forest in the level data, then each cut spot has a walkable stand point within 1.5 m, and the forest stays solid and keeps its hiding place valid. | unit |
 | FEED-023 | Given zebras following and the player carrying grass, when they enter their enclosure, then the grass is consumed (the player carries nothing); given the grass was put down earlier, the lying grass stays; showing food alone never consumes it. | unit |
+| FEED-024 | Given the current mission needs an item that lies on the ground (the fish bowl, or the mission's food) and the child carries nothing better, when the hint is asked, then a candidate of GAME-HINT priority 2 is "pick up" at that lying item (§13). | unit |
+| FEED-025 | Given the panda info board not read, then no hint points at a bamboo cut spot; given it was read and a cut spot is full grown, then the nearest ripe cut spot may be a hint candidate for bamboo beside the bamboo food box (§16). | unit |
+| FEED-026 | Given the exported bamboo forest model, then every cut spot has the stage nodes `stalk_full`, `stalk_young` and `stump` (§17). | asset |
 
 ## Open questions
 
@@ -164,3 +167,5 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 - Q-158 Put-down interpretations (9th item = the bowl, pocket swap, back-into-box distance, `E` still puts the bowl down).
 - Q-155 answered: animals keep following when their food is put down; at most 8 lying items; giving consumes.
 - Q-150 answered 2026-09-27: the food-box rows leave a free gap ≥ 1.2 m in front of every food storage door (LAYOUT-032).
+- Q-172 basket and honey pot: hand items that can be put down (§8, FEED-014) or a separate slot (GAME-GARDEN §4, GARD-007)?
+- Q-154 the bamboo forest model with cut-spot stage nodes (§17) is not yet listed in ART-ENVIRONMENT.

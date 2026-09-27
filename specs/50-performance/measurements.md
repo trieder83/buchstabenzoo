@@ -6,7 +6,7 @@ module: measurements
 status: draft
 depends_on: [PERF-BUDGETS]
 test_prefix: PERFLOG
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Performance measurement log
@@ -217,3 +217,13 @@ PERF_VIEWPORTS=phone PERF_SCENARIOS=S01,S10 tools/perf/run.sh --skip-build   # a
 
 Regressions: none (first run). Top recommendations: PERF-R-001 (night lights), PERF-R-002
 (ground tiles), PERF-R-003 (uniform traffic) — see `recommendations.md`.
+
+## Test cases
+
+No test cases of its own: the measuring tool and the log format are checked by PERF-015
+(PERF-BUDGETS); each run is the evidence for the PERF-BUDGETS test cases it reports.
+
+## Open questions
+
+- Q-013 reference phone, Q-166 frame-time budgets, Q-167 WASM / first-load budgets,
+  Q-168 memory budget, Q-169 allocation rule scope (see PERF-BUDGETS).

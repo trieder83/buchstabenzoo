@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1]
 test_prefix: LAYOUT-N1
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Night level 1 — the moonlit forest garden (hedgehog, bat, owl)
@@ -155,17 +155,17 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `path_n1_plaza` | path (plaza) | -39, 24, 9, 11 | Night plaza under string lights; food boxes on its west edge, path to the night house north, s_link south. |
 | `map_board_n1` | landmark (map_board) | -30, 31, 1, 2 | Picture map of the night garden (silhouettes, no text), with a board lamp. |
 | `bench_n1_plaza` | decoration (bench) | -29, 25, 2, 1 |  |
-| `food_storage_n1` | building (food_hut) | -44, 26, 5, 6 | `door` (-40, 29). Small wooden food hut with warmly lit windows (env_night_overview); the 4 night food boxes stand in front of its east facade (proposal Q-135). |
+| `food_storage_n1` | building (food_hut) | -44, 26, 5, 6 | `door` (-40, 29). Small wooden food hut with warmly lit windows (env_night_overview); the 4 night food boxes stand in front of its east facade (Q-135 answered). |
 | `path_n1_house` | path (main) | -38, 35, 3, 4 | From the plaza north to the night-house door (-37, 39). |
 | `night_house` | building (night_house) | -45, 39, 17, 5 | `interior` (-44, 40, 15, 4), `door` (-37, 39), `model_rect` (-45, 39, 17, 13). Rounded night house with a grass roof, painted moon, blue and warm red-orange porthole windows (env_night_house, Q-116). Inside: dim blue and red-orange light, three glass-fronted indoor enclosures along the north side, each with a small glass door (gate) and an enclosure sign above it. |
 | `enc_n1_hedgehog` | enclosure | -45, 44, 6, 8 | gate (-43, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, warm red-orange light: straw nest box, a hollow log tunnel, low ferns, earth floor. No twig heap, no mushrooms, no flower pots (riddle guards). |
 | `enc_n1_bat` | enclosure | -39, 44, 5, 8 | gate (-38, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, soft blue light: bare climbing branches and ropes under the ceiling to hang from, a fruit bowl on a shelf. No hollow tree, no windmill, no fireflies (riddle guards). |
 | `enc_n1_owl` | enclosure | -34, 44, 6, 8 | gate (-32, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, soft blue light: perch poles, a wooden owl box high on the wall, a painted moon on the back wall. No fir tree, no hill, no pond (riddle guards). |
-| `board_n1_hedgehog` | decoration (info_board) | -42, 38, 1, 1 | board of `enc_n1_hedgehog`, `mount = "wall"` (Q-157). Outside the night house, south of the hall wall, below its enclosure; board lamp (proposal Q-134: boards outside, the hall has no room for solid boards). |
+| `board_n1_hedgehog` | decoration (info_board) | -42, 38, 1, 1 | board of `enc_n1_hedgehog`, `mount = "wall"` (Q-157). Outside the night house, south of the hall wall, below its enclosure; board lamp (Q-134 answered: boards outside, the hall has no room for solid boards). |
 | `board_n1_bat` | decoration (info_board) | -39, 38, 1, 1 | board of `enc_n1_bat`, `mount = "wall"` (Q-157). Left of the door path, flat on the facade; board lamp. |
 | `board_n1_owl` | decoration (info_board) | -33, 38, 1, 1 | board of `enc_n1_owl`, `mount = "wall"` (Q-157). Right of the door path, below the owl enclosure; board lamp. |
 | `trees_n1_ne` | decoration (tree_grove) | -28, 39, 2, 13 | `density = "dense"`, bush border. Old round trees between the night house and the east hedge. |
-| `telescope_n1` | decoration (telescope) | -52, 38, 1, 1 | Toy star telescope on a wooden stand, pointing at the moon — a resting point halfway along the north ring (keeps the boards -> north-west walk <= 10 s per leg). Not a riddle detail; interactive use (look at the moon) is a proposal (Q-138). |
+| `telescope_n1` | decoration (telescope) | -52, 38, 1, 1 | Toy star telescope on a wooden stand, pointing at the moon — a resting point halfway along the north ring (keeps the boards -> north-west walk <= 10 s per leg). Not a riddle detail; interactive use (look at the moon) comes later as a small bonus (Q-138 answered). |
 | `path_n1_ring_n` | path (main) | -64, 35, 26, 3 | From the night-house path west to the west ring; passes the boards. |
 | `path_n1_ring_w` | path (main) | -64, 13, 3, 22 | West side of the loop; the hedgehog places and the hill lie west of it. |
 | `path_n1_ring_s` | path (main) | -61, 13, 25, 3 | South side of the loop; windmill, firefly meadow and pond lie south of it. |
@@ -184,7 +184,7 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `hill_n1` | landmark (hill) | -69, 42, 3, 3 | Small round grassy hill (2 m) with one big round stone on top, no trees — the brightest moonlit spot of the garden (loc_hilltop). |
 | `fir_n1` | decoration (fir_tree) | -62, 48, 2, 2 | The one tall dark pointed fir tree in the north-west corner, with cones (loc_fir). The only fir in the zoo. |
 
-## Night house (GAME-NIGHT rule 4; proposal Q-134)
+## Night house (GAME-NIGHT rule 4; Q-134 answered)
 
 A rounded house with a grass roof, a painted moon and blue / warm red-orange porthole windows
 (`env_night_house`). The child walks in through the door (−37, 39) into a **visitor hall**
@@ -200,7 +200,7 @@ gate, 2 m) and an enclosure sign above it. The roof and the walls above 1 m of t
 | `enc_n1_bat` | (−39, 44, 5, 8) | (−38, 44, 2, 1) | soft blue `#5B7FE0` | bare branches and ropes under the ceiling, a fruit bowl — no hollow tree, windmill or fireflies |
 | `enc_n1_owl` | (−34, 44, 6, 8) | (−32, 44, 2, 1) | soft blue `#5B7FE0` | perch poles, an owl box high on the wall, a painted moon — no fir, hill or pond |
 
-- **Info boards outside** (proposal Q-134): `board_n1_hedgehog` (−42, 38), `board_n1_bat`
+- **Info boards outside** (Q-134 answered): `board_n1_hedgehog` (−42, 38), `board_n1_bat`
   (−39, 38), `board_n1_owl` (−33, 38) hang in a row on the south wall (`mount = "wall"`: a flat
   panel on the facade behind their cell, not solid — no pocket beside the door, Q-157,
   LAYOUT-038), each below its enclosure, facing south onto `path_n1_ring_n` / `path_n1_house`, each with a `board_lamp`. The
@@ -212,7 +212,7 @@ gate, 2 m) and an enclosure sign above it. The roof and the walls above 1 m of t
 - Leading an animal home: through the door (−37, 39), along the hall to the gate; the hall is
   4 m wide, so a following animal fits next to the player.
 
-## Night food storage (proposal Q-135)
+## Night food storage (Q-135 answered)
 
 `food_storage_n1` (x −44…−40, z 26…31, door (−40, 29) on the east facade) is a small wooden food
 hut with warm windows. Its four `[[food_box]]`es stand on the west row of the plaza in front of the
@@ -391,14 +391,15 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 
 ## Open questions
 
-- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
-- Q-133 night level data (`time = "night"`, moon door `opens_at` / `unlock_after`, open every night — also after the night zoo is done?).
-- Q-134 night house structure (hall + indoor enclosures + `model_rect`, boards outside).
-- Q-135 night food storage and food ids (`beetles`, `fruit`, `worms`, `nectar`; hedgehog and owl share beetles).
-- Q-136 riddle uniqueness scope for night levels.
-- Q-137 `[[light]]`, `[[item]]`, `[[prop]]` data shape.
-- Q-138 telescope as an interactive toy.
+- Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
+- Q-133 answered 2026-09-27: night level data (`time = "night"`, moon door `opens_at` / `unlock_after`), open every night — also after the night zoo is done.
+- Q-134 answered 2026-09-27: night house structure (hall + indoor enclosures + `model_rect`, boards outside).
+- Q-135 answered 2026-09-27: night food storage and food ids (`beetles`, `fruit`, `worms`, `nectar`; hedgehog and owl share beetles).
+- Q-136 answered 2026-09-27: night levels are their own riddle scope.
+- Q-137 answered 2026-09-27: `[[light]]`, `[[item]]`, `[[prop]]` data shape.
+- Q-138 answered 2026-09-27: telescope is decoration now, interactive later as a small bonus.
 - Q-142 answered 2026-09-27: eyeshine 2.5 m, visible lantern ground pool 2.5 m (GAME-NIGHT, NIGHT-018).
 - Q-094 perch heights, Q-043 poses (`hang`), Q-126 (answered) night haze.
 - Q-147 string-light spans on the plaza; Q-149 `loc_hilltop` perch height 2.4 m vs. the `rock_hill` model (1.95 m); Q-151 "Futter" board of the `food_hut` above its eaves.
 - Q-154 `kit_landmarks` (windmill, trees, `rock_hill`, …) has no manifest entry / ART listing yet.
+- Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).

@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [GAME-WORLD]
 test_prefix: ANIM
-updated: 2026-09-26
+updated: 2026-09-28
 ---
 
 # Animals and enclosures
@@ -108,6 +108,7 @@ On `kiga` the board shows pictures (habitat, food) plus one word each; read-alou
 
 ## Open questions
 
-- Q-002 final list, Q-004 hippos, Q-005 elephant, Q-030 herd size, Q-036 goldfish transport.
+- Q-002 final list, Q-004 hippos, Q-005 elephant, Q-030 herd size; Q-036 answered (goldfish bowl, GAME-RESCUE).
 - Q-043 Animation set per animal (hiding-place idles, reactions, koala/goldfish locomotion).
 - Q-044 How hiding places are represented in the layout data. Q-085 `home_wander_on` and enclosure pools (data shape). Q-097 out-of-reach escaped animal comes towards the player (proposal).
+- Q-174 bears for the honey event (Q-131 answered): level and species spec.

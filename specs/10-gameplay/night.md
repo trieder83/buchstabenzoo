@@ -6,7 +6,7 @@ module: night
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION]
 test_prefix: NIGHT
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Nightfall and the night zoo
@@ -84,8 +84,8 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
    sleep (bed) → morning → the **next day-zoo level** (level 2 behind the fallen tree opens);
    day and night levels alternate (Q-078).
    **No pressure (Q-079):** the child can sleep at any time; the moon door stays open every
-   night until the night zoo is complete, and progress there is kept (whether it also opens
-   after completion: proposal Q-133 (d)).
+   night until the night zoo is complete, and progress there is kept (it also opens every
+   night after completion: Q-133 (d) answered).
 8. **Saving:** day/night state, nightfall done, night-zoo progress and which area the player
    is in are part of the save (GAME-SAVE). Reloading at night restores the night.
 9. **Reading and levels:** all night texts exist for every reading level and language
@@ -96,7 +96,7 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
     separate models; the comic style stays (cel shading, outlines). Performance budget as
     by day.
 
-## Implementation data (level design, 2026-09-27 — proposals Q-133…Q-139)
+## Implementation data (level design, 2026-09-27 — Q-133…Q-139 answered)
 
 Where the night lives in the level data (owner `zoo-level-designer`; details in GAME-LAYOUT
 "Moon door and night levels" / "Night lights, interactables and furniture"):
@@ -118,7 +118,7 @@ Where the night lives in the level data (owner `zoo-level-designer`; details in 
 Rules for the implementation that follow from the data:
 - The moon door is **not** an exit barrier of the Q-091 rule (barriers open the next morning;
   it must not be counted by `exit_barriers()`); it opens at nightfall and closes in the morning.
-- After `night_1` is complete the moon door still opens every night (proposal Q-133), so the
+- After `night_1` is complete the moon door still opens every night (Q-133 answered), so the
   child can visit the night animals.
 - Burglars (GAME-EVENTS) use `[[event_spot]]`s of the **day** levels only (Q-139).
 
@@ -148,7 +148,7 @@ Rules for the implementation that follow from the data:
   Sleeping uses the normal **interact action** (user decision 2026-09-27): standing next to
   the bed, desktop `E` (or Space/Enter) and the touch action button (🛏 icon) start sleeping —
   no extra menu or text needed.
-  *Proposal Q-140:* while a visited night level is unfinished, the bed also works **by day**
+  *Q-140 answered (user 2026-09-27):* while a visited night level is unfinished, the bed also works **by day**
   and the child sleeps until the evening (dusk → night) — otherwise a child who slept before
   the night zoo was done would never get another night (level 2 waits for `night_1`, Q-078).
 - **Save** (GAME-SAVE): `daytime` (phase, time in phase, pending dusk, nightfalls, pending
@@ -202,7 +202,7 @@ Rules for the implementation that follow from the data:
 | NIGHT-008 | Given a save made at night (day zoo or night zoo), when restored, then it is still night and the player is in the same area and position. | unit |
 | NIGHT-009 | Given the night scenes, then reviewers confirm nothing is scary for 4–6 year olds (manual review with the art direction checklist). | manual |
 | NIGHT-010 | Given a completed level, then its barriers (by `unlock_after`, else the transition) open only the next morning, never at the celebration; the moon door is never opened as an exit; with `night_1` joined the fallen tree opens the morning after `night_1` is complete, without it after level 1. | unit |
-| NIGHT-011 | Given the child slept while `night_1` is unfinished (proposal Q-140), then by day the bed is interactable and sleeping leads to dusk and night with the moon door open; night-zoo progress is kept and a following night animal is back at its hiding place. | unit |
+| NIGHT-011 | Given the child slept while `night_1` is unfinished (Q-140 answered), then by day the bed is interactable and sleeping leads to dusk and night with the moon door open; night-zoo progress is kept and a following night animal is back at its hiding place. | unit |
 | NIGHT-012 | Given the night grading, then no colour is darker than `#2B3566`, grass turns deep blue and paths pale lavender, dusk is warmer than day, lamp light has a hard edge, and the nearest lamps get point lights, the next ones light pools, far ones none (Q-114). | unit |
 | NIGHT-013 | Given night, then ducks sleep (no swimming, `sleep` pose), butterflies are hidden and frogs croak more often than by day. | unit |
 | NIGHT-014 | Given the same spot by day and at night, then the night adds at most 6 draw calls (night props batched); frame time is reported. | e2e |
@@ -214,10 +214,10 @@ Rules for the implementation that follow from the data:
 ## Open questions
 
 - Q-076…Q-079 answered 2026-09-26 (animals of night level 1, owl food, what comes after, no pressure).
-- Q-133…Q-139 night level data, night house, night foods, riddle scope of night levels, light/item/prop data, telescope, burglar spots (level design, 2026-09-27).
+- Q-133…Q-139 answered 2026-09-27 (as recommended): night level data, night house, night foods, riddle scope of night levels, light/item/prop data, telescope, burglar spots (level design, 2026-09-27).
 - Q-126 answered 2026-09-27: dark-blue gradient with moon and stars, haze in the same blue, day fog end kept (20.8 m since FIX-056).
 - Q-091 answered 2026-09-27: barriers open the next morning (engine section, NIGHT-010).
-- Q-140 (open) Sleeping by day "until the evening" while a night level is unfinished (implemented as proposal).
+- Q-140 answered 2026-09-27: sleeping by day "until the evening" while a visited night level is unfinished (NIGHT-011).
 - Q-141 answered 2026-09-27: until `night_2` exists, level 3 opens the morning after level 2's night; bed `bed_l2` at level 2's food storage, the 🛏 icon offers the nearest unlocked bed.
 - Q-142 answered 2026-09-27: eyeshine stays 2.5 m, the visible lantern ground pool is 2.5 m too (NIGHT-018).
 - Q-146 answered 2026-09-27: `eye_glow` is skipped while `sleep` plays; no eyelids for v1 (NIGHT-017).

@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L3
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Level 3 — monkey, goldfish, snow fox (adventure playground and stream)
@@ -176,7 +176,7 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `path_l3_mill` | path (side) | -19, 73, 5, 2 | Short path from the ring to the stream bank just north of the mill hut. |
 | `path_l3_ne` | path (side) | 10, 77, 10, 3 | Side path east from the ring towards the ice cream kiosk and the trampoline. |
 | `zookeeper_house_3` | building (zookeeper_house) | -11, 61, 7, 6 | door at cell (-8, 61); walkable interior (-10, 62, 5, 4). Enterable zookeeper house (roof cut-away inside, GAME-PLAYER §2): shelves, a table, a bed, and the big empty glass bowl (fish_bowl) on the table. Water tap on the outside wall next to the door. |
-| `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61). Third food storage (proposal Q-new): all 10 food boxes in a row in front of the south facade (z 60.66, x −1.4 … 7.4 every 0.8 m) with a free gap in front of the door (box edges 2.91 … 4.69, Q-150). |
+| `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61). Third food storage (proposal Q-089): all 10 food boxes in a row in front of the south facade (z 60.66, x −1.4 … 7.4 every 0.8 m) with a free gap in front of the door (box edges 2.91 … 4.69, Q-150). |
 | `trees_l3_center` | decoration (tree_grove) | -4, 61, 3, 16 | density `dense`.  |
 | `trees_l3_center_e` | decoration (tree_grove) | -1, 67, 8, 10 | density `dense`.  |
 | `enc_goldfish` | enclosure | 11, 63, 11, 10 | gate (11, 67, 1, 2). Goldfish pond enclosure: round pond with a low stone rim, water plants, a low wooden fence; the "gate" is a flat stone step where the bowl is put down to let the fish in (GAME-RESCUE goldfish bowl step 6). No waterfall, no wheel, no willow (riddle guards). |
@@ -352,7 +352,7 @@ storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes abou
     walkable cell within 1.5 m, and `enc_goldfish`'s gate step has a walkable cell in front.
 11. The 10 food boxes of food storage 3 are props with a walkable standing cell within 2 m.
 
-## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118 answered, proposals Q-137, Q-139)
+## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118, Q-137, Q-139 answered)
 
 `[[light]]` in `level-3.toml` (night-only): 9 lantern posts along the entry path and the ring
 ((18.0, 52.25), (8.0, 52.25), (−13.0, 58.25), (−13.75, 72.0), (7.25, 62.0), (7.25, 72.0),
@@ -363,7 +363,7 @@ monkey (0.65, 81.7), snow fox (−1.35, 57.3)), wall lamps at the doors of `zook
 board lamps on the three info boards and `map_board_l3`. No string lights (Q-118).
 
 `[[event_spot]]`: burglars climb in over a ladder on the inside of `wall_l3_north` at (9.5, 91.7),
-take a food box in front of `food_storage_3` (never the fish bowl — proposal Q-139) and hide in the
+take a food box in front of `food_storage_3` (never the fish bowl — Q-139 answered) and hide in the
 grass corner between the monkey enclosure and the north wall (`l3_burglar_hideout` (8, 87, 3, 5));
 note texts `event-burglar-note-level_3-<reading_level>`.
 
@@ -416,8 +416,8 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 
 ## Open questions
 
-- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
-- Q-137 `[[light]]` data shape, Q-139 burglar event spots. The beds of GAME-NIGHT are `bed_l1` in the level-1 `zookeeper_house_1` (Q-096) and `bed_l2` at level 2's food storage (Q-141 b); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`).
+- Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
+- Q-137 `[[light]]` data shape, Q-139 burglar event spots (both answered 2026-09-27). The beds of GAME-NIGHT are `bed_l1` in the level-1 `zookeeper_house_1` (Q-096) and `bed_l2` at level 2's food storage (Q-141 b); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`).
 
 - Q-088 joining levels; Q-090 second entry through the level-1 north gate;
   Q-091 unlock timing (answered: the next morning); Q-141 (answered) night level before level 3; Q-089 own food storage; Q-092 enterable
@@ -426,3 +426,4 @@ note texts `event-burglar-note-level_3-<reading_level>`.
   Q-033 key on the pirate ship (not used); Q-080, Q-082, Q-043.
 - Q-096 (answered by Q-141) the bed after level 2 is `bed_l2` in level 2, not in `zookeeper_house_3`.
 - Q-150 answered: the food-box row of `food_storage_3` leaves a gap ≥ 1.2 m in front of the door (meat moved from x 3.4 to −1.4, leaves from 4.2 to 7.4). Q-157 answered (no pocket beside a door: `tap_l3` moved flush on the facade to (−5.5, 60.9), LAYOUT-038).
+- Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).

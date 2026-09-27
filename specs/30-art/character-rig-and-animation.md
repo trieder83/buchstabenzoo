@@ -6,7 +6,7 @@ module: character-rig-and-animation
 status: draft
 depends_on: [ART-PIPELINE, GAME-PLAYER, TECH-ARCH]
 test_prefix: RIG
-updated: 2026-09-26
+updated: 2026-09-28
 ---
 
 # Character rig and animation — technical contract
@@ -295,7 +295,7 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 - Q-026 Texture approach for body and faces (blocking — renderer needs to know).
 - Q-027 Visitor proportions and whether visitors walk.
 - Q-029 Is the player clip set complete?
-- Q-049 High-angle game camera (characters small on screen).
+- Q-049 answered: high-angle game camera (characters small on screen; close-ups Q-051).
 - Q-050 Outline technique for characters (inverted hull vs. screen-space).
 - Q-051 Close-up for dialogue so faces/expressions are visible.
 - Q-063 Walk cadence vs. speed (hips dip needed for no foot sliding at 1.4 m/s).

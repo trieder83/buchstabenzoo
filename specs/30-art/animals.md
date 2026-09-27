@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG]
 test_prefix: AANI
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Animals — concept and models
@@ -256,7 +256,7 @@ firing §4.8, loop seams, sampling) are the same as ART-RIG.
 ## Ambient animals (GAME-AMBIENT, M6)
 
 Decorative animals with behaviour but no mission (glossary `ambient_animal`); not part of the
-mission-animal list above (they have no `eat` / `happy`; which AANI tests apply to them: Q-122). Look from the approved
+mission-animal list above (they have no `eat` / `happy`; Q-122 answered: AANI-004, AANI-006, AANI-007 and AANI-013 apply, AANI-001/002/003/005/008 do not). Look from the approved
 `kit_water` sheet (`art/props/kit_water/sheet_v1.jpg`, kit 5 duck / frog); models by script,
 origin at the water surface; they replace the static `duck` / `frog` props of `kit_water`.
 
@@ -267,7 +267,7 @@ origin at the water surface; they replace the static `duck` / `frog` props of `k
 | `frog` | `tools/blender/animals/frog.py` | `frog` (11 joints) | `idle`, `croak`, `hop`, `swim` | ≈ 0.2 m | model v1 |
 | `butterfly` | built-in renderer mesh (12 triangles, no `.glb`) | — | wing beat as instance scale | ≈ 0.34 m wingspan | implemented |
 
-Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
+Game scale of duckling / frog: Q-108. Manifest entries (Q-122 answered): added with `concept_approved = true` only after the user confirms the `kit_water` sheet counts; the static `duck` / `frog` props are removed from `kit_water`.
 
 ## Test cases
 
@@ -285,6 +285,7 @@ Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
 | AANI-010 | Given each animal `.glb` with an `eye_glow` material, then `eye_glow` uses the same atlas image as `body`, has `emissiveFactor` = linear `#E6F7A0` and covers only the eye caps (1–120 triangles); every night animal has it. | asset |
 | AANI-011 | Given each animal in the manifest (Q-143), then its clips contain `sleep` (loop) — enforced for the night animals now, for the day animals once their `sleep` exists. | asset |
 | AANI-012 | Given `bat` / `owl`, then min Y = 0 in the rest pose (origin at the feet), perched height ± 0.05 m (bat 0.80, owl 0.80), `fly` has `speed = 1.4` and `fly_height` in `animal_anims.toml`, and the bat has `hang`. | asset |
+| AANI-013 | Given the ambient animal `.glb`s (`duck`, `duckling`, `frog`), then each has exactly the clips of the "Ambient animals" table in `animal_anims.toml` and in the file (Q-122). | asset |
 
 ## Open questions
 
@@ -292,7 +293,8 @@ Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
 - Q-043 Animation set (hiding-place idles such as `drink`/`sleep`, reactions `not_interested`/`refuse`, locomotion for koala and goldfish while following). The zebra v1 follows the recommendation (`drink`, `refuse`) provisionally.
 - Q-040 Monkey baby needed?
 - Q-108 Game scale of the ambient animals (duckling, frog).
-- Q-122 Ambient models: manifest entries, concept gate, which AANI tests apply.
+- Q-122 answered 2026-09-27: manifest entries after the user confirms the kit sheet counts; AANI-004/006/007 + AANI-013 apply; static `duck`/`frog` props leave `kit_water`.
 - Q-143 answered 2026-09-27: night animals with the comic sizes of their briefs, `sleep` and `eye_glow` in every animal's required set.
 - Q-144 answered 2026-09-27: bat wingspan in `fly` stays ≈ 1.1 m for v1.
 - Q-146 answered 2026-09-27: no eyelids for v1; the renderer skips `eye_glow` while `sleep` plays.
+- Q-174 bears (new species for the honey event): size, clips and concept once the level is chosen.

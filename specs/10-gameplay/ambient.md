@@ -6,7 +6,7 @@ module: ambient
 status: implemented
 depends_on: [GAME-LAYOUT, GAME-ANIMALS, ART-ENVIRONMENT, TECH-WATER]
 test_prefix: AMB
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Ambient animals
@@ -23,12 +23,12 @@ decoration with behaviour: no mission, no food, never block the player.
 1. **Characters, not props:** each duck is a small rigged model with clips `swim` (paddling
    loop, body bob), `dip` (head under water, tail up), `flap` (wing flap, short rise),
    `preen` (idle, turns head, cleans feathers) and `idle` (float, gentle bob).
-2. **Behaviour on the river** (per river element, 2–4 ducks, seeded): they swim slowly
+2. **Behaviour on the river** (per river — not per river element — 2–4 adult ducks, seeded,
+   plus up to 3 ducklings following the mother in a line; Q-121 answered): they swim slowly
    (0.3–0.6 m/s) along the river — mostly downstream with the flow, sometimes turning and
    paddling back upstream — stay on water cells, keep ≥ 0.6 m apart, never pass through the
    bridge posts or rocks (swim around them), sometimes stop to `dip`, `preen` or `flap`
-   (every 5–20 s, seeded). A small group (mother + 2–3 ducklings following in a line) is
-   allowed.
+   (every 5–20 s, seeded).
 3. **React to the player:** when the player comes within 2.5 m of the bank next to a duck,
    it swims away to ≥ 4 m with a short `flap`; after 5–10 s calm it swims normally again.
    Ducks never leave the water and never block walking.
@@ -43,7 +43,8 @@ decoration with behaviour: no mission, no food, never block the player.
 ## Frogs and butterflies
 
 7. **Frogs** (`frog`) at the pond: sit on lily pads/ the bank, `croak` (throat puff) and
-   sometimes `hop` to another pad; hop into the water when the player comes within 2 m.
+   sometimes `hop` to another spot of the same pad or to a neighbouring pad ≤ 1 m away (Q-121
+   answered); hop into the water when the player comes within 2 m.
 8. **Butterflies** only where the level data allows them — the meadow hiding place
    (`loc_meadow`, where they are a riddle clue) and the flower beds by the map board: flutter
    in small loops, land on flowers; drawn as tiny animated quads or a 2-bone model. **Never in
@@ -123,10 +124,11 @@ decoration with behaviour: no mission, no food, never block the player.
 | AMB-011 | Given the player walks along the bank next to a duck, onto the jetty end next to a frog and through a butterfly, then the player's movement is never blocked by them and no interaction prompt appears. (Rule 11) | unit |
 | AMB-012 | Given a swimming and a dipping duck, then the water shader receives a wake for the swimmer and a dip ring for the dipper (TECH-WATER WATER-013). (Rule 5) | unit |
 | AMB-013 | Given review shots from the 55° camera at 10, 14 and 20 m zoom, then ducks, ducklings, frogs and butterflies are recognisable and in the comic style (Q-108). (Rule 4) | manual |
+| AMB-014 | Given 5 min of simulated time and no player nearby, then every frog hop ends on a spot of its own pad or of a neighbouring pad whose edge is ≤ 1 m away, never on open water (rule 7, Q-121). | unit |
 
 ## Open questions
 
 - Q-107 Butterflies at the map-board flower beds vs. the meadow-only riddle detail.
 - Q-108 Readability of ducklings and frogs from the 20 m camera (scale them up?).
-- Q-121 Rule 2 (ducks per river element) and rule 7 (frog hops to another pad) vs. the implementation.
-- Q-122 Ambient models not in the manifest / concept gate; old static `duck` / `frog` props.
+- Q-121 answered 2026-09-27: 2–4 adult ducks + up to 3 ducklings per river (rule 2); frogs hop on the same pad or to a neighbouring pad ≤ 1 m away (rule 7, AMB-014; the implementation still hops on the same pad only).
+- Q-122 answered 2026-09-27: manifest entries with `concept_approved = true` only after the user confirms the kit sheet counts; AANI-004/006/007 (+ AANI-013) apply; the static `duck` / `frog` props leave `kit_water` (ART-ANIMALS "Ambient animals").

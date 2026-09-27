@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Zoo layout and level boundaries
@@ -154,7 +154,7 @@ interactable. Without the field every enclosure's animal is in scope.
   FIX-056 (level minima: `level_1` 22.0 m, `level_2` 22.0 m, `level_3` 22.2 m, `night_1`
   22.1 m); tools, in this order: clip the wander area (rect or a smaller `wander_radius_m`)
   on the side facing the board, move the spot inside its place, move the board along its
-  enclosure, move the whole place (proposals of FIX-056: Q-145).
+  enclosure, move the whole place (FIX-056 moves accepted, Q-145 answered).
 
 ## Joining levels (proposal, level design — Q-088)
 
@@ -214,7 +214,7 @@ open for confirmation):**
 - LAYOUT-024 treats background kinds (water bodies shared by one animal's places, the
   level-1 tree areas, walls, hedges and the three-part level-1 rock hill) as non-details.
 
-## Moon door and night levels (proposal, level design — Q-133; GAME-NIGHT rules 3, 4, 7)
+## Moon door and night levels (level design, Q-133 answered; GAME-NIGHT rules 3, 4, 7)
 
 - A **night level** (`[level] time = "night"`, id `night_<N>`) is a normal level file in the
   shared coordinates. It is reachable only through a **moon door**: a barrier of kind
@@ -227,17 +227,17 @@ open for confirmation):**
   it is always closed (NIGHT-002).
 - The day barrier to the next day level follows GAME-NIGHT rule 7 / Q-078: `unlock_after =
   "night_<N>"`, `opens_at = "morning"` (opens the morning after the night level is complete).
-- Night levels are their own **riddle scope** (proposal Q-136): scenery kinds and riddle
+- Night levels are their own **riddle scope** (Q-136 answered): scenery kinds and riddle
   landmarks are unique among the night levels (LAYOUT-024 per scope); night riddles still
   avoid every `kiga` word of the day levels (CONT-MISSIONS MISS-013).
-- **Enterable house with indoor enclosures** (first used by `night_house`, proposal Q-134):
+- **Enterable house with indoor enclosures** (first used by `night_house`, Q-134 answered):
   the building's `interior` is the visitor hall; `enclosure` elements with `indoor = true`
   lie directly next to it with their gate edge-adjacent to an interior cell; `model_rect` is
   the footprint of the whole house model (roof cut away while the player is on a hall/door
   cell). Info boards stand outside (a solid board cell inside the building rect would overlap
   it, LAYOUT-003).
 
-## Night lights, interactables and furniture (Q-118 answered; data shape proposal Q-137)
+## Night lights, interactables and furniture (Q-118 answered; data shape Q-137 answered)
 
 - `[[light]]` (night-only props, hidden by day): `id`, `kind` = `lantern_post` |
   `string_lights` | `wall_lamp` | `board_lamp` | `indoor`, `pos` [x, z] (level metres),
@@ -260,7 +260,7 @@ open for confirmation):**
   pocket beside a door (the three `night_1` boards on the night-house facade).
 - `[[prop]]` (furniture inside buildings, not grid elements): `id`, `model`, `pos`, `facing`,
   `size_m` [w, d] (collider box until the model exists; [0, 0] = no collider), `building`.
-- `[[event_spot]]` (GAME-EVENTS burglar event, proposal Q-139): `burglar_entry` (ladder on the
+- `[[event_spot]]` (GAME-EVENTS burglar event, Q-139 answered): `burglar_entry` (ladder on the
   inside of the wall, `pos`, `facing`), `burglar_target` (`target` building whose food box is
   taken), `burglar_hideout` (`rect` of walkable grass where they are caught; never a hiding
   place, scenery, garden or path). One set per day level.
@@ -277,7 +277,7 @@ condition, spawn point, and a top-down ASCII or SVG map.
 | `level_1` | [levels/level-1.md](levels/level-1.md) (GAME-LEVEL-1): entrance, food storage, zookeeper house `zookeeper_house_1` (bed, cart key box), moon door to `night_1`, zebra, hippo and panda enclosures and their 9 candidate hiding places (`loc_river`, `loc_meadow`, `loc_sand`; `loc_pond`, `loc_mud`, `loc_shade`; `loc_cave`, `loc_bamboo`, `loc_leaves`); hippo pool `hippo_pool`; dense central grove, sparse woods `trees_nw` / `trees_ne`; vegetable garden `garden_veg` in the back (GAME-GARDEN, Q-102) | draft — proposal pending Q-023 |
 | `level_2` | [levels/level-2.md](levels/level-2.md) (GAME-LEVEL-2): behind `barrier_ne_tree` (east); food storage 2, koala (pair), elephant, giraffe and lion enclosures, elephant pool, and their 12 candidate hiding places (`loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree`; `loc_fountain`, `loc_log_pile`, `loc_big_ball`; `loc_lookout_tower`, `loc_train`, `loc_playground`; `loc_sun_rocks`, `loc_stage`, `loc_deckchairs`); exit `barrier_l2_construction` | draft — proposal (Q-088, Q-089, Q-091, Q-094, Q-095) |
 | `level_3` | [levels/level-3.md](levels/level-3.md) (GAME-LEVEL-3): behind `barrier_l2_construction` (north of level 1, second entry through `barrier_north_gate`, Q-090); zookeeper house with the fish bowl and a tap, food storage 3, stream with waterfall, monkey, goldfish (pond) and snow fox enclosures, adventure playground with the pirate ship, and their 9 candidate hiding places (`loc_pirate_ship`, `loc_carousel`, `loc_trampoline`; `loc_waterfall`, `loc_water_wheel`, `loc_willow`; `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`) | draft — proposal (Q-017, Q-088…Q-095) |
-| `night_1` | [levels/night-1.md](levels/night-1.md) (GAME-LEVEL-NIGHT-1): the night zoo west of level 1 behind the level-1 `moon_door` (open at night); plaza with string lights, night food hut, night house with the indoor enclosures of hedgehog, bat and owl, loop path around dense old-tree groves, and 9 candidate hiding places (`loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms`; `loc_windmill`, `loc_fireflies`, `loc_hollow_tree`; `loc_moon_pond`, `loc_hilltop`, `loc_fir`) | draft — proposal (Q-133…Q-138) |
+| `night_1` | [levels/night-1.md](levels/night-1.md) (GAME-LEVEL-NIGHT-1): the night zoo west of level 1 behind the level-1 `moon_door` (open at night); plaza with string lights, night food hut, night house with the indoor enclosures of hedgehog, bat and owl, loop path around dense old-tree groves, and 9 candidate hiding places (`loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms`; `loc_windmill`, `loc_fireflies`, `loc_hollow_tree`; `loc_moon_pond`, `loc_hilltop`, `loc_fir`) | draft (Q-133…Q-138 answered) |
 | later levels | further night levels (`night_2`…) and day areas after Q-023 | — |
 
 ## Behaviour
@@ -497,12 +497,12 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 ## Open questions
 
 - Q-006, Q-017, Q-022, Q-023.
-- Q-133 moon door / night level data and opening rule, Q-134 night house with indoor enclosures, Q-135 night food storage, Q-136 riddle scope of night levels, Q-137 `[[light]]` / `[[item]]` / `[[prop]]` data shape, Q-138 telescope, Q-139 burglar event spots. Q-118 (answered) lantern placement, Q-110 (answered) 17 m fog margin.
+- Answered 2026-09-27 (as recommended): Q-133 moon door / night level data and opening rule, Q-134 night house with indoor enclosures, Q-135 night food storage, Q-136 riddle scope of night levels, Q-137 `[[light]]` / `[[item]]` / `[[prop]]` data shape, Q-138 telescope, Q-139 burglar event spots. Q-118 (answered) lantern placement, Q-110 (answered) 17 m fog margin.
 - Q-104 draw-call budget for the joined zoo, Q-105 background kinds exempt from LAYOUT-024.
 - Q-102 garden data (`[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]`, fence edges, self-opening gate, animals never enter).
 - Q-088 joining levels (one continuous map, `[[entry]]`), Q-089 food storage per level, Q-090 level-1 north gate as second level-3 entry, Q-091 (answered 2026-09-27) barrier opens the next morning, Q-092 enterable buildings (`interior`, `door`), Q-093 fish bowl / water-source data, Q-094 `perch_height_m`, Q-095 new hiding places of levels 2–3.
 - Q-056 answered: coordinate spaces (level x east / z north; world = (x, 0, −z)).
 - Q-057 answered: 1 m segment variants and the fill rule. Q-059 band joins, Q-060 enclosure fence and band placement (proposals), Q-061 front direction of props (open).
-- Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 enclosure sign form (panel over the gate). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
+- Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 answered 2026-09-27: (b) enclosure sign beside the gate (LAYOUT-033; distance ≥ 0.9 m since Q-157). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
 - Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-069 (answered) `[level] missions`. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).
-- Q-150 answered 2026-09-27: the food-box rows leave a gap ≥ 1.2 m in front of the storage doors (no exception to LAYOUT-032 any more). Q-157 pockets beside doors (zebra board, level-3 tap, night-house boards; LAYOUT-034). Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.
+- Q-150 answered 2026-09-27: the food-box rows leave a gap ≥ 1.2 m in front of the storage doors (no exception to LAYOUT-032 any more). Q-157 answered 2026-09-27: no pocket beside a door or gate (zebra board, level-3 tap and night-house boards moved; LAYOUT-034, LAYOUT-038); wall-gap part: Q-173. Q-171 `loc_river` below the 22 m margin after the `board_zebra` move. Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.

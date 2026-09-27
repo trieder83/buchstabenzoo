@@ -36,7 +36,7 @@ faster than guessing.
 ## Target layout
 
 ```
-specs/                 # Source of truth — specs drive everything (see below)
+specs/                 # Source of truth — specs drive everything (see below); 50-performance/ = perf budgets + log
 art/                   # Concept art BEFORE modelling: reference/, characters/, animals/, environment/
                        #   index.html = review page (open directly), catalog.js = its data
 crates/
@@ -81,6 +81,7 @@ Conventions (structure, frontmatter, test IDs) are in `specs/README.md`;
 | `zoo-level-designer` | Zoo map: enclosures, buildings, paths, landmarks, and barriers (road blocks, stones, gates) that limit each level. Owns GAME-LAYOUT, `specs/10-gameplay/levels/`, `assets/levels/`, environment mockup briefs. |
 | `character-artist` | Human characters only: briefs/turnarounds, Blender model, rig, skinning, animation, `.glb` export. Owns ART-RIG and ART-CHARACTERS. |
 | `gameplay-qa` | Plays the game automatically (desktop + touch) and verifies gameplay quality: movement, collision, interaction prompts, camera, touch controls, mission flow. Reports findings in `qa/reports/`, adds regression tests. Run after gameplay/renderer changes and before a milestone is done. |
+| `performance` | Measures frame time, draw calls, triangles, allocations, WASM/download size and load time in fixed scenarios; finds bottlenecks and recommends optimisations. Owns `specs/50-performance/` (budgets `PERF-*`, append-only `measurements.md`, tracked `recommendations.md` `PERF-R-*`). **Run after big changes** (new models, renderer/scene work, new levels) and before a milestone is done. |
 
 Agents never decide game design silently — they add open questions and report them.
 

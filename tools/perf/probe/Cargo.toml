@@ -1,0 +1,23 @@
+# Native performance probe (PERF-BUDGETS, specs/50-performance/): CPU cost and heap
+# allocations of the per-frame game systems (zoo-core Game::update, Ambient) and of the
+# skeletal animation sampling of every skinned model, plus per-model triangle / texture
+# statistics. Not a workspace member (own [workspace] table) so it never affects
+# `cargo test --workspace`; run it through tools/perf/run.sh or
+#   cargo run --release --manifest-path tools/perf/probe/Cargo.toml -- <repo root>
+[package]
+name = "zoo-perf-probe"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+zoo-core = { path = "../../../crates/zoo-core" }
+zoo-assets = { path = "../../../crates/zoo-assets", default-features = false }
+glam = "0.33.10"
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+debug = "line-tables-only"

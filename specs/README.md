@@ -17,6 +17,7 @@ specs/
   20-content/           # aspect: texts, reading levels, localization
   30-art/               # aspect: look, concept art, 3D asset pipeline
   40-tech/              # aspect: architecture, rendering, platforms, testing
+  50-performance/       # aspect: budgets, measurement log, tracked recommendations (`performance` agent)
 ```
 
 - One file per module. Use a subfolder (submodule) only when a module grows too large or a
@@ -27,9 +28,9 @@ specs/
 
 ```yaml
 ---
-id: GAME-FEED              # unique, UPPER-KEBAB, prefix = aspect (PROD, GAME, CONT, ART, TECH)
+id: GAME-FEED              # unique, UPPER-KEBAB, prefix = aspect (PROD, GAME, CONT, ART, TECH, PERF)
 title: Feeding animals
-aspect: gameplay           # product | gameplay | content | art | tech
+aspect: gameplay           # product | gameplay | content | art | tech | performance
 module: feeding
 status: draft              # draft | review | approved | implemented | deprecated
 depends_on: [GAME-ANIMALS] # ids of specs this one relies on

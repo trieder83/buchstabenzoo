@@ -110,9 +110,12 @@ class MeshBuilder(qr.MeshBuilder):
         bmesh.ops.triangulate(self.bm, faces=self.bm.faces[:], quad_method="SHORT_EDGE",
                               ngon_method="BEAUTY")
         self.bm.normal_update()
+        has_glow = any(f.material_index == 1 for f in self.bm.faces)
         self.bm.to_mesh(me)
         self.bm.free()
         me.materials.append(material)
+        if has_glow:
+            me.materials.append(qr.glow_material(material))
         me.shade_smooth()
         obj = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(obj)

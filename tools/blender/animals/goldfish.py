@@ -213,7 +213,8 @@ def build_eyes(mb, at):
                 u, v = u / r * 0.97, v / r * 0.97
             return at.map_uv("eye", 0.5 + 0.5 * u, 0.5 + 0.5 * v)
 
-        mb.loft(rings, uv, rb.rigid("head"), pole_start=c - f * 0.04, pole_end=c + f * 0.031)
+        _, faces = mb.loft(rings, uv, rb.rigid("head"), pole_start=c - f * 0.04, pole_end=c + f * 0.031)
+        mb.mark_glow(faces[-12:])  # eye cap -> `eye_glow` slot (NIGHT-006)
 
 
 def fin(mb, at, base, D, W, length, widths, thick, weight_fn, curl=0.0, n=8):

@@ -16,6 +16,9 @@ check_character.py. Covers AANI-003..AANI-008:
   AANI-006 clips: names == manifest `animations`, length == animal_anims.toml frames,
            root never animated, translation on `hips` only, no scale, loops seamless
   AANI-008 walk: planted hooves drift <= 0.03 m at the authored speed
+  AANI-010 eye_glow: 2nd material on the eye caps, same atlas as `body` (night animals: required)
+  AANI-011 night animals have a looping `sleep`; AANI-012 bat / owl: origin at the feet,
+           `fly` speed + fly_height, bat `hang`
 Exit code 1 if any check fails.
 """
 
@@ -52,6 +55,8 @@ FEET = [f"{e}_foot_{s}" for e in ("front", "hind") for s in ("l", "r")]
 EXTRA = {
     "elephant": {"trunk_1": "head", "trunk_2": "trunk_1", "trunk_3": "trunk_2"},
     "snow_fox": {"tail_3": "tail_2"},
+    "fennec": {"tail_3": "tail_2"},
+    "raccoon": {"tail_3": "tail_2"},
 }
 MAX_JOINTS = 32
 
@@ -66,6 +71,13 @@ SIZES = {
     "giraffe": {"back": 2.30, "max_height": 4.55, "height": 4.50},
     "lion": {"back": 1.02, "max_height": 1.55, "height": 1.50},
     "snow_fox": {"back": 0.62, "max_height": 0.95, "height": 0.90},
+    # night animals (ART-ANIMALS "Night animals", comic sizes of the approved briefs, Q-143)
+    "hedgehog": {"back": 0.57, "max_height": 0.65, "height": 0.60},
+    "raccoon": {"back": 0.72, "max_height": 0.95, "height": 0.90},
+    "badger": {"back": 0.56, "max_height": 0.75, "height": 0.70},
+    "fennec": {"back": 0.54, "max_height": 0.95, "height": 0.90},
+    "porcupine": {"back": 0.77, "max_height": 0.85, "height": 0.80},
+    "slow_loris": {"back": 0.57, "max_height": 0.75, "height": 0.70},
 }
 
 # non-quadruped rigs (tools/blender/animals/biped_rig.py, fish_rig.py): skeleton, feet for
@@ -94,7 +106,19 @@ for _s in ("l", "r"):
                          f"leg_upper_{_s}": "hips", f"leg_lower_{_s}": f"leg_upper_{_s}"})
     FROG_PARENTS.update({f"arm_{_s}": "spine", f"leg_upper_{_s}": "hips",
                          f"leg_lower_{_s}": f"leg_upper_{_s}"})
+# night animals with wings (tools/blender/animals/owl.py, bat.py): origin at the feet when
+# perched (min Y = 0), perched height +- 0.05
+BAT_PARENTS = {"root": None, "hips": "root", "spine": "hips", "chest": "spine",
+               "neck": "chest", "head": "neck", "ear_l": "head", "ear_r": "head"}
+for _s in ("l", "r"):
+    BAT_PARENTS.update({f"wing_upper_{_s}": "chest", f"wing_lower_{_s}": f"wing_upper_{_s}",
+                        f"wing_hand_{_s}": f"wing_lower_{_s}", f"leg_upper_{_s}": "hips",
+                        f"leg_lower_{_s}": f"leg_upper_{_s}", f"foot_{_s}": f"leg_lower_{_s}"})
 OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
+    "owl": ("perch_bird", BIRD_PARENTS, [], {"height": 1.00}),
+    "bat": ("bat", BAT_PARENTS, [], {"height": 0.80}),
+    "kiwi": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 0.70}),
+    "tarsier": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 0.70}),
     "monkey": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 1.10}),
     "goldfish": ("fish", FISH_PARENTS, [], {"length": 0.60, "depth": 0.22}),
     "duck": ("bird", BIRD_PARENTS, [], {"length": 0.45, "height": 0.34}),
@@ -109,10 +133,30 @@ AMBIENT = {
     "frog": ["idle", "croak", "hop", "swim"],
 }
 MAX_AMBIENT_TRIS = 1200
+# eye_glow material slot (NIGHT-006, art/night/README.md "Eyeshine rule"): required for the
+# night animals, allowed (as the 2nd material, same atlas as `body`) for every animal
+NIGHT_ANIMALS = {"hedgehog", "bat", "owl", "raccoon", "badger", "fennec", "kiwi", "porcupine",
+                 "slow_loris", "tarsier"}
 
 
 def check_other_rest(rig, exp, rp, mn, mx, err):
     """AANI-005 for the biped / fish / bird / frog rigs."""
+    if rig in ("perch_bird", "bat"):
+        if any(abs(c) > 1e-4 for c in rp["root"]):
+            err.append(f"AANI-005 {rig} root is not at the origin")
+        if abs(mn[1]) > 0.01:
+            err.append(f"AANI-005 min Y = {mn[1]:.4f} (expected 0: origin at the feet)")
+        if abs(mx[1] - exp["height"]) > 0.05:
+            err.append(f"AANI-005 height {mx[1]:.3f} m (game size {exp['height']} +- 0.05)")
+        wing = "wing_upper" if rig == "perch_bird" else "wing_hand"
+        for a in (wing, "leg_upper"):
+            if not rp[f"{a}_l"][0] > 0 > rp[f"{a}_r"][0]:
+                err.append(f"AANI-005 {a}_l is not at +X")
+        if rig == "perch_bird" and not rp["tail"][2] < -0.1:
+            err.append("AANI-005 not facing +Z (tail must be at -Z)")
+        if rig == "bat" and not rp["head"][2] > rp["hips"][2]:
+            err.append("AANI-005 not facing +Z (head in front of the hips)")
+        return
     if rig in ("bird", "frog"):
         if any(abs(c) > 1e-4 for c in rp["root"]):
             err.append(f"AANI-005 {rig} root is not at the origin")
@@ -271,8 +315,28 @@ def check(path, anims_data):
     if len(meshes) != 1 or len(skinned) != 1 or "skin" not in skinned[0]:
         err.append(f"AANI-004 expected one skinned mesh, got {len(meshes)} meshes")
     mats = [mt.get("name") for mt in js.get("materials", [])]
-    if mats != ["body"]:
-        err.append(f"AANI-004 materials {mats}, expected ['body']")
+    want_mats = [["body", "eye_glow"]] if asset in NIGHT_ANIMALS else [["body"], ["body", "eye_glow"]]
+    if mats not in want_mats:
+        err.append(f"AANI-004 materials {mats}, expected {' or '.join(map(str, want_mats))}")
+    if "eye_glow" in mats:
+        def tex_src(mt):
+            ti = mt.get("pbrMetallicRoughness", {}).get("baseColorTexture", {}).get("index")
+            return None if ti is None else js["textures"][ti]["source"]
+        mm = {mt.get("name"): mt for mt in js.get("materials", [])}
+        if tex_src(mm["eye_glow"]) != tex_src(mm["body"]):
+            err.append("AANI-004 eye_glow does not use the body atlas image")
+        # emissiveFactor = linear #E6F7A0 (night glow colour, props' *_glow convention)
+        want_e = [((c / 255) / 12.92 if c / 255 <= 0.04045 else ((c / 255 + 0.055) / 1.055) ** 2.4)
+                  for c in (0xE6, 0xF7, 0xA0)]
+        ef = mm["eye_glow"].get("emissiveFactor")
+        if not ef or max(abs(a_ - b_) for a_, b_ in zip(ef, want_e)) > 0.01:
+            err.append(f"AANI-010 eye_glow emissiveFactor {ef} != #E6F7A0 (linear)")
+        gi = mats.index("eye_glow")
+        n_glow = sum((js["accessors"][pr["indices"]]["count"] // 3) for pr in meshes[0]["primitives"]
+                     if pr.get("material") == gi)
+        if not 0 < n_glow <= 120:
+            err.append(f"AANI-004 eye_glow has {n_glow} triangles (expected 1..120: eye caps only)")
+        info.append(f"eye_glow {n_glow} tris")
     body_joints = {jn.index(n) for n in ("hips", "spine", "chest") if n in jn}
     tris = 0
     mn, mx = [1e9] * 3, [-1e9] * 3
@@ -365,6 +429,16 @@ def check(path, anims_data):
     if sorted(anims) != sorted(want):
         err.append(f"AANI-006 clips {sorted(anims)} != manifest {sorted(want)}")
     table = anims_data.get(asset, {})
+    # AANI-011 / AANI-012 (Q-143): night animals sleep; bat / owl fly (+ bat hang)
+    if asset in NIGHT_ANIMALS:
+        if "sleep" not in anims or not table.get("sleep", {}).get("loop"):
+            err.append("AANI-011 night animal without a looping `sleep` clip")
+    if asset in ("bat", "owl"):
+        fly = table.get("fly", {})
+        if fly.get("speed") != 1.4 or "fly_height" not in fly:
+            err.append("AANI-012 `fly` needs speed = 1.4 and fly_height in animal_anims.toml")
+        if asset == "bat" and "hang" not in anims:
+            err.append("AANI-012 bat without `hang`")
     if sorted(table) != sorted(want):
         err.append(f"AANI-006 animal_anims.toml clips {sorted(table)} != manifest {sorted(want)}")
     for name, a in anims.items():

@@ -526,3 +526,456 @@ crossfade_in = 0.20
 events = {}
 speed = 0.3
 kind = "ambient"
+
+# ---- night animals (ART-ANIMALS "Night animals"; tools/blender/animals/{hedgehog,bat,owl}.py,
+# night_kit.py). Every animal has `sleep` (loop; lying down / curled / tucked) and an
+# `eye_glow` material slot (NIGHT-006).
+# bat / owl: origin at the feet when perched. `perch` = idle with the toes curled over a branch
+# whose top is the origin. `fly` is authored in place (no root motion) at the perched height;
+# the game raises the origin by `fly_height` (m) while the animal follows and moves it at
+# `speed` (playback rate matched like walk). bat `hang`: upside down, feet at the origin =
+# the grip point (the bat hangs 0.8 m below it). Event `wingbeat` = start of the downstroke.
+
+[hedgehog.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[hedgehog.walk]
+frames = 8
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 2, footstep_hr = 4, footstep_fr = 6 }
+speed = 1.4
+
+[hedgehog.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[hedgehog.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[hedgehog.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+# hedgehog.sleep: rolled up into a spiky ball, face tucked under the coat
+[hedgehog.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[bat.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[bat.perch]
+frames = 90
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[bat.hang]
+frames = 90
+loop = true
+crossfade_in = 0.30
+events = {}
+
+[bat.fly]
+frames = 16
+loop = true
+crossfade_in = 0.25
+events = { wingbeat = 4 }
+speed = 1.4
+fly_height = 1.5
+
+[bat.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[bat.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[bat.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+# bat.sleep: on its feet, wrapped in its wings, head bowed into the collar
+[bat.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[owl.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[owl.perch]
+frames = 90
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[owl.fly]
+frames = 20
+loop = true
+crossfade_in = 0.25
+events = { wingbeat = 5 }
+speed = 1.4
+fly_height = 1.5
+
+[owl.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[owl.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[owl.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+# owl.sleep: fluffed down, head bowed into the chest (face hidden from the zoo camera)
+[owl.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+# owl.look: one-shot big head turn left and right (idle variation)
+[owl.look]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = {}
+
+# ---- night animals of later night levels (models v1). Quadrupeds: generic curled `sleep`
+# (night_kit.QuadClips). kiwi: biped rig, quick planted steps. tarsier: biped rig, `hop`
+# locomotion (both feet planted 4 frames, then a leap; no root motion, speed like walk).
+
+[raccoon.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[raccoon.walk]
+frames = 16
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 4, footstep_hr = 8, footstep_fr = 12 }
+speed = 1.4
+
+[raccoon.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[raccoon.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[raccoon.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[raccoon.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[badger.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[badger.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 1.4
+
+[badger.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[badger.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[badger.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[badger.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[fennec.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[fennec.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 1.4
+
+[fennec.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[fennec.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[fennec.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[fennec.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[porcupine.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[porcupine.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 1.4
+
+[porcupine.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[porcupine.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[porcupine.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[porcupine.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[slow_loris.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[slow_loris.walk]
+frames = 16
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 4, footstep_hr = 8, footstep_fr = 12 }
+speed = 1.4
+
+[slow_loris.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[slow_loris.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[slow_loris.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[slow_loris.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[kiwi.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[kiwi.walk]
+frames = 6
+loop = true
+crossfade_in = 0.15
+events = { footstep_l = 0, footstep_r = 3 }
+speed = 1.4
+
+[kiwi.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[kiwi.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[kiwi.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[kiwi.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[tarsier.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[tarsier.hop]
+frames = 16
+loop = true
+crossfade_in = 0.15
+events = { land = 0, takeoff = 4 }
+speed = 1.4
+
+[tarsier.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[tarsier.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[tarsier.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[tarsier.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]

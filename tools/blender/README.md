@@ -19,7 +19,11 @@ tools/blender/
   check_glb.py          export-rule checker for every .glb (plain python3)
   animals/quadruped_rig.py  shared quadruped skeleton, pattern-map atlas, gait/IK, clips
   animals/zebra.py      zebra (skinned, 6 clips) -> assets/models/animals/zebra.glb
-  check_animal.py       rig/clip checker for animal .glb files (ART-ANIMALS AANI-003..008)
+  animals/night_kit.py  night-animal kit (generic skeleton kit, `eye_glow` slot, wings, curled
+                        sleep, preview with a night panel); night animals hedgehog.py, bat.py,
+                        owl.py, raccoon.py, badger.py, fennec.py, kiwi.py, porcupine.py,
+                        slow_loris.py, tarsier.py (ART-ANIMALS "Night animals")
+  check_animal.py       rig/clip checker for animal .glb files (ART-ANIMALS AANI-003..012)
 ```
 
 ## Run

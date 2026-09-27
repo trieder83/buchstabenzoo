@@ -350,9 +350,11 @@ class Kit:
                 if pt is not None:
                     self.add(pt, qr.leg_bones(leg)[2], cell=paw_cell)
 
-    def eyes(self, tube, u, th_deg, r, depth=0.03, bone="head", tilt=0.0):
+    def eyes(self, tube, u, th_deg, r, depth=0.03, bone="head", tilt=0.0, glow=True):
         """Dome eyes on the tube surface at (u, +-th) (radius r = (along, up)), mapped to
-        the 'eye' region. tilt rotates the eye swatch (deg, positive = outer corner up)."""
+        the 'eye' region. tilt rotates the eye swatch (deg, positive = outer corner up).
+        glow: the front cap of each dome (pupil, inner iris and both highlights, inner 52 %
+        of the eye) goes to the `eye_glow` material slot (NIGHT-006, no extra geometry)."""
         at = self.atlas
         for sg in (1.0, -1.0):
             th = sg * math.radians(th_deg)
@@ -376,8 +378,10 @@ class Kit:
                 dd = co - c
                 return at.map_uv("eye", 0.5 + 0.5 * dd.dot(ex) / r[0], 0.5 + 0.5 * dd.dot(ey) / r[1])
 
-            self.mb.loft(rings, uv, qr.rigid(bone), pole_start=c - f * (1.3 * depth),
-                         pole_end=c + f * (0.9 * depth))
+            _, faces = self.mb.loft(rings, uv, qr.rigid(bone), pole_start=c - f * (1.3 * depth),
+                                    pole_end=c + f * (0.9 * depth))
+            if glow:
+                self.mb.mark_glow(faces[-12:])  # the pole_end fan (12 = ring vertices)
 
     def eye_swatch(self, iris="iris", pupil="pupil", white="eye_white", ink="ink", iris_r=0.62,
                    pupil_r=0.36, look=0.12):

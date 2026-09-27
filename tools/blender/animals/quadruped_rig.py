@@ -293,14 +293,23 @@ class MeshBuilder:
         self._weights(verts, weight_fn)
         return verts, fl
 
+    def mark_glow(self, faces):
+        """Faces of the eye highlight -> second material slot `eye_glow` (GAME-NIGHT
+        NIGHT-006 eyeshine; art/night/README.md "Eyeshine rule")."""
+        for f in faces:
+            f.material_index = 1
+
     def to_object(self, name, material, arm_obj):
         me = bpy.data.meshes.new(name)
         bmesh.ops.triangulate(self.bm, faces=self.bm.faces[:], quad_method="SHORT_EDGE",
                               ngon_method="BEAUTY")
         self.bm.normal_update()
+        has_glow = any(f.material_index == 1 for f in self.bm.faces)
         self.bm.to_mesh(me)
         self.bm.free()
         me.materials.append(material)
+        if has_glow:
+            me.materials.append(glow_material(material))
         me.shade_smooth()  # smooth averaged normals (ART-RIG §3.5)
         obj = bpy.data.objects.new(name, me)
         bpy.context.scene.collection.objects.link(obj)
@@ -322,6 +331,20 @@ def _face_verts(ids, vr, extra, R):
         else:
             out.append(vr[i][int(k) % len(vr[i])])
     return out
+
+
+def glow_material(body_mat, name="eye_glow"):
+    """`eye_glow` slot: same atlas as `body` (renders identically by day); the game makes it
+    emissive #E6F7A0 at night inside the lantern radius (NIGHT-006)."""
+    mat = body_mat.copy()
+    mat.name = name
+    # emissiveFactor = the night glow colour (same convention as the props' *_glow slots,
+    # tools/blender/props/README_night.md); the renderer applies it only at night
+    bsdf = next(n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    rgb = [zb.srgb_to_linear(c) for c in hr.hex_rgb("#E6F7A0")]
+    bsdf.inputs["Emission Color"].default_value = (*rgb, 1.0)
+    bsdf.inputs["Emission Strength"].default_value = 1.0
+    return mat
 
 
 def body_material(img, name="body"):
@@ -629,8 +652,9 @@ def setup_preview(mesh_obj, body_img):
     scene = bpy.context.scene
     mat = zb._toon_material("pv_body", tex_image=body_img)
     next(n for n in mat.node_tree.nodes if n.type == "TEX_IMAGE").interpolation = "Linear"
-    mesh_obj.material_slots[0].link = "OBJECT"
-    mesh_obj.material_slots[0].material = mat
+    for slot in mesh_obj.material_slots:  # body (+ eye_glow): same toon look by day
+        slot.link = "OBJECT"
+        slot.material = mat
 
     bpy.ops.mesh.primitive_plane_add(size=600, location=(0, 0, 0))  # tall animals: no horizon
     ground = bpy.context.active_object

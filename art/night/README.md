@@ -97,6 +97,9 @@ monsters, ghosts, skulls, bats swarming, fog*.
   eyeball, **never red**, no slit pupils.
 - Budget: no extra geometry; one extra material slot per animal (or one UV island in the
   shared atlas).
+- **Implemented 2026-09-27** (ART-ANIMALS "Rig conventions" §4): material `eye_glow` = the
+  front cap of each eye dome (pupil, inner iris, both highlights; 12 triangles per eye), same
+  atlas as `body`, `emissiveFactor` linear `#E6F7A0`; in every animal model (day and night).
 
 ## Emissive rule for props
 

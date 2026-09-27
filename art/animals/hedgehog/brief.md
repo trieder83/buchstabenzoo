@@ -1,6 +1,6 @@
 # Brief — `hedgehog` (night animal turnaround)
 
-Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **night_1 (night level 1)** — food box **Käfer / beetles**; hiding place (proposal): under the leaf pile by the hedge. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **night_1 (night level 1)** — food box **Käfer / beetles**; hiding place (proposal): under the leaf pile by the hedge. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 > **Game size (proposal, user decides):** top of the spines ≈ 0.6 m, length ≈ 0.8 m (real ≈ 0.15 m high; scaled up like the snow fox so it reads at ≈ 60 px). Comic-scaled like the day animals (ART-ANIMALS "Game sizes").
 
@@ -61,3 +61,9 @@ Turnaround sheet of one hedgehog: four views of the SAME hedgehog side by side i
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | downscaled to 2048 px; alternative — nice face and spine tufts, but it stands upright on its hind legs (brief: all four paws) |
+| 2026-09-27 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | discarded (deleted) — upright pose and faded zebra-head fragments copied from the reference above every view |
+| 2026-09-27 | sheet_v3.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | discarded (deleted) — retry with extra text 'all four paws, no zebra': zebra head fragments and zebra legs under every hedgehog |
+| 2026-09-27 | sheet_v4.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | retry with the same extra text — **best hedgehog**: on all four paws, side faces LEFT, big rounded spine tufts; but faded zebra-head fragments above every view → cleaned locally (see sheet_v4_clean.jpg), raw file deleted |
+| 2026-09-27 | sheet_v5.jpg | gemini-3-pro-image (2K, 21:9) | — | edit: Edit this turnaround sheet: remove the four faded zebra head fragments floating …, ref: sheet_v4.jpg | discarded (deleted) — edit of v4 to remove the zebra fragments; Gemini returned the image unchanged |
+| 2026-09-27 | sheet_v4_clean.jpg | local script (no generation) | — | sheet_v4 with the zebra fragments removed: per column everything above the hedgehog's top (brown-hue mask) filled with the background grey | **chosen**, split → front/side/back/three_quarter; a few spine tips are slightly flattened by the cleanup |

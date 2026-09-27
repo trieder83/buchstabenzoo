@@ -1,6 +1,6 @@
 # Brief — `badger` (night animal turnaround)
 
-Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **later night level** — food box **Würmer / worms**; hiding place (proposal): digging at the hill. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **later night level** — food box **Würmer / worms**; hiding place (proposal): digging at the hill. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 > **Game size (proposal, user decides):** top of head ≈ 0.7 m, length ≈ 1.1 m (low and wide). Comic-scaled like the day animals (ART-ANIMALS "Game sizes").
 
@@ -60,3 +60,5 @@ Turnaround sheet of one badger: four views of the SAME badger side by side in on
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | extra text also asked for 'all four paws, not upright' and 'no zebra parts'; discarded (deleted) — faded zebra-head fragments above every view |
+| 2026-09-27 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | extra text also asked for 'all four paws, not upright' and 'no zebra parts'; downscaled to 2048 px; **chosen**, split → views — low wide grey body on four legs, white face with black stripes, side faces LEFT |

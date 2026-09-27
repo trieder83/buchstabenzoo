@@ -1,6 +1,6 @@
 # Brief — `kit_bedroom` (bed and bedroom corner in the zookeeper house)
 
-Spec: GAME-NIGHT (rule 3 "Sleep": a bed in the zookeeper house; NIGHT-003), GAME-PLAYER §2 (enterable building, roof disappears inside), ART-ENVIRONMENT "Night art". Plan: `art/night/README.md`. House: `zookeeper_house` (`art/props/kit_buildings`, `art/environment/env_zookeeper_house`). Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and `art/props/kit_fences/sheet_v3.jpg`; for prompt 2 also the approved night style frame. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (rule 3 "Sleep": a bed in the zookeeper house; NIGHT-003), GAME-PLAYER §2 (enterable building, roof disappears inside), ART-ENVIRONMENT "Night art". Plan: `art/night/README.md`. House: `zookeeper_house` (`art/props/kit_buildings`, `art/environment/env_zookeeper_house`). Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and `art/props/kit_fences/sheet_v3.jpg`; for prompt 2 also the approved night style frame. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 ## Purpose
 
@@ -73,3 +73,7 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | bedroom_night_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; alternative — cosy, but a moon/sky corner is visible, two glass bowls and duplicated broom |
+| 2026-09-27 | bedroom_night_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; **chosen** — one coherent cut-away room: bed, lit bedside lamp with light pool, window with moon, rug, toy chest with elephant, bowl table, broom and boots by the door; girl on-model with her lantern; warm and safe |
+| 2026-09-27 | sheet_bedroom_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v3.jpg | downscaled to 2048 px; **chosen** — all 6 props, lamp shade glows flat yellow (separable glow slot), plush elephant clearly readable; window shows a crescent moon (brief: round moon) |
+| 2026-09-27 | sheet_bedroom_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v3.jpg | downscaled to 2048 px; alternative — round moon in the window as briefed, but the whole lamp glows and the elephant is harder to read |

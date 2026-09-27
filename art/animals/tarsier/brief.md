@@ -1,6 +1,6 @@
 # Brief — `tarsier` (night animal turnaround)
 
-Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **later night level** — food box **Grillen / crickets**; hiding place (proposal): with giant eyes in the bamboo. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **later night level** — food box **Grillen / crickets**; hiding place (proposal): with giant eyes in the bamboo. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 > **Game size (proposal, user decides):** sitting upright ≈ 0.7 m (real ≈ 0.15 m — the most scaled-up animal). Comic-scaled like the day animals (ART-ANIMALS "Game sizes").
 
@@ -61,3 +61,5 @@ Turnaround sheet of one tarsier: four views of the SAME tarsier side by side in 
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | extra text also asked for 'no zebra parts'; downscaled to 2048 px; **chosen**, split → views — upright on long legs, giant amber eyes, big round ears, tufted tail, side faces LEFT |
+| 2026-09-27 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | extra text also asked for 'no zebra parts'; downscaled to 2048 px; alternative — thinner, tail in the back view bends oddly |

@@ -1,6 +1,6 @@
 # Brief — `env_night_overview` (mood of night level 1)
 
-Spec: GAME-NIGHT (rule 4 night zoo `night_1`, rules 1, 2, 5, 10), ART-ENVIRONMENT "Night art", GAME-LAYOUT. Plan: `art/night/README.md`. Layout: **not designed yet** — `specs/10-gameplay/levels/night-1.md` and `assets/levels/night-1.toml` belong to the `zoo-level-designer`; this is a **mood image** (no `layout.md`), positions are free. Once the layout exists, a layout-true overview follows the ART-PIPELINE greybox order. Style: `art/style/style.md` (comic) — references: `art/environment/style_frame/style_frame.png`, the approved night style frame, and `art/environment/env_level1_overview/overview.png` (for the overview camera). Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (rule 4 night zoo `night_1`, rules 1, 2, 5, 10), ART-ENVIRONMENT "Night art", GAME-LAYOUT. Plan: `art/night/README.md`. Layout: **not designed yet** — `specs/10-gameplay/levels/night-1.md` and `assets/levels/night-1.toml` belong to the `zoo-level-designer`; this is a **mood image** (no `layout.md`), positions are free. Once the layout exists, a layout-true overview follows the ART-PIPELINE greybox order. Style: `art/style/style.md` (comic) — references: `art/environment/style_frame/style_frame.png`, the approved night style frame, and `art/environment/env_level1_overview/overview.png` (for the overview camera). Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 ## Purpose
 
@@ -68,3 +68,5 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | overview_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; **chosen** → copied to overview.png — whole garden in frame: open moon door with glowing sign, girl with lantern, lantern-lit paths, string-light plaza, night house (blue/red portholes, grass roof), pond with bridge and stars, old tree with knot hole, leaf piles, meadow with fireflies, hill with rocks, two empty enclosures, food hut with lit window; the 'very tall' tree is not especially tall |
+| 2026-09-27 | overview_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; alternative — night house cropped at the top, different moon-door design, light shaft in the top-left corner |

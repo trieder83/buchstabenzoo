@@ -2,7 +2,7 @@
 
 Spec: GAME-GARDEN (§ Assets, item 9). Style: `art/style/style.md` (comic) — style
 reference image for asset sheets: `art/props/kit_fences/sheet_v3.jpg` (the style frame as
-reference blends its scene into the sheet). Status: **brief** (not yet generated — Gemini monthly spending cap reached 2026-09-26; re-checked the same day: still HTTP 429 RESOURCE_EXHAUSTED).
+reference blends its scene into the sheet). Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log; awaiting user review).
 
 ## Purpose
 
@@ -82,3 +82,7 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | sheet_plants_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v3.jpg | downscaled to 2048 px; **chosen** — clean growth stages; carrot (feathery, light green, orange top only when ripe) vs potato (broad dark-green bush, white flowers) clearly different; 4 potatoes instead of 3 |
+| 2026-09-27 | sheet_plants_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: sheet_v3.jpg | downscaled to 2048 px; alternative — orange carrot top visible in every stage (stages less distinct), stage-1 carrot looks like grass/onion |
+| 2026-09-27 | sheet_furniture_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 2 + negative as 'Avoid' + extra text, ref: sheet_v3.jpg | downscaled to 2048 px; alternative — open gate is a correct single swung leaf, but item 9 is a square crate instead of a bed module; chunky watering can |
+| 2026-09-27 | sheet_furniture_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 2 + negative as 'Avoid' + extra text, ref: sheet_v3.jpg | downscaled to 2048 px; **chosen** — cleanest line work, long bed + second module with a visible join, good picket fence/gate/corner; issue: the OPEN gate is drawn as a two-leaf gate while the closed gate is one leaf (use v1's open gate as modelling reference) |

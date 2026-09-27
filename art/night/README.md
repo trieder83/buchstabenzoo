@@ -125,5 +125,4 @@ monsters, ghosts, skulls, bats swarming, fog*.
 5. `env_night_overview`, then `env_night_house`.
 6. The other seven night animals.
 
-Status 2026-09-26: **blocked** — Gemini monthly spending cap (HTTP 429 on a single 1K test
-generation). The user must raise the cap at https://ai.studio/spend.
+Status 2026-09-27: **generated, in review** — steps 1–6 done (night style frame, kit_night, kit_bedroom, 10 night-animal sheets + `art/animals/night_lineup.png`, env_night_overview, env_night_house); chosen variants and issues are logged in each brief. The night lighting paragraph produced night images without daylight leaks, so a NIGHT STYLE block (*Q-113*) is not forced — still a user decision.

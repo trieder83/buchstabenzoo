@@ -1,6 +1,6 @@
 # Brief — `owl` (night animal turnaround)
 
-Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **night_1 (night level 1)** — food box **Käfer / beetles (Q-077: no prey animals in food boxes)**; hiding place (proposal): on the highest branch, round eyes in the moonlight. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (night animals, rule 2 "friendly, never scary", NIGHT-006 eyeshine), ART-ANIMALS (look, sizes, animations), ART-PIPELINE §3 (turnaround). Level: **night_1 (night level 1)** — food box **Käfer / beetles (Q-077: no prey animals in food boxes)**; hiding place (proposal): on the highest branch, round eyes in the moonlight. Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` (approved) and the approved zebra sheet `art/animals/zebra/sheet_v1.jpg`. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 > **Game size (proposal, user decides):** perched ≈ 1.0 m tall (real tawny owl ≈ 0.4 m; comic-scaled up — about the girl's shoulder). Comic-scaled like the day animals (ART-ANIMALS "Game sizes").
 
@@ -62,3 +62,5 @@ Turnaround sheet of one owl: four views of the SAME owl side by side in one row,
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | sheet_v1.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | downscaled to 2048 px; **chosen**, split → front/side/back/three_quarter — egg-shaped body, ear tufts, giant golden eyes in a pale face disc, side faces LEFT with feet pointing left |
+| 2026-09-27 | sheet_v2.jpg | gemini-3-pro-image (2K, 21:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, sheet_v1.jpg | downscaled to 2048 px; alternative — side view faces RIGHT |

@@ -1,6 +1,6 @@
 # Brief — `style_frame_night` (the night look)
 
-Spec: GAME-NIGHT (rules 1, 2, 10 — dusk → night, friendly never scary, night lighting as a renderer mode), ART-PIPELINE §5 (style frame first), ART-DIRECTION. Style: `art/style/style.md` (comic). Reference image: the approved day style frame `art/environment/style_frame/style_frame.png`. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (rules 1, 2, 10 — dusk → night, friendly never scary, night lighting as a renderer mode), ART-PIPELINE §5 (style frame first), ART-DIRECTION. Style: `art/style/style.md` (comic). Reference image: the approved day style frame `art/environment/style_frame/style_frame.png`. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 ## Purpose
 
@@ -62,3 +62,5 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
 | 2026-09-26 | style_frame_night_v1.png (quota test) | gemini-3-pro-image (1K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | **failed — HTTP 429** (monthly spending cap still reached; no image) |
+| 2026-09-27 | style_frame_night_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | downscaled to 2048 px; **chosen (proposal)** — friendliest: deep blue night, warm yellow lantern pools, clear light circle around the girl, lit info board (lamp on top), sleepy zebra, stars in a puddle, fireflies, nothing scary; daylight did NOT leak (Q-113 night STYLE block not needed so far). Not yet copied to style_frame_night.png (user approval). Used as night reference for all other night images |
+| 2026-09-27 | style_frame_night_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png | downscaled to 2048 px; alternative — also clearly night and friendly, but more violet and the light pools are pinkish-grey instead of warm yellow |

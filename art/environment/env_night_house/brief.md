@@ -1,6 +1,6 @@
 # Brief — `env_night_house` (the night house of `night_1`)
 
-Spec: GAME-NIGHT (rule 4 "night house: dim indoor enclosures with red/blue light, like real zoo nocturnal houses", rules 2, 10), GAME-PLAYER §2 (enterable building, roof disappears inside), ART-ENVIRONMENT "Night art". Plan: `art/night/README.md`. Layout: `specs/10-gameplay/levels/night-1.md` (to be written by the `zoo-level-designer`; positions here are a mood proposal only). Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` and, once approved, `art/environment/style_frame_night/style_frame_night.png`. Status: **brief** (not generated — Gemini monthly spending cap, HTTP 429, 2026-09-26).
+Spec: GAME-NIGHT (rule 4 "night house: dim indoor enclosures with red/blue light, like real zoo nocturnal houses", rules 2, 10), GAME-PLAYER §2 (enterable building, roof disappears inside), ART-ENVIRONMENT "Night art". Plan: `art/night/README.md`. Layout: `specs/10-gameplay/levels/night-1.md` (to be written by the `zoo-level-designer`; positions here are a mood proposal only). Style: `art/style/style.md` (comic) — style references: `art/environment/style_frame/style_frame.png` and, once approved, `art/environment/style_frame_night/style_frame_night.png`. Status: **in-review** (generated 2026-09-27 with gemini-3-pro-image — see the generation log for the chosen variant; awaiting user review).
 
 ## Purpose
 
@@ -89,3 +89,7 @@ text, letters, words, numbers, writing, captions, writing on signs, watermark, s
 
 | Date | File | Tool / model | Seed | Prompt changes | Result |
 |---|---|---|---|---|---|
+| 2026-09-27 | overview_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; alternative — girl on-model and cosy, but the building is cropped (roof and right side outside the frame) |
+| 2026-09-27 | overview_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 1 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; **chosen** → copied to overview.png — whole building in frame: grass roof, painted moon + stars, blue and red-orange portholes, arched entrance with wall lamps, info board with lamp, lantern posts, old tree; issue: the girl is simplified (plain shirt, off-model) and the doorway is dark |
+| 2026-09-27 | cutaway_v1.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; alternative — warmer, three clear rooms (blue logs / red-orange sand + rocks / blue tree), but the corridor wraps around a dark semicircular pit |
+| 2026-09-27 | cutaway_v2.jpg | gemini-3-pro-image (2K, 16:9) | — | prompt 2 + negative as 'Avoid' + extra text, ref: style_frame.png, style_frame_night_v1.jpg | downscaled to 2048 px; **chosen** → copied to cutaway.png — curved corridor with wooden floor, three glass-fronted rooms (soft blue logs, warm red-orange sand + rocks, blue tree + leaves), lit blank boards, girl with lantern, no cages, readable |

@@ -62,7 +62,7 @@ animals are scaled up (user decision). Height = top of head/ears standing; the p
 | `snow_fox` | **0.9 m** (was 0.6) | model v1 (0.90 m, withers 0.62 m) |
 | `hedgehog` | 0.6 m (top of the spines), ≈ 0.75 m long | night; model v1 (0.58 m) |
 | `bat` | 0.8 m perched incl. ears | night; model v1 (0.80 m); wingspan in `fly` ≈ 1.1 m (v1 kept, Q-144 answered) |
-| `owl` | 1.0 m perched | night; model v1 (1.01 m) |
+| `owl` | **0.8 m perched** (was 1.0) | night; model v1 scaled down uniformly (0.80 m, user decision 2026-09-27, Q-143) |
 | `raccoon` | 0.9 m (ears), back 0.55 m | night; model v1 (0.91 m, 1.2 m long incl. tail) |
 | `badger` | 0.7 m, 1.1 m long | night; model v1 (0.70 m, 1.08 m long) |
 | `fennec` | 0.9 m (ears), back 0.4 m | night; model v1 (0.92 m, back ≈ 0.42 m) |
@@ -284,7 +284,7 @@ Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
 | AANI-009 | Given the preview renders (55° game camera at ~60 px size and close-ups), then the animal reads as the turnaround animal (zebra: broad stripes, black muzzle, striped mane) and no limb passes through the body in any clip (review checklist). | manual |
 | AANI-010 | Given each animal `.glb` with an `eye_glow` material, then `eye_glow` uses the same atlas image as `body`, has `emissiveFactor` = linear `#E6F7A0` and covers only the eye caps (1–120 triangles); every night animal has it. | asset |
 | AANI-011 | Given each animal in the manifest (Q-143), then its clips contain `sleep` (loop) — enforced for the night animals now, for the day animals once their `sleep` exists. | asset |
-| AANI-012 | Given `bat` / `owl`, then min Y = 0 in the rest pose (origin at the feet), perched height ± 0.05 m (bat 0.80, owl 1.00), `fly` has `speed = 1.4` and `fly_height` in `animal_anims.toml`, and the bat has `hang`. | asset |
+| AANI-012 | Given `bat` / `owl`, then min Y = 0 in the rest pose (origin at the feet), perched height ± 0.05 m (bat 0.80, owl 0.80), `fly` has `speed = 1.4` and `fly_height` in `animal_anims.toml`, and the bat has `hang`. | asset |
 
 ## Open questions
 

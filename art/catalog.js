@@ -535,7 +535,7 @@ window.ART_CATALOG = {
           status: "reference",
           description: "Front views of the 10 night animals next to the 1.2 m player girl at their proposed game sizes (GAME-NIGHT).",
           spec: "GAME-NIGHT",
-          notes: "Composite (no generation) of the chosen front views at the proposed sizes from the briefs: girl 1.2, hedgehog 0.6, bat 0.8, owl 1.0, raccoon 0.9, badger 0.7, fennec 0.9, kiwi 0.7, porcupine 0.8, slow loris 0.7, tarsier 0.7 m. Decide whether sizes are OK — most night animals are 0.6–0.9 m and similar in size.",
+          notes: "Composite (no generation) of the chosen front views at the proposed sizes from the briefs: girl 1.2, hedgehog 0.6, bat 0.8, owl 1.0, raccoon 0.9, badger 0.7, fennec 0.9, kiwi 0.7, porcupine 0.8, slow loris 0.7, tarsier 0.7 m. Decide whether sizes are OK — most night animals are 0.6–0.9 m and similar in size. Update 2026-09-27: user decided owl 0.8 m (model scaled down; this lineup still shows 1.0 m).",
           images: [
             { file: "animals/night_lineup.png", label: "night lineup", required: true },
           ],

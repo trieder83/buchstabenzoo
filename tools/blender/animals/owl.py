@@ -10,7 +10,10 @@ Look: art/animals/owl/{front,side,back,three_quarter}.png (sheet_v1). Egg-shaped
 brown body with a cream spotted belly, a big round head merged with the body, a pale
 heart-shaped face disc with two giant golden eyes, small yellow beak, two small ear tufts,
 wings folded at the sides with dark tips, short cream feathered legs and big yellow feet.
-Perched height 1.0 m (comic-scaled, Q-143).
+Perched height 0.80 m (comic-scaled; user decision 2026-09-27, v1 was 1.01 m). The model is
+authored in v1 units (P, WING, build, clip offsets) and scaled uniformly by `SCALE`: the rig
+joints and the finished mesh are scaled, clip translations (`hips_offset`) are multiplied by
+`SCALE`; rotations and clip timing are unchanged.
 
 Rig: the 16-joint `bird` skeleton (bird_rig.py) with an owl's proportions. **Origin at the
 feet** (not the duck's waterline): min Y = 0 in the rest pose. `perch` = idle with the toes
@@ -45,6 +48,8 @@ env = rb.envelope
 TAU = rb.TAU
 SIDES = rb.SIDES
 ASSET = "owl"
+# uniform size factor on the v1 geometry (1.01 m perched -> 0.80 m)
+SCALE = 0.80 / 1.01
 
 COLORS = {
     "brown": "#9A6A43",
@@ -67,6 +72,15 @@ P = {
     "wing": ((0.195, 0.0, 0.58), (0.275, 0.08, 0.38), (0.22, 0.17, 0.17)),
     "leg": ((0.10, 0.0, 0.16), (0.10, -0.005, 0.05), (0.10, -0.13, 0.012)),
 }
+
+
+def scaled_p(p, f=SCALE):
+    """P with every joint position multiplied by f (paired entries are tuples of points)."""
+    def sc(v):
+        return tuple(sc(x) for x in v) if isinstance(v[0], tuple) else tuple(f * x for x in v)
+    return {k: sc(v) for k, v in p.items()}
+
+
 WING = [(0.195, 0.0, 0.58), (0.252, 0.04, 0.48), (0.275, 0.08, 0.38), (0.262, 0.12, 0.275),
         (0.222, 0.165, 0.175)]
 WING_W = [0.07, 0.11, 0.12, 0.10, 0.05]
@@ -213,7 +227,7 @@ class OwlClips:
     def fly(self, f, n=20):
         t = TAU * f / n
         p = self.pose()
-        p.hips_offset = V((0, 0, 0.03 * math.sin(t - 1.2)))
+        p.hips_offset = SCALE * V((0, 0, 0.03 * math.sin(t - 1.2)))
         pitch = 30.0
         p.rel["hips"] = rx(pitch + 2 * math.sin(t))
         p.rel["chest"] = rx(-4 * math.sin(t))
@@ -248,14 +262,14 @@ class OwlClips:
         z = -0.04 * crouch + 0.2 * jump - 0.03 * land
         sp = env(f, 5, 11, 26, 34)
         p = self.pose()
-        p.hips_offset = V((0, 0, z))
+        p.hips_offset = SCALE * V((0, 0, z))
         p.rel["chest"] = rx(-6 * jump + 5 * crouch)
         self.look(p, 0.0, -12 * env(f, 6, 14, 22, 36), 10 * math.sin(TAU * f / 15) * sp)
         self.wings(p, spread=0.8 * sp, flap=sp * (25 + 30 * math.sin(TAU * f / 10)),
                    lag=12 * sp * math.cos(TAU * f / 10))
         p.rel["tail"] = rx(-15 * sp) @ rz(12 * math.sin(TAU * f / 8) * sp)
         for s, _ in SIDES:
-            tgt = self.toe0[s] + V((0, 0, max(0.0, z)))
+            tgt = self.toe0[s] + SCALE * V((0, 0, max(0.0, z)))
             p.limb_ik(f"leg_upper_{s}", f"leg_lower_{s}", tgt, Y)
         return p
 
@@ -276,7 +290,7 @@ class OwlClips:
         t = TAU * f / n
         b = math.sin(t)
         p = self.pose()
-        p.hips_offset = V((0, 0, -0.045 + 0.004 * b))
+        p.hips_offset = SCALE * V((0, 0, -0.045 + 0.004 * b))
         p.rel["spine"] = rx(5 + 0.8 * b)
         p.rel["chest"] = rx(10 + 0.8 * b)
         p.rel["neck_1"] = rx(14)
@@ -303,9 +317,18 @@ class OwlClips:
                 C("sleep", 90, True, self.sleep), C("look", 60, False, self.look_clip)]
 
 
+def build_scaled(k):
+    """build() in v1 units, then the whole mesh scaled by SCALE about the origin (feet)."""
+    build(k)
+    for v in k.mb.bm.verts:
+        v.co *= SCALE
+
+
 if __name__ == "__main__":
-    kit = nk.GKit(ASSET, COLORS, br.Rig(P))
-    nk.run(kit, build, lambda k: OwlClips(k.rig).all(),
-           dict(loco=("fly", 0), center_z=0.5, height_m=2.2, big_scale=1.7, close_scale=1.4,
-                night_pose=("idle", 20), loco_z=0.45),
-           debug=dict(center_z=0.5, head_pt=(0, -0.1, 0.78), head_scale=0.8, strip_scale=1.5))
+    S = SCALE
+    kit = nk.GKit(ASSET, COLORS, br.Rig(scaled_p(P)))
+    nk.run(kit, build_scaled, lambda k: OwlClips(k.rig).all(),
+           dict(loco=("fly", 0), center_z=0.5 * S, height_m=2.2, big_scale=1.7 * S,
+                close_scale=1.4 * S, night_pose=("idle", 20), loco_z=0.45 * S),
+           debug=dict(center_z=0.5 * S, head_pt=(0, -0.1 * S, 0.78 * S), head_scale=0.8 * S,
+                      strip_scale=1.5 * S))

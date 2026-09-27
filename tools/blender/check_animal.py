@@ -115,7 +115,7 @@ for _s in ("l", "r"):
                         f"wing_hand_{_s}": f"wing_lower_{_s}", f"leg_upper_{_s}": "hips",
                         f"leg_lower_{_s}": f"leg_upper_{_s}", f"foot_{_s}": f"leg_lower_{_s}"})
 OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
-    "owl": ("perch_bird", BIRD_PARENTS, [], {"height": 1.00}),
+    "owl": ("perch_bird", BIRD_PARENTS, [], {"height": 0.80}),
     "bat": ("bat", BAT_PARENTS, [], {"height": 0.80}),
     "kiwi": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 0.70}),
     "tarsier": ("biped", BIPED_PARENTS, ["foot_l", "foot_r"], {"height": 0.70}),

@@ -9,6 +9,7 @@ pub mod coords;
 pub mod daytime;
 pub mod food;
 pub mod game;
+pub mod garden;
 pub mod ground;
 pub mod level;
 pub mod nav;

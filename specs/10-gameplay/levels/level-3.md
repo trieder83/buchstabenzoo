@@ -17,7 +17,7 @@ GAME-LAYOUT. Look of each area: ART-ENVIRONMENT and the mockup briefs in `art/en
 
 ## Goal
 
-The third day level: on the morning after level 2 is complete (after night 2), the
+The third day level: on the morning after level 2 is complete (after level 2's night — Q-141 a, until a `night_2` exists), the
 construction fence `barrier_l2_construction` (GAME-LEVEL-2) is gone and the new northern part
 of the zoo opens — an **adventure playground** with the pirate ship, a **stream** with a
 waterfall, the **zookeeper house** and three rescue missions. With level 3 all ten day
@@ -415,11 +415,12 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 ## Open questions
 
 - Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
-- Q-137 `[[light]]` data shape, Q-139 burglar event spots. The bed of GAME-NIGHT is `bed_l1` in the level-1 `zookeeper_house_1` (Q-096); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`, so the game has one bed).
+- Q-137 `[[light]]` data shape, Q-139 burglar event spots. The beds of GAME-NIGHT are `bed_l1` in the level-1 `zookeeper_house_1` (Q-096) and `bed_l2` at level 2's food storage (Q-141 b); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`).
 
 - Q-088 joining levels; Q-090 second entry through the level-1 north gate;
-  Q-091 unlock timing (answered: the next morning); Q-141 night level before level 3; Q-089 own food storage; Q-092 enterable
+  Q-091 unlock timing (answered: the next morning); Q-141 (answered) night level before level 3; Q-089 own food storage; Q-092 enterable
   buildings; Q-093 fish bowl and water-source data (with Q-084); Q-094 animals up
   in a perch; Q-095 new hiding places; Q-017 pirate ship location (proposal here);
   Q-033 key on the pirate ship (not used); Q-080, Q-082, Q-043.
-- Q-096 the zookeeper house (bed for GAME-NIGHT) exists only in level 3.
+- Q-096 (answered by Q-141) the bed after level 2 is `bed_l2` in level 2, not in `zookeeper_house_3`.
+- Q-150 food boxes in front of the food storage door of `food_storage_3`.

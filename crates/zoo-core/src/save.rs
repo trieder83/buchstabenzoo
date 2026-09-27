@@ -48,6 +48,9 @@ pub struct SaveState {
     /// NIGHT-008). Missing in older saves = day.
     #[serde(default)]
     pub daytime: Option<crate::daytime::Daytime>,
+    /// Garden plant states and the treat basket (GARD-008). Missing = a fresh garden.
+    #[serde(default)]
+    pub garden: Option<crate::garden::Garden>,
 }
 
 /// The fish bowl (GAME-RESCUE "goldfish bowl" 7, RESC-022).
@@ -248,6 +251,7 @@ impl Game {
                 fish: b.fish,
             }),
             daytime: Some(self.daytime.clone()),
+            garden: Some(self.garden.clone()),
         }
     }
 
@@ -310,6 +314,9 @@ impl Game {
             g.carry.take(&FoodBox { food });
         }
 
+        if let Some(garden) = &s.garden {
+            g.garden.restore(garden);
+        }
         if let (Some(bs), Some(b)) = (&s.bowl, &mut g.bowl) {
             if bs.id == b.id {
                 b.pos = v2(bs.pos)?;

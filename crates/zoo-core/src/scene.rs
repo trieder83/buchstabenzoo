@@ -18,6 +18,9 @@ use crate::level::{band_run, cell_center, enclosure_fence, Element, Grid, Run, R
 use crate::level::{ElementType, LevelData, Rect};
 use glam::{IVec2, Quat, Vec2, Vec3};
 
+mod models;
+pub use models::*;
+
 /// Placeholder colours (sRGB, flat) per element kind.
 pub mod colors {
     pub const WATER: [f32; 3] = [0.36, 0.66, 0.90];
@@ -86,6 +89,23 @@ pub fn placeholder_kind(kind: &str) -> Option<&'static str> {
     KINDS.iter().copied().find(|k| *k == kind)
 }
 
+/// The `kit_landmarks` model of a night landmark kind and its yaw (degrees; README_night
+/// "kit_landmarks": fronts / knot hole / sails towards level south, the potting bench's
+/// front east against the west hedge).
+pub fn landmark_model(kind: &str) -> Option<(&'static str, f32)> {
+    Some(match kind {
+        "windmill" => ("windmill", 0.0),
+        "telescope" => ("telescope", 0.0),
+        "tree_crooked" => ("crooked_tree", 0.0),
+        "tree_hollow" => ("hollow_tree", 0.0),
+        "tree_old" => ("old_tree", 0.0),
+        "fir_tree" => ("fir_tree", 0.0),
+        "hill" => ("rock_hill", 0.0),
+        "potting_bench" => ("potting_bench", 90.0),
+        _ => return None,
+    })
+}
+
 /// The element a perch belongs to (first scenery id of the place that is an element).
 pub fn perch_scenery<'a>(
     h: &crate::level::HidingPlaceData,
@@ -119,6 +139,9 @@ pub struct Placement {
     /// Level part it belongs to ([`LevelData::parts`]; render chunks, GAME-LAYOUT "Joining
     /// levels").
     pub part: u8,
+    /// Extra scale along the model's x axis (a string-light cord spanning less than its
+    /// 6 m, proposal Q-147); 1 = none.
+    pub stretch: f32,
 }
 
 impl Placement {
@@ -129,6 +152,7 @@ impl Placement {
             yaw,
             scale: 1.0,
             part: 0,
+            stretch: 1.0,
         }
     }
 }
@@ -167,7 +191,7 @@ pub enum DecalImage {
     /// lettering on a cream sign, ART-ENVIRONMENT behaviour 7); re-rendered when the
     /// language changes.
     Text {
-        key: &'static str,
+        key: String,
         width_px: u32,
         height_px: u32,
     },
@@ -221,7 +245,8 @@ pub const DECAL_LIFT_M: f32 = 0.004;
 /// Food storage sign board (ART-ENVIRONMENT behaviour 7): wooden board on the south facade
 /// above the food boxes; the text decal covers its front minus a wooden frame.
 pub const STORAGE_SIGN_BOARD: Vec3 = Vec3::new(3.4, 1.2, 0.08);
-pub const STORAGE_SIGN_BOTTOM_M: f32 = 1.75;
+/// Board bottom (m): above the 2.1 m door opening, in the gable (README_night open point 2).
+pub const STORAGE_SIGN_BOTTOM_M: f32 = 2.3;
 const STORAGE_SIGN_FRAME_M: f32 = 0.09;
 
 /// The assembled static scene of a level.
@@ -251,6 +276,17 @@ pub struct LevelScene {
     /// Collision shapes of placeholder boxes standing on walkable cells (furniture, beds,
     /// leaf heaps, the sprinkler post): solid, never stood on (GAME-PLAYER 9, PLAY-035).
     pub box_colliders: Vec<crate::collision::Shape>,
+    /// Gate and door models in the openings (LAYOUT-031).
+    pub openings: Vec<Opening>,
+    /// Buildings drawn by their model (roof hiding, PLAY-028 / CAMV-022).
+    pub building_models: Vec<BuildingModel>,
+    /// Text faces of placed models (entrance board, garden signs).
+    pub text_faces: Vec<TextFace>,
+    /// Garden plant spots (their model follows the growth stage).
+    pub plants: Vec<PlantPlacement>,
+    /// Placements that never move, merged into one static mesh each by the renderer (a
+    /// garden, a room's furniture; ARCH-008).
+    pub bake_groups: Vec<BakeGroup>,
 }
 
 /// Bridge piles standing in the water (`kit_water.py` `bridge_wood`, Q-068): offsets from
@@ -569,6 +605,11 @@ pub fn moon_door_axis(e: &Element, data: &LevelData) -> (Vec2, bool) {
     (c, along_z)
 }
 
+/// Position (level) and readable side of the map board: its rect centre, facing the spawn.
+pub fn map_board_pose(e: &Element, spawn: IVec2) -> (Vec2, Dir) {
+    (rect_center(e.rect), dir_away(e.rect, cell_center(spawn)))
+}
+
 /// Position (level) and readable-side direction of an info board element: at the rect
 /// centre, facing away from its enclosure (GAME-PLAYER §5 uses the same pose).
 pub fn info_board_pose(e: &Element, data: &LevelData) -> (Vec2, Dir) {
@@ -681,11 +722,8 @@ impl LevelScene {
         // leaves swing open
         for e in data.elements_of(ElementType::Barrier) {
             if e.kind.as_deref() == Some("moon_door") {
-                let first_box = s.boxes.len();
-                s.moon_door_frame(e, data);
-                for bx in &mut s.boxes[first_box..] {
-                    bx.part = e.part as u8;
-                }
+                // the model: frame and leaves (the leaves swing open, LAYOUT-028/031)
+                s.moon_door_model(e, data);
             }
         }
         // perches (proposal Q-094): a branch / platform under every perch point
@@ -717,20 +755,33 @@ impl LevelScene {
                 }
             }
         }
-        // The bed (GAME-NIGHT rule 3) and furniture placeholders (proposal Q-137).
-        for it in data.items.iter().filter(|it| it.kind == "bed") {
+        // The bed (GAME-NIGHT rule 3), the desk note, the key box and the furniture
+        // (proposal Q-137) by their models (placeholder boxes as fallbacks).
+        for it in &data.items {
+            let first = s.placements.len();
             let first_box = s.boxes.len();
-            s.bed_box(&it.id, it.pos(), Vec2::new(2.0, 1.0));
+            s.item_model(it, data);
+            for p in &mut s.placements[first..] {
+                p.part = it.part as u8;
+            }
             for bx in &mut s.boxes[first_box..] {
                 bx.part = it.part as u8;
             }
         }
         for p in &data.props {
+            let first = s.placements.len();
             let first_box = s.boxes.len();
-            s.prop_placeholder(p);
+            s.prop_model(p);
+            for pl in &mut s.placements[first..] {
+                pl.part = p.part as u8;
+            }
             for bx in &mut s.boxes[first_box..] {
                 bx.part = p.part as u8;
             }
+        }
+        // Vegetable gardens (GAME-GARDEN, proposal Q-102).
+        for g in &data.gardens {
+            s.garden(g, data);
         }
         // Rivers (flow order, Q-066) and foam obstacles standing in the water (Q-068).
         s.water.rivers = crate::water::river_paths(data).unwrap_or_default();
@@ -968,7 +1019,7 @@ impl LevelScene {
         self.decals.push(Decal {
             id: format!("sign:{}", e.id),
             image: DecalImage::Text {
-                key,
+                key: key.to_owned(),
                 width_px: w,
                 height_px: h,
             },
@@ -1020,6 +1071,7 @@ impl LevelScene {
             yaw,
             scale,
             part: 0,
+            stretch: 1.0,
         });
     }
 
@@ -1453,13 +1505,23 @@ impl LevelScene {
                 }
             }
             "mushroom_ring" => {
+                // the `mushroom_patch` model (brown / cream mushrooms, never red with dots);
+                // the flat boxes below are its fallback
                 let c = rect_center(r);
+                let first_box = self.boxes.len();
                 for k in 0..7 {
                     let a = k as f32 / 7.0 * std::f32::consts::TAU;
                     let p = c + Vec2::new(a.cos(), a.sin()) * 0.75;
                     self.flat(id, p, Vec3::new(0.08, 0.18, 0.08), 0.0, colors::WHITE);
                     self.flat(id, p, Vec3::new(0.24, 0.1, 0.24), 0.18, [0.86, 0.28, 0.22]);
                 }
+                let boxes: Vec<BoxPlacement> = self.boxes.drain(first_box..).collect();
+                self.model_at("mushroom_patch", c, 0.0);
+                self.fallbacks.push(Fallback {
+                    model: "mushroom_patch",
+                    boxes,
+                    placements: Vec::new(),
+                });
             }
             "firefly_meadow" => {
                 // low grass tufts; the fireflies themselves glow at night (Q-115)
@@ -1768,12 +1830,8 @@ impl LevelScene {
                     .parts
                     .get(e.part)
                     .map_or(data.spawn.cell(), |p| p.spawn.cell());
-                let to_spawn = cell_center(spawn);
-                self.model_at(
-                    "map_board",
-                    rect_center(e.rect),
-                    facing_yaw(dir_away(e.rect, to_spawn)),
-                );
+                let (p, d) = map_board_pose(e, spawn);
+                self.model_at("map_board", p, facing_yaw(d));
             }
             (ElementType::Decoration | ElementType::Boundary, "hedge" | "zoo_wall") => {
                 let (two, one) = if kind == "hedge" {
@@ -1811,7 +1869,8 @@ impl LevelScene {
                 let (pos, dir) = info_board_pose(e, data);
                 self.model_at("info_board", pos, facing_yaw(dir));
             }
-            (ElementType::Enclosure, _) => self.enclosure(e),
+            (ElementType::Enclosure, _) => self.enclosure(e, data, grid),
+            (ElementType::Building, "entrance") if self.building_by_model(e, data) => {}
             (ElementType::Building, "entrance") => {
                 // Arch: two pillars and a beam, so the player is visible through it. The
                 // pillars end under the beam: no coplanar faces (ARCH-005 — they used to
@@ -1858,11 +1917,17 @@ impl LevelScene {
                 );
             }
             (ElementType::Building, _) if e.is_enterable() => {
-                self.enterable_building(e, data);
+                if !self.building_by_model(e, data) {
+                    self.enterable_building(e, data);
+                } else {
+                    self.furnish_building(e, data);
+                }
                 if kind == "night_house" {
-                    // name board over the door (south facade)
+                    // name board over the door (south facade); hidden with the roof while
+                    // the player is inside (zoo view)
                     let wall_h = e.height_m.unwrap_or(4.0) * 0.7;
                     let board = Vec3::new(2.6, 0.8, 0.08);
+                    let first = self.boxes.len();
                     self.building_sign(
                         e,
                         Dir::S,
@@ -1870,18 +1935,57 @@ impl LevelScene {
                         board,
                         NIGHT_HOUSE_SIGN_KEY,
                     );
+                    if building_model(e).is_some() {
+                        self.roof_boxes
+                            .push((e.id.clone(), first..self.boxes.len()));
+                    }
                 }
             }
             (ElementType::Building, "kiosk") => self.kiosk(e),
             (ElementType::Landmark | ElementType::Decoration, _)
                 if placeholder_kind(kind).is_some() =>
             {
-                self.landmark_placeholder(e, data)
+                match landmark_model(kind) {
+                    // the `kit_landmarks` model; the placeholder boxes are its fallback
+                    Some((model, yaw_deg)) => {
+                        let first_box = self.boxes.len();
+                        let first = self.placements.len();
+                        self.landmark_placeholder(e, data);
+                        let boxes: Vec<BoxPlacement> = self.boxes.drain(first_box..).collect();
+                        let placements: Vec<Placement> = self.placements.drain(first..).collect();
+                        self.model_at(model, rect_center(e.rect), yaw_deg.to_radians());
+                        self.fallbacks.push(Fallback {
+                            model,
+                            boxes,
+                            placements,
+                        });
+                    }
+                    None => self.landmark_placeholder(e, data),
+                }
             }
             (ElementType::Barrier, "construction_fence") => self.construction_fence(e, grid),
+            (ElementType::Building, _) if self.building_by_model(e, data) => {
+                if kind == "food_storage" || kind == "food_hut" {
+                    self.food_storage_sign(e, data, f32::MAX);
+                }
+            }
             (ElementType::Building, _) => {
                 let height = h.unwrap_or(4.0);
                 self.rect_box(e, 0.0, height * 0.7, colors::BUILDING);
+                // a (closed) door on the facade of the door cell (LAYOUT-031)
+                if let Some(dc) = e.door_cell() {
+                    let r = e.rect;
+                    let (side, mid) = if dc.y == r.z {
+                        ('S', r.z as f32 - 0.06)
+                    } else if dc.y == r.z + r.d - 1 {
+                        ('N', (r.z + r.d) as f32 + 0.06)
+                    } else if dc.x == r.x {
+                        ('W', r.x as f32 - 0.06)
+                    } else {
+                        ('E', (r.x + r.w) as f32 + 0.06)
+                    };
+                    self.procedural_door(e, mid, side);
+                }
                 if kind == "food_storage" || kind == "food_hut" {
                     self.food_storage_sign(e, data, height * 0.7);
                 }
@@ -1920,27 +2024,8 @@ impl LevelScene {
                 self.model_at("traffic_cone", block + Vec2::new(0.7, 0.35), 0.0);
                 self.model_at("traffic_cone", block + Vec2::new(1.25, -1.2), 0.0);
             }
-            (ElementType::Barrier, "moon_door") => {
-                // the two door leaves (they swing open at night: hidden with the barrier);
-                // pillars and the moon sign stay (added after the elements, `moon_door_frame`)
-                let (c, along_z) = moon_door_axis(e, data);
-                let half = if along_z { Vec2::Y } else { Vec2::X } * 0.5;
-                let leaf = if along_z {
-                    Vec3::new(0.18, 2.6, 0.96)
-                } else {
-                    Vec3::new(0.96, 2.6, 0.18)
-                };
-                for s in [-1.0f32, 1.0] {
-                    self.push_box(&e.id, c + half * s, 0.0, leaf, [0.28, 0.40, 0.72]);
-                    // painted star on each leaf
-                    let star = if along_z {
-                        Vec3::new(0.22, 0.24, 0.24)
-                    } else {
-                        Vec3::new(0.24, 0.24, 0.22)
-                    };
-                    self.push_box(&e.id, c + half * s, 1.5, star, colors::GOLD);
-                }
-            }
+            // the moon door is one model (frame + leaves), placed after the elements
+            (ElementType::Barrier, "moon_door") => {}
             (ElementType::Barrier, _) => self.rect_box(e, 0.0, h.unwrap_or(1.2), colors::BARRIER),
             _ => self.rect_box(e, 0.0, h.unwrap_or(1.0), colors::DEFAULT),
         }
@@ -2866,6 +2951,14 @@ impl LevelScene {
                 Vec3::new(size.x, wall_h - 2.2, size.y),
                 colors::BUILDING,
             );
+            // the door leaf in the gap (LAYOUT-031), on the wall's middle line
+            let mid = match k {
+                'S' => (z0 + iz0) / 2.0,
+                'N' => (iz1 + z1) / 2.0,
+                'W' => (x0 + ix0) / 2.0,
+                _ => (ix1 + x1) / 2.0,
+            };
+            self.procedural_door(e, mid, k);
         }
         // the whole model (night house: hall + indoor enclosure wing, proposal Q-134)
         let m = e.model_rect.unwrap_or(r);
@@ -2912,6 +3005,23 @@ impl LevelScene {
         }
         if let Some((c, size)) = bed_pose(e).filter(|_| !furnished) {
             self.bed_box(id, c, size);
+        }
+    }
+
+    /// Furniture of a building drawn by its model: the level data's `[[prop]]` / bed item,
+    /// else the bed of a zookeeper house (placeholder). Walls, roof and built-ins are in the
+    /// model.
+    fn furnish_building(&mut self, e: &Element, data: &LevelData) {
+        let furnished = data
+            .props
+            .iter()
+            .any(|p| p.building.as_deref() == Some(e.id.as_str()))
+            || data
+                .items
+                .iter()
+                .any(|it| it.kind == "bed" && it.building.as_deref() == Some(e.id.as_str()));
+        if let Some((c, size)) = bed_pose(e).filter(|_| !furnished) {
+            self.bed_box(&e.id, c, size);
         }
     }
 
@@ -3011,35 +3121,6 @@ impl LevelScene {
         }
     }
 
-    /// Pillars, arch and the (dark by day) moon sign of a moon door.
-    fn moon_door_frame(&mut self, e: &Element, data: &LevelData) {
-        let (c, along_z) = moon_door_axis(e, data);
-        let side = if along_z { Vec2::Y } else { Vec2::X };
-        let pillar = Vec3::new(0.7, 3.1, 0.7);
-        for s in [-1.0f32, 1.0] {
-            self.push_box(&e.id, c + side * s * 1.35, 0.0, pillar, colors::STONE);
-            self.push_box(
-                &e.id,
-                c + side * s * 1.35,
-                3.1,
-                Vec3::new(0.8, 0.14, 0.8),
-                colors::ROCK,
-            );
-        }
-        let beam = if along_z {
-            Vec3::new(0.6, 0.35, 3.3)
-        } else {
-            Vec3::new(3.3, 0.35, 0.6)
-        };
-        self.push_box(&e.id, c, 2.7, beam, colors::WOOD);
-        let sign = if along_z {
-            Vec3::new(0.1, 0.9, 0.9)
-        } else {
-            Vec3::new(0.9, 0.9, 0.1)
-        };
-        self.push_box(&e.id, c, 2.9, sign, [0.36, 0.38, 0.52]);
-    }
-
     /// Construction fence (level-2 exit): striped panels on the walkable side, a sign with
     /// a digger icon, a small yellow digger behind (all removed when it opens).
     fn construction_fence(&mut self, e: &Element, grid: &Grid) {
@@ -3088,7 +3169,7 @@ impl LevelScene {
         );
     }
 
-    fn enclosure(&mut self, e: &Element) {
+    fn enclosure(&mut self, e: &Element, data: &LevelData, grid: &Grid) {
         self.enclosure_dressing(e);
         let fence = match enclosure_fence(e.rect, e.gate) {
             Ok(f) => f,
@@ -3097,27 +3178,47 @@ impl LevelScene {
                 return;
             }
         };
-        for (corner, k) in fence.corners.iter().zip(CORNER_TURNS) {
-            self.placements.push(Placement::new(
-                "fence_wood_corner",
-                level_to_world(*corner),
-                quarter_turns_cw_to_yaw(k),
-            ));
-        }
-        for run in &fence.runs {
-            self.run_pieces(run, "fence_wood", "fence_wood_1m");
+        // an indoor enclosure inside a modelled night house: its walls and glass front are
+        // part of the house model; the gate is a glass door (LAYOUT-031)
+        let in_model = e.indoor
+            && data.elements_of(ElementType::Building).any(|b| {
+                building_model(b).is_some()
+                    && b.model_rect.is_some_and(|m| {
+                        m.contains(IVec2::new(e.rect.x, e.rect.z))
+                            && m.contains(IVec2::new(
+                                e.rect.x + e.rect.w - 1,
+                                e.rect.z + e.rect.d - 1,
+                            ))
+                    })
+            });
+        if !in_model {
+            for (corner, k) in fence.corners.iter().zip(CORNER_TURNS) {
+                self.placements.push(Placement::new(
+                    "fence_wood_corner",
+                    level_to_world(*corner),
+                    quarter_turns_cw_to_yaw(k),
+                ));
+            }
+            for run in &fence.runs {
+                self.run_pieces(run, "fence_wood", "fence_wood_1m");
+            }
         }
         if let Some(gate) = fence.gate {
             let dir = gate.axis.dir();
-            self.placements.push(Placement::new(
-                "gate_wood",
-                level_to_world(gate.start + dir * 0.09),
-                run_yaw(gate.axis),
-            ));
+            self.enclosure_gate(e, gate, in_model);
             // Enclosure sign just outside the gate, reading outwards.
             let mid = gate.start + dir * 1.0;
             let out = dir_away(e.rect, mid + (mid - rect_center(e.rect)).normalize() * 0.01);
-            let pos = mid + out.offset().as_vec2() * 0.35;
+            if in_model {
+                // indoor (night house): a board above the glass door, so the doorway and
+                // the walk in front of it stay free (GAME-LAYOUT "Gates and doors")
+                self.indoor_enclosure_sign(e, mid, out);
+                return;
+            }
+            // beside the gate, never in front of it (user decision 2026-09-27, Q-086 (b),
+            // LAYOUT-033): the first free spot along the fence, the fallback in front of it
+            let pos = enclosure_sign_spot(e, gate, out, data, grid)
+                .unwrap_or(mid + out.offset().as_vec2() * 0.35);
             let yaw = facing_yaw(out);
             self.placements
                 .push(Placement::new("enclosure_sign", level_to_world(pos), yaw));
@@ -3129,6 +3230,132 @@ impl LevelScene {
         }
     }
 }
+
+impl LevelScene {
+    /// Board with the animal's silhouette above an indoor enclosure's glass door (on its
+    /// hall side, bottom 2.3 m — the door is 2.2 m high).
+    fn indoor_enclosure_sign(&mut self, e: &Element, mid: Vec2, out: Dir) {
+        let o = out.offset().as_vec2();
+        let board = Vec3::new(1.1, 0.7, 0.06);
+        let along_z = matches!(out, Dir::E | Dir::W);
+        let c = mid + o * (0.1 + board.z / 2.0);
+        self.boxes.push(BoxPlacement {
+            pos: level_to_world_at(c, INDOOR_SIGN_BOTTOM_M),
+            size: board,
+            yaw: if along_z {
+                quarter_turns_cw_to_yaw(1)
+            } else {
+                0.0
+            },
+            color: colors::WOOD_LIGHT,
+            fadeable: false,
+            source: format!("{}:sign", e.id),
+            part: e.part as u8,
+        });
+        if let Some(animal) = &e.animal {
+            let n = level_to_world(o).normalize();
+            let right = Vec3::Y.cross(n);
+            let front = mid + o * (0.1 + board.z + DECAL_LIFT_M);
+            self.decals.push(Decal {
+                id: format!("sign:{}", e.id),
+                image: DecalImage::Texture(silhouette_path(animal)),
+                center: level_to_world_at(front, INDOOR_SIGN_BOTTOM_M + board.y / 2.0),
+                right: right * 0.45,
+                up: Vec3::Y * 0.3,
+            });
+        }
+    }
+}
+
+/// `enclosure_sign` footprint (model space: half width along its panel, depth centre and
+/// half depth; Q-086 (b): the whole sign is solid).
+pub const ENCLOSURE_SIGN_HALF_W: f32 = 1.19;
+pub const ENCLOSURE_SIGN_Z: (f32, f32) = (0.10, 0.26);
+/// Gap between the sign and the gate post (m) and its distance out from the fence line.
+pub const ENCLOSURE_SIGN_GAP_M: f32 = 0.5;
+pub const ENCLOSURE_SIGN_OUT_M: f32 = 0.35;
+
+/// Where an enclosure's sign stands beside its gate (LAYOUT-033): outside the fence, along
+/// it, ≥ 0.5 m from the gate post, its whole footprint on walkable cells and clear of the
+/// gate opening and the 1 m walkway in front of it, of the info boards and the food boxes,
+/// and with a walkable place in front to look at it. The side away from the enclosure's
+/// info board is tried first; `None` when neither side has room.
+pub fn enclosure_sign_spot(
+    e: &Element,
+    gate: Run,
+    out: Dir,
+    data: &LevelData,
+    grid: &Grid,
+) -> Option<Vec2> {
+    let dir = gate.axis.dir();
+    let o = out.offset().as_vec2();
+    let mid = gate.start + dir * 1.0;
+    let board = data
+        .elements
+        .iter()
+        .find(|b| b.kind.as_deref() == Some("info_board") && b.enclosure.as_deref() == Some(&e.id))
+        .map(|b| rect_center(b.rect));
+    let mut sides = [1.0f32, -1.0];
+    if let Some(b) = board {
+        // away from the board first
+        if (b - mid).dot(dir) > 0.0 {
+            sides = [-1.0, 1.0];
+        }
+    }
+    let base = 1.0 + ENCLOSURE_SIGN_GAP_M + ENCLOSURE_SIGN_HALF_W;
+    for extra in [0.0f32, 0.5, 1.0, 1.5] {
+        for side in sides {
+            let c = mid + dir * side * (base + extra) + o * ENCLOSURE_SIGN_OUT_M;
+            if enclosure_sign_fits(c, dir, o, mid, data, grid) {
+                return Some(c);
+            }
+        }
+    }
+    None
+}
+
+/// Whether an `enclosure_sign` at `c` (panel along `dir`, front towards `o`) fits the rules
+/// of [`enclosure_sign_spot`].
+pub fn enclosure_sign_fits(
+    c: Vec2,
+    dir: Vec2,
+    o: Vec2,
+    mid: Vec2,
+    data: &LevelData,
+    grid: &Grid,
+) -> bool {
+    let (zc, hz) = ENCLOSURE_SIGN_Z;
+    let center = c + o * zc;
+    // footprint samples (with 0.1 m margin) and a 1 m reading place in front
+    let mut pts = Vec::new();
+    for i in -4..=4 {
+        let a = i as f32 / 4.0 * (ENCLOSURE_SIGN_HALF_W + 0.1);
+        for b in [-(hz + 0.1), 0.0, hz + 0.1] {
+            pts.push(center + dir * a + o * b);
+        }
+    }
+    let front: Vec<Vec2> = (-2..=2)
+        .map(|i| center + dir * (i as f32 * 0.4) + o * (hz + 1.0))
+        .collect();
+    let walk = |p: Vec2| grid.is_walkable(crate::level::cell_of(p), false);
+    // the gate opening and its walkway (2 m wide, 1 m out) plus the 0.5 m gap
+    let in_gate = |p: Vec2| {
+        let d = p - mid;
+        // (the 0.1 m sampling margin of the footprint may reach into the gap)
+        d.dot(dir).abs() < 1.0 + ENCLOSURE_SIGN_GAP_M - 0.11 && d.dot(o) > -0.2 && d.dot(o) < 1.2
+    };
+    let hits_other = |p: Vec2| {
+        data.elements.iter().any(|b| {
+            b.kind.as_deref() == Some("info_board") && b.rect.contains(crate::level::cell_of(p))
+        }) || data.food_boxes.iter().any(|f| f.pos().distance(p) < 0.5)
+    };
+    pts.iter()
+        .all(|&p| walk(p) && !in_gate(p) && !hits_other(p))
+        && front.iter().all(|&p| walk(p) && !in_gate(p))
+}
+
+/// Bottom of the sign board above an indoor enclosure's glass door (m).
+pub const INDOOR_SIGN_BOTTOM_M: f32 = 2.3;
 
 /// Silhouette decal on the `sign_panel` face of an `enclosure_sign` placed at `origin`
 /// (world) with `yaw` (front = local +Z, Q-061).
@@ -3260,7 +3487,11 @@ mod tests {
         // smaller world Z (GAME-LAYOUT "Coordinate spaces").
         let s = LevelScene::build(&level1());
         let bench = s.boxes.iter().find(|b| b.source == "bench_plaza").unwrap();
-        let storage = s.boxes.iter().find(|b| b.source == "food_storage").unwrap();
+        let storage = s
+            .placements
+            .iter()
+            .find(|p| p.model == "food_storage")
+            .unwrap();
         assert!(bench.pos.x > 0.5);
         assert!(storage.pos.z < -10.0);
     }
@@ -3334,11 +3565,8 @@ mod tests {
             .find(|d| d.id == "sign:food_storage")
             .unwrap();
         assert!(matches!(
-            d.image,
-            DecalImage::Text {
-                key: FOOD_STORAGE_SIGN_KEY,
-                ..
-            }
+            &d.image,
+            DecalImage::Text { key, .. } if key == FOOD_STORAGE_SIGN_KEY
         ));
         let n = d.normal();
         assert!((n - Vec3::Z).length() < 1e-5, "faces south: {n}");
@@ -3351,8 +3579,13 @@ mod tests {
             tl.x >= min_x - 0.5 && br.x <= max_x + 0.5,
             "over the box row"
         );
-        assert!(br.y > 1.2, "above the food boxes: {br}");
-        assert!(tl.y < 3.15, "below the roof: {tl}");
+        // board bottom 2.3 m: above the 2.1 m door opening, in the gable below the ridge
+        // (4.53 m) of the `food_storage` model (README_night open point 2)
+        let board_bottom = d.center.y - d.up.y - STORAGE_SIGN_FRAME_M;
+        assert!((board_bottom - STORAGE_SIGN_BOTTOM_M).abs() < 1e-4);
+        const { assert!(STORAGE_SIGN_BOTTOM_M >= 2.3, "above the door") };
+        assert!(br.y > 2.1, "above the door: {br}");
+        assert!(tl.y < 4.0, "below the ridge: {tl}");
         // just in front of the facade (level z = 11.05 → world z = -11.05)
         let board = s
             .boxes

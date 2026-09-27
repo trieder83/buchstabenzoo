@@ -12,6 +12,14 @@ use crate::wander::{self, Wander};
 
 /// Radius of the player's lantern light (art plan: 2.5 m around the player; NIGHT-005/006).
 pub const LANTERN_RADIUS_M: f32 = 2.5;
+/// Height of the hand lantern's light centre above her feet (m).
+pub const LANTERN_LIGHT_Y_M: f32 = 1.4;
+
+/// Radius of the lantern's point-light sphere so that its hard-edged pool on the ground is
+/// as wide as the eyeshine radius (Q-142 answered: the visible pool ≈ 2.5 m).
+pub fn lantern_light_radius() -> f32 {
+    (LANTERN_RADIUS_M * LANTERN_RADIUS_M + LANTERN_LIGHT_Y_M * LANTERN_LIGHT_Y_M).sqrt()
+}
 /// Barrier kind of the night-zoo gate (GAME-NIGHT rule 3).
 pub const MOON_DOOR_KIND: &str = "moon_door";
 
@@ -54,6 +62,31 @@ impl Game {
             .filter_map(crate::scene::bed_pose)
             .map(|(c, _)| c)
             .collect()
+    }
+
+    /// Where the child stands to use the bed nearest to `from`: the bed item's `stand` cell
+    /// (level data), else a walkable cell next to it (NIGHT-016).
+    pub fn bed_stand(&self, from: Vec2) -> Option<Vec2> {
+        let data = &self.level.data;
+        let item = data
+            .items
+            .iter()
+            .filter(|it| it.kind == "bed" && self.part_unlocked(it.part))
+            .min_by(|a, b| a.pos().distance(from).total_cmp(&b.pos().distance(from)));
+        if let Some(c) = item.and_then(|it| it.stand) {
+            return Some(cell_center(glam::IVec2::new(c[0], c[1])));
+        }
+        let bed = self
+            .beds()
+            .into_iter()
+            .min_by(|a, b| a.distance(from).total_cmp(&b.distance(from)))?;
+        let grid = self.level.grid();
+        crate::level::Rect::new(bed.x as i32 - 2, bed.y as i32 - 2, 5, 5)
+            .cells()
+            .filter(|&c| grid.is_passable(c, false))
+            .map(cell_center)
+            .filter(|q| q.distance(bed) <= 1.8)
+            .min_by(|a, b| a.distance(bed).total_cmp(&b.distance(bed)))
     }
 
     /// The first bed (level 1's) and its readable side (none).
@@ -344,4 +377,50 @@ impl Game {
         self.debug_set_daytime("day");
         self.drain_events()
     }
+}
+
+/// How a flying night animal (bat, owl: `fly_height` in `animal_anims.toml`) is posed
+/// (ART-ANIMALS "Night animals", GAME-NIGHT, NIGHT-017): perched at its hiding place it plays
+/// `perch` (the bat its data pose, `hang` below the grip point); following the child it
+/// flies (`fly`, origin raised by `fly_height`); at home and elsewhere it stands (`idle`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FlyerPose {
+    pub rest: &'static str,
+    pub locomotion: &'static str,
+    /// Height of the model origin above the ground (m).
+    pub lift: f32,
+}
+
+/// Pose of a flyer: `perch_m` = the perch height while it sits at its hiding place, `pose`
+/// = the hiding place's data pose (`hang` for the bat).
+pub fn flyer_pose(
+    state: AnimalState,
+    perch_m: Option<f32>,
+    pose: &str,
+    fly_height: f32,
+) -> FlyerPose {
+    match (state, perch_m) {
+        (AnimalState::Following, _) => FlyerPose {
+            rest: "fly",
+            locomotion: "fly",
+            lift: fly_height,
+        },
+        (AnimalState::Escaped, Some(h)) => FlyerPose {
+            rest: if pose == "hang" { "hang" } else { "perch" },
+            locomotion: "fly",
+            lift: h,
+        },
+        _ => FlyerPose {
+            rest: "idle",
+            locomotion: "walk",
+            lift: 0.0,
+        },
+    }
+}
+
+/// Whether an animal's `eye_glow` slot shines (NIGHT-006): inside the lantern light, and
+/// not while it sleeps (no eyelids — Q-146 answered 2026-09-27: `eye_glow` is skipped
+/// while `sleep` plays).
+pub fn eye_glow(shine: bool, rest_clip: &str, action: Option<&str>) -> bool {
+    shine && rest_clip != "sleep" && action != Some("sleep")
 }

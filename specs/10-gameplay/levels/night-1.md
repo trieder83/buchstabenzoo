@@ -397,5 +397,7 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 - Q-136 riddle uniqueness scope for night levels.
 - Q-137 `[[light]]`, `[[item]]`, `[[prop]]` data shape.
 - Q-138 telescope as an interactive toy.
-- Q-142 eyeshine radius 2.5 m vs. the visible lantern pool (GAME-NIGHT).
+- Q-142 answered 2026-09-27: eyeshine 2.5 m, visible lantern ground pool 2.5 m (GAME-NIGHT, NIGHT-018).
 - Q-094 perch heights, Q-043 poses (`hang`), Q-126 (answered) night haze.
+- Q-147 string-light spans on the plaza; Q-149 `loc_hilltop` perch height 2.4 m vs. the `rock_hill` model (1.95 m); Q-151 "Futter" board of the `food_hut` above its eaves.
+- Q-154 `kit_landmarks` (windmill, trees, `rock_hill`, …) has no manifest entry / ART listing yet.

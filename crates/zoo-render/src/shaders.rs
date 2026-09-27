@@ -17,6 +17,7 @@ in vec4 v_color;
 in float v_view_depth;
 in float v_fadeable;
 in vec3 v_world;
+in vec4 v_glow;               // material slot: rgb + mode (2 emissive, 3 glass, 4 eye glow)
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_normal;
 // @night (GAME-NIGHT §10; night.rs)
@@ -37,19 +38,33 @@ void main() {
         if (p.x == p.y) discard;
     }
     vec3 n = normalize(v_normal);
-    if (v_color.a > 1.5) {
-        // emissive (lamp glass, lit windows, eyeshine, fireflies): flat, unlit (night.rs)
-        o_color = vec4(v_color.rgb, 1.0);
+    if (v_color.a > 1.5 || (v_glow.w > 1.5 && v_glow.w < 2.5)) {
+        // emissive (lamp glass, lit windows, eyeshine, fireflies, `*_glow` slots at night):
+        // flat, unlit (night.rs)
+        o_color = vec4(v_color.a > 1.5 ? v_color.rgb : v_glow.rgb, 1.0);
         o_normal = vec4(n * 0.5 + 0.5, u_edge_mask);
         return;
     }
     vec4 tex = texture(u_palette, v_uv);
-    if (v_color.a < 0.25 && tex.a < 0.5) discard; // alpha-tested decals (faces, ART-RIG §6)
-    vec3 albedo = v_color.a > 0.25 ? v_color.rgb : tex.rgb;
+    if (v_glow.w > 3.5 && v_glow.w < 4.5) {
+        // eye_glow inside the lantern radius (NIGHT-006): highlights shine, the pupil stays dark
+        float lum = dot(tex.rgb, vec3(0.2126, 0.7152, 0.0722));
+        o_color = vec4(v_glow.rgb * (0.25 + 0.75 * lum), 1.0);
+        o_normal = vec4(n * 0.5 + 0.5, u_edge_mask);
+        return;
+    }
+    // slot colour: glass (3, alpha 0.35) and flat text faces (5) use their own colour; one
+    // shade() call for every path (branches are predicated on software GPUs)
+    bool slot = v_glow.w > 2.5;
+    bool glass = slot && v_glow.w < 3.5;
+    if (!slot && v_color.a < 0.25 && tex.a < 0.5) discard; // alpha-tested decals (faces, ART-RIG §6)
+    vec3 albedo = slot ? v_glow.rgb : (v_color.a > 0.25 ? v_color.rgb : tex.rgb);
     albedo = mix(albedo, u_tint.rgb, u_tint.a);
     float lit = step(0.12, dot(n, u_sun_dir));
-    o_color = vec4(shade(albedo, lit, n, v_world), 1.0);
-    o_normal = vec4(n * 0.5 + 0.5, u_edge_mask);
+    float alpha = glass ? 0.35 : 1.0;
+    o_color = vec4(shade(albedo, lit, n, v_world), alpha);
+    // glass: the normal buffer keeps what is behind the pane (blend weight 0: no outline)
+    o_normal = vec4(n * 0.5 + 0.5, glass ? 0.0 : u_edge_mask);
 }
 "#;
 
@@ -70,10 +85,53 @@ float bob_hash(vec3 o) {
 }
 "#;
 
-fn static_vs_src(water: bool) -> String {
+/// Attributes, uniforms and the part / slot code of the *rich* static vertex shader: models
+/// with material slots or moving parts (ARCH-007). Plain meshes (tiles, hedges, fences —
+/// most of the scene) use the lean shader without them (half the vertex fetch).
+const RICH_DECL: &str = r#"
+layout(location = 6) in vec4 a_glow;        // slot: sRGB emission / colour + mode (1 glow, 3 glass, 5 flat)
+layout(location = 7) in vec4 a_node;        // part pivot (model space) + part code (0 = root)
+layout(location = 8) in vec4 a_inst_node;   // instance: open 0..1, hide mask
+uniform vec4 u_nodes[8];    // per part: axis (1 X, 2 Y, 3 Z), angle at open 1, hide bit, mode
+uniform float u_glow_on;    // night: glow slots emissive, night-only parts shown
+vec3 turn(vec3 v, int axis, float a) {
+    float c = cos(a), s = sin(a);
+    if (axis == 1) return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
+    if (axis == 2) return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z);
+    return vec3(c * v.x - s * v.y, s * v.x + c * v.y, v.z);
+}
+"#;
+
+const RICH_MAIN: &str = r#"
+    int code = int(a_node.w + 0.5);
+    if (code > 0 && code < 8) {
+        // moving / hideable part of a multi-node asset (ARCH-007)
+        vec4 nd = u_nodes[code];
+        int bit = int(nd.z + 0.5);
+        if ((bit > 0 && (int(a_inst_node.y + 0.5) & bit) != 0) || (nd.w > 1.5 && u_glow_on < 0.5)) {
+            gl_Position = vec4(0.0, 0.0, 2.0, 1.0);   // hidden: outside the clip volume
+            v_normal = vec3(0.0, 1.0, 0.0); v_uv = a_uv; v_color = a_color; v_view_depth = 0.0;
+            v_fadeable = 0.0; v_glow = vec4(0.0); v_world = vec3(0.0);
+            return;
+        }
+        int axis = int(nd.x + 0.5);
+        float ang = (nd.w > 0.5 && nd.w < 1.5) ? nd.y * u_time : nd.y * a_inst_node.x;
+        if (axis > 0 && ang != 0.0) {
+            mp = turn(mp - a_node.xyz, axis, ang) + a_node.xyz;
+            mn = turn(mn, axis, ang);
+        }
+    }
+    // glow slots emit only at night; glass (3) and flat slot colours (5) always apply
+    v_glow = a_glow.w > 2.5 ? a_glow : (a_glow.w > 0.5 && u_glow_on > 0.5 ? vec4(a_glow.rgb, 2.0) : vec4(0.0));
+"#;
+
+fn static_vs_src(rich: bool) -> String {
     // every static batch outputs its world position (night point lights, GAME-NIGHT §10)
-    let _ = water;
-    let (decl, set) = ("out vec3 v_world;", "v_world = w;");
+    let (rich_decl, rich_main) = if rich {
+        (RICH_DECL, RICH_MAIN)
+    } else {
+        ("", "    v_glow = vec4(0.0);\n")
+    };
     format!(
         r#"#version 300 es
 layout(location = 0) in vec3 a_pos;
@@ -90,12 +148,17 @@ out vec2 v_uv;
 out vec4 v_color;
 out float v_view_depth;
 out float v_fadeable;
-{decl}
+out vec4 v_glow;
+out vec3 v_world;
+{rich_decl}
 void main() {{
+    vec3 mp = a_pos;
+    vec3 mn = a_normal;
+{rich_main}
     float c = cos(a_pos_yaw.w);
     float s = sin(a_pos_yaw.w);
-    vec3 p = a_pos * a_scale_fade.xyz;
-    vec3 n = a_normal / a_scale_fade.xyz;
+    vec3 p = mp * a_scale_fade.xyz;
+    vec3 n = mn / a_scale_fade.xyz;
     vec3 off = vec3(0.0);
     if (u_bob.x + u_bob.y + u_bob.z > 0.0) {{
         float ph = bob_hash(a_pos_yaw.xyz) * TAU;
@@ -112,7 +175,7 @@ void main() {{
     v_color = a_color;
     v_fadeable = a_scale_fade.w;
     v_view_depth = -(u_view * vec4(w, 1.0)).z;
-    {set}
+    v_world = w;
     gl_Position = u_view_proj * vec4(w, 1.0);
 }}
 "#
@@ -123,9 +186,14 @@ pub fn static_vs() -> String {
     static_vs_src(false)
 }
 
-/// Vertex shader of the water tile batches: `static_vs` plus the world position.
-pub fn water_vs() -> String {
+/// Static vertex shader of models with material slots / moving parts (ARCH-007).
+pub fn rich_vs() -> String {
     static_vs_src(true)
+}
+
+/// Vertex shader of the water tile batches (the plain static one).
+pub fn water_vs() -> String {
+    static_vs_src(false)
 }
 
 pub fn static_fs() -> String {
@@ -149,12 +217,14 @@ uniform highp sampler2D u_joint_tex;   // 4 RGBA32F texels (matrix columns) per 
 uniform vec4 u_color;
 uniform vec3 u_eye;
 uniform float u_depth_bias;   // m towards the camera for the depth test (under water)
+uniform vec4 u_emit;          // eye_glow part that shines: rgb + mode 4 (else 0)
 out vec3 v_normal;
 out vec2 v_uv;
 out vec4 v_color;
 out float v_view_depth;
 out float v_fadeable;
 out vec3 v_world;
+out vec4 v_glow;
 mat4 joint(float j) {
     int x = int(j) * 4;
     return mat4(texelFetch(u_joint_tex, ivec2(x, 0), 0),
@@ -170,6 +240,7 @@ void main() {
     v_normal = mat3(m) * a_normal;
     v_uv = a_uv;
     v_color = u_color;
+    v_glow = u_emit;
     v_fadeable = 0.0;
     v_view_depth = -(u_view * w).z;
     v_world = w.xyz;

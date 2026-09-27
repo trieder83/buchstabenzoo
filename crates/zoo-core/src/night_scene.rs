@@ -9,7 +9,11 @@ use glam::{Vec2, Vec3};
 
 use crate::coords::level_to_world_at;
 use crate::level::{ElementType, LevelData, Rect};
-use crate::scene::{facing_yaw, info_board_pose, BoxPlacement, Dir};
+use crate::scene::{
+    building_model, facing_yaw, info_board_pose, model_offset, moon_door_pose, BoxPlacement, Dir,
+    Placement, BOARD_LAMP_INFO, BOARD_LAMP_LIGHT, BOARD_LAMP_MAP, LANTERN_LIGHT, MOON_DOOR_LIGHTS,
+    STRING_SPAN_M, WALL_LAMP_LIGHT, WALL_LAMP_MOUNT_M,
+};
 
 /// Glow and light colours (sRGB) of the art plan's night colour table.
 pub mod colors {
@@ -33,10 +37,11 @@ pub mod colors {
     pub const METAL: [f32; 3] = [0.30, 0.30, 0.34];
 }
 
-/// Light radius (m) per lamp kind (art plan: post 3 m, board lamp 1.2 m, player 2.5 m).
+/// Light radius (m) per lamp kind (art plan: post 3 m, board lamp 1.2 m, player 2.5 m; the
+/// light sits at the model's `light` empty, README_night).
 pub fn default_radius(kind: &str) -> f32 {
     match kind {
-        "lantern_post" => 2.4,
+        "lantern_post" => 3.0,
         "string_lights" => 2.0,
         "wall_lamp" => 2.1,
         "board_lamp" => 1.2,
@@ -61,6 +66,9 @@ pub struct Lamp {
 /// The night-only scene parts of a (joined) level.
 #[derive(Debug, Clone, Default)]
 pub struct NightScene {
+    /// Lamp models (`kit_night`: lantern posts, string lights, wall and board lamps); their
+    /// `*_glow` slots light up at night.
+    pub placements: Vec<Placement>,
     /// Placeholder lamp props (posts, arms, wires): lit like everything else.
     pub boxes: Vec<BoxPlacement>,
     /// Emissive parts (lamp glass, lit windows, the moon sign).
@@ -95,19 +103,30 @@ impl NightScene {
                     // every info board gets a small board lamp (GAME-NIGHT rule 5)
                     if !attached("board_lamp", &e.id) {
                         let (pos, dir) = info_board_pose(e, data);
-                        s.board_lamp(&e.id, pos, dir, 1.62, part);
+                        s.board_lamp(
+                            &e.id,
+                            pos,
+                            facing_yaw(dir),
+                            BOARD_LAMP_INFO,
+                            default_radius("board_lamp"),
+                            part,
+                        );
                     }
                 }
-                (ElementType::Barrier, "moon_door") => {
-                    let (c, along_z) = crate::scene::moon_door_axis(e, data);
-                    s.moon_door(c, along_z, &e.id, part)
-                }
+                (ElementType::Barrier, "moon_door") => s.moon_door(e, data, part),
                 (ElementType::Building, "entrance") => {}
                 (ElementType::Building, _) => {
                     let h = e.height_m.unwrap_or(4.0) * 0.7;
                     let door = e.door_cell();
                     let door_lamp = !attached("wall_lamp", &e.id);
-                    s.windows(e.rect, door, door_lamp, h, &e.id, part);
+                    // a building model has its own glowing windows (`window_glow`) and
+                    // ceiling lamps
+                    let model = building_model(e);
+                    if model.is_none() {
+                        s.windows(e.rect, door, door_lamp, h, &e.id, part);
+                    } else if door_lamp {
+                        s.windows(e.rect, door, true, 0.0, &e.id, part);
+                    }
                     if let Some(inner) = e.interior {
                         let night_house = data.is_night_part(e.part) || kind == "night_house";
                         if !attached("indoor", &e.id) {
@@ -139,14 +158,16 @@ impl NightScene {
                                     color,
                                     part,
                                 );
-                                s.glow(
-                                    &enc.id,
-                                    level_to_world_at(ec, 3.0),
-                                    Vec3::new(0.5, 0.1, 0.5),
-                                    0.0,
-                                    color,
-                                    part,
-                                );
+                                if model.is_none() {
+                                    s.glow(
+                                        &enc.id,
+                                        level_to_world_at(ec, 3.0),
+                                        Vec3::new(0.5, 0.1, 0.5),
+                                        0.0,
+                                        color,
+                                        part,
+                                    );
+                                }
                                 k += 1;
                             }
                         }
@@ -216,30 +237,29 @@ impl NightScene {
         let fwd = dir.offset().as_vec2();
         match l.kind.as_str() {
             "string_lights" => {
+                // `string_lights` spans (≤ 6 m, the cord stretched to the span, proposal
+                // Q-147) from post to post, a `string_post` at the far end
                 let pts = l.points();
-                let h = l.height_m.unwrap_or(2.8);
                 for w in pts.windows(2) {
                     let (a, b) = (w[0], w[1]);
                     let len = a.distance(b);
-                    let n = (len / 0.8).ceil().max(1.0) as usize;
-                    for k in 0..=n {
-                        let p = a.lerp(b, k as f32 / n as f32);
-                        let sag = 0.35 * (std::f32::consts::PI * k as f32 / n as f32).sin();
-                        let bulb = [
-                            colors::LAMP_GLOW,
-                            [1.0, 0.62, 0.45],
-                            [0.62, 0.86, 1.0],
-                            [0.80, 1.0, 0.62],
-                        ][k % 4];
-                        self.glow(
-                            &l.id,
-                            level_to_world_at(p, h - sag - 0.12),
-                            Vec3::splat(0.12),
-                            0.0,
-                            bulb,
-                            part,
-                        );
+                    if len < 0.1 {
+                        continue;
                     }
+                    let n = (len / STRING_SPAN_M).ceil().max(1.0) as usize;
+                    let d = (b - a) / len;
+                    let yaw = d.y.atan2(d.x);
+                    for k in 0..n {
+                        let p = a.lerp(b, k as f32 / n as f32);
+                        let mut pl =
+                            Placement::new("string_lights", level_to_world_at(p, 0.0), yaw);
+                        pl.stretch = len / n as f32 / STRING_SPAN_M;
+                        pl.part = part;
+                        self.placements.push(pl);
+                    }
+                    let mut end = Placement::new("string_post", level_to_world_at(b, 0.0), yaw);
+                    end.part = part;
+                    self.placements.push(end);
                     let mid = (a + b) / 2.0;
                     self.lamp(
                         &l.id,
@@ -250,56 +270,51 @@ impl NightScene {
                         part,
                     );
                 }
-                for p in &pts {
-                    self.prop(
-                        &l.id,
-                        level_to_world_at(*p, 0.0),
-                        Vec3::new(0.12, h, 0.12),
-                        0.0,
-                        colors::POST,
-                        part,
-                    );
-                }
             }
             "board_lamp" => {
-                // on an info board: at the board's pose (its readable side)
-                let board = l
-                    .attach
-                    .as_deref()
-                    .and_then(|id| data.element(id))
-                    .filter(|e| e.kind.as_deref() == Some("info_board"));
-                if let Some(e) = board {
-                    let (p, d) = info_board_pose(e, data);
-                    self.board_lamp(&l.id, p, d, l.height_m.unwrap_or(1.62), part);
-                } else if let Some(p) = l.pos() {
-                    // map board: under its small roof
-                    self.board_lamp(&l.id, p, dir, l.height_m.unwrap_or(2.1), part);
+                // on an info board / the map board: on its socket (README_night)
+                let board = l.attach.as_deref().and_then(|id| data.element(id));
+                match board {
+                    Some(e) if e.kind.as_deref() == Some("info_board") => {
+                        let (p, d) = info_board_pose(e, data);
+                        self.board_lamp(&l.id, p, facing_yaw(d), BOARD_LAMP_INFO, radius, part);
+                    }
+                    Some(e) if e.kind.as_deref() == Some("map_board") => {
+                        let spawn = data
+                            .parts
+                            .get(e.part)
+                            .map_or(data.spawn.cell(), |p| p.spawn.cell());
+                        let (p, d) = crate::scene::map_board_pose(e, spawn);
+                        self.board_lamp(&l.id, p, facing_yaw(d), BOARD_LAMP_MAP, radius, part);
+                    }
+                    _ => {
+                        if let Some(p) = l.pos() {
+                            self.board_lamp(
+                                &l.id,
+                                p,
+                                facing_yaw(dir),
+                                BOARD_LAMP_MAP,
+                                radius,
+                                part,
+                            );
+                        }
+                    }
                 }
             }
             "wall_lamp" => {
                 if let Some(p) = l.pos() {
-                    let h = l.height_m.unwrap_or(2.2);
                     let yaw = facing_yaw(dir);
-                    self.prop(
-                        &l.id,
-                        level_to_world_at(p, h + 0.22),
-                        Vec3::new(0.26, 0.06, 0.26),
-                        yaw,
-                        colors::METAL,
-                        part,
-                    );
-                    self.glow(
-                        &l.id,
-                        level_to_world_at(p, h - 0.1),
-                        Vec3::new(0.2, 0.3, 0.2),
-                        yaw,
-                        colors::LAMP_GLOW,
-                        part,
-                    );
+                    // origin on the facade (the data point is 5 cm in front of it)
+                    let wall = p - fwd * 0.05;
+                    let h = l.height_m.unwrap_or(WALL_LAMP_MOUNT_M);
+                    let mut pl = Placement::new("wall_lamp", level_to_world_at(wall, h), yaw);
+                    pl.part = part;
+                    self.placements.push(pl);
+                    let q = wall + model_offset(WALL_LAMP_LIGHT, yaw);
                     self.lamp(
                         &l.id,
                         "wall_lamp",
-                        level_to_world_at(p + fwd * 0.4, 1.2),
+                        level_to_world_at(q, h + WALL_LAMP_LIGHT.y),
                         radius,
                         colors::LAMP_LIGHT,
                         part,
@@ -307,6 +322,20 @@ impl NightScene {
                 }
             }
             "ceiling" | "indoor" => {
+                // the ceiling lamps / bedside lamp of a building model glow by themselves
+                let modelled = l
+                    .attach
+                    .as_deref()
+                    .and_then(|id| data.element(id))
+                    .is_some_and(|a| {
+                        building_model(a).is_some()
+                            || data.elements_of(ElementType::Building).any(|b| {
+                                building_model(b).is_some()
+                                    && b.model_rect.is_some_and(|m| {
+                                        m.contains(glam::IVec2::new(a.rect.x, a.rect.z))
+                                    })
+                            })
+                    });
                 if let Some(p) = l.pos() {
                     let c = l.color_rgb().unwrap_or(colors::CEILING);
                     // as a light the colour gives the hue; lightened so the room stays
@@ -316,14 +345,16 @@ impl NightScene {
                         c[1] + (1.0 - c[1]) * 0.45,
                         c[2] + (1.0 - c[2]) * 0.45,
                     ];
-                    self.glow(
-                        &l.id,
-                        level_to_world_at(p, l.height_m.unwrap_or(2.4)),
-                        Vec3::new(0.35, 0.12, 0.35),
-                        0.0,
-                        c,
-                        part,
-                    );
+                    if !modelled {
+                        self.glow(
+                            &l.id,
+                            level_to_world_at(p, l.height_m.unwrap_or(2.4)),
+                            Vec3::new(0.35, 0.12, 0.35),
+                            0.0,
+                            c,
+                            part,
+                        );
+                    }
                     let kind = if l.color.is_some() {
                         "indoor_colored"
                     } else {
@@ -333,49 +364,17 @@ impl NightScene {
                 }
             }
             _ => {
-                // lantern post (default): post, arm towards `facing`, hanging lantern
+                // lantern post (default): the arm and lantern towards `facing`
                 if let Some(p) = l.pos() {
                     let yaw = facing_yaw(dir);
-                    let h = l.height_m.unwrap_or(2.4);
-                    self.prop(
-                        &l.id,
-                        level_to_world_at(p, 0.0),
-                        Vec3::new(0.14, h, 0.14),
-                        yaw,
-                        colors::POST,
-                        part,
-                    );
-                    let arm = p + fwd * 0.3;
-                    self.prop(
-                        &l.id,
-                        level_to_world_at(arm, h - 0.2),
-                        Vec3::new(0.08, 0.08, 0.08)
-                            + level_to_world_at(fwd.abs() * 0.55, 0.0).abs(),
-                        0.0,
-                        colors::POST,
-                        part,
-                    );
-                    let lantern = p + fwd * 0.55;
-                    self.prop(
-                        &l.id,
-                        level_to_world_at(lantern, h - 0.34),
-                        Vec3::new(0.3, 0.08, 0.3),
-                        yaw,
-                        colors::METAL,
-                        part,
-                    );
-                    self.glow(
-                        &l.id,
-                        level_to_world_at(lantern, h - 0.74),
-                        Vec3::new(0.24, 0.4, 0.24),
-                        yaw,
-                        colors::LAMP_GLOW,
-                        part,
-                    );
+                    let mut pl = Placement::new("lantern_post", level_to_world_at(p, 0.0), yaw);
+                    pl.part = part;
+                    self.placements.push(pl);
+                    let q = p + model_offset(LANTERN_LIGHT, yaw);
                     self.lamp(
                         &l.id,
                         "lantern_post",
-                        level_to_world_at(lantern, 1.2),
+                        level_to_world_at(q, LANTERN_LIGHT.y),
                         radius,
                         colors::LAMP_LIGHT,
                         part,
@@ -385,41 +384,19 @@ impl NightScene {
         }
     }
 
-    /// Board lamp over an info board's panel (GAME-NIGHT rule 5): lamp head + emissive glass
-    /// + a small light on the panel.
-    fn board_lamp(&mut self, id: &str, pos: Vec2, dir: Dir, height: f32, part: u8) {
-        let fwd = dir.offset().as_vec2();
-        let yaw = facing_yaw(dir);
-        let head = pos + fwd * 0.28;
-        self.prop(
-            id,
-            level_to_world_at(pos + fwd * 0.14, height),
-            Vec3::new(0.05, 0.05, 0.05) + level_to_world_at(fwd.abs() * 0.3, 0.0).abs(),
-            0.0,
-            colors::METAL,
-            part,
-        );
-        self.prop(
-            id,
-            level_to_world_at(head, height - 0.02),
-            Vec3::new(0.34, 0.06, 0.16),
-            yaw,
-            colors::METAL,
-            part,
-        );
-        self.glow(
-            id,
-            level_to_world_at(head, height - 0.08),
-            Vec3::new(0.28, 0.06, 0.1),
-            yaw,
-            colors::LAMP_GLOW,
-            part,
-        );
+    /// `board_lamp` on a board's socket (same yaw as the board; README_night "Board-lamp
+    /// sockets"), its light on the panel.
+    fn board_lamp(&mut self, id: &str, pos: Vec2, yaw: f32, socket: Vec3, radius: f32, part: u8) {
+        let q = pos + model_offset(socket, yaw);
+        let mut pl = Placement::new("board_lamp", level_to_world_at(q, socket.y), yaw);
+        pl.part = part;
+        self.placements.push(pl);
+        let light = q + model_offset(BOARD_LAMP_LIGHT, yaw);
         self.lamp(
             id,
             "board_lamp",
-            level_to_world_at(pos + fwd * 0.3, 1.1),
-            1.2,
+            level_to_world_at(light, (socket.y + BOARD_LAMP_LIGHT.y - 0.3).max(0.9)),
+            radius,
             colors::LAMP_LIGHT,
             part,
         );
@@ -502,29 +479,18 @@ impl NightScene {
                 Dir::W => Vec2::new(x0, c.y),
                 Dir::E => Vec2::new(x1, c.y),
             };
-            let p = edge + side * 0.85 + o * 0.12;
+            // `wall_lamp` model on the facade beside the door (README_night mount 1.6 m)
+            let p = edge + side * 0.85;
             let yaw = facing_yaw(out);
-            self.prop(
-                id,
-                level_to_world_at(p, 2.35),
-                Vec3::new(0.24, 0.06, 0.24),
-                yaw,
-                colors::METAL,
-                part,
-            );
-            self.glow(
-                id,
-                level_to_world_at(p, 2.05),
-                Vec3::new(0.18, 0.28, 0.18),
-                yaw,
-                colors::LAMP_GLOW,
-                part,
-            );
+            let mut pl = Placement::new("wall_lamp", level_to_world_at(p, WALL_LAMP_MOUNT_M), yaw);
+            pl.part = part;
+            self.placements.push(pl);
+            let q = p + model_offset(WALL_LAMP_LIGHT, yaw);
             self.lamp(
                 &format!("{id}:door"),
                 "wall_lamp",
-                level_to_world_at(p + o * 0.5, 1.2),
-                2.1,
+                level_to_world_at(q, WALL_LAMP_MOUNT_M + WALL_LAMP_LIGHT.y),
+                default_radius("wall_lamp"),
                 colors::LAMP_LIGHT,
                 part,
             );
@@ -568,49 +534,23 @@ impl NightScene {
         }
     }
 
-    /// Moon door (GAME-NIGHT rule 3): glowing moon sign + soft blue rim at night.
-    fn moon_door(&mut self, c: Vec2, along_z: bool, id: &str, part: u8) {
-        let size = if along_z {
-            Vec3::new(0.16, 0.8, 0.8)
-        } else {
-            Vec3::new(0.8, 0.8, 0.16)
-        };
-        self.glow(
-            id,
-            level_to_world_at(c, 2.95),
-            size,
-            0.0,
-            colors::MOON,
-            part,
-        );
-        let rim = if along_z {
-            Vec3::new(0.66, 0.1, 3.0)
-        } else {
-            Vec3::new(3.0, 0.1, 0.66)
-        };
-        self.glow(
-            id,
-            level_to_world_at(c, 2.6),
-            rim,
-            0.0,
-            colors::MOON_RIM,
-            part,
-        );
-        // lanterns on both pillars
-        let side = if along_z { Vec2::Y } else { Vec2::X };
-        for s in [-1.0f32, 1.0] {
-            let p = c + side * s * 1.35;
-            self.glow(
-                id,
-                level_to_world_at(p, 3.26),
-                Vec3::new(0.3, 0.36, 0.3),
-                0.0,
-                colors::LAMP_GLOW,
+    /// Moon door (GAME-NIGHT rule 3): the model's moon sign, rim and pillar lanterns glow at
+    /// night (`*_glow` slots); its two lanterns light the doorway (`light_l` / `light_r`).
+    fn moon_door(&mut self, e: &crate::level::Element, data: &LevelData, part: u8) {
+        let (c, yaw) = moon_door_pose(e, data);
+        for (k, p) in MOON_DOOR_LIGHTS.iter().enumerate() {
+            let q = c + model_offset(*p, yaw);
+            self.lamp(
+                &format!("{}:lantern{k}", e.id),
+                "moon_door",
+                level_to_world_at(q, p.y),
+                2.5,
+                colors::LAMP_LIGHT,
                 part,
             );
         }
         self.lamp(
-            &format!("{id}:sign"),
+            &format!("{}:sign", e.id),
             "moon_door",
             level_to_world_at(c, 1.2),
             2.8,

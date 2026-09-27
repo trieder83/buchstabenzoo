@@ -407,3 +407,128 @@ fn debug_set_daytime_jumps() {
     assert!(!door_walkable(&g));
     assert_eq!(g.daytime.phase, Phase::Day);
 }
+
+// NIGHT-017: flying night animals perch / hang at their hiding place, fly `fly_height` above
+// the ground while they follow, stand at home; eye_glow never while sleeping (proposal
+// Q-146, answered).
+#[test]
+fn night_017_flyers_perch_hang_and_fly_and_sleeping_eyes_stay_dark() {
+    use zoo_core::night::{eye_glow, flyer_pose};
+    let anims = zoo_core::animals::AnimTable::from_toml_str(&common::read(
+        "assets/models/animals/animal_anims.toml",
+    ))
+    .unwrap();
+    let h = anims.fly_height("bat").expect("bat fly_height");
+    assert!((h - 1.5).abs() < 1e-6);
+    assert_eq!(anims.fly_height("owl"), Some(1.5));
+    assert_eq!(anims.fly_height("hedgehog"), None);
+    let p = flyer_pose(AnimalState::Escaped, Some(2.5), "hang", h);
+    assert_eq!((p.rest, p.lift), ("hang", 2.5));
+    let p = flyer_pose(AnimalState::Escaped, Some(6.0), "idle", h);
+    assert_eq!((p.rest, p.lift), ("perch", 6.0));
+    let p = flyer_pose(AnimalState::Following, Some(6.0), "idle", h);
+    assert_eq!((p.rest, p.locomotion, p.lift), ("fly", "fly", 1.5));
+    let p = flyer_pose(AnimalState::InEnclosure, None, "idle", h);
+    assert_eq!((p.rest, p.lift), ("idle", 0.0));
+    assert!(eye_glow(true, "idle", None));
+    assert!(!eye_glow(false, "idle", None));
+    assert!(!eye_glow(true, "sleep", None));
+    assert!(!eye_glow(true, "idle", Some("sleep")));
+    // every flyer clip exists in the models' clip table
+    for a in ["bat", "owl"] {
+        for c in ["perch", "fly", "sleep"] {
+            assert!(anims.clip(a, c).is_some(), "{a}.{c}");
+        }
+    }
+    assert!(anims.clip("bat", "hang").is_some());
+}
+
+// NIGHT-018 (Q-142 answered): the lantern's visible ground pool is as wide as the eyeshine
+// radius (2.5 m).
+#[test]
+fn night_018_lantern_pool_matches_the_eyeshine_radius() {
+    use zoo_core::night::{lantern_light_radius, LANTERN_LIGHT_Y_M};
+    let r = lantern_light_radius();
+    let pool = (r * r - LANTERN_LIGHT_Y_M * LANTERN_LIGHT_Y_M).sqrt();
+    assert!((pool - LANTERN_RADIUS_M).abs() < 0.01, "pool {pool}");
+    assert!((pool - 2.5).abs() < 0.05);
+}
+
+// NIGHT-016 (unit part; the key / touch button is the e2e test): the bed's stand point in
+// the furnished bedroom is walkable, free of furniture colliders, reachable from the spawn,
+// and standing there facing the bed makes the bed the interact target at night.
+#[test]
+fn night_016_bed_stand_is_free_and_reachable() {
+    use zoo_core::collision::PLAYER_RADIUS_M;
+    let mut g = night_game(1);
+    let bed = g.bed().expect("a bed").0;
+    let stand = g.bed_stand(bed).expect("a stand point");
+    let cell = cell_of(stand);
+    assert!(
+        g.level.grid().is_passable(cell, false),
+        "stand cell walkable"
+    );
+    assert!(
+        !g.level.colliders().overlaps(stand, PLAYER_RADIUS_M),
+        "no furniture on the stand point {stand}"
+    );
+    let spawn = g.level.data.spawn.cell();
+    let reach = zoo_core::nav::flood_fill(g.level.grid(), spawn, false);
+    assert!(
+        reach[g.level.grid().index(cell).unwrap()],
+        "reachable from the spawn"
+    );
+    g.player.pos = stand;
+    g.player.facing = (bed - stand).normalize();
+    assert_eq!(g.available_target(), Some(Target::Bed));
+    // away from the bed: nothing bed-related
+    g.player.pos = stand + Vec2::new(3.0, 0.0);
+    assert_ne!(g.available_target(), Some(Target::Bed));
+}
+
+// LAYOUT-L2-018 (Q-141 answered): level 2 has its own bed `bed_l2` on walkable cells, clear of
+// hiding places, scenery and doors; its stand cell is walkable, 1.0–1.5 m from the bed and
+// reachable; with level 2 open the bed offered near level 2 is `bed_l2`.
+#[test]
+fn layout_l2_018_level_2_bed() {
+    use zoo_core::collision::PLAYER_RADIUS_M;
+    let data = common::zoo_with_night();
+    let bed = data
+        .items
+        .iter()
+        .find(|it| it.id == "bed_l2")
+        .expect("bed_l2")
+        .clone();
+    assert_eq!(bed.kind, "bed");
+    let k = data.part_index("level_2").unwrap();
+    assert_eq!(bed.part, k);
+    let mut g = zoo_core::Game::new(data.clone(), 3).unwrap();
+    assert!(g.level.open_barrier("barrier_ne_tree"));
+    assert!(g.level_unlocked("level_2"));
+    // footprint 2 × 1 m on walkable cells outside hiding places and scenery
+    for dx in [-0.75f32, 0.25, 0.75] {
+        let c = cell_of(bed.pos() + Vec2::new(dx, 0.0));
+        assert!(g.level.grid().is_walkable(c, false), "{c}");
+        assert!(!data.hiding_places.iter().any(|h| h.rect.contains(c)));
+        assert!(!data.scenery.iter().any(|s| s.rect.contains(c)));
+    }
+    // the stand point
+    let spawn = data.parts[k].spawn.cell();
+    let reach = zoo_core::nav::flood_fill(g.level.grid(), spawn, false);
+    let stand_cell = glam::IVec2::from(bed.stand.expect("stand"));
+    let stand = zoo_core::level::cell_center(stand_cell);
+    let d = stand.distance(bed.pos());
+    assert!((1.0..=1.5).contains(&d), "stand {d} m from the bed");
+    assert!(
+        reach[g.level.grid().index(stand_cell).unwrap()],
+        "stand reachable"
+    );
+    assert!(!g.level.colliders().overlaps(stand, PLAYER_RADIUS_M));
+    // near level 2: that bed is the one offered
+    g.player.pos = zoo_core::level::cell_center(spawn);
+    assert_eq!(g.bed_stand(g.player.pos), Some(stand));
+    g.player.pos = stand;
+    g.player.facing = (bed.pos() - stand).normalize();
+    assert!(g.debug_set_daytime("night"));
+    assert_eq!(g.available_target(), Some(Target::Bed));
+}

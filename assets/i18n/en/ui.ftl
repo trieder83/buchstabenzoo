@@ -30,3 +30,5 @@ ui-refuse = I don't live here!
 ## Signs in the zoo (rendered as text textures, ART-ENVIRONMENT behaviour 7)
 
 sign-food-storage = Food
+# Name board of the entrance arch (proposal Q-148)
+sign-zoo-entrance = Letter Zoo

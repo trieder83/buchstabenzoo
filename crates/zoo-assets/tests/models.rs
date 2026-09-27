@@ -59,3 +59,94 @@ fn props_share_the_palette_texture() {
     let img = m.image.expect("embedded palette");
     assert_eq!(img.mime, "image/png");
 }
+
+fn load(rel: &str) -> Model {
+    Model::from_glb(&std::fs::read(root().join(rel)).unwrap()).unwrap()
+}
+
+/// ARCH-006: multi-node assets keep their movable / hideable parts with the pivot, their
+/// material slots (glow emission, glass blend), empties and text faces.
+#[test]
+fn arch_006_multi_node_assets_keep_parts_slots_empties_and_faces() {
+    // every static model: one node index per vertex, part 0 = the root
+    let files = find_files(&root().join("assets/models"), &|p| {
+        p.extension().is_some_and(|e| e == "glb")
+    });
+    for f in files {
+        let m = Model::from_glb(&std::fs::read(&f).unwrap()).unwrap();
+        if m.skeleton.is_none() {
+            assert_eq!(m.mesh.node.len(), m.mesh.positions.len(), "{}", f.display());
+            assert!(!m.nodes.is_empty(), "{}", f.display());
+            assert!(m.mesh.node.iter().all(|&k| (k as usize) < m.nodes.len()));
+        }
+    }
+    // moon door: two leaves at their hinge pivots, lanterns as light empties, glow slots
+    let door = load("assets/models/props/moon_door.glb");
+    let leaf_l = door.node_index("leaf_l").expect("leaf_l");
+    let leaf_r = door.node_index("leaf_r").expect("leaf_r");
+    assert!(door.nodes[leaf_l]
+        .pivot
+        .abs_diff_eq(glam::Vec3::new(-0.96, 0.0, -0.04), 1e-3));
+    assert!(door.nodes[leaf_r]
+        .pivot
+        .abs_diff_eq(glam::Vec3::new(0.96, 0.0, -0.04), 1e-3));
+    for k in [leaf_l, leaf_r] {
+        let n = door.mesh.node.iter().filter(|&&x| x as usize == k).count();
+        assert!(n > 0, "leaf vertices");
+    }
+    let light = door.empty("light_l").expect("light_l");
+    assert!(light.abs_diff_eq(glam::Vec3::new(-1.35, 3.62, 0.0), 1e-2));
+    let glow: Vec<&str> = door
+        .materials
+        .iter()
+        .filter(|m| m.is_glow())
+        .map(|m| m.name.as_str())
+        .collect();
+    assert_eq!(glow, ["moon_glow", "rim_glow", "lamp_glow"]);
+    let lamp = door
+        .materials
+        .iter()
+        .find(|m| m.name == "lamp_glow")
+        .unwrap();
+    // linear emissive → sRGB #FFD66B-ish
+    let c = lamp.emissive_srgb();
+    assert!(
+        (c[0] - 1.0).abs() < 0.02 && (c[1] - 0.84).abs() < 0.03,
+        "{c:?}"
+    );
+    // buildings: roof and walls_upper parts; the night house has a glass part (BLEND)
+    for b in ["zookeeper_house", "food_storage", "food_hut", "night_house"] {
+        let m = load(&format!("assets/models/buildings/{b}.glb"));
+        assert!(m.node_index("roof").is_some(), "{b} roof");
+        assert!(m.node_index("walls_upper").is_some(), "{b} walls_upper");
+    }
+    let nh = load("assets/models/buildings/night_house.glb");
+    assert!(nh.node_index("glass").is_some());
+    assert!(nh.materials.iter().any(|m| m.is_glass()));
+    assert!(nh.empty("light_hall").is_some());
+    // text faces: the garden sign's face reads upright towards its front (+Z)
+    let sign = load("assets/models/props/garden_sign.glb");
+    let face = sign.faces.first().expect("sign_face");
+    assert_eq!(face.slot, "sign_face");
+    let [tl, tr, br, bl] = face.corners;
+    assert!(
+        tl.y > bl.y && tr.y > br.y,
+        "top above bottom: {:?}",
+        face.corners
+    );
+    assert!(tr.x > tl.x, "left to right: {:?}", face.corners);
+    assert!(face.normal.z > 0.5, "faces the front: {}", face.normal);
+    let note = load("assets/models/props/note_paper.glb");
+    let f = note.faces.first().expect("note_face");
+    assert!(f.normal.y > 0.9, "note face up: {}", f.normal);
+    assert!(
+        f.corners[0].z < f.corners[3].z,
+        "top edge away from the reader (−Z)"
+    );
+    // animals: eye_glow shares the body's atlas image (uploaded once per asset)
+    let owl = load("assets/models/animals/owl.glb");
+    let body = owl.materials.iter().find(|m| m.name == "body").unwrap();
+    let eye = owl.materials.iter().find(|m| m.is_eye_glow()).unwrap();
+    assert!(body.image_index.is_some());
+    assert_eq!(body.image_index, eye.image_index);
+}

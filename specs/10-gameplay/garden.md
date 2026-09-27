@@ -6,7 +6,7 @@ module: garden
 status: draft
 depends_on: [GAME-FEED, GAME-FAMILY, GAME-LAYOUT, GAME-SAVE, CONT-READING]
 test_prefix: GARD
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Vegetable garden and treats
@@ -69,6 +69,25 @@ between missions.
    `carrot` and `potato` (items), `basket` (carried, with visible treats), `garden_fence` +
    `garden_gate` (low picket fence), `wheelbarrow`, `watering_can`, `garden_sign`.
 
+## Implementation (2026-09-27)
+
+- `[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]` are loaded (`zoo_core::level`), joined
+  with the levels; the fence lines block the grid steps across them (`Grid::step_open`),
+  the beds, signs, fence pieces and tools are solid by their model footprints
+  (`collision::footprint`, measured from the `kit_garden` meshes); the gate opens by itself
+  within 2 m; following animals come to the gate and wait outside while the child is in
+  the garden (proposal Q-102).
+- `zoo_core::garden`: plant stages and regrowth (3 min, 3 visible steps), the basket (6
+  treats), harvest (1 carrot / 2–3 seeded potatoes; a full basket refuses — what does not
+  fit of a potato harvest stays in the soil), treats per animal (**proposal Q-100**, not
+  answered yet), saved with the game (`SaveState::garden`).
+- Interaction: ripe plants (🥕), the garden signs (reading panel: picture, word, sentence
+  from klasse1 on — proposal Q-103), treats at the fence of an animal at home (🧺, the
+  offered treat = the child's choice, default the first in the basket); the HUD shows the
+  basket (🧺 + counts). Plants are drawn by stage (`carrot_plant_*`, `potato_plant_*`).
+- Not implemented: GARD-006 (care feeding) — GAME-FAMILY does not exist in the engine yet;
+  the "at least one treat" rule waits for Q-101.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -87,3 +106,4 @@ between missions.
 
 - Q-100 Which animals like which treat (and should koala/panda/snow fox get their own treats)?
 - Q-101 Must at least one of the 3 care feedings be a garden treat?
+- Q-102 garden in level 1 (gate opens within 2 m — proposal). Q-154 `basket`, `carrot`, `potato` models not yet listed in ART-ENVIRONMENT.

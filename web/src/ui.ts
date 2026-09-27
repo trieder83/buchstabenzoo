@@ -31,6 +31,26 @@ export interface UiApp {
   /** GAME-NIGHT: time of day and the dream fade of the sleep (0…1). */
   daytime?(): string;
   sleep_fade?(): number;
+  /** GAME-GARDEN: the treat basket as JSON `{"carrot", "potato", "capacity", "offered"}`. */
+  basket_json?(): string;
+}
+
+/** Treat basket contents (GAME-GARDEN §4). */
+export interface Basket {
+  carrot: number;
+  potato: number;
+  capacity?: number;
+  offered?: string;
+}
+
+/** Parses the basket JSON; empty basket on errors. */
+export function parseBasket(json: string | undefined): Basket {
+  try {
+    const b = JSON.parse(json ?? '') as Partial<Basket>;
+    return { carrot: Math.max(0, b.carrot ?? 0), potato: Math.max(0, b.potato ?? 0), capacity: b.capacity, offered: b.offered };
+  } catch {
+    return { carrot: 0, potato: 0 };
+  }
 }
 
 export const LANGUAGES = ['de', 'en'] as const;
@@ -48,6 +68,9 @@ export const FOOD_ICONS: Record<string, string> = {
   leaves: '🍂',
   meat: '🥩',
   berries: '🫐',
+  // garden treats (GAME-GARDEN)
+  carrot: '🥕',
+  potato: '🥔',
   // night zoo (GAME-NIGHT rule 6)
   beetles: '🪲',
   fruit: '🍎',
@@ -136,6 +159,10 @@ export const TARGET_ICONS: Record<string, string> = {
   // GAME-NIGHT rule 3: the two night choices, no reading needed
   bed: '🛏️',
   moon_door: '🌙',
+  // GAME-GARDEN: pull a plant, read a garden sign, give a treat at the fence
+  plant: '🥕',
+  garden_sign: '👀',
+  treat: '🧺',
 };
 
 const LEVEL_ICONS: Record<string, string> = { kiga: '🧸', klasse1: '1', klasse2: '2', klasse3: '3' };
@@ -320,7 +347,7 @@ export class Ui {
     const json = this.app.interact();
     if (!json) return;
     const data = JSON.parse(json) as PanelData;
-    if (data.kind === 'info_board' || data.kind === 'food_box') this.openPanel(data);
+    if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign') this.openPanel(data);
     this.pollEvents();
   }
 
@@ -341,7 +368,7 @@ export class Ui {
     }
     this.updateView();
     this.updateNight();
-    const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}`;
+    const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}|${this.app.basket_json?.() ?? ''}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
       this.renderCarry();
@@ -409,11 +436,16 @@ export class Ui {
     }, 6000);
   }
 
-  /** HUD: the carried food and — carried with both hands — the fish bowl (RESC-020). */
+  /**
+   * HUD: the carried food, the fish bowl carried with both hands (RESC-020) and the treat
+   * basket with its counts (GAME-GARDEN §4: icons + numbers, no reading needed).
+   */
   private renderCarry(): void {
     const carry = this.app.carry_food();
     const bowl = this.app.carry_bowl?.() ?? '';
-    this.hud.hidden = !carry && !bowl;
+    const basket = parseBasket(this.app.basket_json?.());
+    const treats = basket.carrot + basket.potato;
+    this.hud.hidden = !carry && !bowl && treats === 0;
     this.hud.dataset.food = carry;
     this.hud.dataset.bowl = bowl;
     this.hud.replaceChildren();
@@ -425,6 +457,17 @@ export class Ui {
     }
     if (carry) {
       this.hud.append(el('span', 'icon', FOOD_ICONS[carry] ?? '📦'), el('span', 'word', this.app.carry_text()));
+    }
+    if (treats > 0) {
+      const b = el('span', 'basket');
+      b.id = 'hud-basket';
+      b.append(el('span', 'icon', '🧺'));
+      for (const t of ['carrot', 'potato'] as const) {
+        if (basket[t] > 0) b.append(el('span', `treat ${t}`, `${FOOD_ICONS[t]}${basket[t]}`));
+      }
+      b.dataset.carrot = String(basket.carrot);
+      b.dataset.potato = String(basket.potato);
+      this.hud.append(b);
     }
     this.hud.setAttribute('aria-label', `${this.app.t('ui-carrying')} ${this.app.carry_text()}`);
   }
@@ -491,6 +534,14 @@ export class Ui {
         more.append(facts);
       }
       kids.push(more);
+    } else if (data.kind === 'garden_sign') {
+      // garden sign (GARD-009): the vegetable picture, its word, a sentence from klasse1 on
+      const pic = el('div', 'panel-picture', FOOD_ICONS[data.food ?? ''] ?? '🌱');
+      pic.id = 'panel-picture';
+      const title = el('h2', 'panel-title', data.title ?? '');
+      title.id = 'panel-title';
+      kids.push(close, pic, title);
+      if (data.text) kids.push(text);
     } else {
       if (data.picture === true) {
         const pic = el('div', 'panel-picture', FOOD_ICONS[data.food ?? ''] ?? '❓');

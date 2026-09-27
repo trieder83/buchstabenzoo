@@ -6,7 +6,7 @@ module: localization
 status: draft
 depends_on: [CONT-READING]
 test_prefix: L10N
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Localization
@@ -40,3 +40,4 @@ updated: 2026-09-26
 
 - Q-008 Voice audio per language. Q-038 Key naming vs. reading level variants.
 - Q-064 Enclosure sign texts (`sign-<animal>`).
+- Q-148 Entrance arch name board `sign-zoo-entrance` (de *Buchstabenzoo*, en *Letter Zoo* — proposal).

@@ -14,3 +14,7 @@ garden-carrot-klasse3 = Carrots grow in this bed. You can only see the green lea
 garden-potato-klasse1 = Potatoes grow here.
 garden-potato-klasse2 = Potatoes grow here. They are under the ground.
 garden-potato-klasse3 = Potatoes grow in this bed. The potatoes are under the ground. On top grow leaves and small white flowers.
+
+## Harvest and treats (GAME-GARDEN §3–§6): short feedback bubbles
+garden-basket-full = The basket is full!
+garden-treat-yum = Mmm, yummy!

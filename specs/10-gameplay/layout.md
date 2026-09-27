@@ -350,7 +350,7 @@ values cover the cross-section within 0.02 m and extend at most 0.1 m beyond it 
 | Model | Mesh cross-section 0.05–1.4 m (x; z) | Current footprint | Proposed footprint | Issue |
 |---|---|---|---|---|
 | `info_board` | −0.50…+0.50; −0.37…+0.25 | B(0, −0.05, 0.50, 0.25) | B(0, −0.06, 0.51, 0.32) | panel overhangs the box by 0.07 m (back) / 0.05 m (front); cell is solid, so not reachable today (F13) |
-| `enclosure_sign` | −1.18…+1.18; −0.14…+0.35 — posts at x ±1.09, **panel between the posts from 0.99 m** up to 1.8 m | two posts C(±1.09, 0, 0.12) | posts C(±1.09, −0.05, 0.12) **and** either (a) panel raised to a gate arch, bottom ≥ 2.1 m (model change, recommended) or (b) the full box B(0, +0.10, 1.19, 0.26) with the sign moved beside the gate | **billboard violation:** the sign stands 0.35 m outside the gate across the whole gate width; the 1.20 m player (and the leading path) passes between the posts **through the panel**. A full box would close the gate, so the sign must become an arch or move (Q-086) |
+| `enclosure_sign` | −1.18…+1.18; −0.14…+0.35 — posts at x ±1.09, **panel between the posts from 0.99 m** up to 1.8 m | **B(0, +0.10, 1.19, 0.26)** (the whole sign) | — | decided 2026-09-27 (Q-086 (b)): the sign stands **beside** its gate (LAYOUT-033), so the whole sign is solid and no longer a billboard over the gate |
 | `map_board` | −1.07…+1.07; −0.14…+0.22 — panel from 0.73 m | two posts C(±1.0, 0, 0.14) | B(0, +0.04, 1.08, 0.19) | panel between the posts is not solid; today only the solid `map_board` cells stop the player (LAYOUT-017 must not rely on cells) |
 | `tree_round` | trunk ±0.37 (0.4–1.4 m); root flare r 0.72 at 0–0.2 m | C(0, 0, 0.35) | C(0, 0, 0.45) | trunk barely covered; the feet may overlap the flat roots (sparse woods) |
 | `tree_grove` | trunk ±0.26 below 0.9 m; branches from 0.9 m to −0.77…+0.65 at 1.4 m | C(0, 0, 0.35) | keep (only used in `dense` areas) — C(0, 0, 0.75) if ever used in a sparse area | low branches at head height |
@@ -394,6 +394,41 @@ close behind them), the garden gate opens when the player is within 2 m, buildin
 while the player passes, the moon door opens at nightfall. Closed gates are solid; open gates
 are walkable only as the rules allow (enclosure gates only while leading animals — GAME-RESCUE).
 
+**Enclosure signs stand beside the gate** (user decision 2026-09-27, Q-086 (b)): the
+`enclosure_sign` never stands in front of or over a gate. It stands outside the fence along
+it, on the path side, with ≥ 0.5 m between the sign and the gate post; its whole footprint
+(B(0, 0.10, 1.19, 0.26), solid) lies on walkable cells outside the gate opening and the
+≥ 1 m walkway in front of it (LAYOUT-032), clear of the info board and the food boxes, with
+a free place ≥ 1 m in front of it to look at it. The engine tries the side away from the
+enclosure's info board first (`scene::enclosure_sign_spot`). Indoor enclosures of the night
+house: a silhouette board above the glass door. Level 1: `board_hippo` and
+`hedge_hippo_nw` moved to make room at the hippo gate (GAME-LEVEL-1). The 22 m hiding-place
+rule and CAMV-008 are unchanged (tests green).
+
+**Doors are never blocked** (user request 2026-09-27): no prop, board, lamp or furniture
+stands in a door or gate opening or in the ≥ 1 m walkway in front of it (the player's body
+width); a sign that belongs to a door goes beside or above it (indoor enclosures of the
+night house: a silhouette board above the glass door, bottom 2.3 m). Known exception: the
+food-box row of level 1 (and the food storages of levels 2–3) stands in front of the
+closed, non-enterable storage door (Q-150).
+
+*Implementation (2026-09-27):* `zoo_core::scene::LevelScene::openings` lists every gate /
+door model with its opening and model widths; `Game::opening_open` decides: building doors
+of **enterable** buildings while the player is within 1.6 m of the door cell (doors of
+non-enterable buildings stay shut), enclosure gates (`gate_wood`, indoor `glass_door`) while
+the player leads animals (or carries one in its container) within 3 m — they stay open
+1.5 s behind the animals —, the garden gate within 2 m (proposal Q-102), the moon door with
+its barrier. The presentation eases the open amount (≈ 0.5 s open, 0.8 s close):
+`door_wood` / `gate_wood` swing as a whole by 90° (inwards / into the enclosure), the
+leaves of `garden_gate`, `glass_door` and `moon_door` open to their back. Collision is
+unchanged (door cells walkable, gate cells by the leading rule, the garden fence edges and
+the garden-bed / sign / tool footprints solid). Building models: `zookeeper_house`,
+`food_storage` (also `food_storage_2`, turned −90°, and `food_storage_3`), `food_hut`,
+`night_house`, `entrance_arch` replace the procedural boxes where footprint and door cell
+fit; `zookeeper_house_3` (7 × 6 m) stays procedural (with a `door_wood` in its gap) until a
+model fits. Entrance turnstiles: three `turnstile` units 0.2 m nearer the plaza than the
+README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -429,6 +464,8 @@ are walkable only as the rules allow (enclosure gates only while leading animals
 | LAYOUT-029 | Given a building with indoor enclosures (`indoor = true`), then each indoor enclosure's gate is edge-adjacent to an `interior` cell of the building, the building's `model_rect` contains the building rect and the indoor enclosures, and none of the enclosure's boards lies inside the building rect (Q-134). | unit |
 | LAYOUT-030 | Given every day level's `[[event_spot]]` list, then it has one `burglar_entry`, one `burglar_target` naming an existing building and one `burglar_hideout` of walkable grass reachable from the target, overlapping no hiding-place rect, scenery, garden or path (Q-139). | unit |
 | LAYOUT-031 | Given every gate/door opening in the joined zoo (enclosure gates, garden gate, building doors, night-house doors, entrance, barrier gates, moon door), then a gate/door model is placed that exactly fills the opening (no gap > 5 cm, no overlap with posts), and it opens/closes per the rules. | unit |
+| LAYOUT-032 | Given every gate/door opening in the joined zoo (LAYOUT-031), then no prop, board, lamp, item or furniture footprint lies in the opening or in the ≥ 1 m walkway in front of it, and a sign that belongs to a door is beside it or above it (bottom above the opening height); the only allowed exception is the food-box row in front of the non-enterable food storage doors (Q-150). | unit |
+| LAYOUT-033 | Given every outdoor enclosure gate of the joined zoo (levels 1–3, `night_1`), then its `enclosure_sign` stands beside the gate — ≥ 0.5 m from the gate post along the fence (centre ≥ 2.69 m from the gate centre), ≤ 5 m away — and the gate's 1 m walkway has no collider; the sign's footprint lies on walkable cells clear of the info board and the food boxes (user decision 2026-09-27, Q-086 (b)). | unit |
 
 ## Open questions
 
@@ -441,3 +478,4 @@ are walkable only as the rules allow (enclosure gates only while leading animals
 - Q-057 answered: 1 m segment variants and the fill rule. Q-059 band joins, Q-060 enclosure fence and band placement (proposals), Q-061 front direction of props (open).
 - Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 enclosure sign form (panel over the gate). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
 - Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-069 (answered) `[level] missions`. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).
+- Q-150 food boxes in front of the food storage doors (exception to "Doors are never blocked", LAYOUT-032). Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.

@@ -453,6 +453,19 @@ food = "eucalyptus"
 pos = [38.66, 34.6]
 facing = "-x"
 
+# ================================================================ items
+# Bed of level 2 (Q-141 answered, option b): the child sleeps here after level 2's nightfall
+# (the 🛏 icon offers the nearest unlocked bed, GAME-NIGHT rule 3). Same fields as level-1.toml
+# bed_l1. Outdoors, against the south wall of food_storage_2 on the north row of path_l2_ring_s;
+# the 2 m south of it stay free. Shelter over it = proposal Q-152 (no model id yet).
+[[item]]
+id = "bed_l2"
+kind = "bed"
+pos = [42.0, 26.5]            # bed 2.0 x 1.0 m, headboard east (x 41.0 .. 43.0, z 26.0 .. 27.0), foot of the storage wall
+facing = "-z"                 # used from its long south side (yaw 0)
+stand = [42, 25]              # cell centre (42.5, 25.5), 1.1 m in front of the bed, on path_l2_ring_s
+notes = "Child-size bed with the blue star blanket (kit_bedroom `bed`, same as bed_l1) against the south wall of food_storage_2; interacting at night -> sleep -> next morning (GAME-NIGHT rule 3, Q-141 b)."
+
 # ================================================================ enclosure features
 # Same data shape as level-1 [[enclosure_feature]] (proposal Q-085): not elements, cells stay solid.
 [[enclosure_feature]]

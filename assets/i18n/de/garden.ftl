@@ -14,3 +14,7 @@ garden-carrot-klasse3 = In diesem Beet wachsen Karotten. Oben siehst du nur die 
 garden-potato-klasse1 = Hier wachsen Kartoffeln.
 garden-potato-klasse2 = Hier wachsen Kartoffeln. Sie liegen unter der Erde.
 garden-potato-klasse3 = In diesem Beet wachsen Kartoffeln. Die Knollen liegen unter der Erde. Oben wachsen Blätter und kleine weiße Blüten.
+
+## Harvest and treats (GAME-GARDEN §3–§6): short feedback bubbles
+garden-basket-full = Der Korb ist voll!
+garden-treat-yum = Mmh, lecker!

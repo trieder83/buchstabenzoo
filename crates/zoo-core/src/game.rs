@@ -107,6 +107,24 @@ pub enum GameEvent {
     MoonDoor {
         into_night_zoo: bool,
     },
+    /// A plant was harvested into the basket (GAME-GARDEN §3).
+    Harvested {
+        spot: String,
+        treat: crate::garden::Treat,
+        count: u32,
+    },
+    /// The basket is full: the plant stays (GARD-003).
+    BasketFull,
+    /// An animal at home ate a garden treat (GAME-GARDEN §6).
+    TreatEaten {
+        animal: String,
+        treat: crate::garden::Treat,
+    },
+    /// It does not like that treat: it sniffs and turns away, the treat stays.
+    TreatRefused {
+        animal: String,
+        treat: crate::garden::Treat,
+    },
     /// The player picked up a carryable item (the fish bowl).
     ItemTaken {
         id: String,
@@ -211,12 +229,27 @@ pub enum Target {
     MoonDoor {
         id: String,
     },
+    /// A ripe plant in a garden bed: pull it out (GAME-GARDEN §3).
+    Plant {
+        spot: String,
+    },
+    /// A garden sign: its word in the text panel (GARD-009).
+    GardenSign {
+        bed: String,
+    },
+    /// An animal at home, from its fence, with a treat in the basket (GAME-GARDEN §6).
+    Treat {
+        animal: &'static str,
+    },
 }
 
 impl Target {
     /// Targets with a reading panel (info boards, food boxes) open it by themselves.
     pub fn is_reading(&self) -> bool {
-        matches!(self, Target::InfoBoard { .. } | Target::FoodBox { .. })
+        matches!(
+            self,
+            Target::InfoBoard { .. } | Target::FoodBox { .. } | Target::GardenSign { .. }
+        )
     }
 
     /// Short id for the host UI (button icon).
@@ -231,6 +264,9 @@ impl Target {
             Target::PutDown => "put_down",
             Target::Bed => "bed",
             Target::MoonDoor { .. } => "moon_door",
+            Target::Plant { .. } => "plant",
+            Target::GardenSign { .. } => "garden_sign",
+            Target::Treat { .. } => "treat",
         }
     }
 }
@@ -264,6 +300,20 @@ pub enum Interaction {
     Sleep,
     /// Went through the moon door.
     MoonDoor { into_night_zoo: bool },
+    /// Harvested a plant (`count` treats into the basket; 0 = the basket is full).
+    Harvest {
+        spot: String,
+        treat: crate::garden::Treat,
+        count: u32,
+    },
+    /// A garden sign: the word (Fluent key) and the reading-level sentence key.
+    GardenSign { bed: String, key: String },
+    /// Gave a treat to an animal at home.
+    Treat {
+        animal: &'static str,
+        treat: crate::garden::Treat,
+        accepted: bool,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -466,7 +516,18 @@ pub struct Game {
     pub bowl: Option<Bowl>,
     /// Time of day (GAME-NIGHT).
     pub daytime: Daytime,
+    /// Vegetable gardens: plant stages and the treat basket (GAME-GARDEN).
+    pub garden: crate::garden::Garden,
+    /// The treat offered at a fence (the child's choice; default: the first one in the basket).
+    pub treat_choice: Option<crate::garden::Treat>,
 }
+
+/// A building door opens while the player is this close to the door cell (m).
+pub const DOOR_OPEN_M: f32 = 1.6;
+/// An enclosure gate opens while the player leads animals this close to it (m).
+pub const GATE_OPEN_M: f32 = 3.0;
+/// The garden gate opens by itself within this distance (m, proposal Q-102).
+pub const GARDEN_GATE_OPEN_M: f32 = 2.0;
 
 /// Walking speed factor while carrying an animal in its container (proposal Q-084, RESC-023).
 pub const CARRY_ANIMAL_SPEED_FACTOR: f32 = 0.9;
@@ -531,6 +592,8 @@ impl GameEvent {
                 | GameEvent::SleepStarted
                 | GameEvent::Morning
                 | GameEvent::MoonDoor { .. }
+                | GameEvent::Harvested { .. }
+                | GameEvent::TreatEaten { .. }
         )
     }
 }
@@ -619,6 +682,7 @@ impl Game {
                 water: false,
                 fish: false,
             });
+        let garden = crate::garden::Garden::new(&data);
         let level = Level::new(data);
         player.y = level.ground_height(player.pos);
         for a in &mut animals {
@@ -668,6 +732,8 @@ impl Game {
             autosave: Autosave::default(),
             bowl,
             daytime: Daytime::default(),
+            garden,
+            treat_choice: None,
         })
     }
 
@@ -1145,6 +1211,56 @@ impl Game {
                 }
             }
         }
+        // vegetable gardens (GAME-GARDEN): ripe plants, the signs
+        for sp in &data.plant_spots {
+            let ripe = self
+                .garden
+                .plant(&sp.id)
+                .is_some_and(|p| p.stage() == crate::garden::Stage::Ripe);
+            if ripe && self.part_unlocked(sp.part) {
+                out.push(Interactable {
+                    target: Target::Plant {
+                        spot: sp.id.clone(),
+                    },
+                    point: sp.pos(),
+                    readable: None,
+                });
+            }
+        }
+        for b in &data.garden_beds {
+            if self.part_unlocked(b.part) {
+                out.push(Interactable {
+                    target: Target::GardenSign { bed: b.id.clone() },
+                    point: Vec2::from(b.sign_pos),
+                    readable: Some(facing_vec(&b.sign_facing)),
+                });
+            }
+        }
+        // treats: at the fence of an animal at home (GAME-GARDEN §6)
+        if self.garden.basket.total() > 0 && !self.is_leading() {
+            let p = self.player.pos;
+            for a in &self.animals {
+                if a.state != AnimalState::InEnclosure || !self.in_scope(a) {
+                    continue;
+                }
+                let r = data.elements[a.enclosure].rect;
+                let min = Vec2::new(r.x as f32, r.z as f32);
+                let max = min + Vec2::new(r.w as f32, r.d as f32);
+                let q = p.clamp(min, max);
+                if q == p
+                    || out
+                        .iter()
+                        .any(|it| it.target == Target::Treat { animal: a.id() })
+                {
+                    continue; // (inside: not at the fence)
+                }
+                out.push(Interactable {
+                    target: Target::Treat { animal: a.id() },
+                    point: q,
+                    readable: None,
+                });
+            }
+        }
         if self.is_leading() || self.carrying_animal() {
             for e in data.elements_of(ElementType::Enclosure) {
                 if let Some(g) = e.gate {
@@ -1269,6 +1385,108 @@ impl Game {
             Target::MoonDoor { id } => self
                 .go_through_moon_door(&id)
                 .map(|into_night_zoo| Interaction::MoonDoor { into_night_zoo }),
+            Target::Plant { spot } => self.harvest(&spot),
+            Target::GardenSign { bed } => {
+                let b = self.level.data.garden_beds.iter().find(|b| b.id == bed)?;
+                Some(Interaction::GardenSign {
+                    bed: b.id.clone(),
+                    key: b.sign_key.clone(),
+                })
+            }
+            Target::Treat { animal } => {
+                let treat = self.offered_treat()?;
+                let accepted = self.give_treat(animal, treat)?;
+                Some(Interaction::Treat {
+                    animal,
+                    treat,
+                    accepted,
+                })
+            }
+        }
+    }
+
+    /// Harvests a ripe plant into the basket (GARD-001/002); a full basket refuses and the
+    /// plant stays (GARD-003). The hands are not needed (GARD-007).
+    pub fn harvest(&mut self, spot: &str) -> Option<Interaction> {
+        use crate::garden::HarvestError;
+        match self.garden.harvest(spot, &mut self.rng) {
+            Ok((treat, count)) => {
+                self.events.push(GameEvent::Harvested {
+                    spot: spot.to_owned(),
+                    treat,
+                    count,
+                });
+                Some(Interaction::Harvest {
+                    spot: spot.to_owned(),
+                    treat,
+                    count,
+                })
+            }
+            Err(HarvestError::BasketFull) => {
+                self.events.push(GameEvent::BasketFull);
+                let treat = self.garden.plant(spot)?.treat;
+                Some(Interaction::Harvest {
+                    spot: spot.to_owned(),
+                    treat,
+                    count: 0,
+                })
+            }
+            Err(_) => None,
+        }
+    }
+
+    /// The treat offered at a fence: the child's choice if the basket has it, else the first
+    /// one in the basket.
+    pub fn offered_treat(&self) -> Option<crate::garden::Treat> {
+        let b = &self.garden.basket;
+        self.treat_choice.filter(|t| b.count(*t) > 0).or_else(|| {
+            crate::garden::Treat::ALL
+                .into_iter()
+                .find(|t| b.count(*t) > 0)
+        })
+    }
+
+    /// Gives a treat to an animal at home (GAME-GARDEN §6, GARD-005): it eats it if it likes
+    /// it (the treat leaves the basket), else it refuses and the treat stays. `None` if the
+    /// animal is not at home or the basket has no such treat.
+    pub fn give_treat(&mut self, animal: &str, treat: crate::garden::Treat) -> Option<bool> {
+        let i = self.animal_index(animal)?;
+        if self.animals[i].state != AnimalState::InEnclosure || self.garden.basket.count(treat) == 0
+        {
+            return None;
+        }
+        let accepted = crate::garden::likes(animal, treat);
+        let id = self.animals[i].id().to_owned();
+        if accepted {
+            self.garden.basket.take(treat);
+            self.events
+                .push(GameEvent::TreatEaten { animal: id, treat });
+        } else {
+            self.events
+                .push(GameEvent::TreatRefused { animal: id, treat });
+        }
+        // it turns to the child at the fence
+        let to = self.player.pos - self.animals[i].pos;
+        if to.length() > 1e-3 {
+            self.animals[i].facing = to.normalize();
+        }
+        Some(accepted)
+    }
+
+    /// Whether a gate / door model should stand open now (LAYOUT-031, GAME-LAYOUT "Gates and
+    /// doors"): building doors while the player passes (enterable buildings), enclosure gates
+    /// while the player leads animals (or carries one) near them, the garden gate while the
+    /// player is within 2 m, the moon door while its barrier is open.
+    pub fn opening_open(&self, o: &crate::scene::Opening) -> bool {
+        use crate::scene::OpeningKind as K;
+        let d = self.player.pos.distance(o.center);
+        match &o.kind {
+            K::BuildingDoor { enterable, .. } => *enterable && d <= DOOR_OPEN_M,
+            K::EnclosureGate { .. } | K::GlassDoor { .. } => {
+                (self.is_leading() || self.carrying_animal()) && d <= GATE_OPEN_M
+            }
+            K::GardenGate { .. } => d <= GARDEN_GATE_OPEN_M,
+            K::MoonDoor { barrier } => self.level.is_barrier_open(barrier),
         }
     }
 
@@ -1363,6 +1581,7 @@ impl Game {
             }
         }
         self.check_gate();
+        self.garden.update(dt);
         self.update_followers(dt);
         self.update_wander(dt);
         self.update_daytime(dt);
@@ -1582,7 +1801,15 @@ impl Game {
     }
 
     fn update_followers(&mut self, dt: f32) {
-        let p = self.player.pos;
+        // animals never enter a garden: while the child is inside, they come to its gate
+        // and wait outside (proposal Q-102)
+        let p = self
+            .level
+            .data
+            .gardens
+            .iter()
+            .find(|g| !g.animals_enter && g.rect.contains(cell_of(self.player.pos)))
+            .map_or(self.player.pos, |g| g.gate_center() + g.gate_out() * 0.9);
         let player_cell = cell_of(p);
         let fp = self.follow_params;
         for a in &mut self.animals {

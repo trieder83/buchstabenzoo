@@ -241,9 +241,9 @@ Solid = every type except `path` and `hiding_place`.
 | `path_leaves_trail` | path (side) | 18, 34, 1, 9 | 1 m stepping-stone trail straight through `trees_ne` from the north edge of the meadow to the bench at the leaf pile; keeps `loc_leaves` ≤ 10 s from `loc_meadow` (7.7 s) after the leaf pile moved into the north-east corner (FIX-056). |
 | `bench_leaves` | decoration (bench) | 19, 43, 1, 1 | Small one-seat bench at the south-west edge of the leaf pile; the rake leans on it. Its solid cell keeps the panda's wander area ≥ 22 m from the panda gate (FIX-056). |
 | `enc_hippo` | enclosure | 9, 11, 11, 12 | Hippo enclosure; gate (9, 15, 1, 2) on the west fence; square tiled pool `hippo_pool` (x 11–18, z 15–21, `[[enclosure_feature]]`, see "Hippo enclosure pool"), wooden hut (area x 15–18, z 11–14 reserved), edge stones; `home_wander_on = ["grass", "water"]`. |
-| `hedge_hippo_nw` | decoration (hedge) | 8, 19, 1, 4 | Tall hedge left of the hippo gate (sight blocker for the cave). |
+| `hedge_hippo_nw` | decoration (hedge) | 8, 21, 1, 2 | Tall hedge north of the hippo board (sight blocker for the cave); 2 cells shorter since 2026-09-27 so the enclosure sign stands beside the gate (LAYOUT-033). |
 | `hedge_hippo_sw` | decoration (hedge) | 8, 11, 1, 4 | Tall hedge right of the hippo gate (sight blocker for the cave). |
-| `board_hippo` | decoration (info_board) | 8, 17, 1, 1 | Info board of `enc_hippo`, next to the gate. |
+| `board_hippo` | decoration (info_board) | 8, 20, 1, 1 | Info board of `enc_hippo`, north of the gate beyond the enclosure sign (moved 3 m north 2026-09-27, LAYOUT-033). |
 | `rock_hill_w` | landmark (rock_hill) | 9, 0, 1, 8 | Rock hill, west flank of the cave mouth. |
 | `rock_hill_back` | landmark (rock_hill) | 10, 0, 3, 5 | Rock hill, back wall of the cave. |
 | `rock_hill_e` | landmark (rock_hill) | 13, 0, 9, 8 | Rock hill, main mass east of the cave. |
@@ -395,10 +395,10 @@ animal spot. Shortest distance (any surface) given for reference.
 | zebra info board → panda info board | 16.1 m | 8.6 s |
 | pond (hippo, north shore) → panda info board | 11.8 m | 7.2 s |
 | panda info board → river (zebra) | 10.8 m | 7.2 s |
-| river → hippo info board | 14.4 m | 7.7 s |
-| hippo info board → cave (panda) | 11.2 m | 6.1 s |
+| river → hippo info board | 11.4 m | 6.2 s |
+| hippo info board → cave (panda) | 14.2 m | 7.7 s |
 | cave → food storage door | 10.1 m | 6.1 s |
-| hippo info board → food storage door | 12.2 m | 6.6 s |
+| hippo info board → food storage door | 15.2 m | 8.2 s |
 | spawn → map board | 6.4 m | 3.6 s |
 | bridge (`path_bridge_w`) → garden gate (inside, cells (7, 36), (8, 36)) | 6.0 m | 5.6 s |
 | garden gate → farthest harvest place (`stand` of `potato_w2` / `potato_e2`) | 8.0 m | 4.1 s |
@@ -410,7 +410,7 @@ animal spot. Shortest distance (any surface) given for reference.
 All neighbour pairs are ≤ 10 s (longest listed neighbour pair: zebra info board → panda info
 board 8.6 s. FIX-056: the pond's hippo spot moved to the north shore, so the pond is now the
 neighbour of the panda board, not of the zebra board (zebra board → pond 12.6 s, not a
-neighbour pair); river → hippo info board 7.7 s;
+neighbour pair); river → hippo info board 6.2 s;
 the four new rows are scratch estimates of 2026-09-27 — the LAYOUT-L1-005 test prints the exact
 values; panda board → moon door is the tightest). The moon door is ≈ 24 s from the bed on
 purpose: the two night choices are separate places (the HUD shows both icons, GAME-NIGHT rule 3).
@@ -596,6 +596,10 @@ Findings for level 1 (scene assembly of 2026-09-26 + exported `.glb` files):
   x = −9 or on the way to the gate). A full box would block the gate. Proposal (Q-086): make
   it a **gate arch** — posts beside the opening, panel bottom ≥ 2.1 m; beside the gate there
   is no room at the hippo gate (hedges `hedge_hippo_sw/nw` and `board_hippo` fill x = 8).
+  **Decided 2026-09-27 (user, option (b), LAYOUT-033):** the sign stands **beside** the gate,
+  solid as a whole; at the hippo gate `board_hippo` moved 3 m north to (8, 20) and
+  `hedge_hippo_nw` is 2 cells shorter (8, 21, 1, 2), so the sign stands between the gate and
+  the board (x 8.65, z ≈ 18.7).
 - **Map board:** only its posts are solid; it is safe today only because its two cells are
   solid. Proposed box footprint in GAME-LAYOUT.
 - **Info boards:** solid cell + box; the panel overhangs the box by ≤ 0.07 m (proposed box
@@ -857,3 +861,4 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 - Q-047 which food boxes stand in the storage in level 1.
 - Q-024 walking speed (answered by GAME-PLAYER §6: 1.93 m/s path, 0.98 m/s grass).
 - Q-056 answered (axes: level x east / z north, world = (x, 0, −z)). Q-057 answered (fences, hedges, walls: 2 m + 1 m segments, bands as one row on the centre line — GAME-LAYOUT "Modular edges", LAYOUT-013). Q-059 band joins, Q-060 fence/band placement (proposals).
+- Q-147 string-light spans (≤ 6 m, stretched model); Q-148 entrance arch name board text (`sign-zoo-entrance`); Q-150 food boxes in front of the food storage door (GAME-LAYOUT "Doors are never blocked").

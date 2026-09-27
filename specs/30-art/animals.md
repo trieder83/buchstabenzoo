@@ -61,7 +61,7 @@ animals are scaled up (user decision). Height = top of head/ears standing; the p
 | `lion` | 1.5 m | model v1 (1.53 m, withers 1.02 m) |
 | `snow_fox` | **0.9 m** (was 0.6) | model v1 (0.90 m, withers 0.62 m) |
 | `hedgehog` | 0.6 m (top of the spines), ≈ 0.75 m long | night; model v1 (0.58 m) |
-| `bat` | 0.8 m perched incl. ears | night; model v1 (0.80 m); wingspan in `fly` ≈ 1.1 m (brief proposal 1.8 m, Q-144) |
+| `bat` | 0.8 m perched incl. ears | night; model v1 (0.80 m); wingspan in `fly` ≈ 1.1 m (v1 kept, Q-144 answered) |
 | `owl` | 1.0 m perched | night; model v1 (1.01 m) |
 | `raccoon` | 0.9 m (ears), back 0.55 m | night; model v1 (0.91 m, 1.2 m long incl. tail) |
 | `badger` | 0.7 m, 1.1 m long | night; model v1 (0.70 m, 1.08 m long) |
@@ -249,7 +249,7 @@ firing §4.8, loop seams, sampling) are the same as ART-RIG.
     legs folded, spine curled to one side, head resting on the ground, tail round); kiwi sits
     down with the beak tucked back into its feathers; tarsier crouches with the head bowed.
     Animals have no eyelids (no expression swap), so sleeping eyes are hidden by the pose
-    where possible; whether the renderer skips `eye_glow` during `sleep`: Q-146.
+    where possible; the renderer skips `eye_glow` while `sleep` plays; no eyelids for v1 (Q-146 answered).
   - Owl `look` (one-shot): the owl's big head turn left and right (idle variation).
 - Other clips as the day animals (`eat` `eat_bite` 22, `happy` `happy_peak` 15, `refuse`).
 
@@ -294,5 +294,5 @@ Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
 - Q-108 Game scale of the ambient animals (duckling, frog).
 - Q-122 Ambient models: manifest entries, concept gate, which AANI tests apply.
 - Q-143 answered 2026-09-27: night animals with the comic sizes of their briefs, `sleep` and `eye_glow` in every animal's required set.
-- Q-144 Bat wingspan in `fly` (≈ 1.1 m model v1 vs. 1.8 m brief proposal).
-- Q-146 Sleeping animals: no eyelids; `eye_glow` during `sleep`.
+- Q-144 answered 2026-09-27: bat wingspan in `fly` stays ≈ 1.1 m for v1.
+- Q-146 answered 2026-09-27: no eyelids for v1; the renderer skips `eye_glow` while `sleep` plays.

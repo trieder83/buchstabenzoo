@@ -134,7 +134,12 @@ fn play_020_availability_sweep_all_boards_and_boxes() {
         .into_iter()
         .filter(|i| i.readable.is_some())
         .collect();
-    assert_eq!(targets.len(), 3 + 10, "3 info boards and 10 food boxes");
+    // (the 4 garden signs of `garden_veg` are read like boards, GAME-GARDEN 1, GARD-009)
+    assert_eq!(
+        targets.len(),
+        3 + 10 + 4,
+        "3 info boards, 10 food boxes, 4 garden signs"
+    );
     let ang = |u: Vec2, v: Vec2| {
         u.normalize()
             .dot(v.normalize())

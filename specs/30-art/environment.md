@@ -251,7 +251,9 @@ tints them with blue moonlight and adds lamp point lights and emissive areas.
    `sign_panel` face (the other animals' silhouettes are derived from their concept side
    views by the same script); an enclosure whose silhouette file is missing keeps a blank
    panel. The "Futter" board is a 3.4 × 1.2 × 0.08 m wooden board (placeholder box)
-   on the south facade, bottom 1.75 m, centred over the box row; its text is a generic
+   on the south facade, bottom **2.3 m** (above the 2.1 m door opening of the `food_storage`
+   model, in its gable — README_night open point 2, user request 2026-09-27), centred over
+   the box row; its text is a generic
    **text texture**: zoo-core lists text decals (Fluent key + pixel size), the host draws the
    current-language string into an offscreen 2D canvas (system bold rounded sans, dark on
    cream with an outline) and hands the RGBA bytes to Rust, which uploads them; it is redrawn
@@ -300,3 +302,5 @@ tints them with blue moonlight and adds lamp point lights and emissive areas.
 - Q-033 Food storage locked? Q-044 Hiding places in layout and mockups. Q-080 (answered) scenery data, Q-081 (answered) bamboo in the panda enclosure. Q-098 `hut_wood` area of the hippo enclosure (`kind = "hut"`). Q-099 remaining invisible walls (`map_board`, fallen tree).
 - Q-049 answered: high-angle game camera (GAME-PLAYER §2). Q-048 screen orientation. Q-052 FOV axis.
 - Q-056 answered: axes (model north = −Z, never mirrored). Q-057 answered: 1 m segment variants, fill rule. Q-059 band joins, Q-060 fence/band placement, Q-061 front direction of props (open).
+- Q-147 `string_lights` stretched to spans ≤ 6 m; Q-148 entrance arch board text; Q-149 `rock_hill` height vs. `loc_hilltop` perch; Q-151 `food_hut` "Futter" board; Q-152 shelter prop over `bed_l2`.
+- Q-153 `food_storage` (model) vs. `food_storage_building` (id here), kind `buildings`. Q-154 models not listed here yet (`door_wood`, `glass_door`, `turnstile`, `string_post`, `food_hut`, bedroom items, `kit_landmarks`, garden items).

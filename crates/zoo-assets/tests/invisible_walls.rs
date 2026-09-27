@@ -106,7 +106,7 @@ fn geometry(data: &LevelData) -> (Geometry, LevelScene, HashMap<&'static str, Ve
             continue;
         }
         if !sections.contains_key(p.model) {
-            let path = root().join(format!("assets/models/props/{}.glb", p.model));
+            let path = root().join(format!("assets/{}", zoo_core::scene::model_path(p.model)));
             let sec = std::fs::read(&path)
                 .ok()
                 .and_then(|b| Model::from_glb(&b).ok())

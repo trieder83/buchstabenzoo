@@ -251,3 +251,49 @@ test('NIGHT-014 performance + review shot: draw calls and frame time night vs. d
   expect(night.draws).toBeLessThanOrEqual(day.draws + 6);
   expect(errors).toEqual([]);
 });
+
+// NIGHT-016: sleeping works with the normal interact action next to the bed — `E` on the
+// desktop, the action button showing 🛏 on touch; away from the bed neither is bed-related.
+test('NIGHT-016: next to the bed, E starts sleeping (desktop); away from it nothing happens', async ({ page }) => {
+  const errors = await start(page);
+  await toNight(page);
+  const stand = await app<number[]>(page, 'bed_stand');
+  expect(stand.length).toBe(2);
+  // away from the bed (on the plaza): E does nothing bed-related
+  await goto(page, 0.5, 4.5);
+  await page.keyboard.press('KeyE');
+  expect(await app<string>(page, 'daytime')).toBe('night');
+  await goto(page, stand[0], stand[1]);
+  expect(await app<string>(page, 'player_inside')).toBe('zookeeper_house_1');
+  const bed = await app<number[]>(page, 'bed_point');
+  await app(page, 'debug_face_point', bed[0], bed[1]);
+  await nextFrames(page, 2);
+  expect(await app<string>(page, 'target_kind')).toBe('bed');
+  await expect(page.locator('#hint .icon')).toHaveText('🛏️');
+  await page.keyboard.press('KeyE');
+  expect(await app<string>(page, 'daytime')).toBe('sleeping');
+  expect(errors).toEqual([]);
+});
+
+test.describe('touch', () => {
+  test.use({ viewport: { width: 540, height: 1170 }, hasTouch: true, isMobile: true });
+
+  test('NIGHT-016: next to the bed, the 🛏 action button starts sleeping (touch)', async ({ page }) => {
+    const errors = await start(page);
+    await toNight(page);
+    // first touch: touch controls on (PLAY-014)
+    await page.touchscreen.tap(270, 400);
+    const stand = await app<number[]>(page, 'bed_stand');
+    await goto(page, stand[0], stand[1]);
+    const bed = await app<number[]>(page, 'bed_point');
+    await app(page, 'debug_face_point', bed[0], bed[1]);
+    await nextFrames(page, 3);
+    const act = page.locator('#act');
+    await expect(act).toBeVisible();
+    await expect(act).toHaveText('🛏️');
+    await act.tap();
+    await nextFrames(page, 2);
+    expect(await app<string>(page, 'daytime')).toBe('sleeping');
+    expect(errors).toEqual([]);
+  });
+});

@@ -320,3 +320,31 @@ test.describe('touch phone portrait', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test('CAMV-022: inside the zookeeper house in first person the roof and its ceiling stay; the zoo view hides the roof', async ({ page }) => {
+  const errors = await start(page);
+  // into the house (door in the east facade), in the middle of the room
+  await goto(page, -7.5, 2.5);
+  await goto(page, -11.5, 2.5);
+  expect(await page.evaluate(() => window.__zoo!.app.player_inside())).toBe('zookeeper_house_1');
+  await page.evaluate(() => window.__zoo!.app.frame(0));
+  expect(await page.evaluate(() => window.__zoo!.app.region_hidden('zookeeper_house_1')), 'zoo view: roof hidden').toBe(true);
+  // face the door wall (east; the other walls have windows whose panes show a painted sky)
+  await page.evaluate(() => window.__zoo!.app.debug_face_point(-7, 2.5));
+  await page.keyboard.press('KeyV');
+  await glide(page, 1);
+  // look up as far as allowed: the ceiling fills the top of the view, no sky
+  await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    a.look_drag(0, -2000);
+    a.frame(0);
+  });
+  expect(await page.evaluate(() => window.__zoo!.app.region_hidden('zookeeper_house_1')), 'first person: roof drawn').toBe(false);
+  expect(await skyFraction(page, 0.1)).toBeLessThan(0.02);
+  await page.screenshot({ path: path.join(shots, 'screenshot_camera_ceiling.png') });
+  await page.keyboard.press('KeyV');
+  await glide(page, 0);
+  await page.evaluate(() => window.__zoo!.app.frame(0));
+  expect(await page.evaluate(() => window.__zoo!.app.region_hidden('zookeeper_house_1')), 'back in the zoo view: hidden again').toBe(true);
+  expect(errors).toEqual([]);
+});

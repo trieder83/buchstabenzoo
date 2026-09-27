@@ -8,7 +8,10 @@ pub mod anim;
 pub mod model;
 
 pub use anim::{Pose, Skeleton};
-pub use model::{Clip, ImageData, LoadError, Material, MeshData, Model, SubMesh};
+pub use model::{
+    linear_to_srgb, Clip, Empty, Face, ImageData, LoadError, Material, MeshData, Model, NodePart,
+    SubMesh,
+};
 
 #[cfg(feature = "pipeline")]
 use std::collections::BTreeMap;

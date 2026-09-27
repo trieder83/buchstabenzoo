@@ -42,7 +42,8 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
    circle around her).
 3. **Two choices, shown without reading** (icons + audio, GAME-PLAYER UX rules):
    - **🛏 Sleep:** a bed in the **zookeeper house** (enterable building, roof disappears
-     inside — GAME-PLAYER §2). Interacting with the bed → the child's character lies down,
+     inside — GAME-PLAYER §2); after level 2 the bed `bed_l2` at level 2's food storage
+     (GAME-LEVEL-2). At nightfall the 🛏 icon offers the **nearest unlocked bed** (Q-141 b). Interacting with the bed → the child's character lies down,
      short dream/fade → **next morning** in the day zoo (free play; care feeding and babies
      continue, GAME-FAMILY). The game is saved.
    - **🌙 Moon door:** a big door with a moon sign (the **night-zoo gate**, a new barrier of
@@ -103,6 +104,7 @@ Where the night lives in the level data (owner `zoo-level-designer`; details in 
 | Thing | Data | Where |
 |---|---|---|
 | Bed (rule 3) | `[[item]] bed_l1`, `kind = "bed"`, pos (−12.0, 1.5), stand (−12, 2) | level 1, inside the new enterable `zookeeper_house_1` (x −14…−9, z 0…4, door (−9, 2)) west of the entrance plaza; bedroom props (`night_table`, `window_moon`, `rug_round`, `toy_chest`) as `[[prop]]`, bedside lamp `[[light]] kind = "indoor"` |
+| Bed after level 2 (rule 3) | `[[item]] bed_l2`, `kind = "bed"`, pos (42.0, 26.5), stand (42, 25) | level 2, outdoors against the south wall of `food_storage_2` (GAME-LEVEL-2 "Bed of level 2", Q-141; shelter Q-152) |
 | Moon door (rule 3) | barrier `moon_door`, `kind = "moon_door"`, `transition = "level_1->night_1"`, `unlock_after = "level_1"`, `opens_at = "night"` | level 1, west zoo wall x −24…−23, z 29…30, reached by `path_moon`; open every night after level 1's nightfall, closed by day, never removed (Q-133) |
 | Night zoo (rule 4) | `assets/levels/night-1.toml`, `[level] time = "night"`, `[[entry]] entry_n1_moon` (−25, 29…30) | west of level 1, bounds (−72, 6, 48, 48) — GAME-LEVEL-NIGHT-1 |
 | Night house (rule 4) | `night_house` (enterable hall, `model_rect`) + `enc_n1_hedgehog` / `enc_n1_bat` / `enc_n1_owl` (`indoor = true`), boards outside; indoor lights `#E8735A` / `#5B7FE0` (Q-116) | `night_1`, north-east (Q-134) |
@@ -138,11 +140,14 @@ Rules for the implementation that follow from the data:
   (`Level::exit_barriers_of` / `barriers_unlocked_by` skip `kind = "moon_door"`). Walking
   through the open door enters `night_1` (joined like the day levels); near the door the
   interact button shows 🌙 and takes the child through it. Night-animal eyes shine within
-  `LANTERN_RADIUS_M` = 2.5 m (horizontal) of the player (NIGHT-006; the visible lantern light
-  below is smaller, see Q-142). Leaving the night zoo is walking
+  `LANTERN_RADIUS_M` = 2.5 m (horizontal) of the player (NIGHT-006; the visible lantern
+  ground pool has the same 2.5 m radius, Q-142, NIGHT-018). Leaving the night zoo is walking
   back. In the morning a night animal that was following goes back to its hiding place.
 - **Bed** (`[[item]] kind = "bed"`, else the bed placeholder of an enterable zookeeper house):
   interactable at night (🛏) → sleep → morning (autosave on `SleepStarted` and `Morning`).
+  Sleeping uses the normal **interact action** (user decision 2026-09-27): standing next to
+  the bed, desktop `E` (or Space/Enter) and the touch action button (🛏 icon) start sleeping —
+  no extra menu or text needed.
   *Proposal Q-140:* while a visited night level is unfinished, the bed also works **by day**
   and the child sleeps until the evening (dusk → night) — otherwise a child who slept before
   the night zoo was done would never get another night (level 2 waits for `night_1`, Q-078).
@@ -151,25 +156,35 @@ Rules for the implementation that follow from the data:
 - **Renderer** (`zoo_render::night`): the night grading is a colour ramp (mid colours → deep
   blue `(0.20, 0.27, 0.66)`, light colours → pale lavender, half the chroma kept, one darker
   shadow tone ×0.74, never below `#2B3566`); dusk multiplies warm orange / violet. Point
-  lights with a hard edge: the player's lantern (centre 1.4 m above her feet, radius 2.3 m —
-  she is always lit, ground pool ≈ 1.8 m) + the 8 lamps nearest to the camera target within
+  lights with a hard edge: the player's lantern (centre 1.4 m above her feet, radius ≈ 2.87 m —
+  she is always lit, ground pool 2.5 m, Q-142) + the 8 lamps nearest to the camera target within
   22 m; the next 24 lamps are **light-pool decals** (flat pools evaluated on the ground in the
   same shader, no extra draw call — Q-114); farther lamps stay emissive only. Lamp light is
   pulled 35 % towards a flat warm cream (style frame); coloured indoor lights (night house
   blue `#5B7FE0` / red-orange `#E8735A`) keep their colour. Emissive surfaces (instance colour
-  alpha 2): lamp glass `#FFD66B`, lit windows `#FFC857` (placeholder panes on every building
-  facade), the moon sign `#FFF4C9` + rim `#8FB8FF`, eyeshine `#E6F7A0`, fireflies `#EFFF8A`.
+  alpha 2): lamp glass `#FFD66B`, lit windows `#FFC857` (placeholder panes on procedural building
+  facades; building models bring their own `*_glow` windows), the moon sign `#FFF4C9` + rim `#8FB8FF`, eyeshine `#E6F7A0`, fireflies `#EFFF8A`.
   Signs (decals) are lit by their lamp. Water: stars reflected as twinkling 4-point
   sparkles, lamp pools on the water. Close views: dark-blue sky gradient + haze
   (`#1E2A5A` → `#3B4C8C`), outlined comic moon, a few stars, blue clouds (Q-126).
-- **Placeholders until the models exist:** lantern posts / string lights / wall lamps / board
-  lamps (post + glowing box), the moon door (stone pillars with lanterns, beam, moon sign;
-  blue plank leaves hidden while open), bed and bedroom furniture (`[[prop]]`), the hand
-  lantern (a glowing box in the left hand), night animals (hedgehog, bat, owl as coloured box
-  shapes with big eyes that shine inside the lantern radius). Since 2026-09-27 all 10
-  night-animal models exist and every animal model (day and night) has the `eye_glow`
-  material slot (ART-ANIMALS "Rig conventions" §4 and "Night animals": `sleep`,
-  `fly`/`perch`/`hang`, `fly_height`); the renderer does not use them yet (follow-up).
+- **Models (since 2026-09-27, `kit_night` / `kit_bedroom` / `kit_landmarks` / the night
+  animals; TECH-ARCH "Multi-node assets"):** `lantern_post`, `string_lights` (spans ≤ 6 m
+  from post to post, the cord stretched to the span — proposal Q-147 — and a `string_post`
+  at the far end), `wall_lamp` (on the facade, 1.6 m), `board_lamp` (on the board's socket),
+  the `hand_lantern` in her left hand (its grip on the hand), the `moon_door` (its leaves
+  swing open to the back at nightfall), bed, desk with the note, night table with the
+  bedside lamp, moon window (its night sky only at night), rug, toy chest, key box with the
+  cart key, and the night-1 landmarks (windmill with turning sails, hollow / old / crooked /
+  fir tree, rock hill, potting bench, telescope, mushroom patch). Their `*_glow` slots
+  light up with the lamps (dusk on); lamp lights sit at the models' `light` empties. The
+  building models bring their own glowing windows and ceiling lamps (no placeholder panes).
+  Night animals are drawn with their models: `sleep` while asleep, the bat `hang`s and the
+  owl `perch`es at their perch, both `fly` `fly_height` (1.5 m) above the ground while they
+  follow (NIGHT-017); `eye_glow` shines inside the lantern radius and never while `sleep`
+  plays (Q-146 answered). The player's lantern light is a sphere of radius √(2.5² + 1.4²)
+  ≈ 2.87 m centred 1.4 m above her feet, so its hard-edged ground pool is 2.5 m = the
+  eyeshine radius (Q-142 answered, NIGHT-018). Placeholders (boxes) remain only as
+  fallbacks for missing models.
 - **Host:** 🛏 / 🌙 choice icons at night, the dusk / morning / welcome / night-complete
   cut-in texts per reading level (`night-*` keys), the dream fade while sleeping.
 
@@ -178,7 +193,7 @@ Rules for the implementation that follow from the data:
 | ID | Given / When / Then | Level |
 |---|---|---|
 | NIGHT-001 | Given the last day animal enters its enclosure, then after the celebration dusk starts once and reaches night within 10–12 s; it does not start earlier. | unit |
-| NIGHT-002 | Given night has fallen, then the moon door is open and the bed in the zookeeper house is interactable; before nightfall the moon door is closed. | unit |
+| NIGHT-002 | Given night has fallen, then the moon door is open and the unlocked bed (`bed_l1` in the zookeeper house; after level 2 also `bed_l2`, Q-141) is interactable; before nightfall the moon door is closed. | unit |
 | NIGHT-003 | Given the player interacts with the bed, then the character sleeps, the game is saved and the next morning starts in the day zoo with all day animals home. | e2e |
 | NIGHT-004 | Given the player walks through the open moon door, then the night zoo level `night_1` loads with its own missions, and walking back through the door returns to the day zoo at night. | e2e |
 | NIGHT-005 | Given the night zoo, then the player, every info board text and every interactable are visible/readable (screenshot brightness of the player and of panels above a minimum contrast). | e2e |
@@ -192,14 +207,20 @@ Rules for the implementation that follow from the data:
 | NIGHT-013 | Given night, then ducks sleep (no swimming, `sleep` pose), butterflies are hidden and frogs croak more often than by day. | unit |
 | NIGHT-014 | Given the same spot by day and at night, then the night adds at most 6 draw calls (night props batched); frame time is reported. | e2e |
 | NIGHT-015 | Given night, then day animals at home lie down (`sleep` clip, fallback `idle`) and do not wander, and the wander pauses of the night animals of a night level count down twice as fast as by day (rule 5, engine section). | unit |
+| NIGHT-016 | Given night and the player standing next to the bed, when `E` is pressed (desktop) or the touch action button (🛏) is tapped, then sleeping starts; away from the bed neither does anything bed-related. | e2e |
+| NIGHT-017 | Given the bat or the owl (`fly_height` in `animal_anims.toml`), then perched at its hiding place it plays `hang` (bat, data pose) / `perch` at the perch height, following the child it plays `fly` 1.5 m above the ground, at home it stands (`idle`); its `eye_glow` shines only inside the lantern radius and never while `sleep` plays (Q-146). | unit |
+| NIGHT-018 | Given the player's lantern at night, then its visible ground pool (sphere radius, centre 1.4 m above her feet) is 2.5 m ± 0.01 m = the eyeshine radius `LANTERN_RADIUS_M` (Q-142). | unit |
 
 ## Open questions
 
 - Q-076…Q-079 answered 2026-09-26 (animals of night level 1, owl food, what comes after, no pressure).
 - Q-133…Q-139 night level data, night house, night foods, riddle scope of night levels, light/item/prop data, telescope, burglar spots (level design, 2026-09-27).
-- Q-126 answered 2026-09-27: dark-blue gradient with moon and stars, haze in the same blue, 16 m fog end kept.
+- Q-126 answered 2026-09-27: dark-blue gradient with moon and stars, haze in the same blue, day fog end kept (20.8 m since FIX-056).
 - Q-091 answered 2026-09-27: barriers open the next morning (engine section, NIGHT-010).
 - Q-140 (open) Sleeping by day "until the evening" while a night level is unfinished (implemented as proposal).
-- Q-141 (open) Night level between level 2 and level 3 (alternation, Q-078) and where the child sleeps after level 2.
-- Q-142 (open) Eyeshine radius 2.5 m vs. the visible lantern pool ≈ 1.8 m.
+- Q-141 answered 2026-09-27: until `night_2` exists, level 3 opens the morning after level 2's night; bed `bed_l2` at level 2's food storage, the 🛏 icon offers the nearest unlocked bed.
+- Q-142 answered 2026-09-27: eyeshine stays 2.5 m, the visible lantern ground pool is 2.5 m too (NIGHT-018).
+- Q-146 answered 2026-09-27: `eye_glow` is skipped while `sleep` plays; no eyelids for v1 (NIGHT-017).
+- Q-147 (open) String-light spans ≤ 6 m by stretching the model.
 - Q-143 answered 2026-09-27: night animals, `sleep` and `eye_glow` are in ART-ANIMALS (models v1).
+- Q-152 shelter over `bed_l2`. Q-153 / Q-154 night models: manifest entries and ART-ENVIRONMENT listing.

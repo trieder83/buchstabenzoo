@@ -139,6 +139,13 @@ pub fn level_to_yaw(dir: Vec2) -> f32 {
     (-dir.x).atan2(dir.y)
 }
 
+/// Whether the roof and upper walls of the building the player is in are hidden (PLAY-028):
+/// only in the zoo view and look-around, where the camera is above / behind her; first
+/// person keeps the roof and shows its ceiling (CAMV-022, user decision 2026-09-27).
+pub fn roof_hidden(inside: bool, mode: ViewMode) -> bool {
+    inside && mode != ViewMode::FirstPerson
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

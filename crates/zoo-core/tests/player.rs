@@ -230,27 +230,33 @@ fn play_019_props_are_solid_and_player_slides() {
     let end2 = walk_checked(&level, col, &mut p, Vec2::new(-1.0, 1.0).normalize(), 1.0);
     assert!(end2.y > end.y + 0.5, "no slide {end} -> {end2}");
 
-    // Enclosure sign of the zebra gate: its southern post stands on a walkable cell.
-    let post = col
-        .shapes()
+    // Enclosure sign of the zebra gate: beside the gate, the whole sign solid (LAYOUT-033,
+    // Q-086 (b)); readable side east. Walk west into it, then slide along it.
+    let scene = zoo_core::scene::LevelScene::build(&level.data);
+    let gate = Vec2::new(-9.5, 13.0);
+    let sign = scene
+        .placements
         .iter()
-        .find_map(|s| match *s {
-            Shape::Circle { c, r }
-                if (r - 0.12).abs() < 1e-4 && c.distance(Vec2::new(-8.65, 11.9)) < 0.3 =>
-            {
-                Some(c)
-            }
-            _ => None,
-        })
-        .expect("zebra sign post");
-    let mut p = player_at(post + Vec2::new(1.5, 0.0));
+        .filter(|p| p.model == "enclosure_sign")
+        .map(|p| zoo_core::coords::world_to_level(p.pos))
+        .min_by(|a, b| a.distance(gate).total_cmp(&b.distance(gate)))
+        .expect("zebra sign");
+    assert!((sign.y - gate.y).abs() > 2.6, "beside the gate: {sign}");
+    let mut p = player_at(sign + Vec2::new(1.5, 0.0));
     let end = walk_checked(&level, col, &mut p, Vec2::NEG_X, 2.0);
     assert!(
-        end.x >= post.x + 0.12 + PLAYER_RADIUS_M - 0.01,
-        "walked into the sign post: {end}"
+        end.x >= sign.x + 0.36 + PLAYER_RADIUS_M - 0.02,
+        "walked into the sign: {end}"
     );
-    let end2 = walk_checked(&level, col, &mut p, Vec2::new(-1.0, -0.3).normalize(), 1.0);
-    assert!((end2 - end).length() > 0.3, "stuck at the post: {end2}");
+    let away = (sign.y - gate.y).signum();
+    let end2 = walk_checked(
+        &level,
+        col,
+        &mut p,
+        Vec2::new(-1.0, 0.6 * away).normalize(),
+        1.0,
+    );
+    assert!((end2 - end).length() > 0.3, "stuck at the sign: {end2}");
 
     // Plaza bench (cells (6..7, 4)): walk north into it from the plaza.
     let mut p = player_at(Vec2::new(7.0, 2.5));

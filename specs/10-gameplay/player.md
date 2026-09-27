@@ -56,6 +56,8 @@ updated: 2026-09-27
      | `E`, Space, Enter | interact (§4) | same | same |
      | `Esc` | close settings, else the open panel (§4) | same | same |
      | `M` | open/close the map (GAME-MAP) | same | same |
+     | `G` | put down the carried item (GAME-FEED §8) | same | same |
+     | `H` | hint: show the next target (GAME-HINT) | same | same |
 
      Close views: GAME-CAMERA-VIEWS 2/3.
    - **Touch — two thumbs** (user decision 2026-09-26, Q-018). Touch controls exist **only

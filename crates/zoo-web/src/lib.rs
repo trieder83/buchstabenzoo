@@ -21,10 +21,13 @@ use zoo_core::level::ElementType;
 use zoo_core::nav::Autopilot;
 use zoo_core::night_scene::NightScene;
 use zoo_core::player::walk_clip_rate;
+use zoo_core::scene::{model_path, OpeningKind};
 use zoo_core::view::{self as views, ViewMode};
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
 use zoo_render::night::{self as nightfx, DayLight, PointLight};
-use zoo_render::renderer::{butterfly_mesh, cylinder_mesh, CAPSULE};
+use zoo_render::renderer::{
+    butterfly_mesh, cylinder_mesh, InstanceHandle, CAPSULE, HIDE_ROOF, HIDE_WALLS_UPPER,
+};
 use zoo_render::scene::{model_placeholder, Decal, DecalImage};
 use zoo_render::{CameraParams, CharacterDraw, FollowCamera, Instance, LevelScene, Renderer};
 
@@ -50,6 +53,8 @@ const GLASS: [f32; 4] = [0.78, 0.92, 0.98, 0.5];
 const BOWL_WATER_COLOR: [f32; 4] = [0.36, 0.66, 0.90, 0.5];
 /// Descending speed from a perch when the animal has no `climb_speed` (m/s).
 const DESCEND_SPEED: f32 = 1.8;
+/// Vertical speed of a flyer between its perch and its flying height (m/s).
+const FLY_CLIMB_SPEED: f32 = 1.2;
 /// Duration of the goldfish's leap into / out of the bowl (s).
 const LEAP_S: f32 = 0.9;
 /// Ambient animal models (GAME-AMBIENT), drawn as instanced skinned crowds.
@@ -62,6 +67,38 @@ const BUTTERFLY: &str = "__butterfly";
 const DYN_GLOW: &str = "__dyn_glow";
 /// Fireflies per firefly area (Q-115).
 const FIREFLIES_PER_AREA: usize = 6;
+/// The hand lantern the player carries at night (`kit_night`, GAME-NIGHT rule 1).
+const HAND_LANTERN: &str = "hand_lantern";
+/// `hand_lantern.socket_handle` (glTF): the grip that coincides with her hand.
+const HAND_LANTERN_GRIP: Vec3 = Vec3::new(0.0, 0.385, 0.0);
+/// Garden plant models per growth stage (`kit_garden`; `empty` = no model).
+const PLANT_MODELS: [[&str; 3]; 2] = [
+    [
+        "carrot_plant_sprout",
+        "carrot_plant_young",
+        "carrot_plant_ripe",
+    ],
+    [
+        "potato_plant_sprout",
+        "potato_plant_young",
+        "potato_plant_ripe",
+    ],
+];
+/// Models the presentation places itself (not in the level scene).
+const EXTRA_MODELS: [&str; 7] = [
+    HAND_LANTERN,
+    "carrot_plant_sprout",
+    "carrot_plant_young",
+    "carrot_plant_ripe",
+    "potato_plant_sprout",
+    "potato_plant_young",
+    "potato_plant_ripe",
+];
+/// Gates and doors: opening / closing speed (open amount per second) and how long an
+/// enclosure gate stays open behind the animals (s).
+const OPEN_RATE: f32 = 2.2;
+const CLOSE_RATE: f32 = 1.2;
+const GATE_HOLD_S: f32 = 1.5;
 
 /// Asset path of an animal model.
 pub fn animal_model_path(animal: &str) -> String {
@@ -96,11 +133,18 @@ pub fn join_levels(tomls: &[String]) -> Result<LevelData, String> {
 pub fn required_assets(level_tomls: Vec<String>) -> Result<Vec<String>, JsError> {
     let data = join_levels(&level_tomls).map_err(|e| JsError::new(&e))?;
     let scene = LevelScene::build(&data);
-    let mut models: Vec<&str> = scene.placements.iter().map(|p| p.model).collect();
+    let night = NightScene::build(&data);
+    let mut models: Vec<&str> = scene
+        .placements
+        .iter()
+        .chain(&night.placements)
+        .map(|p| p.model)
+        .chain(EXTRA_MODELS)
+        .collect();
     models.sort_unstable();
     models.dedup();
     let mut out = vec!["textures/palette.png".to_owned()];
-    out.extend(models.iter().map(|m| format!("models/props/{m}.glb")));
+    out.extend(models.iter().map(|m| model_path(m)));
     // decal images (enclosure sign silhouettes); missing ones leave the panel blank
     for d in &scene.decals {
         if let DecalImage::Texture(path) = &d.image {
@@ -191,10 +235,31 @@ impl AnimalView {
     }
 }
 
+/// A gate / door model in an opening (LAYOUT-031): its instance as placed, how it swings,
+/// the eased open amount and how long it stays open behind the animals.
+struct OpeningView {
+    handle: Option<InstanceHandle>,
+    base: Instance,
+    /// Yaw at full open (whole-model swing), or 0 = its leaf parts open.
+    swing: f32,
+    open: f32,
+    hold: f32,
+    enclosure_gate: bool,
+}
+
+/// A garden plant spot: its model per growth stage (sprout, young, ripe) and the one shown.
+struct PlantView {
+    spot: String,
+    stages: [Option<InstanceHandle>; 3],
+    base: [Instance; 3],
+    shown: Option<usize>,
+}
+
 /// Maps a clip name from the game data to a static name the renderer knows (unknown → idle).
 fn static_clip(name: &str) -> &'static str {
-    const CLIPS: [&str; 10] = [
+    const CLIPS: [&str; 15] = [
         "idle", "walk", "drink", "eat", "sleep", "swim", "happy", "refuse", "climb", "roll",
+        "perch", "hang", "fly", "look", "hop",
     ];
     CLIPS.iter().copied().find(|c| *c == name).unwrap_or("idle")
 }
@@ -231,7 +296,7 @@ pub struct App {
     /// Decals of the level scene (debug getters, AENV-011/012).
     decals: Vec<Decal>,
     /// Text textures the host renders: (texture id, Fluent key, width, height).
-    text_textures: Vec<(String, &'static str, u32, u32)>,
+    text_textures: Vec<(String, String, u32, u32)>,
     /// Text textures must be (re-)rendered (start, language change).
     text_dirty: bool,
     /// Render regions of barriers (hidden once open) and roofs (hidden while inside).
@@ -265,6 +330,14 @@ pub struct App {
     glows: Vec<Instance>,
     /// Fireflies: centre of the dance (world), phase.
     fireflies: Vec<(Vec3, f32)>,
+    /// Gates and doors (index = `Level::openings`).
+    openings: Vec<OpeningView>,
+    /// Buildings drawn by their model: element id, instance (roof / upper walls hide).
+    building_models: Vec<(String, InstanceHandle, Instance)>,
+    /// Garden plants.
+    plants: Vec<PlantView>,
+    /// The hand lantern at night (dynamic instance).
+    hand_lantern: [Instance; 1],
 }
 
 #[wasm_bindgen]
@@ -339,17 +412,23 @@ impl App {
             .collect();
         renderer.set_water_obstacles(&obstacles);
 
-        // Static props: one instanced batch per model. Ground tiles get no normal edges.
+        // Static props and buildings: one instanced batch per model (its moving parts, glow
+        // slots and glass included, ARCH-006/007). Ground tiles get no normal edges.
         let mut has_carry_model = false;
+        let mut faces: BTreeMap<String, Vec<zoo_assets::Face>> = BTreeMap::new();
         for (path, bytes) in &files {
             let Some(name) = path
                 .strip_prefix("models/props/")
+                .or_else(|| path.strip_prefix("models/buildings/"))
                 .and_then(|s| s.strip_suffix(".glb"))
             else {
                 continue;
             };
             match Model::from_glb(bytes) {
                 Ok(m) => {
+                    if !m.faces.is_empty() {
+                        faces.insert(name.to_owned(), m.faces.clone());
+                    }
                     let ground = name.ends_with("_tile") || name == "path_edge";
                     renderer
                         .add_model(name, &m, if ground { 0.0 } else { 1.0 })
@@ -445,9 +524,48 @@ impl App {
             part_regions[part as usize]
         };
         let mut placeholders: BTreeMap<String, usize> = BTreeMap::new();
+        // static batching (ARCH-008): groups that never move become one mesh each
+        let mut baked = vec![false; scene.placements.len()];
+        for g in &scene.bake_groups {
+            let members: Vec<usize> = g
+                .placements
+                .iter()
+                .copied()
+                .filter(|&i| renderer.can_bake(scene.placements[i].model))
+                .collect();
+            if members.len() < 2 {
+                continue;
+            }
+            let items: Vec<(&str, Vec3, f32, Vec3)> = members
+                .iter()
+                .map(|&i| {
+                    let p = &scene.placements[i];
+                    let sc = Vec3::new(p.scale * p.stretch, p.scale, p.scale);
+                    (p.model, p.pos, p.yaw, sc)
+                })
+                .collect();
+            let region = placement_region(members[0], g.part);
+            if renderer
+                .bake(&g.name, region, &items)
+                .map_err(|e| JsError::new(&format!("{e:?}")))?
+            {
+                for i in members {
+                    baked[i] = true;
+                }
+            }
+        }
+        let mut handles: Vec<Option<InstanceHandle>> = Vec::with_capacity(scene.placements.len());
         for (i, p) in scene.placements.iter().enumerate() {
             let region = placement_region(i, p.part);
-            if !renderer.add_instance_in(p.model, region, p.pos, p.yaw, p.scale) {
+            if baked[i] {
+                handles.push(None);
+                continue;
+            }
+            let h = renderer.add_instance_handle(p.model, region, p.pos, p.yaw, p.scale);
+            handles.push(h);
+            if let Some(h) = h {
+                stretch(&mut renderer, h, p.stretch);
+            } else {
                 *placeholders.entry(p.model.to_owned()).or_default() += 1;
                 if scene.fallbacks.iter().any(|f| f.model == p.model) {
                     continue; // drawn by its fallback geometry below
@@ -457,6 +575,59 @@ impl App {
                 let pos = p.pos + glam::Quat::from_rotation_y(p.yaw) * offset * p.scale;
                 renderer.add_box_in(region, pos, size, p.yaw, color, pos.y + size.y > 1.5);
             }
+        }
+        // gates and doors (LAYOUT-031), building models (roof hiding), garden plants
+        let openings: Vec<OpeningView> = scene
+            .openings
+            .iter()
+            .map(|o| {
+                let handle = handles[o.placement];
+                OpeningView {
+                    handle,
+                    base: handle
+                        .and_then(|h| renderer.instance(h))
+                        .unwrap_or_else(|| Instance::model(Vec3::ZERO, 0.0, false)),
+                    swing: o.swing,
+                    open: 0.0,
+                    hold: 0.0,
+                    enclosure_gate: matches!(
+                        o.kind,
+                        OpeningKind::EnclosureGate { .. } | OpeningKind::GlassDoor { .. }
+                    ),
+                }
+            })
+            .collect();
+        let building_models: Vec<(String, InstanceHandle, Instance)> = scene
+            .building_models
+            .iter()
+            .filter_map(|b| {
+                let h = handles[b.placement]?;
+                Some((b.element.clone(), h, renderer.instance(h)?))
+            })
+            .collect();
+        let mut plants = Vec::new();
+        for pl in &scene.plants {
+            let kind = usize::from(pl.kind == "potato");
+            let region = part_regions[(pl.part as usize).min(part_regions.len() - 1)];
+            let mut stages = [None; 3];
+            let mut base = [Instance::model(pl.pos, 0.0, false); 3];
+            for (k, m) in PLANT_MODELS[kind].iter().enumerate() {
+                // a little turn per spot so the rows do not look copied
+                let yaw = (pl.pos.x * 7.3 + pl.pos.z * 3.1).sin() * 0.6;
+                stages[k] = renderer.add_instance_handle(m, region, pl.pos, yaw, 1.0);
+                if let Some(h) = stages[k] {
+                    base[k] = renderer.instance(h).unwrap_or(base[k]);
+                    let mut hidden = base[k];
+                    hidden.scale_fade = [0.0; 4];
+                    renderer.set_instance(h, hidden);
+                }
+            }
+            plants.push(PlantView {
+                spot: pl.spot.clone(),
+                stages,
+                base,
+                shown: None,
+            });
         }
         // placeholder geometry of missing models (e.g. the tiled pool rim, `pool_tiled`)
         for f in &scene.fallbacks {
@@ -479,9 +650,39 @@ impl App {
                 .entry(format!("element:{}", b.source))
                 .or_default() += 1;
         }
+        // Text faces of placed models (entrance board, garden signs): text decals on them.
+        let mut decals = scene.decals.clone();
+        for tf in &scene.text_faces {
+            let p = &scene.placements[tf.placement];
+            let Some(f) = faces
+                .get(p.model)
+                .and_then(|v| v.iter().find(|f| f.slot == tf.slot))
+            else {
+                continue;
+            };
+            let rot = Quat::from_rotation_y(p.yaw);
+            let w = |c: Vec3| p.pos + rot * (c * p.scale);
+            let [tl, tr, br, bl] = f.corners.map(w);
+            let n = rot * f.normal;
+            let center = (tl + tr + br + bl) / 4.0 + n * zoo_core::scene::DECAL_LIFT_M;
+            let right = (tr - tl) / 2.0;
+            let up = (tl - bl) / 2.0;
+            let aspect = up.length() / right.length().max(1e-3);
+            decals.push(Decal {
+                id: tf.id.clone(),
+                image: DecalImage::Text {
+                    key: tf.key.clone(),
+                    width_px: 512,
+                    height_px: ((512.0 * aspect).round() as u32).clamp(32, 512),
+                },
+                center,
+                right,
+                up,
+            });
+        }
         // Decals: sign silhouettes (image files) and sign texts (rendered by the host).
-        let mut text_textures: Vec<(String, &'static str, u32, u32)> = Vec::new();
-        for d in &scene.decals {
+        let mut text_textures: Vec<(String, String, u32, u32)> = Vec::new();
+        for d in &decals {
             let texture = match &d.image {
                 DecalImage::Texture(path) => {
                     if !renderer.has_decal_texture(path) {
@@ -502,12 +703,17 @@ impl App {
                 } => {
                     let id = text_texture_id(key);
                     if !text_textures.iter().any(|(t, ..)| *t == id) {
-                        text_textures.push((id.clone(), *key, *width_px, *height_px));
+                        text_textures.push((id.clone(), key.clone(), *width_px, *height_px));
                     }
                     id
                 }
             };
-            renderer.add_decal(&texture, d.corners(), d.normal());
+            // a building's name board hides with its roof (inside, zoo view)
+            let region = roof_regions
+                .iter()
+                .find(|(id, _)| d.id.strip_prefix("sign:") == Some(id.as_str()))
+                .map_or(zoo_render::renderer::REGION_ALWAYS, |(_, r)| *r);
+            renderer.add_decal_in(&texture, d.corners(), d.normal(), region);
         }
 
         // Night-only parts (GAME-NIGHT §10): lamp props (placeholders until `kit_night`),
@@ -523,6 +729,14 @@ impl App {
         for b in &night.glows {
             let region = night_regions[(b.part as usize).min(night_regions.len() - 1)];
             renderer.add_glow_box_in(region, b.pos, b.size, b.yaw, b.color);
+        }
+        // lamp models (`kit_night`): lantern posts, string lights, wall and board lamps
+        for p in &night.placements {
+            let region = night_regions[(p.part as usize).min(night_regions.len() - 1)];
+            match renderer.add_instance_handle(p.model, region, p.pos, p.yaw, p.scale) {
+                Some(h) => stretch(&mut renderer, h, p.stretch),
+                None => *placeholders.entry(p.model.to_owned()).or_default() += 1,
+            }
         }
         for r in &night_regions {
             renderer.set_region_hidden(*r, true);
@@ -636,7 +850,7 @@ impl App {
             autopilot: None,
             outbox: Vec::new(),
             time: 0.0,
-            decals: scene.decals,
+            decals,
             text_textures,
             text_dirty: true,
             barrier_regions,
@@ -660,6 +874,10 @@ impl App {
             frame_pools: Vec::with_capacity(nightfx::MAX_LIGHT_POOLS),
             glows: Vec::with_capacity(64),
             fireflies,
+            openings,
+            building_models,
+            plants,
+            hand_lantern: [Instance::model(Vec3::ZERO, 0.0, false)],
         };
         app.reset_views();
         Ok(app)
@@ -1055,6 +1273,68 @@ impl App {
         ok
     }
 
+    /// The treat basket (GAME-GARDEN §4) as JSON `{"carrot": n, "potato": n, "capacity": 6,
+    /// "offered": "carrot"|""}` for the HUD (icons + numbers).
+    pub fn basket_json(&self) -> String {
+        let b = self.game.garden.basket;
+        format!(
+            "{{\"carrot\":{},\"potato\":{},\"capacity\":{},\"offered\":{}}}",
+            b.carrots,
+            b.potatoes,
+            zoo_core::garden::BASKET_CAPACITY,
+            js(self.game.offered_treat().map_or("", |t| t.id()))
+        )
+    }
+
+    /// Chooses the treat offered at a fence (`carrot`, `potato`); false if unknown.
+    pub fn select_treat(&mut self, id: &str) -> bool {
+        match zoo_core::garden::Treat::from_id(id) {
+            Some(t) => {
+                self.game.treat_choice = Some(t);
+                true
+            }
+            None => false,
+        }
+    }
+
+    /// Debug/e2e: the gates and doors as JSON `[{"model", "x", "z", "open"}]` (open amount
+    /// 0…1 as drawn, LAYOUT-031).
+    pub fn openings_json(&self) -> String {
+        let scene_models: Vec<String> = self
+            .game
+            .level
+            .openings()
+            .iter()
+            .zip(&self.openings)
+            .map(|(o, v)| {
+                format!(
+                    "{{\"kind\":{},\"x\":{:.2},\"z\":{:.2},\"open\":{:.3},\"drawn\":{}}}",
+                    js(match o.kind {
+                        OpeningKind::BuildingDoor { .. } => "door",
+                        OpeningKind::EnclosureGate { .. } => "gate",
+                        OpeningKind::GlassDoor { .. } => "glass_door",
+                        OpeningKind::GardenGate { .. } => "garden_gate",
+                        OpeningKind::MoonDoor { .. } => "moon_door",
+                    }),
+                    o.center.x,
+                    o.center.y,
+                    v.open,
+                    v.handle.is_some()
+                )
+            })
+            .collect();
+        format!("[{}]", scene_models.join(","))
+    }
+
+    /// Debug/e2e: a garden plant's growth stage (`empty` … `ripe`) or empty if unknown.
+    pub fn plant_stage(&self, spot: &str) -> String {
+        self.game
+            .garden
+            .plant(spot)
+            .map(|p| p.stage().id().to_owned())
+            .unwrap_or_default()
+    }
+
     /// Id of the carried food or empty.
     pub fn carry_food(&self) -> String {
         self.game
@@ -1121,6 +1401,7 @@ impl App {
                 pos_yaw: [p.x, p.y, p.z, yaw],
                 scale_fade: [0.55, 0.55, 0.55, 0.0],
                 color: [1.0, 1.0, 1.0, 0.0],
+                node: [0.0; 4],
             };
             self.renderer
                 .set_dynamic_instances(CARRY_BOX, &self.carry_box[..n]);
@@ -1135,12 +1416,26 @@ impl App {
             }
         }
         self.inside = self.building_inside();
+        let mode = self.camera.mode();
         for (id, region) in &self.roof_regions {
-            let hide = self.inside.as_deref() == Some(id.as_str());
+            // first person keeps the roof and its ceiling (CAMV-022)
+            let hide = views::roof_hidden(self.inside.as_deref() == Some(id.as_str()), mode);
             if hide != self.renderer.region_hidden(*region) {
                 self.renderer.set_region_hidden(*region, hide);
             }
         }
+        for (id, h, base) in &self.building_models {
+            let hide = views::roof_hidden(self.inside.as_deref() == Some(id.as_str()), mode);
+            let mut i = *base;
+            i.node[1] = if hide {
+                (HIDE_ROOF | HIDE_WALLS_UPPER) as f32
+            } else {
+                0.0
+            };
+            self.renderer.set_instance(*h, i);
+        }
+        self.update_openings(dt);
+        self.update_plants();
 
         // The fish bowl: glass + water (+ the fish inside, drawn with the animals).
         let bowl_base = self.bowl_base(fwd, player);
@@ -1151,6 +1446,7 @@ impl App {
                 pos_yaw: [base.x, base.y, base.z, 0.0],
                 scale_fade: [r, BOWL_HEIGHT_M, r, 0.0],
                 color: GLASS,
+                node: [0.0; 4],
             };
             n_glass = 1;
             if b.water {
@@ -1159,6 +1455,7 @@ impl App {
                     pos_yaw: [base.x, base.y + 0.02, base.z, 0.0],
                     scale_fade: [w, BOWL_HEIGHT_M * 0.72, w, 0.0],
                     color: BOWL_WATER_COLOR,
+                    node: [0.0; 4],
                 };
                 n_water = 1;
             }
@@ -1208,6 +1505,8 @@ impl App {
                         action_blend: if action.is_some() { 1.0 } else { 0.0 },
                         under_water: a.under_water,
                         tilt: Quat::IDENTITY,
+                        // eye_glow inside the lantern light, never while asleep (Q-146)
+                        eye_glow: zoo_core::night::eye_glow(shine, a.rest, action),
                     },
                 ));
             } else if is_night_placeholder(a.id) {
@@ -1281,6 +1580,7 @@ impl App {
                     action_blend: p.action_blend,
                     under_water: false,
                     tilt: p.tilt,
+                    eye_glow: false,
                 },
             ));
         }
@@ -1402,6 +1702,15 @@ impl App {
 
     pub fn draw_calls(&self) -> u32 {
         self.renderer.stats.draw_calls
+    }
+
+    /// Debug: renders one frame and returns the static batches it drew (`model@region`, one
+    /// per line) — which meshes cost the draw calls (CAMV-014, Q-104).
+    pub fn debug_draw_list(&mut self) -> String {
+        self.renderer.debug_draws = Some(Vec::new());
+        self.frame(0.0);
+        let list = self.renderer.debug_draws.take().unwrap_or_default();
+        list.join("\n")
     }
 
     pub fn instances(&self) -> u32 {
@@ -1787,6 +2096,13 @@ impl App {
 
     /// Whether the renderer hides a barrier's models (opened) or a building's roof (inside).
     pub fn region_hidden(&self, id: &str) -> bool {
+        if let Some((_, h, _)) = self.building_models.iter().find(|(k, ..)| k == id) {
+            // a building model: its roof part is hidden by the instance's hide mask
+            return self
+                .renderer
+                .instance(*h)
+                .is_some_and(|i| (i.node[1] as u32) & HIDE_ROOF != 0);
+        }
         self.barrier_regions
             .iter()
             .chain(&self.roof_regions)
@@ -1926,6 +2242,15 @@ impl App {
             .unwrap_or_default()
     }
 
+    /// Where the child stands to use the nearest bed `[x, z]` (level), empty if none
+    /// (NIGHT-016).
+    pub fn bed_stand(&self) -> Vec<f32> {
+        self.game
+            .bed_stand(self.game.player.pos)
+            .map(|p| vec![p.x, p.y])
+            .unwrap_or_default()
+    }
+
     /// Whether the player is in a night level.
     pub fn player_in_night_zoo(&self) -> bool {
         self.game.player_in_night_zoo()
@@ -1943,6 +2268,66 @@ impl App {
 }
 
 impl App {
+    /// Gates and doors open and close visibly (LAYOUT-031): eased towards what the game
+    /// wants; an enclosure gate stays open a moment behind the animals.
+    fn update_openings(&mut self, dt: f32) {
+        let openings = self.game.level.openings();
+        for (o, v) in openings.iter().zip(self.openings.iter_mut()) {
+            let Some(h) = v.handle else { continue };
+            let want = self.game.opening_open(o);
+            if want {
+                v.hold = if v.enclosure_gate { GATE_HOLD_S } else { 0.0 };
+            } else {
+                v.hold = (v.hold - dt).max(0.0);
+            }
+            let target = if want || v.hold > 0.0 { 1.0 } else { 0.0 };
+            let before = v.open;
+            if target > v.open {
+                v.open = (v.open + OPEN_RATE * dt).min(1.0);
+            } else if target < v.open {
+                v.open = (v.open - CLOSE_RATE * dt).max(0.0);
+            }
+            if v.open == before && dt > 0.0 {
+                continue;
+            }
+            // ease in and out
+            let k = v.open * v.open * (3.0 - 2.0 * v.open);
+            let mut i = v.base;
+            if v.swing != 0.0 {
+                i.pos_yaw[3] = v.base.pos_yaw[3] + v.swing * k;
+            } else {
+                i.node[0] = k;
+            }
+            self.renderer.set_instance(h, i);
+        }
+    }
+
+    /// Garden plants show the model of their growth stage (GAME-GARDEN §3).
+    fn update_plants(&mut self) {
+        for v in &mut self.plants {
+            let stage = self.game.garden.plant(&v.spot).map(|p| p.stage());
+            let shown = match stage {
+                Some(zoo_core::garden::Stage::Sprout) => Some(0),
+                Some(zoo_core::garden::Stage::Young) => Some(1),
+                Some(zoo_core::garden::Stage::Ripe) => Some(2),
+                _ => None,
+            };
+            if shown == v.shown {
+                continue;
+            }
+            for k in 0..3 {
+                if let Some(h) = v.stages[k] {
+                    let mut i = v.base[k];
+                    if Some(k) != shown {
+                        i.scale_fade = [0.0; 4];
+                    }
+                    self.renderer.set_instance(h, i);
+                }
+            }
+            v.shown = shown;
+        }
+    }
+
     /// Night presentation of a frame (GAME-NIGHT §10): global light, night-only props,
     /// the player's lantern + the nearest lamps as point lights, light pools for the rest,
     /// eyeshine and fireflies (emissive dynamic boxes).
@@ -1952,8 +2337,9 @@ impl App {
             night: l.night,
             warm: l.warm,
         });
-        // lamps switch on during dusk (rule 1)
+        // lamps switch on during dusk (rule 1); their glow slots with them
         let lamps_on = l.night > 0.2;
+        self.renderer.set_glow(lamps_on);
         for r in &self.night_regions {
             if self.renderer.region_hidden(*r) == lamps_on {
                 self.renderer.set_region_hidden(*r, !lamps_on);
@@ -1961,30 +2347,37 @@ impl App {
         }
         self.frame_lights.clear();
         self.frame_pools.clear();
+        let mut lantern = 0;
         if lamps_on {
             // the player's hand lantern: a light circle around her, always (NIGHT-005)
             // (centre above her hands: she is lit from head to toe, her pool on the ground
             // ≈ 1.8 m around her; eyes shine within LANTERN_RADIUS_M, NIGHT-006)
             self.frame_lights.push(PointLight {
-                pos: player + Vec3::Y * 1.4,
-                radius: 2.3,
+                pos: player + Vec3::Y * zoo_core::night::LANTERN_LIGHT_Y_M,
+                // ground pool ≈ the 2.5 m eyeshine radius (Q-142)
+                radius: zoo_core::night::lantern_light_radius(),
                 color: Vec3::new(1.0, 0.95, 0.84),
                 strength: 1.0,
                 // (a lamp: flat cream pool on the ground; she keeps her colours, NIGHT-005)
                 tinted: false,
             });
-            // the hand lantern (placeholder until `hand_lantern`, Q-117): left hand
+            // the hand lantern in her left hand (`hand_lantern`: its grip on the hand)
             if !self.camera.hides_player() {
                 let yaw = self.player_yaw;
                 let left = Quat::from_rotation_y(yaw) * Vec3::X;
                 let fwd = Quat::from_rotation_y(yaw) * Vec3::Z;
                 let hand = player + left * 0.3 + fwd * 0.08 + Vec3::Y * 0.42;
-                self.glows.push(Instance::glow(
-                    hand,
-                    yaw,
-                    Vec3::new(0.16, 0.2, 0.16),
-                    nightfx::LAMP_GLOW.to_array(),
-                ));
+                if self.renderer.has_model(HAND_LANTERN) {
+                    self.hand_lantern[0] = Instance::model(hand - HAND_LANTERN_GRIP, yaw, false);
+                    lantern = 1;
+                } else {
+                    self.glows.push(Instance::glow(
+                        hand,
+                        yaw,
+                        Vec3::new(0.16, 0.2, 0.16),
+                        nightfx::LAMP_GLOW.to_array(),
+                    ));
+                }
             }
             nightfx::pick_lamps(
                 &self.lamps,
@@ -2019,6 +2412,8 @@ impl App {
         self.renderer.set_point_lights(&self.frame_lights);
         self.renderer.set_light_pools(&self.frame_pools);
         self.renderer.set_dynamic_instances(DYN_GLOW, &self.glows);
+        self.renderer
+            .set_dynamic_instances(HAND_LANTERN, &self.hand_lantern[..lantern]);
         self.ambient.night = self.game.daytime.is_dark();
     }
 
@@ -2087,6 +2482,19 @@ impl App {
                 food: *food,
                 label: zoo_core::FoodBox { food: *food }.label(self.game.settings.reading_level),
             }),
+            Target::GardenSign { bed } => {
+                let b = self
+                    .game
+                    .level
+                    .data
+                    .garden_beds
+                    .iter()
+                    .find(|b| &b.id == bed)?;
+                Some(Interaction::GardenSign {
+                    bed: b.id.clone(),
+                    key: b.sign_key.clone(),
+                })
+            }
             _ => None,
         }
     }
@@ -2141,6 +2549,37 @@ impl App {
                 js(action)
             ),
             Interaction::Sleep => "{\"kind\":\"sleep\"}".to_owned(),
+            Interaction::Harvest { spot, treat, count } => format!(
+                "{{\"kind\":\"harvest\",\"spot\":{},\"treat\":{},\"count\":{count}}}",
+                js(spot),
+                js(treat.id())
+            ),
+            Interaction::GardenSign { bed, key } => {
+                // the word (GARD-009) and, from klasse1 on, a sentence (proposal Q-103)
+                let level = self.game.settings.reading_level.id();
+                let sentence = format!("{key}-{level}");
+                let text = self
+                    .content
+                    .as_ref()
+                    .and_then(|c| c.text(self.game.settings.language, &sentence))
+                    .unwrap_or_default();
+                format!(
+                    "{{\"kind\":\"garden_sign\",\"key\":{},\"food\":{},\"title\":{},\"text\":{},\"picture\":true}}",
+                    js(&format!("garden_sign:{bed}")),
+                    js(key.trim_start_matches("garden-")),
+                    js(&self.text_now(key)),
+                    js(&text)
+                )
+            }
+            Interaction::Treat {
+                animal,
+                treat,
+                accepted,
+            } => format!(
+                "{{\"kind\":\"treat\",\"animal\":{},\"treat\":{},\"accepted\":{accepted}}}",
+                js(animal),
+                js(treat.id())
+            ),
             Interaction::MoonDoor { into_night_zoo } => {
                 format!("{{\"kind\":\"moon_door\",\"into_night_zoo\":{into_night_zoo}}}")
             }
@@ -2326,6 +2765,28 @@ impl App {
                         js(&text)
                     ));
                 }
+                GameEvent::Harvested { treat, count, .. } => {
+                    self.outbox.push(format!(
+                        "{{\"type\":\"harvest\",\"treat\":{},\"count\":{count},\"text\":{}}}",
+                        js(treat.id()),
+                        js(&self.text_now(treat.label_key()))
+                    ));
+                }
+                GameEvent::BasketFull => {
+                    let text = self.text_now("garden-basket-full");
+                    self.outbox.push(format!(
+                        "{{\"type\":\"say\",\"animal\":\"\",\"key\":\"garden-basket-full\",\"text\":{}}}",
+                        js(&text)
+                    ));
+                }
+                GameEvent::TreatEaten { animal, .. } => {
+                    self.queue(&animal, &["eat", "happy"], false);
+                    self.say(&animal, "garden-treat-yum");
+                }
+                GameEvent::TreatRefused { animal, .. } => {
+                    self.queue(&animal, &["refuse"], false);
+                    self.say(&animal, "ui-not-interested");
+                }
                 GameEvent::FoodTaken { food, .. } => {
                     self.outbox.push(format!(
                         "{{\"type\":\"food_taken\",\"food\":{},\"text\":{}}}",
@@ -2416,10 +2877,16 @@ impl App {
             }
             let to = a.pos - v.pos;
             let dist = to.length();
+            // bat / owl fly (`fly_height`, ART-ANIMALS "Night animals", NIGHT-017)
+            let fly_height = if v.skinned {
+                self.anims.fly_height(v.id)
+            } else {
+                None
+            };
             let moved = if dist > 12.0 || v.anchor.is_some() {
                 v.pos = a.pos;
                 0.0
-            } else if v.lift > 0.3 && a.state == AnimalState::Following {
+            } else if v.lift > 0.3 && a.state == AnimalState::Following && fly_height.is_none() {
                 0.0 // still coming down from its perch
             } else {
                 let step = (2.2 * dt).min(dist);
@@ -2431,13 +2898,27 @@ impl App {
             let speed = if dt > 0.0 { moved / dt } else { 0.0 };
             // perch (Q-094): up there while escaped, climbs down when it follows
             let perch = self.game.perch(a);
-            let want_lift = perch.map_or(0.0, |(_, h)| h);
+            let flyer = fly_height.map(|h| {
+                let pose = self
+                    .game
+                    .level
+                    .data
+                    .hiding_place(&a.hiding_place)
+                    .and_then(|p| p.pose.as_deref())
+                    .unwrap_or("idle");
+                zoo_core::night::flyer_pose(a.state, perch.map(|(_, h)| h), pose, h)
+            });
+            let want_lift = flyer.map_or(perch.map_or(0.0, |(_, h)| h), |f| f.lift);
             let mut climbing = false;
             if (v.lift - want_lift).abs() > 1e-3 {
-                let rate = self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED);
+                let rate = if flyer.is_some() {
+                    FLY_CLIMB_SPEED
+                } else {
+                    self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED)
+                };
                 let step = rate * dt;
                 v.lift += (want_lift - v.lift).clamp(-step, step);
-                climbing = true;
+                climbing = flyer.is_none();
             }
             if let Some((p, _)) = perch {
                 if v.leap.is_none() {
@@ -2484,6 +2965,14 @@ impl App {
             } else {
                 "walk"
             };
+            if let Some(f) = flyer {
+                // perched / hanging at its place, flying while it follows; asleep at night
+                // stays asleep
+                if v.rest != "sleep" {
+                    v.rest = f.rest;
+                }
+                v.locomotion = f.locomotion;
+            }
             if v.skinned {
                 if !self.renderer.has_clip(v.id, v.rest) {
                     v.rest = "idle";
@@ -2717,6 +3206,17 @@ fn night_animal_placeholder(
     }
 }
 
+/// Scales an instance along its model's x axis (string-light spans, proposal Q-147).
+fn stretch(r: &mut Renderer, h: InstanceHandle, k: f32) {
+    if (k - 1.0).abs() < 1e-4 {
+        return;
+    }
+    if let Some(mut i) = r.instance(h) {
+        i.scale_fade[0] *= k;
+        r.set_instance(h, i);
+    }
+}
+
 /// Texture id of a text decal (`text:<fluent key>`).
 fn text_texture_id(key: &str) -> String {
     format!("text:{key}")
@@ -2733,6 +3233,9 @@ fn target_key(t: &Target) -> String {
         Target::PutDown => "put_down".to_owned(),
         Target::Bed => "bed".to_owned(),
         Target::MoonDoor { id } => format!("moon_door:{id}"),
+        Target::Plant { spot } => format!("plant:{spot}"),
+        Target::GardenSign { bed } => format!("garden_sign:{bed}"),
+        Target::Treat { animal } => format!("treat:{animal}"),
     }
 }
 

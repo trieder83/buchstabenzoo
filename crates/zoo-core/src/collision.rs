@@ -40,18 +40,13 @@ pub fn footprint(model: &str) -> &'static [LocalShape] {
         }],
         // two posts at x = ±1.09; the gate opening between them stays free (Q-086: the
         // panel becomes a gate arch)
-        "enclosure_sign" => &[
-            C {
-                x: -1.09,
-                z: -0.05,
-                r: 0.12,
-            },
-            C {
-                x: 1.09,
-                z: -0.05,
-                r: 0.12,
-            },
-        ],
+        // beside the gate, the whole sign solid (Q-086 (b), user decision 2026-09-27)
+        "enclosure_sign" => &[B {
+            x: 0.0,
+            z: 0.10,
+            hx: 1.19,
+            hz: 0.26,
+        }],
         "map_board" => &[B {
             x: 0.0,
             z: 0.04,
@@ -132,6 +127,43 @@ pub fn footprint(model: &str) -> &'static [LocalShape] {
             x: 0.0,
             z: 0.0,
             r: 0.2,
+        }],
+        // vegetable garden (GAME-GARDEN, measured from the kit_garden meshes)
+        "garden_bed" => &[B {
+            x: 0.0,
+            z: 0.0,
+            hx: 0.41,
+            hz: 1.45,
+        }],
+        "garden_sign" => &[B {
+            x: 0.0,
+            z: 0.067,
+            hx: 0.25,
+            hz: 0.087,
+        }],
+        "wheelbarrow" => &[B {
+            x: 0.0,
+            z: -0.074,
+            hx: 0.306,
+            hz: 0.783,
+        }],
+        "watering_can" => &[B {
+            x: 0.0,
+            z: 0.1325,
+            hx: 0.13,
+            hz: 0.2675,
+        }],
+        "garden_fence" => &[B {
+            x: 0.0,
+            z: -0.0075,
+            hx: 1.04,
+            hz: 0.0475,
+        }],
+        "garden_fence_1m" => &[B {
+            x: 0.0,
+            z: -0.0075,
+            hx: 0.54,
+            hz: 0.0475,
         }],
         "gate_zoo_closed" => &[B {
             x: 0.0,

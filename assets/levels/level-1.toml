@@ -498,7 +498,7 @@ notes = "Tiled pool hippo_pool (see [[enclosure_feature]]; square, tiled rim —
 id = "hedge_hippo_nw"
 type = "decoration"
 kind = "hedge"
-rect = [8, 19, 1, 4]
+rect = [8, 21, 1, 2]           # 2026-09-27: 2 cells shorter, the enclosure sign stands beside the gate (LAYOUT-033)
 blocks_view = true
 height_m = 3.0
 notes = "Tall hedge between path_ring_e and the hippo fence; hides the cave mouth from the east side of the panda enclosure."
@@ -516,7 +516,7 @@ notes = "Tall hedge south of the hippo gate; with hedge_hippo_nw it frames the g
 id = "board_hippo"
 type = "decoration"
 kind = "info_board"
-rect = [8, 17, 1, 1]
+rect = [8, 20, 1, 1]           # 2026-09-27: 3 m north, the enclosure sign stands between it and the gate (LAYOUT-033)
 enclosure = "enc_hippo"
 
 # ---------------------------------------------------------------- cave (panda hiding place)
@@ -1195,7 +1195,7 @@ attach = "board_zebra"
 [[light]]
 id = "l1_board_lamp_hippo"
 kind = "board_lamp"
-pos = [8.5, 17.5]
+pos = [8.5, 20.5]
 facing = "-x"
 attach = "board_hippo"
 

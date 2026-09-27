@@ -270,6 +270,12 @@ pub struct ItemData {
     pub id: String,
     pub kind: String,
     pub pos: [f32; 2],
+    /// The side the child uses / reads (`+x`, `-x`, `+z`, `-z`).
+    #[serde(default)]
+    pub facing: Option<String>,
+    /// The walkable cell the child stands on to use it (tests, scripted player).
+    #[serde(default)]
+    pub stand: Option<[i32; 2]>,
     pub building: Option<String>,
     /// The animal that needs this item to be carried home (GAME-RESCUE "goldfish bowl").
     pub animal: Option<String>,
@@ -303,6 +309,109 @@ impl PropData {
     pub fn pos(&self) -> Vec2 {
         Vec2::from(self.pos)
     }
+}
+
+/// A fenced vegetable garden (`[[garden]]`, GAME-GARDEN, data proposal Q-102): its cells
+/// stay walkable; the fence runs (cell-edge lines) block the player and the grid crossings,
+/// the gate opens by itself, animals never enter.
+#[derive(Debug, Clone, Deserialize)]
+pub struct GardenData {
+    pub id: String,
+    pub rect: Rect,
+    /// The gate opening (cells just inside it, on the `gate_side` fence line).
+    pub gate: Rect,
+    #[serde(default = "default_south")]
+    pub gate_side: String,
+    #[serde(default)]
+    pub gate_model: Option<String>,
+    #[serde(default)]
+    pub fence_model: Option<String>,
+    /// Fence lines `[x0, z0, x1, z1]` on cell edges (level metres).
+    #[serde(default)]
+    pub fence_runs: Vec<[f32; 4]>,
+    #[serde(default)]
+    pub fence_inset_m: f32,
+    #[serde(default)]
+    pub edges_closed_by: Vec<String>,
+    #[serde(default)]
+    pub animals_enter: bool,
+    /// Decoration with a collider (wheelbarrow, watering can).
+    #[serde(default)]
+    pub props: Vec<GardenProp>,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+/// A decoration model of a garden (`props` of `[[garden]]`).
+#[derive(Debug, Clone, Deserialize)]
+pub struct GardenProp {
+    pub model: String,
+    pub pos: [f32; 2],
+    #[serde(default = "default_south")]
+    pub facing: String,
+}
+
+impl GardenData {
+    /// Centre of the gate opening on the fence line (level metres).
+    pub fn gate_center(&self) -> Vec2 {
+        let g = self.gate;
+        let c = Vec2::new(g.x as f32 + g.w as f32 / 2.0, g.z as f32 + g.d as f32 / 2.0);
+        match self.gate_side.as_str() {
+            "-z" => Vec2::new(c.x, g.z as f32),
+            "+z" => Vec2::new(c.x, (g.z + g.d) as f32),
+            "-x" => Vec2::new(g.x as f32, c.y),
+            _ => Vec2::new((g.x + g.w) as f32, c.y),
+        }
+    }
+
+    /// Unit direction out of the garden through the gate (level).
+    pub fn gate_out(&self) -> Vec2 {
+        facing_vec(&self.gate_side)
+    }
+}
+
+/// A raised soil bed of a garden (`[[garden_bed]]`).
+#[derive(Debug, Clone, Deserialize)]
+pub struct GardenBedData {
+    pub id: String,
+    pub garden: String,
+    pub rect: Rect,
+    /// `carrot` | `potato`.
+    pub plant: String,
+    pub sign_pos: [f32; 2],
+    #[serde(default = "default_south")]
+    pub sign_facing: String,
+    pub sign_key: String,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+/// One harvestable plant (`[[plant_spot]]`, GAME-GARDEN §3).
+#[derive(Debug, Clone, Deserialize)]
+pub struct PlantSpotData {
+    pub id: String,
+    pub garden: String,
+    pub bed: String,
+    /// `carrot` | `potato`.
+    pub kind: String,
+    pub pos: [f32; 2],
+    /// `empty` | `sprout` | `young` | `ripe` in a new game.
+    #[serde(default = "default_ripe")]
+    pub start_stage: String,
+    /// The walkable cell in front of the plant.
+    pub stand: [i32; 2],
+    #[serde(skip)]
+    pub part: usize,
+}
+
+impl PlantSpotData {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::from(self.pos)
+    }
+}
+
+fn default_ripe() -> String {
+    "ripe".to_owned()
 }
 
 /// A place where the fish bowl is filled (`[[water_source]]`, proposal Q-093): `tap` = prop
@@ -560,6 +669,13 @@ pub struct LevelData {
     /// Furniture (proposal Q-137).
     #[serde(default, rename = "prop")]
     pub props: Vec<PropData>,
+    /// Vegetable gardens (GAME-GARDEN, proposal Q-102).
+    #[serde(default, rename = "garden")]
+    pub gardens: Vec<GardenData>,
+    #[serde(default, rename = "garden_bed")]
+    pub garden_beds: Vec<GardenBedData>,
+    #[serde(default, rename = "plant_spot")]
+    pub plant_spots: Vec<PlantSpotData>,
     /// The level files joined into this data (one for a single level file).
     #[serde(skip)]
     pub parts: Vec<LevelPart>,
@@ -730,6 +846,20 @@ impl LevelData {
                 e.part = shift(e.part);
                 e
             }));
+            out.gardens.extend(next.gardens.into_iter().map(|mut e| {
+                e.part = shift(e.part);
+                e
+            }));
+            out.garden_beds
+                .extend(next.garden_beds.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
+            out.plant_spots
+                .extend(next.plant_spots.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
             out.scenery.extend(next.scenery);
             out.enclosure_features.extend(next.enclosure_features);
             out.entries.extend(next.entries);
@@ -860,6 +990,9 @@ pub struct Grid {
     bounds: Rect,
     cells: Vec<CellInfo>,
     ground: Surface,
+    /// Cell edges no step may cross (garden fences on cell-edge lines, Q-102): the lower /
+    /// western cell and the axis of the step (0 = +x, 1 = +z).
+    blocked_edges: std::collections::BTreeSet<(i32, i32, u8)>,
 }
 
 impl Grid {
@@ -899,10 +1032,43 @@ impl Grid {
                 }
             }
         }
+        let mut blocked_edges = std::collections::BTreeSet::new();
+        for g in &data.gardens {
+            for r in &g.fence_runs {
+                for key in fence_edges(*r) {
+                    blocked_edges.insert(key);
+                }
+            }
+        }
         Self {
             bounds: b,
             cells,
             ground: data.level.ground_surface,
+            blocked_edges,
+        }
+    }
+
+    /// Whether a step between two neighbouring cells crosses no blocked cell edge (garden
+    /// fences); a diagonal step is blocked by any of the four edges at its corner.
+    pub fn step_open(&self, a: IVec2, b: IVec2) -> bool {
+        if self.blocked_edges.is_empty() {
+            return true;
+        }
+        let d = b - a;
+        let edge = |p: IVec2, q: IVec2| -> bool {
+            let (lo, axis) = if q.x != p.x {
+                (if q.x > p.x { p } else { q }, 0u8)
+            } else {
+                (if q.y > p.y { p } else { q }, 1u8)
+            };
+            !self.blocked_edges.contains(&(lo.x, lo.y, axis))
+        };
+        if d.x != 0 && d.y != 0 {
+            let ax = a + IVec2::new(d.x, 0);
+            let az = a + IVec2::new(0, d.y);
+            edge(a, ax) && edge(a, az) && edge(ax, b) && edge(az, b)
+        } else {
+            edge(a, b)
         }
     }
 
@@ -997,6 +1163,28 @@ impl Grid {
     }
 }
 
+/// Cell edges a fence line `[x0, z0, x1, z1]` (level metres, on cell edges) blocks:
+/// `(lower cell x, z, axis)` with axis 0 = the step +x, 1 = the step +z.
+pub fn fence_edges(r: [f32; 4]) -> Vec<(i32, i32, u8)> {
+    let [x0, z0, x1, z1] = r;
+    let mut out = Vec::new();
+    if (z0 - z1).abs() < 1e-3 {
+        // along x on the line z = z0: blocks the +z steps (x, z0 - 1) → (x, z0)
+        let z = z0.round() as i32;
+        let (a, b) = (x0.min(x1).round() as i32, x0.max(x1).round() as i32);
+        for x in a..b {
+            out.push((x, z - 1, 1));
+        }
+    } else if (x0 - x1).abs() < 1e-3 {
+        let x = x0.round() as i32;
+        let (a, b) = (z0.min(z1).round() as i32, z0.max(z1).round() as i32);
+        for z in a..b {
+            out.push((x - 1, z, 0));
+        }
+    }
+    out
+}
+
 /// A level at runtime: data plus which barriers are open.
 #[derive(Debug, Clone)]
 pub struct Level {
@@ -1011,6 +1199,8 @@ pub struct Level {
     box_colliders: Vec<crate::collision::Shape>,
     /// Ground heights (GAME-PLAYER 8).
     ground: crate::ground::GroundMap,
+    /// Gate and door models in the openings (LAYOUT-031).
+    openings: Vec<crate::scene::Opening>,
 }
 
 impl Level {
@@ -1034,7 +1224,14 @@ impl Level {
             barrier_parts: scene.barrier_parts,
             box_colliders: scene.box_colliders,
             ground,
+            openings: scene.openings,
         }
+    }
+
+    /// Gate and door models in the openings (LAYOUT-031); indices match
+    /// [`crate::scene::LevelScene::openings`].
+    pub fn openings(&self) -> &[crate::scene::Opening] {
+        &self.openings
     }
 
     /// Height (m) of the visible walkable surface at level point `p` (GAME-PLAYER 8).

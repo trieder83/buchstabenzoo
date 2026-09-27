@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FOOD_ICONS, loadSettings, saveSettings, type KeyValue } from './ui';
+import { FOOD_ICONS, TARGET_ICONS, loadSettings, parseBasket, saveSettings, type KeyValue } from './ui';
 
 class MapStore implements KeyValue {
   m = new Map<string, string>();
@@ -89,5 +89,23 @@ describe('GAME-NIGHT icons (no reading needed)', async () => {
       'loc_fir',
     ])
       expect(PLACE_ICONS[p], p).toBeTruthy();
+  });
+});
+
+describe('garden basket HUD (GAME-GARDEN §4)', () => {
+  it('parses the basket and falls back to empty', () => {
+    expect(parseBasket('{"carrot":2,"potato":3,"capacity":6,"offered":"carrot"}')).toEqual({
+      carrot: 2,
+      potato: 3,
+      capacity: 6,
+      offered: 'carrot',
+    });
+    expect(parseBasket('')).toEqual({ carrot: 0, potato: 0 });
+    expect(parseBasket(undefined)).toEqual({ carrot: 0, potato: 0 });
+  });
+  it('has pictures for treats and the garden targets (no reading needed)', () => {
+    expect(FOOD_ICONS.carrot).toBeTruthy();
+    expect(FOOD_ICONS.potato).toBeTruthy();
+    for (const k of ['plant', 'garden_sign', 'treat']) expect(TARGET_ICONS[k]).toBeTruthy();
   });
 });

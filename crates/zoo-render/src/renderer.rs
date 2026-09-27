@@ -45,7 +45,7 @@ pub const MAX_WATER_OBSTACLES: usize = 4;
 /// Duck / frog ripples per frame (GAME-AMBIENT 5).
 pub const MAX_WATER_RIPPLES: usize = 8;
 
-/// Per-instance data of a static batch (48 bytes).
+/// Per-instance data of a static batch (64 bytes).
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Pod, Zeroable)]
 pub struct Instance {
@@ -55,6 +55,229 @@ pub struct Instance {
     pub scale_fade: [f32; 4],
     /// Flat colour with `a = 1`, or `a = 0` to sample the palette texture.
     pub color: [f32; 4],
+    /// Moving parts (ARCH-007): x = open amount 0…1 (door leaves, gates), y = hide mask
+    /// ([`HIDE_ROOF`] | [`HIDE_WALLS_UPPER`]), z, w unused.
+    pub node: [f32; 4],
+}
+
+/// Hide-mask bit of a model's `roof` part (with its inner ceiling).
+pub const HIDE_ROOF: u32 = 1;
+/// Hide-mask bit of a model's `walls_upper` part.
+pub const HIDE_WALLS_UPPER: u32 = 2;
+/// Parts a mesh can move / hide on its own (`u_nodes` array size, part 0 = root).
+pub const MAX_NODE_PARTS: usize = 8;
+
+/// How a named part of a multi-node asset moves (README_night "Nodes", ARCH-007).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct NodeBehaviour {
+    /// Rotation axis: 0 none, 1 = +X, 2 = +Y, 3 = +Z (model space, about the pivot).
+    pub axis: f32,
+    /// Rotation at open = 1 (radians); for `spin` the turn per second.
+    pub angle: f32,
+    /// Hide-mask bit ([`HIDE_ROOF`], [`HIDE_WALLS_UPPER`]) or 0.
+    pub hide_bit: f32,
+    /// 0 = driven by the instance's open amount, 1 = spins with the clock (windmill sails),
+    /// 2 = shown only while the glow slots are on (night sky of the moon window).
+    pub mode: f32,
+}
+
+impl NodeBehaviour {
+    pub const STATIC: NodeBehaviour = NodeBehaviour {
+        axis: 0.0,
+        angle: 0.0,
+        hide_bit: 0.0,
+        mode: 0.0,
+    };
+
+    fn turn(axis: f32, deg: f32) -> Self {
+        Self {
+            axis,
+            angle: deg.to_radians(),
+            ..Self::STATIC
+        }
+    }
+
+    /// Behaviour of a part by its node name (kit conventions, README_night.md).
+    pub fn of(name: &str) -> Self {
+        match name {
+            // leaves open to the back (−Z): left +90°, right −90° about +Y
+            "leaf_l" => Self::turn(2.0, 90.0),
+            "leaf_r" => Self::turn(2.0, -90.0),
+            // key box door: −100° about +Y
+            "door" => Self::turn(2.0, -100.0),
+            // turnstile arms: a third of a turn per passage
+            "arms" => Self::turn(2.0, 120.0),
+            // toy chest lid: modelled open 70°, +70° about +X closes it (open = 1 → closed)
+            "lid" => Self::turn(1.0, 70.0),
+            // windmill sails: slow spin about the hub's +Z (one turn per 8 s)
+            "sails" => Self {
+                axis: 3.0,
+                angle: std::f32::consts::TAU / 8.0,
+                mode: 1.0,
+                ..Self::STATIC
+            },
+            "roof" => Self {
+                hide_bit: HIDE_ROOF as f32,
+                ..Self::STATIC
+            },
+            "walls_upper" => Self {
+                hide_bit: HIDE_WALLS_UPPER as f32,
+                ..Self::STATIC
+            },
+            "night_sky" => Self {
+                mode: 2.0,
+                ..Self::STATIC
+            },
+            _ => Self::STATIC,
+        }
+    }
+}
+
+/// Vertex data of a static mesh (ARCH-007): 16 floats per vertex (position, normal, uv,
+/// slot colour + mode, part pivot + code; see [`static_vertices`]) and the indices with every
+/// glass triangle moved to the end: `glass_first` is the index where the glass starts (drawn
+/// blended after the opaque pass). Slot modes: 0 palette, 1 glow slot, 3 glass, 5 flat face
+/// colour.
+pub struct StaticVertices {
+    pub vertices: Vec<f32>,
+    pub indices: Vec<u32>,
+    pub glass_first: u32,
+    /// `u_nodes` uniform of the mesh (4 floats per part) and whether any part moves / hides.
+    pub nodes: [f32; MAX_NODE_PARTS * 4],
+    pub has_nodes: bool,
+}
+
+impl StaticVertices {
+    /// Whether instances can be merged into one static mesh: no glass (drawn apart) and no
+    /// part that hides, spins or shows only at night (moving parts are baked at rest).
+    pub fn is_bakeable(&self) -> bool {
+        self.glass_first as usize == self.indices.len()
+            && self.nodes.chunks(4).all(|b| b[2] == 0.0 && b[3] == 0.0)
+    }
+
+    /// Whether the mesh needs the rich vertex format: a material slot other than the
+    /// palette, or a part that moves / hides.
+    pub fn is_rich(&self) -> bool {
+        self.has_nodes
+            || self
+                .vertices
+                .chunks(STATIC_VERTEX_FLOATS)
+                .any(|v| v[11] != 0.0)
+    }
+}
+
+/// Merges static meshes placed at (position, yaw, scale) into one mesh around `origin`
+/// (pure; ARCH-008): positions and normals transformed exactly like the instanced vertex
+/// shader, parts baked at rest (part code 0), slot colours kept.
+pub fn bake_vertices(items: &[(&StaticVertices, Vec3, f32, Vec3)], origin: Vec3) -> StaticVertices {
+    let mut vertices = Vec::new();
+    let mut indices = Vec::new();
+    for (src, pos, yaw, scale) in items {
+        let (s, c) = yaw.sin_cos();
+        let base = (vertices.len() / STATIC_VERTEX_FLOATS) as u32;
+        for v in src.vertices.chunks(STATIC_VERTEX_FLOATS) {
+            let p = Vec3::new(v[0], v[1], v[2]) * *scale;
+            let n = Vec3::new(v[3], v[4], v[5]) / *scale;
+            let w = Vec3::new(c * p.x + s * p.z, p.y, -s * p.x + c * p.z) + *pos - origin;
+            let wn = Vec3::new(c * n.x + s * n.z, n.y, -s * n.x + c * n.z).normalize_or_zero();
+            vertices.extend_from_slice(&[w.x, w.y, w.z, wn.x, wn.y, wn.z, v[6], v[7]]);
+            vertices.extend_from_slice(&v[8..12]);
+            vertices.extend_from_slice(&[0.0; 4]);
+        }
+        indices.extend(src.indices.iter().map(|i| i + base));
+    }
+    let glass_first = indices.len() as u32;
+    StaticVertices {
+        vertices,
+        indices,
+        glass_first,
+        nodes: [0.0; MAX_NODE_PARTS * 4],
+        has_nodes: false,
+    }
+}
+
+/// Floats per static vertex.
+pub const STATIC_VERTEX_FLOATS: usize = 16;
+
+/// Packs a static mesh with its material slots and parts (pure; ARCH-007).
+pub fn static_vertices(
+    mesh: &MeshData,
+    materials: &[zoo_assets::Material],
+    parts: &[zoo_assets::NodePart],
+) -> StaticVertices {
+    let n = mesh.positions.len();
+    let mut glow = vec![[0.0f32; 4]; n];
+    let mut glass_tri = vec![false; mesh.indices.len() / 3];
+    for sub in &mesh.submeshes {
+        let Some(mat) = sub.material.and_then(|i| materials.get(i)) else {
+            continue;
+        };
+        let g = if mat.is_glass() {
+            let c = mat.base_color.map(zoo_assets::linear_to_srgb);
+            Some([c[0], c[1], c[2], 3.0])
+        } else if mat.name.ends_with("_face") {
+            // blank text face: its flat colour (UVs run 0..1 across it, not into the atlas)
+            let c = mat.base_color.map(zoo_assets::linear_to_srgb);
+            Some([c[0], c[1], c[2], 5.0])
+        } else if mat.is_glow() {
+            let e = mat.emissive_srgb();
+            Some([e[0], e[1], e[2], 1.0])
+        } else {
+            None
+        };
+        let Some(g) = g else { continue };
+        let (a, b) = (
+            sub.first_index as usize,
+            (sub.first_index + sub.index_count) as usize,
+        );
+        for &i in &mesh.indices[a.min(mesh.indices.len())..b.min(mesh.indices.len())] {
+            glow[i as usize] = g;
+        }
+        if g[3] > 2.5 {
+            for t in a / 3..(b / 3).min(glass_tri.len()) {
+                glass_tri[t] = true;
+            }
+        }
+    }
+    let mut vertices = Vec::with_capacity(n * STATIC_VERTEX_FLOATS);
+    for (i, g) in glow.iter().enumerate() {
+        vertices.extend_from_slice(&mesh.positions[i]);
+        vertices.extend_from_slice(&mesh.normals[i]);
+        vertices.extend_from_slice(&mesh.uvs[i]);
+        vertices.extend_from_slice(g);
+        let code = mesh.node.get(i).copied().unwrap_or(0) as usize;
+        let (pivot, code) = match parts.get(code) {
+            Some(p) if code > 0 && code < MAX_NODE_PARTS => (p.pivot, code),
+            _ => (Vec3::ZERO, 0),
+        };
+        vertices.extend_from_slice(&[pivot.x, pivot.y, pivot.z, code as f32]);
+    }
+    let mut indices = Vec::with_capacity(mesh.indices.len());
+    for (t, tri) in mesh.indices.chunks(3).enumerate() {
+        if !glass_tri[t] {
+            indices.extend_from_slice(tri);
+        }
+    }
+    let glass_first = indices.len() as u32;
+    for (t, tri) in mesh.indices.chunks(3).enumerate() {
+        if glass_tri[t] {
+            indices.extend_from_slice(tri);
+        }
+    }
+    let mut nodes = [0.0; MAX_NODE_PARTS * 4];
+    let mut has_nodes = false;
+    for (k, p) in parts.iter().enumerate().skip(1).take(MAX_NODE_PARTS - 1) {
+        let b = NodeBehaviour::of(&p.name);
+        nodes[k * 4..k * 4 + 4].copy_from_slice(&[b.axis, b.angle, b.hide_bit, b.mode]);
+        has_nodes |= b != NodeBehaviour::STATIC;
+    }
+    StaticVertices {
+        vertices,
+        indices,
+        glass_first,
+        nodes,
+        has_nodes,
+    }
 }
 
 impl Instance {
@@ -63,6 +286,17 @@ impl Instance {
             pos_yaw: [pos.x, pos.y, pos.z, yaw],
             scale_fade: [1.0, 1.0, 1.0, f32::from(u8::from(fadeable))],
             color: [1.0, 1.0, 1.0, 0.0],
+            node: [0.0; 4],
+        }
+    }
+
+    /// A palette-textured model with a uniform scale.
+    pub fn scaled(pos: Vec3, yaw: f32, scale: f32) -> Self {
+        Self {
+            pos_yaw: [pos.x, pos.y, pos.z, yaw],
+            scale_fade: [scale, scale, scale, 0.0],
+            color: [1.0, 1.0, 1.0, 0.0],
+            node: [0.0; 4],
         }
     }
 
@@ -73,6 +307,7 @@ impl Instance {
             pos_yaw: [pos.x, pos.y, pos.z, yaw],
             scale_fade: [scale.x, scale.y, scale.z, 0.0],
             color: [color[0], color[1], color[2], night::EMISSIVE_ALPHA],
+            node: [0.0; 4],
         }
     }
 
@@ -81,6 +316,7 @@ impl Instance {
             pos_yaw: [pos.x, pos.y, pos.z, yaw],
             scale_fade: [scale.x, scale.y, scale.z, f32::from(u8::from(fadeable))],
             color: [color[0], color[1], color[2], 1.0],
+            node: [0.0; 4],
         }
     }
 }
@@ -145,6 +381,13 @@ struct MeshInfo {
     water: bool,
     /// Bobbing on the water (`u_bob`, TECH-WATER behaviour 8).
     bob: [f32; 4],
+    /// First index of the glass triangles (= `index_count` without glass).
+    glass_first: i32,
+    /// Part behaviours (`u_nodes`) if any part moves or hides.
+    nodes: Option<[f32; MAX_NODE_PARTS * 4]>,
+    /// Has material slots or parts: 16-float vertices and the rich vertex shader; else the
+    /// lean 8-float format (ARCH-007).
+    rich: bool,
 }
 
 /// A render region (chunk): a level part, a barrier or a building roof. Its batches are
@@ -171,6 +414,8 @@ pub const REGION_ALWAYS: u16 = 0;
 
 /// One mesh drawn with instancing (per region).
 struct Batch {
+    /// Mesh name (debug: which batches draw).
+    name: String,
     region: u16,
     vao: WebGlVertexArrayObject,
     inst_vbo: WebGlBuffer,
@@ -186,6 +431,12 @@ struct Batch {
     dynamic: bool,
     water: bool,
     bob: [f32; 4],
+    glass_first: i32,
+    nodes: Option<[f32; MAX_NODE_PARTS * 4]>,
+    rich: bool,
+    /// Instances with a non-zero scale (a batch of hidden instances is not drawn: garden
+    /// plants of the other growth stages).
+    live: usize,
     /// Bounds of the instances per [`CHUNK_M`] ground chunk (static regions only): a batch is
     /// drawn only when one of its chunks is in view, so the short far plane of the close
     /// views culls every mesh that has no instance nearby (GAME-CAMERA-VIEWS 6).
@@ -202,7 +453,12 @@ struct Part {
     texture: WebGlTexture,
     textured: bool,
     color: [f32; 4],
+    /// `eye_glow` slot: its emission colour (sRGB).
+    emit: Option<[f32; 3]>,
 }
+
+/// `u_emit.w` of an eye_glow part that shines (`#E6F7A0 × (0.25 + 0.75 × luminance)`).
+const EMIT_EYE: f32 = 4.0;
 
 struct SkinnedModel {
     vao: WebGlVertexArrayObject,
@@ -248,6 +504,8 @@ pub struct CharacterDraw {
     pub under_water: bool,
     /// Extra rotation before the yaw (bobbing roll of ducks and frogs).
     pub tilt: Quat,
+    /// The `eye_glow` slot shines (night animal inside the lantern radius, NIGHT-006).
+    pub eye_glow: bool,
 }
 
 /// How far an under-water character is pulled towards the camera for the depth test, so it
@@ -277,6 +535,7 @@ impl CharacterDraw {
             action_blend: 0.0,
             under_water: false,
             tilt: Quat::IDENTITY,
+            eye_glow: false,
         }
     }
 
@@ -315,6 +574,8 @@ struct DecalDraw {
     /// Bounds of the quad (frustum culling, GAME-CAMERA-VIEWS 6).
     min: Vec3,
     max: Vec3,
+    /// Hidden with this render region (a name board hidden with its roof).
+    region: u16,
 }
 
 /// Generous bounds of a skinned character around its origin (giraffe 4.5 m, elephant).
@@ -345,6 +606,8 @@ pub struct Renderer {
     gl: Gl,
     canvas: HtmlCanvasElement,
     static_prog: Program,
+    /// Static models with material slots / parts (ARCH-007).
+    rich_prog: Program,
     water_prog: Program,
     crowd_prog: Program,
     skinned_prog: Program,
@@ -386,6 +649,19 @@ pub struct Renderer {
     light_count: i32,
     pool_u: [f32; MAX_LIGHT_POOLS * 4],
     pool_count: i32,
+    /// Glow slots emissive (night).
+    glow_on: bool,
+    /// Debug: names of the static batches drawn in the last frame (only while recording).
+    pub debug_draws: Option<Vec<String>>,
+    /// CPU copies of the static meshes (static batching, [`Renderer::bake`]).
+    cpu_meshes: HashMap<String, StaticVertices>,
+}
+
+/// A model instance in a batch ([`Renderer::add_instance_handle`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct InstanceHandle {
+    batch: usize,
+    index: usize,
 }
 
 /// Name of the built-in unit box batch (placeholders).
@@ -422,12 +698,20 @@ impl Renderer {
             "u_light_count",
             "u_pools",
             "u_pool_count",
+            "u_glow_on",
         ];
         let mut static_names = common.to_vec();
-        static_names.extend(["u_time", "u_bob"]);
+        static_names.extend(["u_time", "u_bob", "u_nodes"]);
         let static_prog = Program::new(
             &gl,
             &shaders::static_vs(),
+            &shaders::static_fs(),
+            &static_names,
+        )
+        .map_err(err)?;
+        let rich_prog = Program::new(
+            &gl,
+            &shaders::rich_vs(),
             &shaders::static_fs(),
             &static_names,
         )
@@ -450,7 +734,14 @@ impl Renderer {
         )
         .map_err(err)?;
         let mut skinned_names = common.to_vec();
-        skinned_names.extend(["u_model", "u_joint_tex", "u_color", "u_eye", "u_depth_bias"]);
+        skinned_names.extend([
+            "u_model",
+            "u_joint_tex",
+            "u_color",
+            "u_eye",
+            "u_depth_bias",
+            "u_emit",
+        ]);
         let skinned_prog = Program::new(
             &gl,
             &shaders::skinned_vs(),
@@ -507,6 +798,7 @@ impl Renderer {
             gl,
             canvas,
             static_prog,
+            rich_prog,
             water_prog,
             crowd_prog,
             skinned_prog,
@@ -542,6 +834,9 @@ impl Renderer {
             light_count: 0,
             pool_u: [0.0; MAX_LIGHT_POOLS * 4],
             pool_count: 0,
+            glow_on: false,
+            debug_draws: None,
+            cpu_meshes: HashMap::new(),
         };
         r.add_mesh(BOX, &box_mesh(), 1.0)?;
         r.add_mesh(CAPSULE, &capsule_mesh(0.3, 1.2), 1.0)?;
@@ -715,6 +1010,11 @@ impl Renderer {
     /// Adds a decal quad: corners top-left, top-right, bottom-right, bottom-left (world);
     /// the image's top row maps to the top edge. Drawn only while its texture exists.
     pub fn add_decal(&mut self, texture: &str, corners: [Vec3; 4], normal: Vec3) {
+        self.add_decal_in(texture, corners, normal, REGION_ALWAYS);
+    }
+
+    /// Adds a decal that is hidden with a render region.
+    pub fn add_decal_in(&mut self, texture: &str, corners: [Vec3; 4], normal: Vec3, region: u16) {
         let first_vertex = self.decals.vertices.len() / 5;
         for (c, uv) in corners
             .iter()
@@ -732,6 +1032,7 @@ impl Renderer {
             first_vertex,
             min: min - Vec3::splat(0.05),
             max: max + Vec3::splat(0.05),
+            region,
         });
         self.decals.uploaded = false;
     }
@@ -809,18 +1110,30 @@ impl Renderer {
         let vao = gl.create_vertex_array()?;
         gl.bind_vertex_array(Some(&vao));
         gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&m.vbo));
-        attrib(gl, 0, 3, 32, 0);
-        attrib(gl, 1, 3, 32, 12);
-        attrib(gl, 2, 2, 32, 24);
+        let stride = if m.rich {
+            (STATIC_VERTEX_FLOATS * 4) as i32
+        } else {
+            32
+        };
+        attrib(gl, 0, 3, stride, 0);
+        attrib(gl, 1, 3, stride, 12);
+        attrib(gl, 2, 2, stride, 24);
+        if m.rich {
+            attrib(gl, 6, 4, stride, 32);
+            attrib(gl, 7, 4, stride, 48);
+        }
         gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, Some(&m.ibo));
         let inst_vbo = gl.create_buffer()?;
         gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&inst_vbo));
-        for (k, loc) in (3..6).enumerate() {
-            attrib(gl, loc, 4, 48, k as i32 * 16);
+        let inst_stride = std::mem::size_of::<Instance>() as i32;
+        let locs: &[u32] = if m.rich { &[3, 4, 5, 8] } else { &[3, 4, 5] };
+        for (k, &loc) in locs.iter().enumerate() {
+            attrib(gl, loc, 4, inst_stride, k as i32 * 16);
             gl.vertex_attrib_divisor(loc, 1);
         }
         gl.bind_vertex_array(None);
         let batch = Batch {
+            name: name.to_owned(),
             region,
             vao,
             inst_vbo,
@@ -833,6 +1146,10 @@ impl Renderer {
             dynamic: false,
             water: m.water,
             bob: m.bob,
+            glass_first: m.glass_first,
+            nodes: m.nodes,
+            rich: m.rich,
+            live: 0,
             chunks: Vec::new(),
         };
         self.batch_index
@@ -892,18 +1209,50 @@ impl Renderer {
 
     /// Adds a static mesh as an instanced batch (props use the palette texture).
     pub fn add_mesh(&mut self, name: &str, mesh: &MeshData, edge_mask: f32) -> Result<(), JsValue> {
+        self.add_mesh_parts(name, mesh, &[], &[], edge_mask)
+    }
+
+    /// Adds a static mesh with its material slots (glow, glass) and movable parts.
+    fn add_mesh_parts(
+        &mut self,
+        name: &str,
+        mesh: &MeshData,
+        materials: &[zoo_assets::Material],
+        parts: &[zoo_assets::NodePart],
+        edge_mask: f32,
+    ) -> Result<(), JsValue> {
+        let packed = static_vertices(mesh, materials, parts);
+        self.upload_static(name, packed, mesh.bounds(), edge_mask)
+    }
+
+    /// Uploads packed static vertices as mesh `name` (lean or rich format) with its batch in
+    /// [`REGION_ALWAYS`]; keeps a CPU copy for [`Renderer::bake`].
+    fn upload_static(
+        &mut self,
+        name: &str,
+        packed: StaticVertices,
+        (lo, hi): (Vec3, Vec3),
+        edge_mask: f32,
+    ) -> Result<(), JsValue> {
         let gl = &self.gl;
-        let mut verts = Vec::with_capacity(mesh.positions.len() * 8);
-        for i in 0..mesh.positions.len() {
-            verts.extend_from_slice(&mesh.positions[i]);
-            verts.extend_from_slice(&mesh.normals[i]);
-            verts.extend_from_slice(&mesh.uvs[i]);
-        }
+        let rich = packed.is_rich();
+        let lean: Vec<f32>;
+        let vertices: &[f32] = if rich {
+            &packed.vertices
+        } else {
+            // the lean format: position, normal, uv (ARCH-007)
+            lean = packed
+                .vertices
+                .chunks(STATIC_VERTEX_FLOATS)
+                .flat_map(|v| v[..8].iter().copied())
+                .collect();
+            &lean
+        };
         let vbo = gl.create_buffer().ok_or("create_buffer")?;
         gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&vbo));
         gl.buffer_data_with_u8_array(
             Gl::ARRAY_BUFFER,
-            bytemuck::cast_slice(&verts),
+            bytemuck::cast_slice(vertices),
             Gl::STATIC_DRAW,
         );
         let ibo = gl.create_buffer().ok_or("create_buffer")?;
@@ -911,10 +1260,9 @@ impl Renderer {
         gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, Some(&ibo));
         gl.buffer_data_with_u8_array(
             Gl::ELEMENT_ARRAY_BUFFER,
-            bytemuck::cast_slice(&mesh.indices),
+            bytemuck::cast_slice(&packed.indices),
             Gl::STATIC_DRAW,
         );
-        let (lo, hi) = mesh.bounds();
         let radius =
             lo.x.abs()
                 .max(hi.x.abs())
@@ -939,22 +1287,71 @@ impl Renderer {
             MeshInfo {
                 vbo,
                 ibo,
-                index_count: mesh.indices.len() as i32,
+                index_count: packed.indices.len() as i32,
                 edge_mask,
                 height: hi.y,
                 radius,
                 water: TileShape::of_model(name).is_some(),
                 bob: bob_params(name).uniform(),
+                glass_first: packed.glass_first as i32,
+                nodes: packed.has_nodes.then_some(packed.nodes),
+                rich,
             },
         );
+        self.cpu_meshes.insert(name.to_owned(), packed);
         self.batch_for(name, REGION_ALWAYS)
             .ok_or_else(|| JsValue::from_str("create batch"))?;
         Ok(())
     }
 
-    /// Adds a static model loaded from a `.glb`.
+    /// Whether a loaded static model can be merged by [`Renderer::bake`].
+    pub fn can_bake(&self, name: &str) -> bool {
+        self.cpu_meshes.get(name).is_some_and(|p| p.is_bakeable())
+    }
+
+    /// Static batching (TECH-ARCH "Multi-node assets", ARCH-008): merges model instances
+    /// that never move, glow-toggle or hide into one new mesh `name` with one instance in
+    /// `region` — one draw call for a whole group (a garden, a room's furniture). Returns
+    /// `false` (nothing added) when a model is unknown or cannot be baked; the caller then
+    /// places the instances one by one.
+    pub fn bake(
+        &mut self,
+        name: &str,
+        region: u16,
+        items: &[(&str, Vec3, f32, Vec3)],
+    ) -> Result<bool, JsValue> {
+        if items.is_empty() {
+            return Ok(false);
+        }
+        let mut sources = Vec::with_capacity(items.len());
+        for (m, pos, yaw, scale) in items {
+            match self.cpu_meshes.get(*m) {
+                Some(p) if p.is_bakeable() => sources.push((p, *pos, *yaw, *scale)),
+                _ => return Ok(false),
+            }
+        }
+        let origin = items.iter().map(|i| i.1).sum::<Vec3>() / items.len() as f32;
+        let origin = Vec3::new(origin.x, 0.0, origin.z);
+        let packed = bake_vertices(&sources, origin);
+        let n = packed.vertices.len() / STATIC_VERTEX_FLOATS;
+        let (mut lo, mut hi) = (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN));
+        for k in 0..n {
+            let o = k * STATIC_VERTEX_FLOATS;
+            let p = Vec3::new(
+                packed.vertices[o],
+                packed.vertices[o + 1],
+                packed.vertices[o + 2],
+            );
+            lo = lo.min(p);
+            hi = hi.max(p);
+        }
+        self.upload_static(name, packed, (lo, hi), 1.0)?;
+        Ok(self.add_instance_in(name, region, origin, 0.0, 1.0))
+    }
+
+    /// Adds a static model loaded from a `.glb` (glow slots, glass, movable parts).
     pub fn add_model(&mut self, name: &str, model: &Model, edge_mask: f32) -> Result<(), JsValue> {
-        self.add_mesh(name, &model.mesh, edge_mask)
+        self.add_mesh_parts(name, &model.mesh, &model.materials, &model.nodes, edge_mask)
     }
 
     /// Adds a model instance; returns `false` if the model is unknown.
@@ -992,6 +1389,48 @@ impl Renderer {
         self.grow_region(region, pos, radius * scale, height * scale);
         self.grow_batch(i, pos, radius * scale, height * scale);
         true
+    }
+
+    /// Adds a model instance to a render region and returns its handle (to move its parts
+    /// later with [`Renderer::set_instance`]); `None` for an unknown model.
+    pub fn add_instance_handle(
+        &mut self,
+        name: &str,
+        region: u16,
+        pos: Vec3,
+        yaw: f32,
+        scale: f32,
+    ) -> Option<InstanceHandle> {
+        if !self.add_instance_in(name, region, pos, yaw, scale) {
+            return None;
+        }
+        let batch = *self.batch_index.get(&(name.to_owned(), region))?;
+        Some(InstanceHandle {
+            batch,
+            index: self.batches[batch].instances.len() - 1,
+        })
+    }
+
+    /// The instance data behind a handle.
+    pub fn instance(&self, h: InstanceHandle) -> Option<Instance> {
+        self.batches.get(h.batch)?.instances.get(h.index).copied()
+    }
+
+    /// Changes one instance (yaw, open amount, hide mask); re-uploads its batch once.
+    pub fn set_instance(&mut self, h: InstanceHandle, inst: Instance) {
+        if let Some(b) = self.batches.get_mut(h.batch) {
+            if let Some(i) = b.instances.get_mut(h.index) {
+                if bytemuck::bytes_of(i) != bytemuck::bytes_of(&inst) {
+                    *i = inst;
+                    b.uploaded = usize::MAX;
+                }
+            }
+        }
+    }
+
+    /// Glow slots on (night: lamps lit, windows glowing, the moon window's night sky).
+    pub fn set_glow(&mut self, on: bool) {
+        self.glow_on = on;
     }
 
     /// Adds a flat-coloured placeholder box (`pos` = bottom centre).
@@ -1075,7 +1514,8 @@ impl Renderer {
         );
         gl.bind_vertex_array(None);
 
-        // One part per material range; PNG base colour textures, else the colour factor.
+        // One part per material range; PNG base colour textures (one upload per atlas image,
+        // shared by `body` and `eye_glow`), else the colour factor.
         let mut textures: HashMap<usize, (WebGlTexture, bool)> = HashMap::new();
         let mut parts = Vec::new();
         let subs = if m.submeshes.is_empty() {
@@ -1089,7 +1529,9 @@ impl Renderer {
         };
         for sub in subs {
             let mat = sub.material.and_then(|i| model.materials.get(i));
-            let key = sub.material.unwrap_or(usize::MAX);
+            let key = mat
+                .and_then(|m| m.image_index)
+                .unwrap_or(usize::MAX - sub.material.unwrap_or(0));
             if let std::collections::hash_map::Entry::Vacant(slot) = textures.entry(key) {
                 let decoded = mat
                     .and_then(|m| m.image.as_ref())
@@ -1108,6 +1550,16 @@ impl Renderer {
                 texture,
                 textured,
                 color: mat.map_or([1.0; 4], |m| m.base_color),
+                emit: mat
+                    .filter(|m| m.is_eye_glow())
+                    .map(|m| m.emissive_srgb())
+                    .map(|e| {
+                        if e.iter().all(|&c| c <= 0.0) {
+                            night::EYE_GLOW.to_array()
+                        } else {
+                            e
+                        }
+                    }),
             });
         }
 
@@ -1317,6 +1769,11 @@ impl Renderer {
         }
         gl.buffer_sub_data_with_i32_and_u8_array(Gl::ARRAY_BUFFER, 0, bytes);
         b.uploaded = b.instances.len();
+        b.live = b
+            .instances
+            .iter()
+            .filter(|i| i.scale_fade[0] != 0.0)
+            .count();
     }
 
     fn set_common(&self, p: &Program, view: &Mat4, view_proj: &Mat4, fade: Vec4) {
@@ -1342,6 +1799,8 @@ impl Renderer {
         gl.uniform1i(p.u("u_light_count"), self.light_count);
         gl.uniform4fv_with_f32_array(p.u("u_pools"), &self.pool_u);
         gl.uniform1i(p.u("u_pool_count"), self.pool_count);
+        gl.uniform1f(p.u("u_glow_on"), f32::from(u8::from(self.glow_on)));
+        gl.uniform4f(p.u("u_emit"), 0.0, 0.0, 0.0, 0.0);
     }
 
     /// Outline sample offset in device pixels (even, so the fade pattern stays line-free).
@@ -1427,8 +1886,21 @@ impl Renderer {
             })
             .collect();
         let water_prog = self.water_animation && self.field_tex.is_some();
-        for pass in [false, true] {
-            if pass && water_prog {
+        let mut glass_batches = 0u32;
+        // passes: 1 = models with slots / parts (rich shader), 0 = lean static meshes,
+        // 2 = water tiles (water shader; the lean one without water animation)
+        // (models first: big buildings hide the ground behind them before it is shaded)
+        for pass in [1u8, 0, 2] {
+            let water_pass = pass == 2;
+            if pass == 0 {
+                self.set_common(&self.static_prog, &view, &view_proj, fade);
+                let gl = &self.gl;
+                gl.uniform1f(self.static_prog.u("u_time"), self.time);
+            } else if pass == 1 {
+                self.set_common(&self.rich_prog, &view, &view_proj, fade);
+                let gl = &self.gl;
+                gl.uniform1f(self.rich_prog.u("u_time"), self.time);
+            } else if water_pass && water_prog {
                 self.set_common(&self.water_prog, &view, &view_proj, fade);
                 let gl = &self.gl;
                 let p = &self.water_prog;
@@ -1445,15 +1917,19 @@ impl Renderer {
                 gl.uniform4fv_with_f32_array(p.u("u_ripples"), &self.ripple_u);
                 gl.uniform4fv_with_f32_array(p.u("u_ripples_b"), &self.ripple_b);
                 gl.uniform1i(p.u("u_ripple_count"), self.ripple_count);
+            } else if water_pass {
+                self.set_common(&self.static_prog, &view, &view_proj, fade);
+                let gl = &self.gl;
+                gl.uniform1f(self.static_prog.u("u_time"), self.time);
             }
-            let prog = if pass && water_prog {
-                &self.water_prog
-            } else {
-                &self.static_prog
+            let prog = match pass {
+                1 => &self.rich_prog,
+                2 if water_prog => &self.water_prog,
+                _ => &self.static_prog,
             };
             let gl = &self.gl;
             for b in &self.batches {
-                if b.instances.is_empty() || b.water != pass {
+                if b.live == 0 || b.water != water_pass || (!water_pass && b.rich != (pass == 1)) {
                     continue;
                 }
                 if !visible.get(b.region as usize).copied().unwrap_or(true)
@@ -1463,8 +1939,11 @@ impl Renderer {
                     stats.culled_batches += 1;
                     continue;
                 }
+                if b.glass_first == 0 {
+                    continue; // glass only: drawn in the glass pass
+                }
                 gl.uniform1f(prog.u("u_edge_mask"), b.edge_mask);
-                if !pass {
+                if !water_pass {
                     let bob = if self.water_animation {
                         b.bob
                     } else {
@@ -1472,17 +1951,32 @@ impl Renderer {
                     };
                     gl.uniform4f(prog.u("u_bob"), bob[0], bob[1], bob[2], bob[3]);
                 }
+                if let Some(nodes) = &b.nodes {
+                    gl.uniform4fv_with_f32_array(prog.u("u_nodes"), nodes);
+                }
+                if let Some(d) = &mut self.debug_draws {
+                    d.push(format!(
+                        "{}@{} x{} {}t",
+                        b.name,
+                        b.region,
+                        b.instances.len(),
+                        (b.glass_first as usize / 3) * b.instances.len()
+                    ));
+                }
                 gl.bind_vertex_array(Some(&b.vao));
                 gl.draw_elements_instanced_with_i32(
                     Gl::TRIANGLES,
-                    b.index_count,
+                    b.glass_first,
                     Gl::UNSIGNED_INT,
                     0,
                     b.instances.len() as i32,
                 );
                 stats.draw_calls += 1;
                 stats.instances += b.instances.len() as u32;
-                stats.triangles += (b.index_count as u32 / 3) * b.instances.len() as u32;
+                stats.triangles += (b.glass_first as u32 / 3) * b.instances.len() as u32;
+                if b.glass_first < b.index_count {
+                    glass_batches += 1;
+                }
             }
         }
 
@@ -1542,6 +2036,12 @@ impl Renderer {
                     [part.color[0], part.color[1], part.color[2], 1.0]
                 };
                 gl.uniform4f(p.u("u_color"), c[0], c[1], c[2], c[3]);
+                // eye_glow (NIGHT-006): unlit eye colour × texel luminance inside the lantern
+                let e = match part.emit {
+                    Some(e) if draw.eye_glow => [e[0], e[1], e[2], EMIT_EYE],
+                    _ => [0.0; 4],
+                };
+                gl.uniform4f(p.u("u_emit"), e[0], e[1], e[2], e[3]);
                 gl.draw_elements_with_i32(
                     Gl::TRIANGLES,
                     part.index_count,
@@ -1640,6 +2140,48 @@ impl Renderer {
             }
         }
 
+        // Glass panes (`glass` slot, alpha 0.35): after everything opaque, blended into the
+        // colour, the depth and the edge mask untouched (ARCH-007).
+        if glass_batches > 0 {
+            self.set_common(&self.rich_prog, &view, &view_proj, fade);
+            let gl = &self.gl;
+            let prog = &self.rich_prog;
+            gl.uniform1f(prog.u("u_time"), self.time);
+            gl.uniform4f(prog.u("u_bob"), 0.0, 0.0, 0.0, 0.0);
+            gl.active_texture(Gl::TEXTURE0);
+            gl.bind_texture(Gl::TEXTURE_2D, Some(&self.palette));
+            gl.enable(Gl::BLEND);
+            gl.blend_func_separate(Gl::SRC_ALPHA, Gl::ONE_MINUS_SRC_ALPHA, Gl::ZERO, Gl::ONE);
+            gl.depth_mask(false);
+            for b in &self.batches {
+                if b.live == 0
+                    || b.glass_first >= b.index_count
+                    || !visible.get(b.region as usize).copied().unwrap_or(true)
+                    || (b.region != REGION_ALWAYS
+                        && !b.chunks.iter().any(|c| aabb_visible(&planes, c.1, c.2)))
+                {
+                    continue;
+                }
+                gl.uniform1f(prog.u("u_edge_mask"), b.edge_mask);
+                if let Some(nodes) = &b.nodes {
+                    gl.uniform4fv_with_f32_array(prog.u("u_nodes"), nodes);
+                }
+                gl.bind_vertex_array(Some(&b.vao));
+                gl.draw_elements_instanced_with_i32(
+                    Gl::TRIANGLES,
+                    b.index_count - b.glass_first,
+                    Gl::UNSIGNED_INT,
+                    b.glass_first * 4,
+                    b.instances.len() as i32,
+                );
+                stats.draw_calls += 1;
+                stats.triangles +=
+                    ((b.index_count - b.glass_first) as u32 / 3) * b.instances.len() as u32;
+            }
+            gl.depth_mask(true);
+            gl.disable(Gl::BLEND);
+        }
+
         // Decals over their faces (sign silhouettes and texts, ART-ENVIRONMENT 6/7).
         if self.decals.uploaded {
             let gl = &self.gl;
@@ -1670,7 +2212,13 @@ impl Renderer {
             gl.polygon_offset(-1.0, -4.0);
             gl.bind_vertex_array(self.decals.vao.as_ref());
             for d in &self.decals.draws {
-                if !aabb_visible(&planes, d.min, d.max) {
+                if !aabb_visible(&planes, d.min, d.max)
+                    || (d.region != REGION_ALWAYS
+                        && self
+                            .regions
+                            .get(d.region as usize)
+                            .is_some_and(|r| r.hidden))
+                {
                     continue;
                 }
                 let Some(t) = self.decal_textures.get(&d.texture) else {
@@ -2058,6 +2606,126 @@ mod tests {
         let (lo, hi) = capsule_mesh(0.3, 1.2).bounds();
         assert!(lo.y.abs() < 1e-5);
         assert!((hi.y - 1.2).abs() < 1e-5);
+    }
+
+    fn load(rel: &str) -> Model {
+        let bytes = std::fs::read(format!("{}/../../{rel}", env!("CARGO_MANIFEST_DIR"))).unwrap();
+        Model::from_glb(&bytes).unwrap()
+    }
+
+    /// ARCH-007: static vertices carry the glow slots (sRGB emission, mode 1), glass tint
+    /// (mode 3, its triangles sorted after the opaque ones) and each vertex's part pivot and
+    /// code; the part behaviours come from the node names.
+    #[test]
+    fn arch_007_static_vertices_carry_slots_glass_and_parts() {
+        let nh = load("assets/models/buildings/night_house.glb");
+        let v = static_vertices(&nh.mesh, &nh.materials, &nh.nodes);
+        assert_eq!(
+            v.vertices.len(),
+            nh.mesh.positions.len() * STATIC_VERTEX_FLOATS
+        );
+        assert_eq!(v.indices.len(), nh.mesh.indices.len());
+        let glass_tris = (v.indices.len() as u32 - v.glass_first) / 3;
+        assert_eq!(glass_tris, 72, "night house glass panes");
+        // every index after glass_first is a glass vertex, none before
+        let mode = |i: u32| v.vertices[i as usize * STATIC_VERTEX_FLOATS + 11];
+        assert!(v.indices[v.glass_first as usize..]
+            .iter()
+            .all(|&i| mode(i) == 3.0));
+        assert!(v.indices[..v.glass_first as usize]
+            .iter()
+            .all(|&i| mode(i) != 3.0));
+        // glow slots: mode 1 with the sRGB emission
+        assert!(v.indices.iter().any(|&i| mode(i) == 1.0));
+        // roof / walls_upper parts: hide bits
+        let roof = nh.node_index("roof").unwrap();
+        let walls = nh.node_index("walls_upper").unwrap();
+        assert!(v.has_nodes);
+        assert_eq!(v.nodes[roof * 4 + 2], HIDE_ROOF as f32);
+        assert_eq!(v.nodes[walls * 4 + 2], HIDE_WALLS_UPPER as f32);
+        // a roof vertex carries its part code and pivot
+        let k = nh
+            .mesh
+            .node
+            .iter()
+            .position(|&n| n as usize == roof)
+            .unwrap();
+        let o = k * STATIC_VERTEX_FLOATS;
+        assert_eq!(v.vertices[o + 15], roof as f32);
+        assert!((v.vertices[o + 13] - nh.nodes[roof].pivot.y).abs() < 1e-5);
+
+        // moon door leaves turn ±90° about +Y (open to the back)
+        let door = load("assets/models/props/moon_door.glb");
+        let v = static_vertices(&door.mesh, &door.materials, &door.nodes);
+        let l = door.node_index("leaf_l").unwrap();
+        let r = door.node_index("leaf_r").unwrap();
+        assert_eq!(v.nodes[l * 4], 2.0);
+        assert!((v.nodes[l * 4 + 1] - 90f32.to_radians()).abs() < 1e-6);
+        assert!((v.nodes[r * 4 + 1] + 90f32.to_radians()).abs() < 1e-6);
+        assert_eq!(v.glass_first as usize, v.indices.len(), "no glass");
+        // a model without parts: no node uniform needed
+        assert!(v.is_rich(), "glow slots and leaves: the rich format");
+        let bed = load("assets/models/props/bed.glb");
+        let b = static_vertices(&bed.mesh, &bed.materials, &bed.nodes);
+        assert!(!b.has_nodes);
+        assert!(!b.is_rich(), "palette only: the lean 8-float format");
+        let tile = load("assets/models/props/grass_tile.glb");
+        assert!(!static_vertices(&tile.mesh, &tile.materials, &tile.nodes).is_rich());
+        // behaviours by name
+        assert_eq!(NodeBehaviour::of("sails").mode, 1.0);
+        assert_eq!(NodeBehaviour::of("night_sky").mode, 2.0);
+        assert_eq!(NodeBehaviour::of("glass"), NodeBehaviour::STATIC);
+    }
+
+    /// ARCH-008: static batching merges instances exactly as the instanced shader places
+    /// them; glass, hiding, spinning and night-only parts are never baked.
+    #[test]
+    fn arch_008_baked_groups_match_their_instances() {
+        let bed = load("assets/models/buildings/../props/garden_bed.glb");
+        let b = static_vertices(&bed.mesh, &bed.materials, &bed.nodes);
+        assert!(b.is_bakeable());
+        let items = [
+            (&b, Vec3::new(1.0, 0.0, -2.0), 0.0, Vec3::ONE),
+            (
+                &b,
+                Vec3::new(4.0, 0.0, -2.0),
+                std::f32::consts::FRAC_PI_2,
+                Vec3::ONE,
+            ),
+        ];
+        let origin = Vec3::new(2.5, 0.0, -2.0);
+        let baked = bake_vertices(&items, origin);
+        let n = b.vertices.len() / STATIC_VERTEX_FLOATS;
+        assert_eq!(baked.vertices.len(), 2 * b.vertices.len());
+        assert_eq!(baked.indices.len(), 2 * b.indices.len());
+        assert_eq!(baked.indices[b.indices.len()], b.indices[0] + n as u32);
+        // the second copy's vertex k = yaw 90° (x' = z, z' = −x) + position − origin
+        for k in [0usize, 5, n - 1] {
+            let v = &b.vertices[k * STATIC_VERTEX_FLOATS..];
+            let w = &baked.vertices[(n + k) * STATIC_VERTEX_FLOATS..];
+            let want = Vec3::new(v[2], v[1], -v[0]) + Vec3::new(4.0, 0.0, -2.0) - origin;
+            assert!(Vec3::new(w[0], w[1], w[2]).abs_diff_eq(want, 1e-5), "{k}");
+        }
+        // what may be baked
+        let can = |rel: &str| {
+            let m = load(rel);
+            static_vertices(&m.mesh, &m.materials, &m.nodes).is_bakeable()
+        };
+        assert!(
+            can("assets/models/props/toy_chest.glb"),
+            "the lid rests open"
+        );
+        assert!(
+            can("assets/models/props/bedside_lamp.glb"),
+            "glow slots stay"
+        );
+        assert!(!can("assets/models/buildings/night_house.glb"), "glass");
+        assert!(
+            !can("assets/models/buildings/zookeeper_house.glb"),
+            "roof hides"
+        );
+        assert!(!can("assets/models/props/window_moon.glb"), "night sky");
+        assert!(!can("assets/models/props/windmill.glb"), "sails spin");
     }
 
     #[test]

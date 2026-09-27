@@ -48,7 +48,7 @@ interface Mission {
   gate: [number, number, string];
 }
 
-const HIPPO: Mission = { animal: 'hippo', food: 'melons', boxX: -3.6, board: [7.0, 17.5, 'KeyD'], gate: [8.4, 16.0, 'KeyD'] };
+const HIPPO: Mission = { animal: 'hippo', food: 'melons', boxX: -3.6, board: [7.0, 20.5, 'KeyD'], gate: [8.4, 16.0, 'KeyD'] };
 const PANDA: Mission = { animal: 'panda', food: 'bamboo', boxX: -1.2, board: [-3.5, 28.8, 'KeyW'], gate: [0.0, 31.3, 'KeyW'] };
 
 /** Plays one mission end to end like a child (board → box → animal → gate). */

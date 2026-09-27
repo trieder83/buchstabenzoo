@@ -29,6 +29,7 @@ pub fn neighbours(
     allow_gates: bool,
 ) -> impl Iterator<Item = (IVec2, f32)> + '_ {
     neighbours_with(c, move |n| grid.is_walkable(n, allow_gates))
+        .filter(move |(n, _)| grid.step_open(c, *n))
 }
 
 /// Neighbours of `c` accepted by `ok` (same rules as [`neighbours`]).
@@ -144,7 +145,7 @@ pub fn dijkstra_with(
         }
         let c = grid.cell_at(k);
         let ic = inv_speed(c);
-        for (n, len) in neighbours_with(c, ok) {
+        for (n, len) in neighbours_with(c, ok).filter(|(n, _)| grid.step_open(c, *n)) {
             let nk = grid.index(n).expect("in bounds");
             let nd = d + len * 0.5 * (ic + inv_speed(n));
             if nd < dist[nk] {

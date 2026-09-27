@@ -6,7 +6,7 @@ module: asset-pipeline
 status: draft
 depends_on: [ART-DIRECTION]
 test_prefix: APIPE
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Asset pipeline — concept to game
@@ -28,7 +28,9 @@ area goes through concept → approval → Blender → glTF → game, and each s
    | 4 | Export | `.glb` (glTF 2.0 binary) | `assets/models/<kind>/<asset_id>.glb` |
    | 5 | Integration | Referenced by game data, loads in the game | `crates/zoo-core` data |
 
-   `<kind>` is one of `characters`, `animals`, `props`, `environment`.
+   `<kind>` is one of `characters`, `animals`, `props`, `environment`, `buildings` (walk-in
+   and landmark buildings of `kit_buildings`, `assets/models/buildings/`; the game resolves
+   the folder with `zoo_core::scene::model_path` — README_night open point 5).
    Scripted modelling keeps assets reproducible and reviewable: changing a model means
    changing its script and re-running it; the script exports the `.glb` too. Hand edits in
    the `.blend` that are not in the script are not allowed.
@@ -104,3 +106,4 @@ they run in CI with the other tests.
 - Q-009 Who/what creates concept images.
 - Q-010 answered: comic style — `art/style/style.md`. Q-049 answered: high-angle camera (§4).
 - Q-026 texture approach (§10).
+- Q-153 manifest granularity for kits, kind `buildings` (manifest kind, triangle budget), `food_storage` vs. `food_storage_building`. Q-154 exported models not yet listed in an ART spec / manifest.

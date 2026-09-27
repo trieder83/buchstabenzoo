@@ -101,6 +101,8 @@ pub fn swim_sink_m(animal: &str) -> f32 {
 pub struct AnimTable {
     clips: std::collections::BTreeMap<(String, String), ClipInfo>,
     climb: std::collections::BTreeMap<String, f32>,
+    /// `fly_height` of a `fly` clip (bat, owl): origin raised this much while flying.
+    fly: std::collections::BTreeMap<String, f32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -117,6 +119,7 @@ impl AnimTable {
         let v: toml::Table = toml::from_str(s).map_err(|e| e.to_string())?;
         let mut clips = std::collections::BTreeMap::new();
         let mut climb = std::collections::BTreeMap::new();
+        let mut fly = std::collections::BTreeMap::new();
         for (animal, t) in &v {
             let Some(t) = t.as_table() else { continue };
             for (clip, c) in t {
@@ -129,6 +132,12 @@ impl AnimTable {
                 if let Some(cs) = c.get("climb_speed").and_then(|f| f.as_float()) {
                     climb.insert(animal.clone(), cs as f32);
                 }
+                if let Some(h) = c
+                    .get("fly_height")
+                    .and_then(|f| f.as_float().or_else(|| f.as_integer().map(|i| i as f64)))
+                {
+                    fly.insert(animal.clone(), h as f32);
+                }
                 clips.insert(
                     (animal.clone(), clip.clone()),
                     ClipInfo {
@@ -139,7 +148,7 @@ impl AnimTable {
                 );
             }
         }
-        Ok(Self { clips, climb })
+        Ok(Self { clips, climb, fly })
     }
 
     pub fn clip(&self, animal: &str, clip: &str) -> Option<ClipInfo> {
@@ -151,6 +160,11 @@ impl AnimTable {
     /// Authored climbing speed (`climb_speed`, m/s) of an animal's `climb` clip.
     pub fn climb_speed(&self, animal: &str) -> Option<f32> {
         self.climb.get(animal).copied()
+    }
+
+    /// `fly_height` (m) of an animal that flies (bat, owl), if any.
+    pub fn fly_height(&self, animal: &str) -> Option<f32> {
+        self.fly.get(animal).copied()
     }
 
     /// Authored speed of an animal's `walk` (default 1.4 m/s, ART-ANIMALS §6).

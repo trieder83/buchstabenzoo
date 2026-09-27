@@ -48,9 +48,10 @@ python3 tools/blender/check_glb.py         # export rules + expected sizes of ev
   the pivot, so "open" = rotate the node about its own origin.
 - **Empties** (nodes without a mesh): `light`, `light_*` = point-light position of a lamp;
   `socket_*` = attachment points. Radii are data (below), not in the file (no extras).
-- The loader in `zoo-assets` bakes every node into one mesh (`every_glb_loads` passes); to
-  animate leaves / sails / hide roofs the renderer must keep the nodes separate and read
-  the material names (today `Model` keeps only per-submesh material indices).
+- The loader in `zoo-assets` keeps one mesh but tags every vertex with its part (direct
+  child node of the root) and pivot, keeps the material names / emission / blend mode, the
+  empties and the text faces (ARCH-006); the renderer moves / hides the parts by their node
+  names (ARCH-007).
 
 ## Assets
 
@@ -183,20 +184,16 @@ see `palette.toml`. No existing index changed.
 
 ## Open points
 
-1. **Renderer support** needed: separate nodes (leaves, sails, lid, key-box door, roof /
-   walls_upper / glass hiding), material names (`*_glow` emission at night, `glass` blend,
-   `*_face` text textures), empties (`light*`, `socket_*`). Until then `moon_door_open` can
-   stand in for the open moon door.
-2. **Food-storage "Futter" board vs. door:** the game's board (bottom 1.75 m, 3.4 × 1.2 m,
-   centred on the south facade) overlaps the top of the 2.1 m door opening (x 0…1). Proposal:
-   board bottom 2.3 m (it fits in the gable). Same for `food_hut` (board centred on the east
-   facade at 1.1 m covers the door and the hatch) — move it to the south gable or above.
-3. **String lights:** the level lines are 9–13 m long across the plaza; the model is a 6 m
-   span with its own post (posts every 6 m + `string_post` at the end). Long spans without
-   middle posts would need a stretched cord (non-uniform scale) — level-design decision.
-4. **Moon door vs. zoo wall:** the pillars (0.9 m deep) enclose the wall ends only if the wall
-   pieces are centred on the door's line; walls drawn on their walkable-side row (Q-087) are
-   0.5 m off — place the door on the same row.
-5. `ART-PIPELINE` §1 lists `<kind>` = characters | animals | props | environment; the
-   buildings went to `assets/models/buildings/` as requested (check_glb budget `buildings`
-   4 000) — the spec needs the new kind (or the files move to `environment/`).
+1. ~~Renderer support~~ — done 2026-09-27 (TECH-ARCH "Multi-node assets", ARCH-006/007/008):
+   parts move / hide in the vertex shader, `*_glow` / `eye_glow` / `glass` / `*_face` slots,
+   `light*` / `socket_*` empties; `moon_door_open` is no longer needed by the game.
+2. **Food-storage "Futter" board vs. door:** done — board bottom 2.3 m (in the gable). The
+   `food_hut` board follows the same rule and now stands in front of the roof slope like a
+   roof sign (Q-151).
+3. **String lights:** equal spans ≤ 6 m with the cord stretched per span, `string_post` at
+   the far end (proposal Q-147).
+4. **Moon door vs. zoo wall:** the door stands at the centre of its barrier rect
+   (`zoo_core::scene::moon_door_pose`, front towards its day level).
+5. `ART-PIPELINE` §1 now lists the kind `buildings`.
+6. Entrance turnstiles stand 0.2 m nearer the plaza than the row above (glTF z −0.7) so the
+   closed row sits on the walkable edge of the arch cells (LAYOUT-019).

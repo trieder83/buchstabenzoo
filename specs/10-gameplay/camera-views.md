@@ -131,6 +131,10 @@ applies only to the zoo view and look-around, where the camera is above or behin
 player). Roof models therefore have a proper inner ceiling surface (not just back faces);
 the ceiling is lit by indoor lamps at night. Passing through a door in first person does
 not fade anything.
+*Implementation (2026-09-27):* `zoo_core::view::roof_hidden(inside, view)` — hidden only
+when inside and not in first person; building models hide their `roof` (with the inner
+ceiling) and `walls_upper` parts by the instance hide mask, procedural roofs by their
+render region, a building's name board with its roof.
 
 ## Test cases
 
@@ -156,7 +160,7 @@ not fade anything.
 | CAMV-018 | Given every view change (zoo ↔ look-around, zoo ↔ first person, look-around → release) at any yaw and zoom, then at every frame of the glide the eye stays above the ground (eye height > 0.05 m, the close-view near plane) and moves smoothly: no 1/60 s step larger than 1.6 × the average step of the 0.4 s glide (eased, no cut, never through the ground; at 20 m zoom the peak is ≈ 1.25 m per frame). | unit |
 | CAMV-019 | Given a touch device, then the 👓 first-person button is in the bottom-right thumb zone (above the interact button, fully inside the safe area); tapping it toggles first person on and off exactly like `V`, while the left thumb keeps walking. | e2e |
 | CAMV-020 | Given first person, then the eye button is hidden and holding `F` or the right mouse button (`look_hold(true)`) leaves the view in first person; given the zoo view, then the 👓 button is shown on desktop and on touch and not highlighted. | unit |
-| CAMV-021 | Given night (GAME-NIGHT), then the close-view sky is a dark-blue gradient (`#1E2A5A` top → `#3B4C8C` horizon), the haze equals the horizon colour and the fog end stays 16 m (shining eyes beyond it are hidden); by day the day sky colours are unchanged (rule 7, Q-126). | unit |
+| CAMV-021 | Given night (GAME-NIGHT), then the close-view sky is a dark-blue gradient (`#1E2A5A` top → `#3B4C8C` horizon), the haze equals the horizon colour and the fog end stays the day fog end (20.8 m, `FOG_END_M`; shining eyes beyond it are hidden); by day the day sky colours are unchanged (rule 7, Q-126). | unit |
 | CAMV-022 | Given the player inside the zookeeper house (and the night house) in first person, then the roof is drawn and its ceiling is visible above (sky pixels absent in the upper screen area inside); switching to the zoo view hides the roof again (PLAY-028). | e2e |
 
 ## Open questions

@@ -497,11 +497,11 @@ fn layout_l2_005_l3_005_walking_times() {
         ("spawn2", "storage2", 5.9),
         ("storage2", "board_koala", 5.1),
         ("storage2", "board_lion", 5.6),
-        ("board_lion", "board_elephant", 9.7),
-        ("board_elephant", "board_giraffe", 6.6),
+        ("board_lion", "board_elephant", 7.1),
+        ("board_elephant", "board_giraffe", 9.1),
         ("board_giraffe", "board_koala", 4.1),
         ("board_koala", "loc_log_pile", 8.9),
-        ("loc_treehouse", "loc_lookout_tower", 9.9),
+        ("loc_treehouse", "loc_blossom_tree", 7.6),
         ("loc_fountain", "spawn2", 2.3),
         ("loc_lookout_tower", "board_lion", 7.0),
         ("loc_train", "board_lion", 9.3),
@@ -526,7 +526,7 @@ fn layout_l2_005_l3_005_walking_times() {
         ("house_door", "entry_s", 6.2),
         ("board_snow_fox", "entry_s", 7.0),
         ("loc_carousel", "entry_s", 3.7),
-        ("loc_trampoline", "house_door", 5.1),
+        ("loc_trampoline", "loc_carousel", 5.1),
         ("loc_waterfall", "loc_sprinkler", 8.0),
         ("loc_water_wheel", "loc_laundry", 6.7),
         ("loc_willow", "house_door", 8.3),
@@ -826,10 +826,10 @@ fn layout_l2_011_l3_011_food_boxes() {
 
 // LAYOUT-L2-013, LAYOUT-L3-012 (LAYOUT-014): ≥ 3 candidates per animal, wander areas ≥ 9
 // cells inside their rect, disjoint between animals, and every candidate in a spread
-// combination (48 of 81 / 10 of 27).
+// combination (57 of 81 / 12 of 27; FIX-056).
 #[test]
 fn layout_l2_013_l3_012_wander_areas_and_spread() {
-    for (case, valid) in [(L2, 48), (L3, 10)] {
+    for (case, valid) in [(L2, 57), (L3, 12)] {
         let zoo = common::zoo();
         let level = zoo_level(case.open);
         let mut areas = Vec::new();

@@ -24,7 +24,7 @@ bigger part of the zoo with **four** rescue missions:
 
 | Mission | Enclosure | Food box | Candidate hiding places (one is picked per playthrough) | What the riddles rely on (CONT-MISSIONS) |
 |---|---|---|---|---|
-| `koala` (**pair**, GAME-FAMILY) | `enc_koala` (west) | Eukalyptus / eucalyptus | `loc_treehouse` (south-west), `loc_tallest_tree` (east), `loc_blossom_tree` (north-east corner) | wooden house with window and rope ladder high up · the tallest tree of the zoo · pink blossoms, drifting petals, bees |
+| `koala` (**pair**, GAME-FAMILY) | `enc_koala` (west) | Eukalyptus / eucalyptus | `loc_treehouse` (east, between the stage and the east wall — FIX-056), `loc_tallest_tree` (east), `loc_blossom_tree` (north-east corner) | wooden house with window and rope ladder high up · the tallest tree of the zoo · pink blossoms, drifting petals, bees |
 | `elephant` | `enc_elephant` (east) | Heu / hay | `loc_fountain` (south-west), `loc_log_pile` (north-west), `loc_big_ball` (north) | water jet, stone basin, coins · stacked tree trunks, sawdust · giant round red-and-white toy |
 | `giraffe` | `enc_giraffe` (north) | Blätter / leaves | `loc_lookout_tower` (south-west), `loc_train` (south), `loc_playground` (south-east corner) | wooden tower with stairs, visitors high up · little train with a bell · slide and swings |
 | `lion` | `enc_lion` (south) | Fleisch / meat | `loc_sun_rocks` (north-west corner), `loc_stage` (north-east), `loc_deckchairs` (north-east) | big flat warm rocks in full sun · round music stage with drums · striped deckchairs under a sunshade |
@@ -56,6 +56,7 @@ combinations (picking rule Q-082: re-draw until valid).
 | New hiding places | The seven single places of the old CONT-MISSIONS draft are replaced by 3 candidates each; `loc_mud_pool` is dropped (clash with the hippo's `loc_mud`, Q-083 c), `loc_fountain` moves from the goldfish to the elephant, `loc_playground` keeps the giraffe with the `kiga` word *Spielplatz* (Q-039). | Q-095 |
 | Enclosure features | `elephant_pool` as `[[enclosure_feature]]` (same data shape as `hippo_pool`). | Q-085 |
 | Tree areas | Centre grove `dense` (solid, blocks view). | Q-085 |
+| 22 m haze rule (FIX-056) | `board_elephant` moved south of its gate (54, 31); `loc_big_ball`, `loc_fountain`, `loc_lookout_tower`, `loc_stage` clipped on the side facing their board; `loc_treehouse` and its oak `treehouse_e` moved from the south-west corner to the east wall (70, 44) (see "Hiding places"). | Q-145 |
 
 ## Spawn and camera
 
@@ -90,9 +91,9 @@ is labelled below. Generated from `assets/levels/level-2.toml`. The fallen tree
    49 %%..........===.jjjjjjjjjjjj===============.......##
    48 %%...5......===.jjjjjjjjjjjj===...................##
    47 %%..........===.jjjjjjjjjjjj===...................##
-   46 %%.LLLL.....===.jjjjjjjjjjjj===...QQQQ............##
-   45 %%.LLLL.....===.jjjjjjjjjjjj===..bQQQQ............##
-   44 %%..........===.jjjjjggjjjjj===...QQQQ............##
+   46 %%.LLLL.....===.jjjjjjjjjjjj===...QQQQ.........HHH##
+   45 %%.LLLL.....===.jjjjjjjjjjjj===..bQQQQ.........HHH##
+   44 %%..........===.jjjjjggjjjjj===...QQQQ........1HHH##
    43 %%..........===.............===...QQQQ............##
    42 %%.kkkkkkkk.===....i........===...................##
    41 %%.kkkkkkkk.==================....................##
@@ -100,12 +101,12 @@ is labelled below. Generated from `assets/levels/level-2.toml`. The fallen tree
    39 %%.kkkkkkkki==================.eeeeeeeeeeee.......##
    38 %%.kkkkkkkk.===TTTTTTTTTTTT===.eeeeeeeeeeee.......##
    37 %%.kkkkkkkg.===TTTTTTTTTTTT===.eeeeeeeeeeee.......##
-   36 %%.kkkkkkkg.===TTTTTTTTTTTT===ieeeeeeeeeeee.......##
+   36 %%.kkkkkkkg.===TTTTTTTTTTTT===.eeeeeeeeeeee.......##
    35 %%.kkkkkkkk.===TTTTTTTTTTTT===.eeeeeeeeeeee.......##
    34 %%.kkkkkkkk.===FFFFFFTTTTTT===.geeeeeeeeeee.......##
    33 %%.kkkkkkkk.===FFFFFFTTTTTT===.geeeeeeeeeee.......##
    32 %%......M...===FFFFFFTTTTTT===.eeeeeeeeeeee..2GG..##
-   31 %%......M...===FFFFFFTTTTTT===.eeeeeeeeeeee...GG..##
+   31 %%......M...===FFFFFFTTTTTT===ieeeeeeeeeeee...GG..##
    30 ===============DFFFFFTTTTTT===.eeeeeeeeeeee===....##
    29 ===S===========FFFFFFTTTTTT===.eeeeeeeeeeee===....##
    28 ===============FFFFFFTTTTTT===.eeeeeeeeeeee===....##
@@ -119,9 +120,9 @@ is labelled below. Generated from `assets/levels/level-2.toml`. The fallen tree
    20 %%.......===.....llllllllllll.==..................##
    19 %%.......===.....llllllllllll.==..................##
    18 %%.......===.....llllllllllll.==..................##
-   17 %%..HHH..===WWW7.llllllllllll.==..........PP......##
-   16 %%..HHH..===WWW..llllllllllll....8........PP9PPPP.##
-   15 %%.1HHH.....WWW..llllllllllll.ZZZZZZZZ....PP.PPPP.##
+   17 %%.......===WWW7.llllllllllll.==..........PP......##
+   16 %%.......===WWW..llllllllllll....8........PP9PPPP.##
+   15 %%..........WWW..llllllllllll.ZZZZZZZZ....PP.PPPP.##
    14 %%...............llllllllllll.ZZZZZZZZ............##
    13 %%##################################################
    12 %%##################################################
@@ -136,7 +137,7 @@ is labelled below. Generated from `assets/levels/level-2.toml`. The fallen tree
 | `F` / `D` | food storage 2 / its door | `T` | dense grove (`decoration`, solid) |
 | `k` `e` `l` `j` | enclosure koala / elephant / lion / giraffe | `g` | enclosure gate (with enclosure sign) |
 | `i` | info board | `M` | map board |
-| `H` | tree house (`treehouse_sw`) | `G` | giant tree (`tree_giant_e`) |
+| `H` | tree house (`treehouse_e`) | `G` | giant tree (`tree_giant_e`) |
 | `B` | blossom tree (`tree_blossom_ne`) | `O` | fountain (`fountain_sw`) |
 | `L` | log pile (`log_pile_nw`) | `o` | giant play ball (`ball_n`) |
 | `W` | lookout tower (`tower_sw`) | `Z` | zoo train at its station (`train_se`) |
@@ -181,13 +182,13 @@ every type except `path` and `hiding_place`. The level has no legacy `[[element]
 | `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter, feeding trough (GAME-FAMILY). No tree taller than the others, no blossoms, no tree house (riddle guards). |
 | `board_koala` | decoration (info_board) | 35, 39, 1, 1 | info board of `enc_koala`.  |
 | `enc_elephant` | enclosure | 55, 28, 12, 13 | gate (55, 33, 1, 2). Elephant pool (still water, stones, a shallow ramp — like hippo_pool), hay rack, sand-coloured ground patch, one big boulder. No fountain, no logs, no ball (riddle guards). |
-| `board_elephant` | decoration (info_board) | 54, 36, 1, 1 | info board of `enc_elephant`.  |
+| `board_elephant` | decoration (info_board) | 54, 31, 1, 1 | info board of `enc_elephant`, just south of its gate cells; moved from 54, 36 by FIX-056 so that `loc_big_ball` stays ≥ 22 m from its standing points. |
 | `enc_lion` | enclosure | 41, 14, 12, 8 | gate (46, 21, 2, 1). Wooden sun deck with a straw roof, a big lying log, dry grass. NO flat rocks, no stage, no chairs (riddle guards). |
 | `board_lion` | decoration (info_board) | 44, 23, 1, 1 | info board of `enc_lion`.  |
 | `enc_giraffe` | enclosure | 40, 44, 12, 12 | gate (45, 44, 2, 1). Tall feeding rack with leafy branches (4 m), giraffe house with a tall door. No tower, no slide, no train (riddle guards). |
 | `board_giraffe` | decoration (info_board) | 43, 42, 1, 1 | info board of `enc_giraffe`.  |
 | `map_board_l2` | landmark (map_board) | 32, 31, 1, 2 | Picture map at the level entry (opens the map, GAME-MAP). |
-| `treehouse_sw` | decoration (treehouse) | 28, 15, 3, 3 | Old oak with a wooden tree house (roof, window, rope ladder). The only tree house in the zoo (loc_treehouse). |
+| `treehouse_e` | decoration (treehouse) | 71, 44, 3, 3 | Old oak with a wooden tree house (roof, window, rope ladder) at the east wall between the music stage and the wall. The only tree house in the zoo (loc_treehouse). Moved from the south-west corner (28, 15) and renamed from `treehouse_sw` by FIX-056 (22 m haze rule). |
 | `tree_giant_e` | decoration (giant_tree) | 70, 31, 2, 2 | The tallest tree of the whole zoo (12 m, twice as tall as every other tree; levels 1-3 have no tree above 7 m). loc_tallest_tree. |
 | `tree_blossom_ne` | decoration (blossom_tree) | 70, 55, 2, 2 | Tree full of pink blossoms; pink petals on the ground (petals_ne). The only blossoming tree in the zoo (loc_blossom_tree). |
 | `fountain_sw` | landmark (fountain) | 27, 24, 3, 3 | Round stone basin with a water jet in the middle, coins shining on the bottom. The only fountain in the zoo (loc_fountain). |
@@ -216,40 +217,54 @@ scenery (generated).
 
 | Id | Animal | Area rect (x, z, w, d) | Animal spot | Wander on | Wander cells | Perch | Features (riddle details) | Scenery | Spot → own info board |
 |---|---|---|---|---|---|---|---|---|---|
-| `loc_treehouse` | koala | 26, 14, 4, 5 | (27, 15) | grass | 11 | 3.5 m | tree_house, rope_ladder, wooden_roof, window | `treehouse_sw` | 25.3 m |
+| `loc_treehouse` | koala | 67, 42, 7, 6 | (70, 44) | grass | 21 | 3.5 m | tree_house, rope_ladder, wooden_roof, window | `treehouse_e` | 35.4 m |
 | `loc_tallest_tree` | koala | 67, 31, 5, 5 | (69, 32) | grass | 17 | 9.0 m | tallest_tree, thick_trunk, crown_above_all_trees | `tree_giant_e` | 34.7 m |
 | `loc_blossom_tree` | koala | 66, 52, 6, 7 | (69, 55) | grass | 24 | 3.0 m | pink_blossoms, falling_petals, bees | `tree_blossom_ne`, `petals_ne` | 37.6 m |
-| `loc_fountain` | elephant | 28, 22, 5, 6 | (30, 25) | grass | 20 | — | water_jet, stone_basin, coins, splashing | `fountain_sw` | 26.4 m |
-| `loc_log_pile` | elephant | 26, 46, 7, 6 | (29, 48) | grass | 24 | — | stacked_logs, bark, sawdust | `log_pile_nw` | 27.7 m |
-| `loc_big_ball` | elephant | 51, 55, 6, 5 | (53, 58) | grass | 20 | — | giant_ball, red_white, round | `ball_n` | 22.0 m |
-| `loc_lookout_tower` | giraffe | 37, 14, 4, 7 | (39, 17) | grass | 16 | — | wooden_tower, stairs, high_platform, visitors_look_down | `tower_sw` | 25.3 m |
+| `loc_fountain` | elephant | 28, 22, 3, 6 | (30, 25) | grass | 10 | — | water_jet, stone_basin, coins, splashing | `fountain_sw` | 24.7 m |
+| `loc_log_pile` | elephant | 26, 46, 7, 6 | (29, 48) | grass | 24 | — | stacked_logs, bark, sawdust | `log_pile_nw` | 30.2 m |
+| `loc_big_ball` | elephant | 51, 57, 6, 3 | (53, 58) | grass | 14 | — | giant_ball, red_white, round | `ball_n` | 27.0 m |
+| `loc_lookout_tower` | giraffe | 37, 14, 4, 5 | (39, 17) | grass | 11 | — | wooden_tower, stairs, high_platform, visitors_look_down | `tower_sw` | 25.3 m |
 | `loc_train` | giraffe | 54, 16, 7, 4 | (57, 16) | grass | 16 | — | train, locomotive, wagons, rails, bell | `train_se` | 29.5 m |
 | `loc_playground` | giraffe | 66, 14, 5, 6 | (68, 16) | grass | 16 | — | slide, swings | `playground_se_slide`, `playground_se_swings` | 36.1 m |
 | `loc_sun_rocks` | lion | 28, 55, 7, 5 | (31, 57) | grass | 27 | — | flat_rocks, warm, full_sun, no_shade | `flat_rocks_nw` | 36.4 m |
-| `loc_stage` | lion | 55, 42, 5, 7 | (57, 45) | grass | 19 | — | stage, pointed_roof, drums, xylophone | `stage_ne` | 25.6 m |
+| `loc_stage` | lion | 55, 45, 5, 4 | (57, 45) | grass | 12 | — | stage, pointed_roof, drums, xylophone | `stage_ne` | 25.6 m |
 | `loc_deckchairs` | lion | 57, 52, 7, 6 | (60, 55) | grass | 20 | — | striped_deckchairs, sunshade | `deckchairs_ne` | 35.8 m |
 
 **Wander area** as in GAME-LEVEL-1 ("Hiding places"): cells within 3 m of the spot, on the
-`wander_on` surface, 4-connected to the spot, never a path cell. All 12 have ≥ 11 cells and a
+`wander_on` surface, 4-connected to the spot, never a path cell. All 12 have ≥ 10 cells and a
 cell ≥ 2 m from the spot; wander areas and rects of different animals are disjoint.
 
-**Spread (RESC-014).** Straight distances between spots of different animals (m); 48 of 81
-combinations have all four spots pairwise ≥ 12 m apart, every candidate is in ≥ 9 of them:
+**Haze rule (22 m, FIX-056).** Every wander cell and spot is ≥ 22 m (planar) from every standing
+point of its own animal (walkable cells ≤ 2.5 m from the own info board, cells around the own
+gate; GAME-LAYOUT "Sight", CAMV-008, close-view fog end 20.8 m). Changes of 2026-09-27:
+`board_elephant` moved from (54, 36) to (54, 31) (south of the gate, facing west as before);
+`loc_big_ball` clipped to z 57–59 (rect was 51, 55, 6, 5; 20 → 14 cells); `loc_fountain`
+clipped to x 28–30 (rect was 28, 22, 5, 6; 20 → 10 cells — the new board stands 2 m further
+south); `loc_lookout_tower` clipped to z 14–18 (was 37, 14, 4, 7; 16 → 11 cells); `loc_stage`
+clipped to z 45–48 (was 55, 42, 5, 7; 19 → 12 cells); `loc_treehouse` moved with its oak from
+the south-west corner (rect 26, 14, 4, 5, spot (27, 15); only 4 cells there were ≥ 22 m from
+the koala gate) to the east wall between the stage and the wall (rect 67, 42, 7, 6 — clear of
+the burglar hideout z 37–41 —, spot (70, 44); 11 → 21 cells). Smallest distances now:
+`loc_big_ball` 22.0 m, `loc_fountain` 22.2 m, `loc_lookout_tower` 22.1 m, `loc_stage` 22.4 m,
+the others ≥ 24.7 m.
+
+**Spread (RESC-014).** Straight distances between spots of different animals (m); 57 of 81
+combinations have all four spots pairwise ≥ 12 m apart (48 before FIX-056), every candidate is in ≥ 12 of them:
 
 | | `loc_treehouse` | `loc_tallest_tree` | `loc_blossom_tree` | `loc_fountain` | `loc_log_pile` | `loc_big_ball` | `loc_lookout_tower` | `loc_train` | `loc_playground` | `loc_sun_rocks` | `loc_stage` | `loc_deckchairs` |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `loc_treehouse` | — | — | — | 10.4 | 33.1 | 50.2 | 12.2 | 30.0 | 41.0 | 42.2 | 42.4 | 51.9 |
+| `loc_treehouse` | — | — | — | 44.3 | 41.2 | 22.0 | 41.1 | 30.9 | 28.1 | 41.1 | 13.0 | 14.9 |
 | `loc_tallest_tree` | — | — | — | 39.6 | 43.1 | 30.5 | 33.5 | 20.0 | 16.0 | 45.5 | 17.7 | 24.7 |
 | `loc_blossom_tree` | — | — | — | 49.2 | 40.6 | 16.3 | 48.4 | 40.8 | 39.0 | 38.1 | 15.6 | 9.0 |
-| `loc_fountain` | 10.4 | 39.6 | 49.2 | — | — | — | 12.0 | 28.5 | 39.1 | 32.0 | 33.6 | 42.4 |
-| `loc_log_pile` | 33.1 | 43.1 | 40.6 | — | — | — | 32.6 | 42.5 | 50.4 | 9.2 | 28.2 | 31.8 |
-| `loc_big_ball` | 50.2 | 30.5 | 16.3 | — | — | — | 43.3 | 42.2 | 44.6 | 22.0 | 13.6 | 7.6 |
-| `loc_lookout_tower` | 12.2 | 33.5 | 48.4 | 12.0 | 32.6 | 43.3 | — | — | — | 40.8 | 33.3 | 43.4 |
-| `loc_train` | 30.0 | 20.0 | 40.8 | 28.5 | 42.5 | 42.2 | — | — | — | 48.5 | 29.0 | 39.1 |
-| `loc_playground` | 41.0 | 16.0 | 39.0 | 39.1 | 50.4 | 44.6 | — | — | — | 55.2 | 31.0 | 39.8 |
-| `loc_sun_rocks` | 42.2 | 45.5 | 38.1 | 32.0 | 9.2 | 22.0 | 40.8 | 48.5 | 55.2 | — | — | — |
-| `loc_stage` | 42.4 | 17.7 | 15.6 | 33.6 | 28.2 | 13.6 | 33.3 | 29.0 | 31.0 | — | — | — |
-| `loc_deckchairs` | 51.9 | 24.7 | 9.0 | 42.4 | 31.8 | 7.6 | 43.4 | 39.1 | 39.8 | — | — | — |
+| `loc_fountain` | 44.3 | 39.6 | 49.2 | — | — | — | 12.0 | 28.5 | 39.1 | 32.0 | 33.6 | 42.4 |
+| `loc_log_pile` | 41.2 | 43.1 | 40.6 | — | — | — | 32.6 | 42.5 | 50.4 | 9.2 | 28.2 | 31.8 |
+| `loc_big_ball` | 22.0 | 30.5 | 16.3 | — | — | — | 43.3 | 42.2 | 44.6 | 22.0 | 13.6 | 7.6 |
+| `loc_lookout_tower` | 41.1 | 33.5 | 48.4 | 12.0 | 32.6 | 43.3 | — | — | — | 40.8 | 33.3 | 43.4 |
+| `loc_train` | 30.9 | 20.0 | 40.8 | 28.5 | 42.5 | 42.2 | — | — | — | 48.5 | 29.0 | 39.1 |
+| `loc_playground` | 28.1 | 16.0 | 39.0 | 39.1 | 50.4 | 44.6 | — | — | — | 55.2 | 31.0 | 39.8 |
+| `loc_sun_rocks` | 41.1 | 45.5 | 38.1 | 32.0 | 9.2 | 22.0 | 40.8 | 48.5 | 55.2 | — | — | — |
+| `loc_stage` | 13.0 | 17.7 | 15.6 | 33.6 | 28.2 | 13.6 | 33.3 | 29.0 | 31.0 | — | — | — |
+| `loc_deckchairs` | 14.9 | 24.7 | 9.0 | 42.4 | 31.8 | 7.6 | 43.4 | 39.1 | 39.8 | — | — | — |
 
 **Sight test (LAYOUT-L2-006).** For every candidate, no cell of its wander area is on screen
 while the player stands on any walkable cell next to its own info board or gate, for all
@@ -259,13 +274,13 @@ and, for perches, at perch height + 1 m (koala up to 10 m). All 12 pass; for inf
 12 are also off-screen in 2340×1080 landscape (the ball and the tree house were moved for this).
 
 **Nearest neighbour of each place** (fastest walk, 1.93 m/s path / 0.98 m/s grass, ≤ 10 s):
-`loc_treehouse` → loc_lookout_tower 9.9 s; `loc_fountain` → spawn 2.3 s; `loc_lookout_tower` → board_lion 7.0 s; `loc_train` → board_lion 9.3 s; `loc_playground` → loc_tallest_tree 9.2 s; `loc_tallest_tree` → loc_playground 9.2 s; `loc_blossom_tree` → loc_deckchairs 5.1 s; `loc_stage` → board_giraffe 7.4 s; `loc_deckchairs` → loc_stage 5.4 s; `loc_big_ball` → loc_deckchairs 4.9 s; `loc_sun_rocks` → construction 3.2 s; `loc_log_pile` → construction 3.0 s.
+`loc_treehouse` → loc_blossom_tree 7.6 s (FIX-056; was → loc_lookout_tower from the old south-west corner); `loc_fountain` → spawn 2.3 s; `loc_lookout_tower` → board_lion 7.0 s; `loc_train` → board_lion 9.3 s; `loc_playground` → loc_tallest_tree 9.2 s; `loc_tallest_tree` → loc_playground 9.2 s; `loc_blossom_tree` → loc_deckchairs 5.1 s; `loc_stage` → board_giraffe 7.4 s; `loc_deckchairs` → loc_stage 5.4 s; `loc_big_ball` → loc_deckchairs 4.9 s; `loc_sun_rocks` → construction 3.2 s; `loc_log_pile` → construction 3.0 s.
 
 ## Hiding places — riddle details and guards
 
 | Hiding place | Riddle details and how the layout provides them |
 |---|---|
-| `loc_treehouse` (koala) | Old oak `treehouse_sw` with a wooden **tree house** (roof, round window) at 3.5 m and a **rope ladder**; the koala pair sits on its little porch. |
+| `loc_treehouse` (koala) | Old oak `treehouse_e` (east wall, north of the elephant enclosure) with a wooden **tree house** (roof, round window) at 3.5 m and a **rope ladder**; the koala pair sits on its little porch. |
 | `loc_tallest_tree` (koala) | `tree_giant_e`, **12 m** — twice as tall as any other tree in levels 1–3 (all others ≤ 7 m, riddle guard); trunk 2 m thick; the pair clings to the top branches at ≈ 9 m. East of the elephant enclosure, reached by `path_l2_e`. |
 | `loc_blossom_tree` (koala) | `tree_blossom_ne` covered in **pink blossoms**, **petals** drifting down onto `petals_ne`, 3–4 **bees** around the crown. The only pink tree of the zoo. |
 | `loc_fountain` (elephant) | `fountain_sw`: round **stone basin** with a **water jet** in the middle and **coins** glinting on the bottom; the elephant drinks and showers with its trunk. The only fountain; no jet in the elephant pool. |
@@ -314,13 +329,13 @@ within 2 m of each animal spot.
 | spawn → storage_door | 5.9 s |
 | storage_door → board_koala | 5.1 s |
 | storage_door → board_lion | 5.6 s |
-| board_lion → board_elephant | 9.7 s |
-| board_elephant → board_giraffe | 6.6 s |
+| board_lion → board_elephant | 7.1 s |
+| board_elephant → board_giraffe | 9.1 s |
 | board_giraffe → board_koala | 4.1 s |
 | board_koala → loc_log_pile | 8.9 s |
 
-All neighbour pairs are ≤ 10 s (longest: lion board → elephant board 9.7 s, round the
-south-east corner of the ring). Each hiding place is ≤ 10 s from its neighbour (list above).
+All neighbour pairs are ≤ 10 s (longest: elephant board → giraffe board 9.1 s, since the
+elephant board stands south of its gate — FIX-056). Each hiding place is ≤ 10 s from its neighbour (list above).
 
 ## Food storage 2 (proposal Q-089)
 
@@ -409,7 +424,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 | LAYOUT-L2-010 | Given missions `koala`, `elephant`, `giraffe`, `lion` complete but the next morning not yet started, then `barrier_l2_construction` is solid; after the morning starts it is walkable and the level-3 spawn is reachable (Q-091). | unit |
 | LAYOUT-L2-011 | Given `level-2.toml`, then it has 10 `food_box` entries (one per food) in front of `food_storage_2`, each with a walkable standing cell within 2 m reachable from the spawn. | unit |
 | LAYOUT-L2-012 | Given the level-2 spawn on a 1080×2340 viewport at maximum zoom-out, then the player faces east and `food_storage_2` is on screen. | e2e |
-| LAYOUT-L2-013 | Given the `[[hiding_place]]` list of level 2, then every animal with an enclosure has ≥ 3 candidates, each wander area (as LAYOUT-L1-014) has ≥ 9 cells inside its rect, places of different animals are disjoint, and every candidate is in a combination with all spots pairwise ≥ 12 m (48 of 81 combinations). | unit |
+| LAYOUT-L2-013 | Given the `[[hiding_place]]` list of level 2, then every animal with an enclosure has ≥ 3 candidates, each wander area (as LAYOUT-L1-014) has ≥ 9 cells inside its rect, places of different animals are disjoint, and every candidate is in a combination with all spots pairwise ≥ 12 m (57 of 81 combinations). | unit |
 | LAYOUT-L2-014 | Given the `[[scenery]]` list of level 2, then no scenery rect overlaps a solid element or a path cell, each lies inside its hiding place's rect, and each scenery kind occurs once in the joined levels 1–3. | unit |
 | LAYOUT-L2-015 | Given a new game seeded with S that reaches level 2, then both koalas start at the same chosen koala place and both follow when one is shown eucalyptus (GAME-FAMILY FAM-001/002 in level 2). | unit |
 | LAYOUT-L2-016 | Given `enc_elephant`, then `elephant_pool` covers 35–60 % of its cells, is fully inside the enclosure and not adjacent to the gate cells, and the elephant's home wander area includes pool cells. | unit |
@@ -430,7 +445,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
   LAYOUT-L2-012 (spawn view) is covered only by the entry screenshot.
 - **Placeholders** (coloured boxes with the element's height inside its solid cells — the
   cells are the collider, wander areas and paths stay free): `fountain_sw` (basin, water,
-  jet, coins), `treehouse_sw` (oak, porch at 3.5 m, house, ladder), `tree_giant_e` (12 m trunk,
+  jet, coins), `treehouse_e` (oak, porch at 3.5 m, house, ladder), `tree_giant_e` (12 m trunk,
   two crown blocks leaving the 9 m branch free), `tree_blossom_ne` (pink crown, bees),
   `log_pile_nw`, `ball_n`, `tower_sw`, `train_se`, `playground_se_slide`,
   `playground_se_swings`, `stage_ne`, `deckchairs_ne`, `barrier_l2_construction` (striped
@@ -442,6 +457,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 
 ## Open questions
 
+- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
 - Q-137 `[[light]]` data shape, Q-139 burglar event spots.
 
 - Q-022 barrier unlock timing (Q-091 answered: the next morning); Q-141 night level between

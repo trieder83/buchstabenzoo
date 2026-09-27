@@ -251,7 +251,7 @@ home_wander_on = ["grass", "water"]
 id = "board_elephant"
 type = "decoration"
 kind = "info_board"
-rect = [54, 36, 1, 1]
+rect = [54, 31, 1, 1]
 enclosure = "enc_elephant"
 
 # ---------------------------------------------------------------- lion (south)
@@ -290,10 +290,10 @@ enclosure = "enc_giraffe"
 
 # ---------------------------------------------------------------- koala hiding places
 [[element]]
-id = "treehouse_sw"
+id = "treehouse_e"
 type = "decoration"
 kind = "treehouse"
-rect = [28, 15, 3, 3]
+rect = [71, 44, 3, 3]
 blocks_view = true
 height_m = 7.0
 notes = "Old oak with a wooden tree house (roof, window, rope ladder). The only tree house in the zoo (loc_treehouse)."
@@ -474,13 +474,13 @@ notes = "Elephant bathing pool (tiled rim like hippo_pool, but larger ramp), 56 
 [[hiding_place]]
 id = "loc_treehouse"
 animal = "koala"
-rect = [26, 14, 4, 5]
-animal_spot = [27, 15]
+rect = [67, 42, 7, 6]
+animal_spot = [70, 44]
 wander_radius_m = 3.0
 wander_on = "grass"
 perch_height_m = 3.5
 features = ["tree_house", "rope_ladder", "wooden_roof", "window"]
-scenery = ["treehouse_sw"]
+scenery = ["treehouse_e"]
 pose = "climb"
 
 [[hiding_place]]
@@ -510,7 +510,7 @@ pose = "climb"
 [[hiding_place]]
 id = "loc_fountain"
 animal = "elephant"
-rect = [28, 22, 5, 6]
+rect = [28, 22, 3, 6]
 animal_spot = [30, 25]
 wander_radius_m = 3.0
 wander_on = "grass"
@@ -532,7 +532,7 @@ pose = "idle"
 [[hiding_place]]
 id = "loc_big_ball"
 animal = "elephant"
-rect = [51, 55, 6, 5]
+rect = [51, 57, 6, 3]
 animal_spot = [53, 58]
 wander_radius_m = 3.0
 wander_on = "grass"
@@ -543,7 +543,7 @@ pose = "idle"
 [[hiding_place]]
 id = "loc_lookout_tower"
 animal = "giraffe"
-rect = [37, 14, 4, 7]
+rect = [37, 14, 4, 5]
 animal_spot = [39, 17]
 wander_radius_m = 3.0
 wander_on = "grass"
@@ -587,7 +587,7 @@ pose = "sleep"
 [[hiding_place]]
 id = "loc_stage"
 animal = "lion"
-rect = [55, 42, 5, 7]
+rect = [55, 45, 5, 4]
 animal_spot = [57, 45]
 wander_radius_m = 3.0
 wander_on = "grass"
@@ -736,7 +736,7 @@ attach = "board_koala"
 [[light]]
 id = "l2_board_lamp_elephant"
 kind = "board_lamp"
-pos = [54.5, 36.5]
+pos = [54.5, 31.5]
 facing = "-x"
 attach = "board_elephant"
 

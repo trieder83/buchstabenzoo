@@ -449,7 +449,7 @@ id = "loc_pirate_ship"
 animal = "monkey"
 rect = [10, 55, 6, 7]
 animal_spot = [13, 58]
-wander_radius_m = 3.0
+wander_radius_m = 2.5
 wander_on = "grass"
 perch_height_m = 4.0
 features = ["ship", "mast", "sail", "flag", "treasure_chest", "rope_ladder"]
@@ -470,8 +470,8 @@ pose = "idle"
 [[hiding_place]]
 id = "loc_trampoline"
 animal = "monkey"
-rect = [-19, 62, 5, 6]
-animal_spot = [-17, 64]
+rect = [-22, 50, 6, 4]
+animal_spot = [-18, 51]
 wander_radius_m = 3.0
 wander_on = "grass"
 features = ["trampoline", "jumping", "springy_mat"]
@@ -539,7 +539,7 @@ pose = "happy"
 [[hiding_place]]
 id = "loc_laundry"
 animal = "snow_fox"
-rect = [-19, 77, 6, 5]
+rect = [-19, 77, 4, 5]
 animal_spot = [-17, 80]
 wander_radius_m = 3.0
 wander_on = "grass"
@@ -560,7 +560,7 @@ notes = "Soft brown bark-mulch ground of the adventure playground around the pir
 [[scenery]]
 id = "trampoline_w"
 kind = "trampoline"
-rect = [-18, 63, 3, 3]
+rect = [-19, 50, 3, 3]
 hiding_place = "loc_trampoline"
 props = ["trampoline_ground"]
 notes = "Ground-level trampoline (flush with the lawn, walkable): round blue springy mat with a soft red rim. The only trampoline in the zoo."

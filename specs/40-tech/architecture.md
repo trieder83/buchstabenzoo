@@ -31,7 +31,7 @@ updated: 2026-09-27
    math in `zoo_render::camera` (constants in `zoo_core::view`); the sky and the distance
    haze are drawn in the outline pass from the depth buffer (no extra draw call). Static
    batches are culled per 8 m chunk of their instances, decals and skinned characters per
-   bounds, against the frustum (whose far plane is the fog end + 2 m = 18 m in the close
+   bounds, against the frustum (whose far plane is the fog end + 2 m = 22.8 m in the close
    views, GAME-CAMERA-VIEWS 6). Tested by CAMV-001…005, 014, 018.
 
 ## Crates

@@ -36,7 +36,7 @@ Lively and fresh: sparkling moving water, ducks, a happy discovery moment ("ther
 | File | Aspect / size | Camera (level coordinates, see `layout.md`) |
 |---|---|---|
 | `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw north, pitch ≈ 62°, target (13, 32), about 28 m from the target; frame covers x 2…24, z 22…44. |
-| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player at the ring's north-east corner (6.5, 28.5); camera yaw north, pitch ≈ 55°, ≈ 14 m from the player; the bridge and the zebras (8, 32) are in the upper right of the frame. |
+| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player at the ring's north-east corner (6.5, 28.5); camera yaw north, pitch ≈ 55°, ≈ 14 m from the player; the bridge and the zebras (8, 33) are in the upper right of the frame. |
 | `player_view_landscape.png` *(optional)* | 16:9, 1920 × 1080 | same as player view |
 
 **Camera (all images):** high-angle view like a cozy zoo park simulation game (Q-049).

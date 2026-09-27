@@ -11,7 +11,7 @@ The monkey on the trampoline: *"Hopp, hopp, hopp! Ich springe hoch. Der Boden fe
 
 - A round **ground-level trampoline** (blue springy mat, red rim) flush with the lawn (`trampoline_w`).
 - The monkey mid-somersault above it.
-- The stream on the left, the mill hut above, the path below.
+- The end of the stream on the left, the weeping willow and the carousel above, the tall hedge below (FIX-056: the trampoline lies in the south-west corner now).
 
 ## Must not appear
 
@@ -19,7 +19,7 @@ The monkey on the trampoline: *"Hopp, hopp, hopp! Ich springe hoch. Der Boden fe
 
 ## Props used
 
-Modular (ART-ENVIRONMENT list): `trampoline_ground`, `grass_tuft`, `water_tile_flowing`, `path_tile`.
+Modular (ART-ENVIRONMENT list): `trampoline_ground`, `grass_tuft`, `water_tile_flowing`, `hedge`, `tree`.
 Hiding places shown: `loc_trampoline`.
 
 ## Mood
@@ -30,8 +30,8 @@ Bouncy and lively.
 
 | File | Aspect / size | Camera (level coordinates, see `layout.md`) |
 |---|---|---|
-| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw north (image top = north), pitch ≈ 62°, target (-17, 64), about 16 m from the target; frame covers the trampoline, the stream, the mill hut above. |
-| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player on `path_l3_bank` at (-16, 61); camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player. |
+| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw north (image top = north), pitch ≈ 62°, target (-17, 53), about 16 m from the target; frame covers the trampoline, the end of the stream (left), the weeping willow and the carousel above, the south hedge below. |
+| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player on the lawn at (-14.5, 50.5), south of the carousel; camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player. |
 | `player_view_landscape.png` *(optional)* | 16:9, 1920 × 1080 | same as player view |
 
 Camera, aspect ratios and consistency tips: as in `art/environment/loc_pond/brief.md` (high-angle
@@ -51,7 +51,7 @@ Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown ou
 
 Elevated three-quarter top-down view like a cozy zoo park simulation game: a high camera looking down at about 60 to 65 degrees, isometric-like perspective with a narrow field of view so vertical lines stay nearly parallel, horizontal widescreen composition, the whole area in frame and neatly laid out like a diorama, the ground fills the image, no horizon, no sky.
 
-A round blue ground trampoline set flush into the lawn, with a red soft rim, in a small cartoon zoo seen from high above. A cheeky friendly cartoon monkey does a somersault in the air above it. A narrow clear stream on the left, a small wooden mill hut above, a sandy path below. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes walks along the path at the bottom of the image. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
+A round blue ground trampoline set flush into the lawn, with a red soft rim, in a small cartoon zoo seen from high above. A cheeky friendly cartoon monkey does a somersault in the air above it. The end of a narrow clear stream on the left, a weeping willow and a colourful carousel above, a tall green hedge below. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes walks across the lawn at the bottom right of the image. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
 
 All signs and boards are blank: plain wooden or cream-coloured panels without any letters, words or numbers. The only markings allowed are a simple solid black animal silhouette on an enclosure sign and simple pictogram icons (shovel, padlock) on barrier signs. Enclosure signs and info boards are tilted back towards the camera so their faces are clearly visible from above.
 ```

@@ -109,7 +109,7 @@ async function playZebra(page: Page, lang: string, level: string, shot?: string)
   }
 
   // 3. The river: walk up to the (wandering) zebra and face it; show the grass.
-  expect(Math.hypot(zebraSpot.x - 8.5, zebraSpot.z - 32.5)).toBeLessThan(3.1); // loc_river
+  expect(Math.hypot(zebraSpot.x - 8.5, zebraSpot.z - 33.5)).toBeLessThan(3.1); // loc_river spot (8, 33), FIX-056
   await approach(page, 'zebra');
   expect((await state(page)).target).toBe('animal:zebra');
   await page.keyboard.press('KeyE');

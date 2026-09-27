@@ -13,7 +13,7 @@ Where the hippo bathes (riddle: *"Das Wasser ist still. Dort blühen Seerosen �
 - **Water lilies:** many round lily pads with pink and white flowers.
 - **Frogs:** 2–3 green frogs sitting on stones and lily pads at the shore.
 - Reeds and cattails along the shore; a short wooden jetty from the path into the pond; a bench on the shore.
-- The hippo in the water near the jetty tip — **only eyes, ears and nostrils above the surface** (klasse3 riddle).
+- The hippo in the water in the **west half of the pond, near the north shore** (FIX-056; the approved mockups still show it near the jetty tip — the look of the place is unchanged, the position is not) — **only eyes, ears and nostrils above the surface** (klasse3 riddle).
 
 ## Must not appear
 

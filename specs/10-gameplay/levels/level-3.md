@@ -25,7 +25,7 @@ animals of the artwork are in the game.
 
 | Mission | Enclosure | Food box | Candidate hiding places (one is picked per playthrough) | What the riddles rely on (CONT-MISSIONS) |
 |---|---|---|---|---|
-| `monkey` | `enc_monkey` (north) | Bananen / bananas | `loc_pirate_ship` (south-east, adventure playground), `loc_carousel` (south-west), `loc_trampoline` (west, by the stream) | mast, sail, black flag, treasure chest · wooden horses, turning, music · springy blue mat in the lawn |
+| `monkey` | `enc_monkey` (north) | Bananen / bananas | `loc_pirate_ship` (south-east, adventure playground), `loc_carousel` (south-west), `loc_trampoline` (south-west corner, by the stream — FIX-056) | mast, sail, black flag, treasure chest · wooden horses, turning, music · springy blue mat in the lawn |
 | `goldfish` | `enc_goldfish` (east, pond) | Fischfutter / fish food | `loc_waterfall` (north-west), `loc_water_wheel` (west), `loc_willow` (south-west) — all in the stream | water falling from rocks, white foam, loud · wooden wheel turning and clattering, little hut · long branches hanging into the water, shady and calm |
 | `snow_fox` | `enc_snow_fox` (south) | Beeren / berries | `loc_ice_cream_kiosk` (north-east), `loc_sprinkler` (north-west), `loc_laundry` (north-west, by the stream) | cold air from a chest, waffles/cones · turning sprinkler, cold drops, rainbow, wet grass · white sheets on a washing line (white on white) |
 
@@ -61,6 +61,7 @@ candidate is in ≥ 1 (picking rule Q-082).
 | Pirate ship | A pirate-ship **climbing frame on the adventure playground** inside the zoo (south-east of level 3), not at a lake; no key on it (Q-033 open: the storage is unlocked). The monkey sits in the crow's nest (`perch_height_m` 4 m). | Q-017, Q-094 |
 | Goldfish home | `enc_goldfish` is a pond enclosure (`[[enclosure_feature]] goldfish_pond`); its "gate" is a flat stone step where the bowl is put down (the player never enters). | Q-093 |
 | Hiding places and scenery | As level 1 (`[[hiding_place]]` with `wander_on = "water"` and `water_kinds = ["stream"]` for the goldfish). | Q-080 |
+| 22 m haze rule (FIX-056) | `loc_pirate_ship` wander radius 2.5 m; `loc_laundry` clipped on the side facing the snow-fox board; `loc_trampoline` with `trampoline_w` moved to the south-west corner by the stream (see "Hiding places"). | Q-145 |
 
 ## Spawn and camera
 
@@ -105,9 +106,9 @@ x −9…−7, z 46–47), level 2 east of x 23 (its `barrier_l2_construction` a
    68 ##~~~.....===TTTTTTTTTTTTTTTTTT===.gffffffffff%%
    67 ##~~~.....===TTTTTTTTTTTTTTTTTT===.gffffffffff%%
    66 ##~~~.....===ZZZZZZZTTTFFFFFFFF===.fffffffffff%%
-   65 ##~~~.ttt.===Z_____ZTTTFFFFFFFF===.fffffffffff%%
-   64 ##~~~.t3t.===Z_U___ZTTTFFFFFFFF===.fffffffffff%%
-   63 ##~~~.ttt.===Z_____ZTTTFFFFFFFF===.fffffffffff%%
+   65 ##~~~.....===Z_____ZTTTFFFFFFFF===.fffffffffff%%
+   64 ##~~~.....===Z_U___ZTTTFFFFFFFF===.fffffffffff%%
+   63 ##~~~.....===Z_____ZTTTFFFFFFFF===.fffffffffff%%
    62 ##~~~.....===Z_____ZTTTFFFFFFFF===............%%
    61 ##~~~========ZZZDZZZTTTFFFFDFFF===............%%
    60 ##~~~=============================.bbb........%%
@@ -118,9 +119,9 @@ x −9…−7, z 46–47), level 2 east of x 23 (its `barrier_l2_construction` a
    55 ##~~~...CCCC...===.xxxxxxxxxx..===.bbb....MM..%%
    54 ##~~~...CCCC2..===.xxxxxxxxxx..=================
    53 ##~~~...CCCC...===.xxxxxxxxxx..=============S===
-   52 ##~~~...CCCC...===.xxxxxxxxxx..=================
-   51 ##.............===.xxxxxxxxxx.................%%
-   50 ##.............===.xxxxxxxxxx.................%%
+   52 ##~~~tttCCCC...===.xxxxxxxxxx..=================
+   51 ##...t3t.......===.xxxxxxxxxx.................%%
+   50 ##...ttt.......===.xxxxxxxxxx.................%%
    49 ##%%%%%%%%%%%%%===%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    48 ##%%%%%%%%%%%%%===%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       |.......|.......|.......|.......|.......|.......
@@ -210,45 +211,58 @@ box of the wander area and scenery.
 
 | Id | Animal | Area rect (x, z, w, d) | Animal spot | Wander on | Wander cells | Perch | Features (riddle details) | Scenery | Spot → own info board |
 |---|---|---|---|---|---|---|---|---|---|
-| `loc_pirate_ship` | monkey | 10, 55, 6, 7 | (13, 58) | grass | 20 | 4.0 m | ship, mast, sail, flag, treasure_chest, rope_ladder | `pirate_ship`, `bark_mulch_se` | 26.6 m |
+| `loc_pirate_ship` | monkey | 10, 55, 6, 7 | (13, 58) | grass | 14 | 4.0 m | ship, mast, sail, flag, treasure_chest, rope_ladder | `pirate_ship`, `bark_mulch_se` | 26.6 m |
 | `loc_carousel` | monkey | -14, 51, 5, 7 | (-12, 54) | grass | 19 | — | carousel, wooden_horses, music, turning_roof | `carousel_sw` | 27.9 m |
-| `loc_trampoline` | monkey | -19, 62, 5, 6 | (-17, 64) | grass | 26 | — | trampoline, jumping, springy_mat | `trampoline_w` | 21.9 m |
+| `loc_trampoline` | monkey | -22, 50, 6, 4 | (-18, 51) | grass | 15 | — | trampoline, jumping, springy_mat | `trampoline_w` | 33.1 m |
 | `loc_waterfall` | goldfish | -22, 82, 3, 6 | (-21, 85) | water | 16 | — | falling_water, foam, splashing, rock_ledge | `waterfall_rocks`, `stream_l3` | 34.4 m |
 | `loc_water_wheel` | goldfish | -22, 68, 3, 7 | (-21, 71) | water | 17 | — | water_wheel, turning, clattering, wooden_hut | `mill_hut`, `stream_l3` | 31.0 m |
 | `loc_willow` | goldfish | -22, 54, 3, 7 | (-21, 57) | water | 17 | — | weeping_willow, hanging_branches, shade_on_water | `tree_willow`, `stream_l3` | 33.6 m |
 | `loc_ice_cream_kiosk` | snow_fox | 14, 80, 7, 4 | (17, 81) | grass | 18 | — | freezer_chest, cold_air, cones, scoops | `ice_cream_kiosk` | 31.2 m |
 | `loc_sprinkler` | snow_fox | -13, 84, 7, 7 | (-10, 87) | grass | 29 | — | sprinkler, cold_drops, rainbow, wet_grass | `sprinkler_lawn` | 30.8 m |
-| `loc_laundry` | snow_fox | -19, 77, 6, 5 | (-17, 80) | grass | 22 | — | white_sheets, washing_line, white_camouflage, wind | `laundry_line` | 26.9 m |
+| `loc_laundry` | snow_fox | -19, 77, 4, 5 | (-17, 80) | grass | 17 | — | white_sheets, washing_line, white_camouflage, wind | `laundry_line` | 26.9 m |
 
 - **Goldfish wander area** = stream cells (`water_kinds = ["stream"]`) within 3 m of the spot,
   16–17 cells; the fish never leaves the stream. Its spot is 2 m from the bank column
   x = −19, so the player feeds it from the bank (interaction range 2 m, LAYOUT-L3-009).
 - **Monkey at the pirate ship** sits in the crow's nest (`perch_height_m` 4 m, proposal
-  Q-094); the ground wander area on the bark mulch is the fallback.
+  Q-094); the ground wander area on the bark mulch is the fallback. Its `wander_radius_m` is
+  **2.5 m** (the only place with less than 3 m): the diagonal cell (11, 60) was 21.6 m from the
+  monkey board's standing cell (−1, 78) (FIX-056).
+- **Haze rule (22 m, FIX-056).** Every wander cell and spot is ≥ 22 m (planar) from every
+  standing point of its own animal (walkable cells ≤ 2.5 m from the own info board, cells
+  around the own gate; GAME-LAYOUT "Sight", CAMV-008, fog end 20.8 m). Changes of 2026-09-27:
+  `loc_pirate_ship` radius 3 → 2.5 m (20 → 14 cells); `loc_laundry` clipped to x −19…−16 (rect
+  was −19, 77, 6, 5; 22 → 17 cells; cell (−15, 78) was 21.95 m from the snow-fox board);
+  `loc_trampoline` moved with `trampoline_w` from the west lawn (rect −19, 62, 5, 6, spot
+  (−17, 64) — 17.0–22 m from the monkey board, boxed in by stream, path and trees) to the
+  south-west corner by the stream (rect −22, 50, 6, 4, spot (−18, 51); 26 → 15 cells).
+  Smallest distances now: `loc_pirate_ship` 22.2 m, `loc_laundry` 22.2 m, `loc_carousel`
+  22.8 m, the others ≥ 25.7 m.
 
-**Spread (RESC-014)**, straight distances between spots of different animals (m); 10 of 27
-combinations are valid:
+**Spread (RESC-014)**, straight distances between spots of different animals (m); 12 of 27
+combinations are valid (10 before FIX-056):
 
 | | `loc_pirate_ship` | `loc_carousel` | `loc_trampoline` | `loc_waterfall` | `loc_water_wheel` | `loc_willow` | `loc_ice_cream_kiosk` | `loc_sprinkler` | `loc_laundry` |
 |---|---|---|---|---|---|---|---|---|---|
 | `loc_pirate_ship` | — | — | — | 43.4 | 36.4 | 34.0 | 23.3 | 37.0 | 37.2 |
 | `loc_carousel` | — | — | — | 32.3 | 19.2 | 9.5 | 39.6 | 33.1 | 26.5 |
-| `loc_trampoline` | — | — | — | 21.4 | 8.1 | 8.1 | 38.0 | 24.0 | 16.0 |
-| `loc_waterfall` | 43.4 | 32.3 | 21.4 | — | — | — | 38.2 | 11.2 | 6.4 |
-| `loc_water_wheel` | 36.4 | 19.2 | 8.1 | — | — | — | 39.3 | 19.4 | 9.8 |
-| `loc_willow` | 34.0 | 9.5 | 8.1 | — | — | — | 44.9 | 32.0 | 23.3 |
-| `loc_ice_cream_kiosk` | 23.3 | 39.6 | 38.0 | 38.2 | 39.3 | 44.9 | — | — | — |
-| `loc_sprinkler` | 37.0 | 33.1 | 24.0 | 11.2 | 19.4 | 32.0 | — | — | — |
-| `loc_laundry` | 37.2 | 26.5 | 16.0 | 6.4 | 9.8 | 23.3 | — | — | — |
+| `loc_trampoline` | — | — | — | 34.1 | 20.2 | 6.7 | 46.1 | 36.9 | 29.0 |
+| `loc_waterfall` | 43.4 | 32.3 | 34.1 | — | — | — | 38.2 | 11.2 | 6.4 |
+| `loc_water_wheel` | 36.4 | 19.2 | 20.2 | — | — | — | 39.3 | 19.4 | 9.8 |
+| `loc_willow` | 34.0 | 9.5 | 6.7 | — | — | — | 44.9 | 32.0 | 23.3 |
+| `loc_ice_cream_kiosk` | 23.3 | 39.6 | 46.1 | 38.2 | 39.3 | 44.9 | — | — | — |
+| `loc_sprinkler` | 37.0 | 33.1 | 36.9 | 11.2 | 19.4 | 32.0 | — | — | — |
+| `loc_laundry` | 37.2 | 26.5 | 29.0 | 6.4 | 9.8 | 23.3 | — | — | — |
 
-Valid combinations (monkey, goldfish, snow fox): (`loc_pirate_ship`, `loc_waterfall`, `loc_ice_cream_kiosk`); (`loc_pirate_ship`, `loc_water_wheel`, `loc_ice_cream_kiosk`); (`loc_pirate_ship`, `loc_water_wheel`, `loc_sprinkler`); (`loc_pirate_ship`, `loc_willow`, `loc_ice_cream_kiosk`); (`loc_pirate_ship`, `loc_willow`, `loc_sprinkler`); (`loc_pirate_ship`, `loc_willow`, `loc_laundry`); (`loc_carousel`, `loc_waterfall`, `loc_ice_cream_kiosk`); (`loc_carousel`, `loc_water_wheel`, `loc_ice_cream_kiosk`); (`loc_carousel`, `loc_water_wheel`, `loc_sprinkler`); (`loc_trampoline`, `loc_waterfall`, `loc_ice_cream_kiosk`).
+Valid combinations (monkey, goldfish, snow fox): (`loc_pirate_ship`, `loc_waterfall`, `loc_ice_cream_kiosk`); (`loc_pirate_ship`, `loc_water_wheel`, `loc_ice_cream_kiosk`); (`loc_pirate_ship`, `loc_water_wheel`, `loc_sprinkler`); (`loc_pirate_ship`, `loc_willow`, `loc_ice_cream_kiosk`); (`loc_pirate_ship`, `loc_willow`, `loc_sprinkler`); (`loc_pirate_ship`, `loc_willow`, `loc_laundry`); (`loc_carousel`, `loc_waterfall`, `loc_ice_cream_kiosk`); (`loc_carousel`, `loc_water_wheel`, `loc_ice_cream_kiosk`); (`loc_carousel`, `loc_water_wheel`, `loc_sprinkler`); (`loc_trampoline`, `loc_waterfall`, `loc_ice_cream_kiosk`); (`loc_trampoline`, `loc_water_wheel`, `loc_ice_cream_kiosk`); (`loc_trampoline`, `loc_water_wheel`, `loc_sprinkler`).
 
 **Sight test (LAYOUT-L3-006)**, same method as level 2 (0.5 m, animal height — monkey 1.1 m,
 goldfish 0.3 m, snow fox 0.9 m —, perch + 1 m): all 9 candidates are off-screen in portrait
 from every cell next to their board or gate, and for information also in landscape (the
-trampoline and the washing line were moved west for this).
+trampoline and the washing line were moved west for this; the trampoline moved again to the
+south-west corner for the 22 m haze rule, FIX-056).
 
-**Nearest neighbour of each place** (≤ 10 s): `loc_pirate_ship` → spawn 5.4 s; `loc_carousel` → entry_s 3.7 s; `loc_trampoline` → house_door 5.1 s; `loc_waterfall` → loc_sprinkler 8.0 s; `loc_water_wheel` → loc_laundry 6.7 s; `loc_willow` → house_door 8.3 s; `loc_ice_cream_kiosk` → board_monkey 9.8 s; `loc_sprinkler` → board_monkey 9.3 s; `loc_laundry` → board_monkey 7.3 s.
+**Nearest neighbour of each place** (≤ 10 s): `loc_pirate_ship` → spawn 5.4 s; `loc_carousel` → entry_s 3.7 s; `loc_trampoline` → loc_carousel 5.1 s (FIX-056; was → house_door from the west lawn); `loc_waterfall` → loc_sprinkler 8.0 s; `loc_water_wheel` → loc_laundry 6.7 s; `loc_willow` → house_door 8.3 s; `loc_ice_cream_kiosk` → board_monkey 9.8 s; `loc_sprinkler` → board_monkey 9.3 s; `loc_laundry` → board_monkey 7.3 s.
 
 ## Hiding places — riddle details and guards
 
@@ -256,7 +270,7 @@ trampoline and the washing line were moved west for this).
 |---|---|
 | `loc_pirate_ship` (monkey) | `pirate_ship`: hull on bark mulch, **mast** with a crow's nest, white **sail**, **black flag** (white paw print, no skull), **treasure chest** on deck, rope ladder. The monkey sits in the crow's nest. **No slide** (the only slide is on the level-2 playground). |
 | `loc_carousel` (monkey) | `carousel_sw`: small **carousel** with painted **wooden horses** under a striped round roof, slowly **turning**, music-box **music**. |
-| `loc_trampoline` (monkey) | `trampoline_w`: round **ground-level trampoline** (blue mat, red rim) flush with the lawn between the ring and the stream; the monkey bounces and somersaults. |
+| `loc_trampoline` (monkey) | `trampoline_w`: round **ground-level trampoline** (blue mat, red rim) flush with the lawn in the south-west corner between the stream, the weeping willow and the carousel (FIX-056); the monkey bounces and somersaults. |
 | `loc_waterfall` (goldfish) | `waterfall_rocks`: the stream **falls** 2.5 m from a rock ledge at the north wall, **white foam**, loud rushing sound; the fish swims in the foam pool below. Different from the level-1 river (only small rapids, bridge, ducks). |
 | `loc_water_wheel` (goldfish) | `mill_hut` + its big **wooden water wheel** turning in the stream (x −20, z 70–72), **clattering** sound, drops glittering. The only water wheel. |
 | `loc_willow` (goldfish) | `tree_willow`: **weeping willow** whose long thin branches hang down like a green curtain **into the water**; shady and still underneath. The only willow. |
@@ -368,7 +382,7 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 | LAYOUT-L3-009 | Given each goldfish candidate, then its spot is a `stream_l3` cell, its wander area contains only stream cells, and a walkable bank cell centre lies within 2 m of the spot; for every other candidate a walkable cell centre is within 2 m. | unit |
 | LAYOUT-L3-010 | Given `level-3.toml`, then `fish_bowl` lies on a walkable interior cell of `zookeeper_house_3` reachable from the spawn, `tap_l3` has a walkable cell centre within 1.5 m, every `stream_l3` bank cell is a water source, and a walkable cell is edge-adjacent to the gate of `enc_goldfish`. | unit |
 | LAYOUT-L3-011 | Given `level-3.toml`, then it has 10 `food_box` entries in front of `food_storage_3`, each with a reachable walkable standing cell within 2 m. | unit |
-| LAYOUT-L3-012 | Given the `[[hiding_place]]` list of level 3, then every animal with an enclosure has ≥ 3 candidates, wander areas ≥ 9 cells inside their rect, disjoint between animals, and every candidate is in a combination with all spots ≥ 12 m apart (10 of 27). | unit |
+| LAYOUT-L3-012 | Given the `[[hiding_place]]` list of level 3, then every animal with an enclosure has ≥ 3 candidates, wander areas ≥ 9 cells inside their rect, disjoint between animals, and every candidate is in a combination with all spots ≥ 12 m apart (12 of 27). | unit |
 | LAYOUT-L3-013 | Given the `[[scenery]]` list, then no scenery rect overlaps a solid element or path cell and each lies inside its hiding place's rect. | unit |
 | LAYOUT-L3-014 | Given the goldfish mission in level 3 (seeded), when the player reads the board, takes the bowl, fills it at `tap_l3`, takes fish food, feeds the fish from the bank and puts the bowl on the goldfish gate step, then the mission completes (RESC-018…021 on this level). | e2e |
 | LAYOUT-L3-015 | Given `enc_goldfish`, then `goldfish_pond` lies fully inside it, is not adjacent to the gate cells and the goldfish's home wander area contains only pond cells. | unit |
@@ -400,6 +414,7 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 
 ## Open questions
 
+- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
 - Q-137 `[[light]]` data shape, Q-139 burglar event spots. The bed of GAME-NIGHT is `bed_l1` in the level-1 `zookeeper_house_1` (Q-096); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`, so the game has one bed).
 
 - Q-088 joining levels; Q-090 second entry through the level-1 north gate;

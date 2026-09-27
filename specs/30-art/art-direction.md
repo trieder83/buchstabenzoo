@@ -37,8 +37,8 @@ The reference images below are for content and layout ideas, not for the style. 
    not baked into textures or modelled (TECH-ARCH §7; outline technique Q-050).
 3. Bright daylight, crisp shadows. **Zoo view** (default camera, GAME-PLAYER §2): ground
    only, no sky. **Close views** (look-around, first person): comic sky with flat rounded,
-   outlined clouds and a pastel distance haze (distance fog) from 9 m, fully hiding from
-   16 m (GAME-CAMERA-VIEWS 5, 7; tested by PLAY-009, CAMV-004, CAMV-016). Night colours of
+   outlined clouds and a pastel distance haze (distance fog) from 11.7 m, fully hiding from
+   20.8 m (GAME-CAMERA-VIEWS 5, 7; tested by PLAY-009, CAMV-004, CAMV-016). Night colours of
    sky and haze: Q-126.
 4. **Signs and labels are gameplay.** From the high camera, signs are tilted towards the
    camera and show large names/silhouettes; longer texts (info boards, food box labels,

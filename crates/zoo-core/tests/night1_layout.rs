@@ -448,8 +448,8 @@ fn layout_n1_005_walking_times() {
         ("loc_flowerpots", "loc_brush_pile", 6.1),
         ("loc_windmill", "loc_fireflies", 1.0),
         ("loc_fireflies", "loc_moon_pond", 7.9),
-        ("loc_moon_pond", "loc_hollow_tree", 6.6),
-        ("loc_hollow_tree", "food boxes", 7.2),
+        ("loc_moon_pond", "loc_hollow_tree", 6.9),
+        ("loc_moon_pond", "food boxes", 7.2),
     ];
     // "for information" legs of the spec (not required to be ≤ 10 s)
     let info: &[(&str, &str, f32)] = &[
@@ -529,8 +529,8 @@ fn standing_points(level: &Level, animal: &str) -> Vec<IVec2> {
 // LAYOUT-N1-006: for hedgehog, bat, owl, every candidate, the player on every walkable cell
 // ≤ 2.5 m from the own board or in front of the own gate, the zoo camera at every 45°
 // rotation and 10 / 14 / 20 m on 1080×2340 → no wander cell centre (0.5 m, 1.0 m,
-// perch + 1 m) is on screen, and every one is ≥ 17 m from the standing points (CAMV-008,
-// Q-110).
+// perch + 1 m) is on screen, and every one is ≥ 22 m from the standing points (CAMV-008,
+// Q-110; 22 m since the close-view haze grew by 30 %, FIX-056).
 #[test]
 fn layout_n1_006_sight_test_and_haze_margin() {
     let level = night_level();
@@ -555,7 +555,7 @@ fn layout_n1_006_sight_test_and_haze_margin() {
                     if d < nearest.0 {
                         nearest = (d, format!("{} {c} ↔ {s}", h.id));
                     }
-                    if d < 17.0 {
+                    if d < 22.0 {
                         close.push(format!("{}: wander cell {c} is {d:.1} m from {s}", h.id));
                     }
                 }
@@ -584,7 +584,7 @@ fn layout_n1_006_sight_test_and_haze_margin() {
     );
     assert!(
         close.is_empty(),
-        "wander cells < 17 m from a standing point: {close:#?}"
+        "wander cells < 22 m from a standing point: {close:#?}"
     );
 }
 
@@ -601,7 +601,7 @@ fn layout_n1_007_wander_areas_and_spread() {
         ("loc_mushrooms", 26),
         ("loc_windmill", 13),
         ("loc_fireflies", 20),
-        ("loc_hollow_tree", 15),
+        ("loc_hollow_tree", 11),
         ("loc_moon_pond", 25),
         ("loc_hilltop", 21),
         ("loc_fir", 22),

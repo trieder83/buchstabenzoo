@@ -5,7 +5,7 @@ the entrance gate, +X east, +Z north; rects are `x, z, w, d`.
 
 ## Area
 
-`pond_water` (-19, 20, 8, 8), `jetty_pond` (-11, 22, 3, 2), `bench_pond` (-11, 26, 2, 1), `loc_pond` (-19, 19, 11, 10) with animal spot (-13, 22); `path_ring_w` (-8, 11, 3, 16) east of it
+`pond_water` (-19, 20, 8, 8), `jetty_pond` (-11, 22, 3, 2), `bench_pond` (-11, 26, 2, 1), `loc_pond` (-19, 19, 4, 10) with animal spot (-16, 26) — the hippo swims in the west half of the pond, next to the north shore and `path_moon` (FIX-056, 22 m haze rule; was (-19, 19, 11, 10), spot (-13, 22) near the jetty); `path_ring_w` (-8, 11, 3, 16) east of it
 
 ## Cameras
 

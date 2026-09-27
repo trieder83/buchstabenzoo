@@ -251,9 +251,11 @@ fn anim_009_stops_and_faces_the_player() {
 }
 
 // Q-097 (proposal): an animal out of reach (far out in the pond) comes to the player when
-// she stands at the shore within 5 m, so the food can always be shown.
+// she stands at the shore within 5 m, so the food can always be shown. Since FIX-056 the
+// loc_pond wander area is the west half of the pond (22 m haze rule), shown from the north
+// shore next to the ring path.
 #[test]
-fn escaped_hippo_in_the_pond_comes_to_the_jetty() {
+fn escaped_hippo_in_the_pond_comes_to_the_shore() {
     let seed = (0..200u64)
         .find(|&s| common::game(s).animal("hippo").unwrap().hiding_place == "loc_pond")
         .unwrap();
@@ -270,8 +272,8 @@ fn escaped_hippo_in_the_pond_comes_to_the_jetty() {
         .unwrap();
     let i = g.animal_index("hippo").unwrap();
     g.animals[i].pos = cell_center(far);
-    g.player.pos = Vec2::new(-10.6, 22.5); // jetty tip
-    g.player.facing = Vec2::NEG_X;
+    g.player.pos = Vec2::new(-15.5, 28.5); // north shore, beside the ring path
+    g.player.facing = Vec2::NEG_Y;
     idle(&mut g, 12.0);
     let d = g.animal("hippo").unwrap().pos.distance(g.player.pos);
     assert!(d <= 2.0, "hippo stays {d:.2} m away");

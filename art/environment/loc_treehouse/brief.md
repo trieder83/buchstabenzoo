@@ -12,7 +12,7 @@ Where the koala pair hides when the riddle says *"Wir klettern gern. Oben ist ei
 - An old oak (7 m) with a **wooden tree house** at 3.5 m: plank walls, a little roof, a round **window**, a small porch.
 - A **rope ladder** hanging down to the grass.
 - The two koalas sitting on the porch (`perch_height_m` 3.5).
-- The side path on the right, the lookout tower further right, the zoo wall at the bottom.
+- The zoo wall right behind the oak (east, image right), the round music stage on the left, the elephant enclosure fence at the bottom, the end of a sandy path at the top left (FIX-056: the tree house stands at the east wall now).
 
 ## Must not appear
 
@@ -21,7 +21,7 @@ Where the koala pair hides when the riddle says *"Wir klettern gern. Oben ist ei
 
 ## Props used
 
-Modular (ART-ENVIRONMENT list): `tree`, `grass_tuft`, `path_tile`, `zoo_wall`, `bush`.
+Modular (ART-ENVIRONMENT list): `tree`, `grass_tuft`, `path_tile`, `zoo_wall`, `fence`, `bush`.
 Unique models: `treehouse_oak`.
 Hiding places shown: `loc_treehouse`.
 
@@ -33,8 +33,8 @@ Cosy and secret, dappled light.
 
 | File | Aspect / size | Camera (level coordinates, see `layout.md`) |
 |---|---|---|
-| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw north (image top = north), pitch ≈ 62°, target (30, 17), about 18 m from the target; frame covers the tree house, the side path and the lookout tower on the right. |
-| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player on `path_l2_sw` at (34, 19); camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player. |
+| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw north (image top = north), pitch ≈ 62°, target (68, 45), about 18 m from the target; frame covers the tree house at the east wall (right), the music stage (left), the elephant fence (bottom) and the end of the north path (top left). |
+| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player at the east end of `path_l2_ne_e` (65.5, 49.5); camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player. |
 | `player_view_landscape.png` *(optional)* | 16:9, 1920 × 1080 | same as player view |
 
 Camera, aspect ratios and consistency tips: as in `art/environment/loc_pond/brief.md` (high-angle
@@ -54,7 +54,7 @@ Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown ou
 
 Elevated three-quarter top-down view like a cozy zoo park simulation game: a high camera looking down at about 60 to 65 degrees, isometric-like perspective with a narrow field of view so vertical lines stay nearly parallel, horizontal widescreen composition, the whole area in frame and neatly laid out like a diorama, the ground fills the image, no horizon, no sky.
 
-An old round-topped oak in a corner of a small cartoon zoo seen from high above, with a small wooden tree house in its branches about 3.5 m up: plank walls, a little pitched roof, a round window and a tiny porch. A rope ladder hangs down to the grass. On the porch sit two small cute grey koalas with huge fluffy round ears and big black noses, peeking over the edge. A sandy side path on the right, a wooden lookout tower further right, a stone zoo wall along the bottom. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes walks along the path at the bottom of the image. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
+An old round-topped oak against the outer zoo wall of a small cartoon zoo seen from high above, with a small wooden tree house in its branches about 3.5 m up: plank walls, a little pitched roof, a round window and a tiny porch. A rope ladder hangs down to the grass. On the porch sit two small cute grey koalas with huge fluffy round ears and big black noses, peeking over the edge. A sandy side path on the right, a wooden lookout tower further right, a stone zoo wall along the bottom. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes walks along the path at the bottom of the image. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
 
 All signs and boards are blank: plain wooden or cream-coloured panels without any letters, words or numbers. The only markings allowed are a simple solid black animal silhouette on an enclosure sign and simple pictogram icons (shovel, padlock) on barrier signs. Enclosure signs and info boards are tilted back towards the camera so their faces are clearly visible from above.
 ```

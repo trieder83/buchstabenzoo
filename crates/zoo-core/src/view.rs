@@ -86,9 +86,10 @@ pub const CLOSE_FOV_DEG: f32 = 50.0;
 pub const CLOSE_NEAR_M: f32 = 0.05;
 
 /// Distance fog of the close views (behaviour 5): starts here …
-pub const FOG_START_M: f32 = 9.0;
-/// … and fully hides everything from here on (the visibility distance).
-pub const FOG_END_M: f32 = 16.0;
+pub const FOG_START_M: f32 = 11.7;
+/// … and fully hides everything from here on (the visibility distance; +30 % from 16 m,
+/// user decision 2026-09-27).
+pub const FOG_END_M: f32 = 20.8;
 /// Far plane / draw distance of the close views (behaviour 6): just past the fog end.
 pub const CLOSE_FAR_M: f32 = FOG_END_M + 2.0;
 
@@ -179,6 +180,7 @@ mod tests {
         let d = min_eye_distance(Vec2::ZERO, Vec2::new(12.0, 0.0), LOOK_UP_M + 9.0);
         assert!((d - 15.0).abs() < 1e-4);
         assert!(!hidden_by_fog(Vec2::ZERO, Vec2::new(12.0, 0.0), 10.6));
-        assert!(hidden_by_fog(Vec2::ZERO, Vec2::new(16.0, 0.0), 1.1));
+        assert!(!hidden_by_fog(Vec2::ZERO, Vec2::new(20.0, 0.0), 1.1));
+        assert!(hidden_by_fog(Vec2::ZERO, Vec2::new(21.0, 0.0), 1.1));
     }
 }

@@ -65,20 +65,22 @@ a hiding place is never visible from its own info board), stay comfortable for c
    fish-eye). The zoo view stays the default; transitions never go through the ground.
 5. **Distance fog keeps the riddles fair.** (Distance fog / haze of the camera, not the map
    `fog` of GAME-MAP.) In both close views a soft **pastel comic haze**
-   in the sky colour starts at **9 m** from the eye and **fully hides everything from 16 m**
+   in the sky colour starts at **11.7 m** from the eye and **fully hides everything from 20.8 m** (view distance +30 %, user decision 2026-09-27; was 9–16 m)
    on (the *visibility distance*, `FOG_END_M`). Hedges, trees and buildings still block the
    view as in the zoo view. Therefore every hiding place (animal spot and wander area, at
-   0.5 m, the animal's height and perch + 1 m) must be ≥ 16 m from every point where the
+   0.5 m, the animal's height and perch + 1 m) must be ≥ 20.8 m from every point where the
    child can read its own info board (≤ 2.5 m from the board, the panel range) or stands next
    to its gate — the same standing points as the screen tests LAYOUT-L1-006/L2-006/L3-006.
    The look-around eye is 3.5 m *behind* the player along its view direction, so any point it
    sees (more than ≈ 2.6 m away) is farther from that eye than from the player — the
    player's position is the binding eye position for both views (CAMV-009).
-   *Measured 2026-09-26:* nearest wander cell 16.97 m (`loc_trampoline` from the monkey
-   board; `loc_big_ball` 17.0 m, `loc_pond` 18.1 m); animal spots are ≥ 21.6 m. The
-   margin is small — Q-110.
+   *Measured 2026-09-26 (16 m fog):* nearest wander cell 16.97 m (`loc_trampoline` from the
+   monkey board) — Q-110 added the layout margin (GAME-LAYOUT "Sight": ≥ 22 m planar since
+   the fog end grew to 20.8 m). *Measured 2026-09-27 after FIX-056:* nearest wander cell
+   22.01 m from the close-view eye (`loc_big_ball` from the elephant gate's corner cell); every
+   level (1–3 and `night_1`) keeps ≥ 22.0 m planar (LAYOUT-N1-006 checks `night_1`).
 6. **Draw distance = fog end.** In the close views the far plane is the fog end + 2 m
-   (18 m; the zoo view has no fog and a 120 m far plane), and static batches whose bounds lie beyond it (or outside the view) are culled —
+   (22.8 m = fog end + 2 m; the zoo view has no fog and a 120 m far plane), and static batches whose bounds lie beyond it (or outside the view) are culled —
    so the close views cost fewer draw calls than the zoo view at maximum zoom-out (20 m).
    *Implementation:* each static batch keeps the bounds of its instances per 8 m ground
    chunk and is drawn only when one chunk is in the frustum; decal quads and skinned
@@ -94,9 +96,9 @@ a hiding place is never visible from its own info board), stay comfortable for c
    the fog (amount 0.85 → 1) it blends to the full sky including clouds, so a fully hidden
    object is exactly the sky (no silhouette cut into a cloud) while half-hidden houses never
    show ghost clouds. Night mode (GAME-NIGHT, Q-126) recolours the sky and haze: dark-blue
-   gradient `#1E2A5A` → `#3B4C8C` (the haze = the horizon blue, fog end 16 m kept), blue
+   gradient `#1E2A5A` → `#3B4C8C` (the haze = the horizon blue, fog end 20.8 m kept), blue
    clouds, an outlined comic moon and a few 4-point stars; shining animal eyes (NIGHT-006) are
-   hidden by the haze beyond 16 m like all geometry (Q-126 answered). The sky costs no
+   hidden by the haze beyond 20.8 m like all geometry (Q-126 answered). The sky costs no
    extra draw call (drawn in the outline pass where there is no geometry).
 8. **Near plane and occluders.** The close views use a **0.05 m near plane**, so walls in
    front of the eye are not cut open. The occluder fade (GAME-PLAYER §2) stays on in
@@ -138,10 +140,10 @@ not fade anything.
 | CAMV-002 | Given look-around, when the view is dragged by any amount, then the yaw changes continuously (no 45° steps), never more than 180° from its start, and after release the zoo view's 45° step and zoom are unchanged. | unit |
 | CAMV-003 | Given first person toggled with player facing F, then after 0.4 s the eye is 1.1 m above the feet, the view direction is F, the vertical FOV 50° and the near plane 0.05 m; pitch drags are clamped to −20° … +20°; toggling back returns to the zoo pose. | unit |
 | CAMV-004 | Given first person or look-around, then the horizon is on screen (sky visible) in portrait and landscape; given the zoo view, PLAY-009 still holds (no sky). | unit |
-| CAMV-005 | Given a close view, then fog starts at 9 m and is 1.0 from 16 m on, and the far plane is 18 m; given the zoo view, then there is no fog and the far plane is 120 m; during a transition fog and far plane change monotonically. | unit |
+| CAMV-005 | Given a close view, then fog starts at 11.7 m and is 1.0 from 20.8 m on, and the far plane is 22.8 m; given the zoo view, then there is no fog and the far plane is 120 m; during a transition fog and far plane change monotonically. | unit |
 | CAMV-006 | Given first person looking at an info board from its readable side within 2 m, then it is available; when the player walks sideways (stick right) her facing stays the view direction and the board stays available; turning the view away makes it unavailable; interact opens the riddle. Leaving first person, the facing follows the walk direction again. | unit |
 | CAMV-007 | Given first person looking in direction D, then stick up walks along D and stick right walks 90° clockwise of D (seen from above), and the player's yaw does not change while walking. | unit |
-| CAMV-008 | Given the joined levels 1–3 and every mission's candidates, the player on every walkable cell centre ≤ 2.5 m from the own info board or next to the own gate, then every animal spot and wander cell centre (0.5 m, animal height, perch + 1 m) is ≥ 16 m (fog end) from the close-view eye. | unit |
+| CAMV-008 | Given the joined levels 1–3 and every mission's candidates, the player on every walkable cell centre ≤ 2.5 m from the own info board or next to the own gate, then every animal spot and wander cell centre (0.5 m, animal height, perch + 1 m) is ≥ 20.8 m (fog end, `FOG_END_M`) from the close-view eye; the level data keeps ≥ 22 m planar (GAME-LAYOUT "Sight"); `night_1` is covered by LAYOUT-N1-006 (22 m). | unit |
 | CAMV-009 | Given the look-around camera at any yaw, portrait or landscape, then every world point inside its view frustum and ≥ 3 m from the eye is at least as far from the eye as from the player's feet (horizontally), so CAMV-008's player-position bound holds. | unit |
 | CAMV-010 | Given the host input: holding `F` or the right mouse button sends look-hold on/off; `V` toggles first person; in a close view a mouse drag or a right-half touch drag sends continuous look drags (no 45° swipe steps), the left half still drives the joystick; the eye button sends look-hold while pressed. | unit (Vitest) |
 | CAMV-011 | Given the view setting `first_person` is stored, when the game restarts, then it starts in first person; `look_around` is never stored; invalid stored values fall back to `zoo`. | unit (Vitest) |

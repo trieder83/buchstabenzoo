@@ -337,33 +337,35 @@ fn layout_l1_005_walking_times_between_neighbours() {
             10.2,
             5.6,
         ),
+        // FIX-056: loc_pond moved to the north shore (22 m haze rule), so the zebra board's
+        // next neighbour is the panda board; the pond is reached from the panda board.
         (
-            "zebra info board -> pond",
+            "zebra info board -> panda info board",
             board("board_zebra"),
-            pond.clone(),
-            7.8,
-            5.4,
+            board("board_panda"),
+            16.1,
+            8.6,
         ),
         (
             "pond -> panda info board",
             pond.clone(),
             board("board_panda"),
-            9.9,
-            5.4,
+            11.8,
+            7.2,
         ),
         (
             "panda info board -> river",
             board("board_panda"),
             river.clone(),
-            10.4,
-            6.4,
+            10.8,
+            7.2,
         ),
         (
             "river -> hippo info board",
             river.clone(),
             board("board_hippo"),
-            13.4,
-            7.0,
+            14.4,
+            7.7,
         ),
         (
             "hippo info board -> cave",
@@ -675,15 +677,15 @@ fn layout_l1_014_024_wander_areas() {
     let level = Level::new(data.clone());
     let grid = level.grid();
     let expected = [
-        ("loc_river", 19),
+        ("loc_river", 12),
         ("loc_meadow", 16),
         ("loc_sand", 22),
-        ("loc_pond", 22),
+        ("loc_pond", 14),
         ("loc_mud", 22),
         ("loc_shade", 12),
         ("loc_cave", 9),
         ("loc_bamboo", 21),
-        ("loc_leaves", 17),
+        ("loc_leaves", 9),
     ];
     let mut areas = Vec::new();
     for (id, n) in expected {

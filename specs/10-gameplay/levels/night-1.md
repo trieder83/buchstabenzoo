@@ -34,7 +34,7 @@ enclosures) and a **loop path** (north, west and south ring) around a dense old-
 
 **Design idea (as level 1): a ring around a hidden middle.** Everything the child needs first
 (plaza, food hut, boards, night house) lies in the **east**, close to the moon door. The nine
-hiding places lie in the **far west and south** of the loop, all ≥ 17 m from their own board
+hiding places lie in the **far west and south** of the loop, all ≥ 22 m from their own board
 and gate, behind the dense groves `grove_n1_center` and `grove_n1_north`.
 
 ## Proposals used in this level (not yet decided)
@@ -49,6 +49,7 @@ and gate, behind the dense groves `grove_n1_center` and `grove_n1_north`.
 | Telescope | `telescope_n1`: a toy star telescope halfway along the north ring — a resting point that keeps the walk to the north-west ≤ 10 s per leg; interactive (look at the moon) later? | Q-138 |
 | Perched animals | bat hangs / owl sits at `perch_height_m` beside the spot (as Q-094); ground wander area is the fallback | Q-094 |
 | Poses | bat `hang` (upside down), hedgehog snuffling | Q-043 |
+| 22 m haze rule (FIX-056) | `tree_hollow_n1` and `loc_hollow_tree` moved 3 m south-east into the corner by the east hedge; the south places reach the plaza over `loc_moon_pond` → food boxes (see "Hiding places", "Walking distances"). | Q-145 |
 
 ## Spawn, entry and camera
 
@@ -100,12 +101,12 @@ Scale **1 character = 1 m**. North (+z) is up, x axis below. Generated from
    23 %%......===..TTTTTTTTTTTTT.......===..........%%
    22 %%P.....===..TTTTTTTTTTTTT.......===..........%%
    21 %%P.....===..TTTTTTTTTTTTT.......===..........%%
-   20 %%..2...===..TTTTTTTTTTTTT.......===.......HH.%%
-   19 %%......===..TTTTTTTTTTTTT.......===......6HH.%%
+   20 %%..2...===..TTTTTTTTTTTTT.......===..........%%
+   19 %%......===..TTTTTTTTTTTTT.......===..........%%
    18 %%......===..TTTTTTTTTTTTT.......===..........%%
-   17 %%......===......................===..........%%
-   16 %%......===......................===..........%%
-   15 %%......=================================.....%%
+   17 %%......===......................===........HH%%
+   16 %%......===......................===........HH%%
+   15 %%......=================================....6%%
    14 %%......=================================.....%%
    13 %%......=================================.....%%
    12 %%...................******............jj.....%%
@@ -177,7 +178,7 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `windmill_n1` | landmark (windmill) | -57, 8, 2, 2 | Little wooden garden windmill (4 m) with four slowly turning sails and a small balcony; soft whirring sound. The only windmill in the zoo (loc_windmill). |
 | `tree_crooked_n1` | decoration (tree_crooked) | -52, 10, 1, 1 | Small crooked tree with a low horizontal branch in the firefly meadow (the bat hangs from the branch, loc_fireflies). |
 | `pond_n1` | landmark (pond) | -35, 8, 6, 4 | Small round still pond; the moon and stars are mirrored in it (night water shader). Reeds at the rim. No lilies, no frogs, no ducks, no bridge (riddle guards vs. level-1 loc_pond / loc_river, Q-136). |
-| `tree_hollow_n1` | decoration (tree_hollow) | -29, 19, 2, 2 | Very thick old tree with a big round knot hole at 2.5 m (env_night_overview). The only hollow tree in the zoo (loc_hollow_tree). |
+| `tree_hollow_n1` | decoration (tree_hollow) | -28, 16, 2, 2 | Very thick old tree with a big round knot hole at 2.5 m (env_night_overview), at the east hedge in the south-east corner of the loop. The only hollow tree in the zoo (loc_hollow_tree). Moved 3 m south-east by FIX-056 (old position x −29…−28, z 19…20; 22 m haze rule). |
 | `potting_bench_n1` | decoration (potting_bench) | -70, 21, 1, 2 | Old wooden potting bench against the west hedge with stacked clay flower pots below and white night-scented flowers (evening primrose) in pots on top (loc_flowerpots). |
 | `tree_old_n1` | decoration (tree_old) | -70, 32, 2, 2 | Big old mossy tree by the west hedge; a ring of mushrooms on the moss at its foot (loc_mushrooms). |
 | `hill_n1` | landmark (hill) | -69, 42, 3, 3 | Small round grassy hill (2 m) with one big round stone on top, no trees — the brightest moonlit spot of the garden (loc_hilltop). |
@@ -227,36 +228,39 @@ Data: `[[hiding_place]]` in `night-1.toml` (fields as in level 1, Q-080). Riddle
 `assets/i18n/{de,en}/night.ftl`). Wander areas (radius 3 m, on grass, clipped to the rect,
 4-connected) computed with a scratch script, 2026-09-27.
 
-| Id | Animal | Area rect (x, z, w, d) | Animal spot | Perch | Wander cells | Features (riddle details) | Scenery | Spot → own board | Fastest walk own board → spot | Nearest wander cell ↔ own board/gate standing point (≥ 17 m, Q-110) |
+| Id | Animal | Area rect (x, z, w, d) | Animal spot | Perch | Wander cells | Features (riddle details) | Scenery | Spot → own board | Fastest walk own board → spot | Nearest wander cell ↔ own board/gate standing point (≥ 22 m, Q-110, FIX-056) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `loc_brush_pile` | hedgehog | -70, 8, 6, 5 | (-68, 10) | — | 26 | brush_pile, twigs, rustling, hedge_corner | `brush_pile_n1`, `hedge_n1_west`, `hedge_n1_south` | 38.2 m | 25.3 s | 33.2 m |
 | `loc_flowerpots` | hedgehog | -70, 18, 6, 6 | (-68, 20) | — | 25 | flower_pots, potting_bench, night_flowers, sweet_smell | `potting_bench_n1` | 31.6 m | 19.7 s | 26.6 m |
 | `loc_mushrooms` | hedgehog | -70, 27, 6, 7 | (-68, 30) | — | 26 | mushrooms, moss, earthy_smell, old_tree | `mushroom_ring_n1`, `tree_old_n1` | 27.2 m | 14.5 s | 22.1 m |
 | `loc_windmill` | bat | -59, 8, 6, 5 | (-55, 9) | 2.5 m (under the sails' platform) | 13 | windmill, turning_sails, whirring | `windmill_n1` | 33.1 m | 21.3 s | 28.3 m |
 | `loc_fireflies` | bat | -52, 8, 7, 5 | (-51, 10) | 2.0 m (branch of the crooked tree) | 20 | fireflies, little_lights, crooked_tree, low_grass | `firefly_meadow_n1`, `tree_crooked_n1` | 30.5 m | 18.3 s | 25.6 m |
-| `loc_hollow_tree` | bat | -33, 16, 7, 4 | (-30, 19) | 2.5 m (at the knothole) | 15 | hollow_tree, knot_hole, thick_old_trunk | `tree_hollow_n1` | 21.0 m | 11.4 s | 17.7 m |
+| `loc_hollow_tree` | bat | -31, 12, 5, 4 | (-27, 15) | 2.5 m (at the knothole) | 11 | hollow_tree, knot_hole, thick_old_trunk | `tree_hollow_n1` | 25.9 m | 16.9 s | 22.5 m |
 | `loc_moon_pond` | owl | -40, 8, 5, 5 | (-38, 10) | 1.5 m (post at the west shore, (−35.6, 10.5)) | 25 | pond, moon_reflection, reeds, wooden_post | `pond_n1`, `jetty_n1` | 28.4 m | 15.1 s | 24.1 m |
 | `loc_hilltop` | owl | -70, 39, 7, 8 | (-66, 43) | 2.4 m (stone on the hilltop) | 21 | hill, big_stone, moonlight, no_trees | `hill_n1` | 33.4 m | 20.1 s | 29.2 m |
 | `loc_fir` | owl | -63, 46, 6, 6 | (-60, 48) | 6.0 m (top of the fir) | 22 | fir_tree, pointed_top, cones, needles | `fir_n1` | 28.8 m | 18.5 s | 24.4 m |
 
 **Standing points** (CAMV-008): walkable cell centres ≤ 2.5 m from the own info board plus the
-hall cells in front of the own gate. The nearest case is `loc_hollow_tree` (17.7 m to the bat
-board) — the rect was cut to z ≤ 19 for this margin. The **zoo-view screen test** (portrait
+hall cells in front of the own gate. The nearest case is `loc_mushrooms` (22.1 m); the level
+minimum is 22.1 m. **FIX-056 (22 m rule):** `loc_hollow_tree` was 17.7 m from the bat board, so
+the hollow tree moved 3 m south-east into the corner by the east hedge (tree (−28, 16, 2, 2),
+spot (−27, 15) right in front of its knothole, rect (−31, 12, 5, 4) south of it; was tree
+(−29, 19), spot (−30, 19), rect (−33, 16, 7, 4); 15 → 11 cells; nearest cell now 22.5 m). The **zoo-view screen test** (portrait
 1080×2340, 45° steps, 10/14/20 m, points at 0.5 m, 1.0 m and perch + 1 m) finds no wander cell
 on screen from any standing point (scratch check; LAYOUT-N1-006 is the real test).
 
 **Spread (RESC-014).** Straight distances between spots of different animals; **all 27
 combinations** keep the chosen spots ≥ 12 m apart (closest: `loc_hollow_tree` – `loc_moon_pond`
-12.0 m):
+12.1 m):
 
 | | `loc_windmill` | `loc_fireflies` | `loc_hollow_tree` | `loc_moon_pond` | `loc_hilltop` | `loc_fir` |
 |---|---|---|---|---|---|---|
-| `loc_brush_pile` | 13.0 | 17.0 | 39.1 | 30.0 | 33.1 | 38.8 |
-| `loc_flowerpots` | 17.0 | 19.7 | 38.0 | 31.6 | 23.1 | 29.1 |
-| `loc_mushrooms` | 24.7 | 26.2 | 39.6 | 36.1 | 13.2 | 19.7 |
+| `loc_brush_pile` | 13.0 | 17.0 | 41.3 | 30.0 | 33.1 | 38.8 |
+| `loc_flowerpots` | 17.0 | 19.7 | 41.3 | 31.6 | 23.1 | 29.1 |
+| `loc_mushrooms` | 24.7 | 26.2 | 43.7 | 36.1 | 13.2 | 19.7 |
 | `loc_windmill` | — | — | — | 17.0 | 35.7 | 39.3 |
 | `loc_fireflies` | — | — | — | 13.0 | 36.2 | 39.1 |
-| `loc_hollow_tree` | — | — | — | 12.0 | 43.3 | 41.7 |
+| `loc_hollow_tree` | — | — | — | 12.1 | 48.0 | 46.7 |
 
 **Picking rule:** as level 1 (Q-082): uniform seeded pick per animal, own seeded RNG of the level
 (`seed ^ k·φ`, GAME-LAYOUT "Implementation"); the first draw is always valid here.
@@ -306,13 +310,15 @@ Fastest walk (8-neighbour, 1.93 m/s on paths, 0.98 m/s on grass; scratch estimat
 | `loc_flowerpots` → `loc_brush_pile` | 6.1 s |
 | `loc_windmill` → `loc_fireflies` | 1.0 s |
 | `loc_fireflies` → `loc_moon_pond` | 7.9 s |
-| `loc_moon_pond` → `loc_hollow_tree` | 6.6 s |
-| `loc_hollow_tree` → food boxes | 7.2 s |
+| `loc_moon_pond` → `loc_hollow_tree` | 6.9 s |
+| `loc_moon_pond` → food boxes | 7.2 s |
 
 Every place has a neighbour ≤ 10 s. Around the loop three legs are close to the limit (for
 information; each end has a nearer neighbour): telescope → `loc_hilltop` 9.5 s, `loc_hilltop` →
-`loc_mushrooms` 9.7 s, `loc_brush_pile` → `loc_windmill` 9.6 s. Board → own spot: 11–25 s (the
-places are far on purpose, as in level 1).
+`loc_mushrooms` 9.7 s, `loc_brush_pile` → `loc_windmill` 9.6 s. Since FIX-056 the south
+places join the plaza over `loc_moon_pond` → food boxes (7.2 s); `loc_hollow_tree` → food boxes
+is 10.7 s (not a neighbour pair any more). Board → own spot: 14–25 s (the places are far on
+purpose, as in level 1).
 
 ## Night lights (GAME-NIGHT rule 1, Q-118, Q-114)
 
@@ -324,11 +330,12 @@ the indoor lights of the night house (`indoor`, `color`). The hiding places have
 of their own**: the child's hand lantern (radius 2.5 m, NIGHT-006) finds the shining eyes; the
 fireflies, the moon reflection and the hilltop moonlight are the places' own soft lights.
 
-## Night riddles and the 16 m haze (Q-126, CAMV-008)
+## Night riddles and the haze (Q-126, CAMV-008)
 
-The close views keep the 16 m haze at night (Q-126 answered); every wander cell is ≥ 17 m from
-the own standing points (table above), so shining eyes are never visible through the haze from
-the board or gate.
+The close views keep the day haze at night (Q-126 answered; fog end 20.8 m since the user raised
+the view distance by 30 %, 2026-09-27); every wander cell is ≥ 22 m from the own standing points
+(table above, FIX-056), so shining eyes are never visible through the haze from the board or
+gate. LAYOUT-N1-006 checks this 22 m margin for `night_1` (CAMV-008 covers levels 1–3).
 
 ## Behaviour
 
@@ -346,7 +353,8 @@ the board or gate.
    no solid or path cell; places of different animals never overlap; all 27 combinations keep
    the spots ≥ 12 m apart.
 7. Every wander cell (0.5 m, animal height, perch + 1 m) is off-screen in the zoo view from its
-   own board/gate standing points and ≥ 17 m from them (CAMV-008 with the Q-110 margin).
+   own board/gate standing points and ≥ 22 m from them (CAMV-008 with the Q-110 margin; 22 m
+   since the fog end grew to 20.8 m, FIX-056).
 8. Each place's `features` exist only there within the night levels (Q-136), the fireflies
    exist only at `loc_fireflies` (Q-115), and every scenery id a place names exists.
 9. Neighbouring points of interest are ≤ 10 s apart ("Walking distances").
@@ -371,7 +379,7 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 | LAYOUT-N1-003 | Given `night-1.toml`, then no two solid elements share a cell and no path cell lies under a solid element; its bounds are disjoint from levels 1–3. | unit |
 | LAYOUT-N1-004 | Given this spec's element table and `night-1.toml`, then both list the same ids, types and rectangles (LAYOUT-005). | unit |
 | LAYOUT-N1-005 | Given `night-1.toml` with 1.93 m/s on paths and 0.98 m/s on grass, then each pair of the "Walking distances" table is ≤ 10 s. | unit |
-| LAYOUT-N1-006 | Given missions `hedgehog`, `bat`, `owl`, every candidate, the player on every walkable cell ≤ 2.5 m from the own board or in front of the own gate, and the zoo camera at every 45° rotation and 10, 14, 20 m on 1080×2340, then no wander cell centre (0.5 m, 1.0 m, perch + 1 m) is on screen, and every one is ≥ 17 m from the standing points (CAMV-008, Q-110). | unit |
+| LAYOUT-N1-006 | Given missions `hedgehog`, `bat`, `owl`, every candidate, the player on every walkable cell ≤ 2.5 m from the own board or in front of the own gate, and the zoo camera at every 45° rotation and 10, 14, 20 m on 1080×2340, then no wander cell centre (0.5 m, 1.0 m, perch + 1 m) is on screen, and every one is ≥ 22 m (planar, cell centres) from the standing points (CAMV-008, Q-110; 17 m before FIX-056). | unit |
 | LAYOUT-N1-007 | Given the hiding places, then each has ≥ 9 wander cells (counts of the table: 26, 25, 26, 13, 20, 15, 25, 21, 22), a cell ≥ 2 m from the spot, no solid or path cell, lies inside its rect; places of different animals do not overlap; all 27 combinations keep spots ≥ 12 m apart. | unit |
 | LAYOUT-N1-008 | Given the hiding places, then their `features` contain the CONT-MISSIONS details, every `scenery` id exists, each scenery kind and each riddle element kind (`windmill`, `tree_hollow`, `fir_tree`, `hill`, `pond`, `potting_bench`, `tree_crooked`) occurs once in the night levels, and `firefly` props appear only in `firefly_meadow_n1`. | unit |
 | LAYOUT-N1-009 | Given `night_house`, then its interior and door are walkable with surface `path`, each indoor enclosure (`indoor = true`) has its gate edge-adjacent to an interior cell, and its `model_rect` contains the hall and all three enclosures. | unit |
@@ -382,6 +390,7 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 
 ## Open questions
 
+- Q-145 the layout proposals of FIX-056 (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
 - Q-133 night level data (`time = "night"`, moon door `opens_at` / `unlock_after`, open every night — also after the night zoo is done?).
 - Q-134 night house structure (hall + indoor enclosures + `model_rect`, boards outside).
 - Q-135 night food storage and food ids (`beetles`, `fruit`, `worms`, `nectar`; hedgehog and owl share beetles).

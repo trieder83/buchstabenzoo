@@ -5,7 +5,7 @@ the entrance gate, +X east, +Z north; rects are `x, z, w, d`.
 
 ## Area
 
-`enc_elephant` (55, 28, 12, 13), gate (55, 33, 1, 2), `board_elephant` (54, 36, 1, 1), `elephant_pool` (59, 31, 7, 8), `path_l2_ring_e` (51, 27, 3, 12).
+`enc_elephant` (55, 28, 12, 13), gate (55, 33, 1, 2), `board_elephant` (54, 31, 1, 1) — south of the gate since FIX-056, `elephant_pool` (59, 31, 7, 8), `path_l2_ring_e` (51, 27, 3, 12).
 
 ## Cameras
 

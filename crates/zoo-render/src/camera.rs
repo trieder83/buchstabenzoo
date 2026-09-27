@@ -748,11 +748,12 @@ mod tests {
             last_far = cam.far();
         }
         let f = cam.fog();
-        assert!((f.start - 9.0).abs() < 1e-4 && (f.end - 16.0).abs() < 1e-4);
+        // fog 11.7-20.8 m, far plane 22.8 m (view distance +30 %, 2026-09-27)
+        assert!((f.start - 11.7).abs() < 1e-4 && (f.end - 20.8).abs() < 1e-4);
         assert!((f.amount - 1.0).abs() < 1e-6);
-        assert!((cam.far() - 18.0).abs() < 1e-4);
-        assert_eq!(view::fog_amount(16.0), 1.0);
-        assert_eq!(view::fog_amount(9.0), 0.0);
+        assert!((cam.far() - 22.8).abs() < 1e-4);
+        assert_eq!(view::fog_amount(20.8), 1.0);
+        assert_eq!(view::fog_amount(11.7), 0.0);
     }
 
     // CAMV-007

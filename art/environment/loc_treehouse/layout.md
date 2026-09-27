@@ -5,12 +5,12 @@ the entrance gate, +X east, +Z north; rects are `x, z, w, d`.
 
 ## Area
 
-`treehouse_sw` (28, 15, 3, 3), spot (27, 15), `path_l2_sw` (33, 16, 3, 12), `tower_sw` (36, 15, 3, 3), `wall_l2_south`.
+`treehouse_e` (71, 44, 3, 3), spot (70, 44), `loc_treehouse` (67, 42, 7, 6); `wall_l2_east` right behind it (east), `stage_ne` (58, 43, 4, 4) to the west, the north fence of `enc_elephant` (z 40) to the south, the end of `path_l2_ne_e` (x ≤ 66, z 49–51) to the north-west. Moved here from the south-west corner by FIX-056 (22 m haze rule, 2026-09-27).
 
 ## Cameras
 
-- `overview.png`: Camera yaw north (image top = north), pitch ≈ 62°, target (30, 17), about 18 m from the target; frame covers the tree house, the side path and the lookout tower on the right.
-- `player_view.png`: Player on `path_l2_sw` at (34, 19); camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player.
+- `overview.png`: Camera yaw north (image top = north), pitch ≈ 62°, target (68, 45), about 18 m from the target; frame covers the tree house at the east wall (right), the music stage (left), the elephant fence (bottom) and the end of the north path (top left).
+- `player_view.png`: Player at the east end of `path_l2_ne_e` (65.5, 49.5); camera yaw north (image top = north), pitch ≈ 55°, ≈ 14 m from the player.
 
 ## Modular props used (ART-ENVIRONMENT)
 
@@ -18,6 +18,7 @@ the entrance gate, +X east, +Z north; rects are `x, z, w, d`.
 - `grass_tuft`
 - `path_tile`
 - `zoo_wall`
+- `fence`
 - `bush`
 
 ## Unique models

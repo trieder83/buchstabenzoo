@@ -5,15 +5,15 @@ folder; level data `assets/levels/level-1.toml` (`[[hiding_place]]` / `[[scenery
 
 ## Purpose
 
-Panda hiding place `loc_leaves` (level 1, north-east corner). Where the panda plays when the riddle says *"Ich spiele gern. Mein Bett ist weich. Rotes und gelbes Laub!"* (klasse1). Shown in the **found** state. One of three candidate hiding places of the panda (discovery, user decision 2026-09-26); the approved image is also cropped for the `kiga` picture of this place.
+Panda hiding place `loc_leaves` (level 1, the very north-east corner — moved 3–4 m east by FIX-056, 22 m haze rule). Where the panda plays when the riddle says *"Ich spiele gern. Mein Bett ist weich. Rotes und gelbes Laub!"* (klasse1). Shown in the **found** state. One of three candidate hiding places of the panda (discovery, user decision 2026-09-26); the approved image is also cropped for the `kiga` picture of this place.
 
 ## Must be visible
 
-- **Leaf pile:** a big raked heap (about 4 × 2 m) of red, yellow and brown leaves at the edge of the trees, a few leaves flying.
-- **Rake:** a wooden rake leaning against a tree trunk.
+- **Leaf pile:** a big raked heap (about 2 × 3 m) of red, yellow and brown leaves in the corner between the north hedge and the east hedge, at the edge of the trees, a few leaves flying.
+- **Rake:** a wooden rake leaning against a small one-seat wooden bench (`bench_leaves`) at the south-west edge of the pile.
 - The panda lying on its back in the middle of the leaves, paws up, happy.
 - **Sunny and colourful** — the pile lies in the sun, not in dark shadow.
-- The trees `trees_ne` behind, the tall north hedge, the stepping-stone trail on the left.
+- The trees `trees_ne` behind, the tall north and east hedges, the stepping-stone trail `path_leaves_trail` coming up through the trees to the bench.
 
 ## Must not appear
 
@@ -22,7 +22,7 @@ Panda hiding place `loc_leaves` (level 1, north-east corner). Where the panda pl
 
 ## Props used
 
-Modular (ART-ENVIRONMENT list): `leaf_pile`, `rake`, `tree`, `hedge`, `path_tile`, `grass_tuft`.
+Modular (ART-ENVIRONMENT list): `leaf_pile`, `rake`, `bench`, `tree`, `hedge`, `path_tile`, `grass_tuft`.
 Hiding places shown: `loc_leaves`.
 
 ## Mood
@@ -33,8 +33,8 @@ Playful and warm: crunchy colourful leaves, a giggling panda.
 
 | File | Aspect / size | Camera (level coordinates, see `layout.md`) |
 |---|---|---|
-| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw south (image top = south), pitch ≈ 62°, target (17, 43), about 18 m from the target; frame covers the north hedge (bottom), the leaf pile, the tree group behind it (top) and the end of the trail. |
-| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player on the grass at (16.5, 45.5); camera yaw south (image top = south), pitch ≈ 55°, ≈ 14 m from the player; the leaf pile fills the upper half, the trees behind it. |
+| `overview.png` | 16:9, 1920 × 1080 (SDXL: 1344 × 768) | Camera yaw south (image top = south), pitch ≈ 62°, target (19, 43), about 18 m from the target; frame covers the north hedge (bottom), the east hedge (left), the leaf pile with the bench, the tree group behind it (top) and the stepping-stone trail. |
+| `player_view.png` | 9:16, 1080 × 1920 (SDXL: 768 × 1344) | Player on the grass at (18.5, 45.5); camera yaw south (image top = south), pitch ≈ 55°, ≈ 14 m from the player; the leaf pile fills the upper half, the trees behind it. |
 | `player_view_landscape.png` *(optional)* | 16:9, 1920 × 1080 | same as player view |
 
 Camera, aspect ratios and consistency tips: as in `art/environment/loc_pond/brief.md` (high-angle
@@ -54,7 +54,7 @@ Comic-style 3D cartoon game art with a cel-shaded look: bold clean dark-brown ou
 
 Elevated three-quarter top-down view like a cozy zoo park simulation game: a high camera looking down at about 60 to 65 degrees, isometric-like perspective with a narrow field of view so vertical lines stay nearly parallel, horizontal widescreen composition, the whole area in frame and neatly laid out like a diorama, the ground fills the image, no horizon, no sky.
 
-A big raked heap of bright red, yellow and brown leaves in a sunny corner of a small zoo, seen from high above, lying at the edge of a group of big round-topped green trees; a wooden rake leans against a tree trunk. A black-and-white panda lies on its back in the middle of the leaf pile with its paws in the air, a few leaves flying around it. A tall dark-green hedge along one side, a narrow stepping-stone trail ending at the pile. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes stands next to the pile, laughing. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
+A big raked heap of bright red, yellow and brown leaves in a sunny corner of a small zoo, seen from high above, lying in the corner between two tall green hedges at the edge of a group of big round-topped green trees; a wooden rake leans against a small wooden bench beside the pile. A black-and-white panda lies on its back in the middle of the leaf pile with its paws in the air, a few leaves flying around it. A tall dark-green hedge along one side, a narrow stepping-stone trail ending at the pile. The player character, a small girl about 7 years old (1.2 m tall, head about one third of her body height), long straight dark-brown hair down her back, white T-shirt with four horizontal blue stripes, brown belt, blue jeans, dark-brown shoes stands next to the pile, laughing. Zoo world: light sand-beige paths of square paving blocks, wooden post-and-rail fences, tall dark-green hedges about 3 m high, round-topped trees, short green grass.
 
 All signs and boards are blank: plain wooden or cream-coloured panels without any letters, words or numbers. The only markings allowed are a simple solid black animal silhouette on an enclosure sign and simple pictogram icons (shovel, padlock) on barrier signs. Enclosure signs and info boards are tilted back towards the camera so their faces are clearly visible from above.
 ```

@@ -5,12 +5,12 @@ the entrance gate, +X east, +Z north; rects are `x, z, w, d`.
 
 ## Area
 
-`river_n` (10, 31, 3, 17), `bridge_river` (10, 28, 3, 3), `river_mid` (10, 27, 3, 1), `river_e` (10, 24, 14, 3), `path_bridge_w` (8, 28, 2, 3), `path_ne` (13, 28, 9, 3), `barrier_ne_tree` (22, 28, 2, 3), `loc_river` (6, 31, 4, 4) with animal spot (8, 32), `trees_ne` (15, 34, 6, 9)
+`river_n` (10, 31, 3, 17), `bridge_river` (10, 28, 3, 3), `river_mid` (10, 27, 3, 1), `river_e` (10, 24, 14, 3), `path_bridge_w` (8, 28, 2, 3), `path_ne` (13, 28, 9, 3), `barrier_ne_tree` (22, 28, 2, 3), `loc_river` (6, 33, 4, 3) with animal spot (8, 33) (FIX-056; was (6, 31, 4, 4) / (8, 32) in this mockup), `trees_ne` (15, 34, 6, 9)
 
 ## Cameras
 
 - `overview.png`: Camera yaw north, pitch ≈ 62°, target (13, 32), about 28 m from the target; frame covers x 2…24, z 22…44.
-- `player_view.png`: Player at the ring's north-east corner (6.5, 28.5); camera yaw north, pitch ≈ 55°, ≈ 14 m from the player; the bridge and the zebras (8, 32) are in the upper right of the frame.
+- `player_view.png`: Player at the ring's north-east corner (6.5, 28.5); camera yaw north, pitch ≈ 55°, ≈ 14 m from the player; the bridge and the zebras (8, 33) are in the upper right of the frame.
 
 ## Modular props used (ART-ENVIRONMENT)
 

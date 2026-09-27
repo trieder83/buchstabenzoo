@@ -456,11 +456,25 @@ trees = [
   { pos = [19.4, 35.2], model = "tree_round" },
   { pos = [17.7, 38.2], model = "tree_round" },
   { pos = [20.5, 38.2], model = "tree_round" },
-  { pos = [16.0, 41.3], model = "tree_round" },   # rake of leaf_pile_ne leans on this tree
+  { pos = [16.0, 41.3], model = "tree_round" },
   { pos = [19.3, 41.3], model = "tree_round" },
   { pos = [20.3, 34.9], model = "bush" },          # hugs the trunk at (19.4, 35.2): one obstacle
 ]
 notes = "Open wood east of the river between loc_meadow (south) and loc_leaves (north); the child can walk through it from the meadow to the leaf pile."
+
+[[element]]
+id = "bench_leaves"
+type = "decoration"
+kind = "bench"
+rect = [19, 43, 1, 1]
+notes = "Small one-seat wooden bench at the south-west edge of the leaf pile (loc_leaves); the rake leans on it. Its solid cell keeps the panda's wander area out of the haze range of the panda gate (22 m rule, FIX-056)."
+
+[[element]]
+id = "path_leaves_trail"
+type = "path"
+kind = "side"
+rect = [18, 34, 1, 9]
+notes = "Stepping-stone trail (1 m) straight through the open wood trees_ne from the north edge of the meadow (loc_meadow) to the bench at the leaf pile (loc_leaves); keeps loc_leaves within 10 s of loc_meadow after the leaf pile moved into the north-east corner (FIX-056)."
 
 [[element]]
 id = "path_ne_trail"
@@ -666,8 +680,8 @@ notes = "Wooden hippo hut (hut_wood, ~4 x 3.5 m); placeholder box until the mode
 [[hiding_place]]
 id = "loc_river"
 animal = "zebra"
-rect = [6, 30, 4, 6]
-animal_spot = [8, 32]
+rect = [6, 33, 4, 3]
+animal_spot = [8, 33]
 wander_radius_m = 3.0
 wander_on = "grass"
 features = ["flowing_water", "bridge", "ducks"]
@@ -699,8 +713,8 @@ pose = "idle"                # proposal: `roll` (dust bath) if Q-043 adds it
 [[hiding_place]]
 id = "loc_pond"
 animal = "hippo"
-rect = [-19, 19, 11, 10]
-animal_spot = [-13, 22]
+rect = [-19, 19, 4, 10]
+animal_spot = [-16, 26]
 wander_radius_m = 3.0
 wander_on = "water"
 features = ["still_water", "water_lilies", "frogs"]
@@ -754,8 +768,8 @@ pose = "eat"
 [[hiding_place]]
 id = "loc_leaves"
 animal = "panda"
-rect = [14, 43, 7, 3]
-animal_spot = [17, 44]
+rect = [18, 43, 4, 3]
+animal_spot = [21, 45]
 wander_radius_m = 3.0
 wander_on = "grass"
 features = ["leaf_pile", "red_yellow_leaves", "rake", "under_trees"]
@@ -803,10 +817,10 @@ notes = "Corridor between the west zoo wall and trees_nw; the tree crowns overha
 [[scenery]]
 id = "leaf_pile_ne"
 kind = "leaf_pile"
-rect = [15, 43, 4, 2]
+rect = [20, 43, 2, 3]
 hiding_place = "loc_leaves"
 props = ["leaf_pile", "rake"]
-notes = "Big raked heap of red, yellow and brown leaves at the north edge of trees_ne, a rake leaning on a tree. Sunlit (not dark — must not look like loc_cave). The only leaf pile in level 1."
+notes = "Big raked heap of red, yellow and brown leaves at the north edge of trees_ne, a rake leaning on the bench bench_leaves. Sunlit (not dark — must not look like loc_cave). The only leaf pile in level 1."
 
 # ================================================================ vegetable garden (GAME-GARDEN)
 # Proposal Q-102 (data shape, level design). Like [[food_box]] and [[scenery]] the garden is NOT

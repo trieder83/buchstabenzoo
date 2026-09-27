@@ -145,8 +145,14 @@ interactable. Without the field every enclosure's animal is in scope.
   test** per level (hiding place off-screen while the player stands at its info board or
   enclosure gate, e.g. LAYOUT-L1-006), not as an eye-level line of sight. In the close
   camera views (look-around, first person) the distance haze does this job: every wander
-  cell ≥ **17 m** from the same standing points (fog end 16 m + 1 m margin; GAME-CAMERA-VIEWS 5,
-  CAMV-008; Q-110 answered 2026-09-27).
+  cell ≥ **22 m** from the same standing points (fog end 20.8 m + 1.2 m margin — raised from 17 m when the close-view fog grew by 30 %, user decision 2026-09-27; GAME-CAMERA-VIEWS 5,
+  CAMV-008; Q-110 answered 2026-09-27). Distances are planar, between cell centres; the
+  standing points are the walkable cells ≤ 2.5 m from the own board and the walkable cells
+  around the own gate (incl. its diagonal corners). All four level files keep it since
+  FIX-056 (level minima: `level_1` 22.0 m, `level_2` 22.0 m, `level_3` 22.2 m, `night_1`
+  22.1 m); tools, in this order: clip the wander area (rect or a smaller `wander_radius_m`)
+  on the side facing the board, move the spot inside its place, move the board along its
+  enclosure, move the whole place (proposals of FIX-056: Q-145).
 
 ## Joining levels (proposal, level design — Q-088)
 

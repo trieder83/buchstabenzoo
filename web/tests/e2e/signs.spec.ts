@@ -105,7 +105,11 @@ test('AENV-012: "Futter" sign above the food boxes, letters ≥ 3 % of the viewp
   const en = ftl('en');
   expect(de['sign-food-storage']).toBe('Futter');
   const spec = await page.evaluate(() => JSON.parse(window.__zoo!.app.text_textures()));
-  expect(spec).toEqual([expect.objectContaining({ id: 'text:sign-food-storage', text: 'Futter' })]);
+  // the food storage sign, and the night house sign of night_1 (GAME-LEVEL-NIGHT-1)
+  expect(spec).toEqual([
+    expect.objectContaining({ id: 'text:sign-food-storage', text: 'Futter' }),
+    expect.objectContaining({ id: 'text:sign-night-house', text: de['sign-night-house'] }),
+  ]);
   expect(await page.evaluate(() => window.__zoo!.app.decal_drawn('sign:food_storage'))).toBe(true);
 
   await goto(page, 0.5, 8.5); // ring path in front of the storage

@@ -12,7 +12,7 @@ pub struct AnimalInfo {
     pub hiding_places: &'static [&'static str],
 }
 
-pub const ANIMALS: [AnimalInfo; 10] = [
+pub const ANIMALS: [AnimalInfo; 13] = [
     AnimalInfo {
         id: "zebra",
         foods: &[Food::Grass],
@@ -62,6 +62,23 @@ pub const ANIMALS: [AnimalInfo; 10] = [
         id: "snow_fox",
         foods: &[Food::Berries],
         hiding_places: &["loc_ice_cream_kiosk", "loc_sprinkler", "loc_laundry"],
+    },
+    // Night zoo `night_1` (GAME-NIGHT rule 6, Q-076/Q-077); candidate places from the
+    // level data (`assets/levels/night-1.toml`).
+    AnimalInfo {
+        id: "hedgehog",
+        foods: &[Food::Beetles],
+        hiding_places: &["night_1"],
+    },
+    AnimalInfo {
+        id: "bat",
+        foods: &[Food::Fruit],
+        hiding_places: &["night_1"],
+    },
+    AnimalInfo {
+        id: "owl",
+        foods: &[Food::Beetles],
+        hiding_places: &["night_1"],
     },
 ];
 

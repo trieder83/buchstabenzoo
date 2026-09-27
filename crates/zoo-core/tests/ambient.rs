@@ -304,3 +304,53 @@ fn amb_009_butterflies_only_over_the_meadow() {
     }
     assert!(rested, "butterflies land on flowers now and then");
 }
+
+// NIGHT-013 (GAME-AMBIENT at night, art plan): ducks sleep (no swimming, `sleep` pose, no
+// actions), butterflies are hidden, frogs croak more often than by day.
+#[test]
+fn night_013_ambient_at_night() {
+    let data = common::level1();
+    let player = spawn(&data);
+    let croaks = |night: bool| {
+        let (_, mut a) = ambient(&data, 5);
+        a.night = night;
+        let mut n = 0;
+        let mut was = vec![false; a.animals.len()];
+        for _ in 0..(120 * 60) {
+            a.update(DT, player);
+            for (i, x) in a.animals.iter().enumerate() {
+                let c =
+                    x.kind == AmbientKind::Frog && x.action.is_some_and(|act| act.clip == "croak");
+                if c && !was[i] {
+                    n += 1;
+                }
+                was[i] = c;
+            }
+        }
+        n
+    };
+    assert!(croaks(true) > croaks(false), "frogs croak more at night");
+    let (_, mut a) = ambient(&data, 5);
+    a.night = true;
+    let start: Vec<Vec2> = ducks(&a).map(|(_, d)| d.pos).collect();
+    for _ in 0..(30 * 60) {
+        a.update(DT, player);
+    }
+    for ((_, d), p) in ducks(&a).zip(start) {
+        assert!(
+            d.pos.distance(p) < 0.05,
+            "a sleeping duck swam {}",
+            d.pos.distance(p)
+        );
+        assert!(d.action.is_none());
+    }
+    let mut poses = Vec::new();
+    a.poses(&mut poses);
+    assert!(poses
+        .iter()
+        .filter(|p| p.model == "duck")
+        .all(|p| p.idle_clip == "sleep"));
+    let mut bf = Vec::new();
+    a.butterfly_poses(&mut bf);
+    assert!(bf.is_empty(), "no butterflies at night");
+}

@@ -455,6 +455,62 @@
           transform: translate(-50%, -50%) scale(0.4);
         }
       }
+      /* GAME-NIGHT: gentle dusk cut-in, the dream fade while sleeping, the two night
+         choices as icons (no reading needed) */
+      #night-banner {
+        position: fixed;
+        left: 50%;
+        top: calc(14% + env(safe-area-inset-top));
+        transform: translateX(-50%);
+        max-width: 84vw;
+        padding: 14px 28px;
+        border-radius: 26px;
+        border: 5px solid #3b2314;
+        background: #2e3e7a;
+        color: #fff4c9;
+        font-size: max(3.4vh, 22px);
+        font-weight: bold;
+        text-align: center;
+        pointer-events: none;
+        animation: fadein 1.2s ease-out;
+      }
+      @keyframes fadein {
+        from {
+          opacity: 0;
+        }
+      }
+      #dream {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 45%, #3b4c8c 0%, #1e2a5a 70%);
+        opacity: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18vh;
+      }
+      #night-choices {
+        position: fixed;
+        left: calc(12px + env(safe-area-inset-left));
+        top: calc(50% - 70px);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        pointer-events: none;
+      }
+      #night-choices span {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 4px solid #3b2314;
+        background: #fff4c9;
+        font-size: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 14px #ffd66b;
+      }
     </style>
   </head>
   <body>
@@ -470,6 +526,9 @@
     <div id="bubble" hidden></div>
     <div id="panel" hidden></div>
     <div id="celebrate" hidden></div>
+    <div id="night-choices" hidden><span id="choice-bed">🛏️</span><span id="choice-moon">🌙</span></div>
+    <div id="night-banner" hidden></div>
+    <div id="dream"><span>💤</span></div>
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

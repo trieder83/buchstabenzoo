@@ -6,7 +6,7 @@ module: ambient
 status: implemented
 depends_on: [GAME-LAYOUT, GAME-ANIMALS, ART-ENVIRONMENT, TECH-WATER]
 test_prefix: AMB
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Ambient animals
@@ -49,6 +49,15 @@ decoration with behaviour: no mission, no food, never block the player.
    in small loops, land on flowers; drawn as tiny animated quads or a 2-bone model. **Never in
    the vegetable garden** (GAME-GARDEN) or at other hiding places, so they never make another
    place look like the meadow riddle.
+
+## At night (GAME-NIGHT, 2026-09-27)
+
+9. **Night:** ducks and ducklings sleep on the water (no swimming, no actions, no fleeing;
+   clip `sleep` with the head tucked — `idle` until the model has it), butterflies (and
+   later bees) are hidden, frogs croak about three times as often (a gentle night sound).
+   **Fireflies** (`#EFFF8A`, tiny emissive blinking dots, 6 per area) dance only over the
+   `[[scenery]]` areas that list a `firefly` prop (Q-115; `night_1`: `firefly_meadow_n1`).
+   Test NIGHT-013.
 
 ## Implementation (M6, 2026-09-26 — values are data in `zoo_core::ambient`)
 

@@ -624,3 +624,154 @@ hiding_place = "loc_sun_rocks"
 props = ["flat_rock_slab", "grass_tuft"]
 notes = "Big flat, light-grey rock slabs lying flush in the grass (walkable, 0.2-0.4 m high), no tree, no shade: the sunniest spot in the zoo. The only flat rocks in the zoo."
 
+# ================================================================ lights (GAME-NIGHT rule 1; Q-118 answered; data shape proposal Q-137)
+# Same fields as level-1.toml [[light]]: lantern posts along the main paths (~10 m) and one beside
+# every enclosure gate, a wall lamp at every building door, a board lamp on every info/map board.
+# No string lights here (Q-118: string lights only at the level-1 entrance plaza).
+[[light]]
+id = "l2_lantern_entry_w"
+kind = "lantern_post"
+pos = [25.0, 28.25]
+facing = "+z"
+
+[[light]]
+id = "l2_lantern_entry_e"
+kind = "lantern_post"
+pos = [35.0, 30.75]
+facing = "-z"
+
+[[light]]
+id = "l2_lantern_ring_s_w"
+kind = "lantern_post"
+pos = [37.0, 24.25]
+facing = "+z"
+
+[[light]]
+id = "l2_lantern_ring_s_m"
+kind = "lantern_post"
+pos = [47.0, 24.25]
+facing = "+z"
+
+[[light]]
+id = "l2_lantern_ring_s_e"
+kind = "lantern_post"
+pos = [53.0, 24.25]
+facing = "+z"
+
+[[light]]
+id = "l2_lantern_ring_w_s"
+kind = "lantern_post"
+pos = [36.25, 33.0]
+facing = "+x"
+
+[[light]]
+id = "l2_lantern_ring_w_n"
+kind = "lantern_post"
+pos = [36.25, 38.0]
+facing = "+x"
+
+[[light]]
+id = "l2_lantern_ring_e_s"
+kind = "lantern_post"
+pos = [51.25, 28.0]
+facing = "+x"
+
+[[light]]
+id = "l2_lantern_ring_e_n"
+kind = "lantern_post"
+pos = [51.25, 38.0]
+facing = "+x"
+
+[[light]]
+id = "l2_lantern_ring_n"
+kind = "lantern_post"
+pos = [47.0, 39.25]
+facing = "+z"
+
+[[light]]
+id = "l2_lantern_gate_koala"
+kind = "lantern_post"
+pos = [35.3, 35.65]
+facing = "-x"
+
+[[light]]
+id = "l2_lantern_gate_elephant"
+kind = "lantern_post"
+pos = [54.7, 32.65]
+facing = "+x"
+
+[[light]]
+id = "l2_lantern_gate_lion"
+kind = "lantern_post"
+pos = [45.65, 22.3]
+facing = "-z"
+
+[[light]]
+id = "l2_lantern_gate_giraffe"
+kind = "lantern_post"
+pos = [44.65, 43.7]
+facing = "+z"
+
+[[light]]
+id = "l2_wall_food_storage"
+kind = "wall_lamp"
+pos = [38.95, 31.3]
+facing = "-x"
+attach = "food_storage_2"
+
+[[light]]
+id = "l2_board_lamp_map"
+kind = "board_lamp"
+pos = [32.5, 32.0]
+facing = "-z"
+attach = "map_board_l2"
+
+[[light]]
+id = "l2_board_lamp_koala"
+kind = "board_lamp"
+pos = [35.5, 39.5]
+facing = "+x"
+attach = "board_koala"
+
+[[light]]
+id = "l2_board_lamp_elephant"
+kind = "board_lamp"
+pos = [54.5, 36.5]
+facing = "-x"
+attach = "board_elephant"
+
+[[light]]
+id = "l2_board_lamp_lion"
+kind = "board_lamp"
+pos = [44.5, 23.5]
+facing = "+z"
+attach = "board_lion"
+
+[[light]]
+id = "l2_board_lamp_giraffe"
+kind = "board_lamp"
+pos = [43.5, 42.5]
+facing = "-z"
+attach = "board_giraffe"
+
+# ================================================================ burglar event (GAME-EVENTS rules 4-7; proposal Q-139)
+# Same kinds as level-1.toml [[event_spot]].
+[[event_spot]]
+id = "l2_burglar_entry"
+kind = "burglar_entry"
+pos = [73.7, 39.5]
+facing = "-x"
+notes = "Ladder on the inside of wall_l2_east, east of the elephant enclosure."
+
+[[event_spot]]
+id = "l2_burglar_target"
+kind = "burglar_target"
+target = "food_storage_2"
+pos = [38.66, 29.0]
+notes = "A food box from the row in front of food_storage_2."
+
+[[event_spot]]
+id = "l2_burglar_hideout"
+kind = "burglar_hideout"
+rect = [71, 37, 3, 5]
+notes = "Grass strip between the elephant enclosure and the east wall (x 71..73, z 37..41); no hiding place, scenery or path."

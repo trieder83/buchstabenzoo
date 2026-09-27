@@ -360,6 +360,11 @@ fn resc_009_l1_010_all_home_opens_ne_barrier() {
             .count(),
         1
     );
+    // the barrier opens the next morning (GAME-NIGHT, replaces the Q-091 temporary rule)
+    assert!(!events.contains(&GameEvent::BarrierOpened {
+        id: "barrier_ne_tree".into()
+    }));
+    events.extend(g.debug_next_morning());
     assert!(events.contains(&GameEvent::BarrierOpened {
         id: "barrier_ne_tree".into()
     }));
@@ -537,7 +542,7 @@ fn feed_001_002_label_forms() {
     }
     let c = common::content();
     for lang in Language::ALL {
-        for f in Food::ALL {
+        for f in Food::DAY {
             let w = c.text(lang, &f.label_key()).unwrap();
             // "one word" (en "fish food" is a two-word label — see report)
             assert!(!w.is_empty() && w.split_whitespace().count() <= 2, "{w}");
@@ -628,7 +633,7 @@ fn feed_007_interact_with_box_shows_label_then_take() {
 fn feed_008_one_box_per_food_next_to_storage() {
     let g = common::game(1);
     let storage = g.level.data.element("food_storage").unwrap().rect;
-    for f in Food::ALL {
+    for f in Food::DAY {
         assert_eq!(g.food_boxes.iter().filter(|b| b.0 == f).count(), 1, "{f:?}");
     }
     let grid = g.level.grid();

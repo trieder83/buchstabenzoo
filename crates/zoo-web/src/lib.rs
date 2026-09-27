@@ -19,9 +19,11 @@ use zoo_core::coords::level_to_world;
 use zoo_core::game::{Interaction, Target};
 use zoo_core::level::ElementType;
 use zoo_core::nav::Autopilot;
+use zoo_core::night_scene::NightScene;
 use zoo_core::player::walk_clip_rate;
 use zoo_core::view::{self as views, ViewMode};
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
+use zoo_render::night::{self as nightfx, DayLight, PointLight};
 use zoo_render::renderer::{butterfly_mesh, cylinder_mesh, CAPSULE};
 use zoo_render::scene::{model_placeholder, Decal, DecalImage};
 use zoo_render::{CameraParams, CharacterDraw, FollowCamera, Instance, LevelScene, Renderer};
@@ -56,6 +58,10 @@ pub const AMBIENT_MODELS: [&str; 3] = ["duck", "duckling", "frog"];
 const AMBIENT_SEED: u64 = 7;
 /// Built-in butterfly mesh (dynamic instances, one draw call).
 const BUTTERFLY: &str = "__butterfly";
+/// Dynamic emissive boxes (eyeshine, fireflies; GAME-NIGHT §10), one draw call.
+const DYN_GLOW: &str = "__dyn_glow";
+/// Fireflies per firefly area (Q-115).
+const FIREFLIES_PER_AREA: usize = 6;
 
 /// Asset path of an animal model.
 pub fn animal_model_path(animal: &str) -> String {
@@ -245,6 +251,16 @@ pub struct App {
     look_at: Option<Vec2>,
     /// Debug/e2e: ambient animals simulated and drawn (AMB-007 A/B measurement).
     ambient_on: bool,
+    /// Night (GAME-NIGHT §10): night-only render regions (lamp props, glowing windows) per
+    /// level part, every lamp's light, per-frame light scratch, emissive dynamic boxes.
+    night_regions: Vec<u16>,
+    lamps: Vec<PointLight>,
+    lamp_order: Vec<(f32, usize)>,
+    frame_lights: Vec<PointLight>,
+    frame_pools: Vec<PointLight>,
+    glows: Vec<Instance>,
+    /// Fireflies: centre of the dance (world), phase.
+    fireflies: Vec<(Vec3, f32)>,
 }
 
 #[wasm_bindgen]
@@ -288,6 +304,9 @@ impl App {
             .map_err(|e| JsError::new(&format!("{e:?}")))?;
         renderer
             .add_mesh(BUTTERFLY, &butterfly_mesh(), 1.0)
+            .map_err(|e| JsError::new(&format!("{e:?}")))?;
+        renderer
+            .add_mesh(DYN_GLOW, &box_mesh, 1.0)
             .map_err(|e| JsError::new(&format!("{e:?}")))?;
         renderer
             .add_mesh(BOWL_WATER, &cylinder_mesh(12, true, false), 1.0)
@@ -487,6 +506,46 @@ impl App {
             renderer.add_decal(&texture, d.corners(), d.normal());
         }
 
+        // Night-only parts (GAME-NIGHT §10): lamp props (placeholders until `kit_night`),
+        // glowing windows, board lamps, the moon sign — hidden by day.
+        let night = NightScene::build(&game.level.data);
+        let night_regions: Vec<u16> = (0..game.level.data.parts.len())
+            .map(|_| renderer.add_region())
+            .collect();
+        for b in &night.boxes {
+            let region = night_regions[(b.part as usize).min(night_regions.len() - 1)];
+            renderer.add_box_in(region, b.pos, b.size, b.yaw, b.color, false);
+        }
+        for b in &night.glows {
+            let region = night_regions[(b.part as usize).min(night_regions.len() - 1)];
+            renderer.add_glow_box_in(region, b.pos, b.size, b.yaw, b.color);
+        }
+        for r in &night_regions {
+            renderer.set_region_hidden(*r, true);
+        }
+        let lamps: Vec<PointLight> = night
+            .lamps
+            .iter()
+            .map(|l| PointLight {
+                pos: l.light,
+                radius: l.radius,
+                color: Vec3::from(l.color),
+                strength: 1.0,
+                tinted: l.kind == "indoor_colored",
+            })
+            .collect();
+        let mut fireflies = Vec::new();
+        let mut frng = zoo_core::rng::Pcg32::new(0xF1F1);
+        for (r, _) in &night.fireflies {
+            for _ in 0..FIREFLIES_PER_AREA {
+                let u = frng.next_u32() as f32 / 4_294_967_296.0;
+                let v = frng.next_u32() as f32 / 4_294_967_296.0;
+                let h = frng.next_u32() as f32 / 4_294_967_296.0;
+                let p = Vec2::new(r.x as f32 + u * r.w as f32, r.z as f32 + v * r.d as f32);
+                fireflies.push((zoo_core::coords::level_to_world_at(p, 0.5 + h), h * 10.0));
+            }
+        }
+
         if !player_skinned {
             *placeholders.entry(PLAYER_MODEL.to_owned()).or_default() += 1;
         }
@@ -590,6 +649,13 @@ impl App {
             paused: false,
             look_at: None,
             ambient_on: true,
+            night_regions,
+            lamps,
+            lamp_order: Vec::with_capacity(128),
+            frame_lights: Vec::with_capacity(nightfx::MAX_POINT_LIGHTS),
+            frame_pools: Vec::with_capacity(nightfx::MAX_LIGHT_POOLS),
+            glows: Vec::with_capacity(64),
+            fireflies,
         };
         app.reset_views();
         Ok(app)
@@ -1101,10 +1167,17 @@ impl App {
         // Animals: skinned models, else placeholder boxes in the dynamic box batch.
         self.dyn_boxes.clear();
         self.draws.clear();
-        for a in &self.animals {
+        self.glows.clear();
+        for (i, a) in self.animals.iter().enumerate() {
             if !a.visible {
                 continue; // its level is still locked
             }
+            // eyeshine inside the lantern light (NIGHT-006)
+            let shine = self
+                .game
+                .animals
+                .get(i)
+                .is_some_and(|ga| self.game.eyes_shine(ga));
             let pos = a
                 .anchor
                 .unwrap_or_else(|| level_to_world(a.pos) - Vec3::Y * a.sink + Vec3::Y * a.lift);
@@ -1133,6 +1206,16 @@ impl App {
                         tilt: Quat::IDENTITY,
                     },
                 ));
+            } else if is_night_placeholder(a.id) {
+                night_animal_placeholder(
+                    &mut self.dyn_boxes,
+                    &mut self.glows,
+                    pos,
+                    a,
+                    action,
+                    t,
+                    shine,
+                );
             } else {
                 animal_placeholder(&mut self.dyn_boxes, pos, a, action, t);
             }
@@ -1231,6 +1314,7 @@ impl App {
                     r.ring,
                 )
             }));
+        self.night_frame(player);
         self.renderer.set_time(self.time);
         self.renderer
             .render(&self.camera, player, &self.draws, &self.crowd);
@@ -1756,6 +1840,74 @@ impl App {
             .unwrap_or_default()
     }
 
+    // ------------------------------------------------------------------ night (GAME-NIGHT)
+
+    /// Time of day: `day`, `dusk`, `night`, `sleeping`, `morning`.
+    pub fn daytime(&self) -> String {
+        self.game.daytime.phase.id().to_owned()
+    }
+
+    /// Night light of the time of day `[night 0…1, warm 0…1]`.
+    pub fn daylight(&self) -> Vec<f32> {
+        let l = self.game.daytime.light();
+        vec![l.night, l.warm]
+    }
+
+    /// Dream fade of the sleep (0 … 1) for the host overlay (NIGHT-003).
+    pub fn sleep_fade(&self) -> f32 {
+        self.game.daytime.sleep_fade()
+    }
+
+    /// Debug/e2e: jumps to a time of day (`day`, `dusk`, `night`, `sleeping`, `morning`;
+    /// `night` opens the moon door, `day` / `morning` apply the morning). False if unknown.
+    pub fn debug_set_daytime(&mut self, id: &str) -> bool {
+        let ok = self.game.debug_set_daytime(id);
+        self.handle_events();
+        self.camera.snap(level_to_world(self.game.player.pos));
+        ok
+    }
+
+    /// Debug/e2e: the rest of the night at once (night → the next morning, day): pending
+    /// barriers open; the player stays where she is (unless she was in the night zoo).
+    pub fn debug_next_morning(&mut self) {
+        let _ = self.game.debug_set_daytime("night");
+        let _ = self.game.debug_set_daytime("day");
+        self.handle_events();
+        self.camera.snap(level_to_world(self.game.player.pos));
+    }
+
+    /// Whether an animal's eyes shine now (lantern light, NIGHT-006).
+    pub fn eyes_shine(&self, id: &str) -> bool {
+        self.game
+            .animal(id)
+            .is_some_and(|a| self.game.eyes_shine(a))
+    }
+
+    /// Point lights and light pools of the last frame `[lights, pools]` and the number of
+    /// lamps of the zoo (Q-114, performance report).
+    pub fn light_stats(&self) -> Vec<u32> {
+        let (l, p) = self.renderer.light_counts();
+        vec![l, p, self.lamps.len() as u32]
+    }
+
+    /// Ids of the moon doors, one per line.
+    pub fn moon_doors(&self) -> String {
+        self.game.moon_doors().join("\n")
+    }
+
+    /// Where the bed is `[x, z]` (level), empty if the zoo has none.
+    pub fn bed_point(&self) -> Vec<f32> {
+        self.game
+            .bed()
+            .map(|(p, _)| vec![p.x, p.y])
+            .unwrap_or_default()
+    }
+
+    /// Whether the player is in a night level.
+    pub fn player_in_night_zoo(&self) -> bool {
+        self.game.player_in_night_zoo()
+    }
+
     /// Debug/e2e: turns the player towards a level point.
     pub fn debug_face_point(&mut self, x: f32, z: f32) -> bool {
         let to = Vec2::new(x, z) - self.game.player.pos;
@@ -1768,6 +1920,85 @@ impl App {
 }
 
 impl App {
+    /// Night presentation of a frame (GAME-NIGHT §10): global light, night-only props,
+    /// the player's lantern + the nearest lamps as point lights, light pools for the rest,
+    /// eyeshine and fireflies (emissive dynamic boxes).
+    fn night_frame(&mut self, player: Vec3) {
+        let l = self.game.daytime.light();
+        self.renderer.set_daylight(DayLight {
+            night: l.night,
+            warm: l.warm,
+        });
+        // lamps switch on during dusk (rule 1)
+        let lamps_on = l.night > 0.2;
+        for r in &self.night_regions {
+            if self.renderer.region_hidden(*r) == lamps_on {
+                self.renderer.set_region_hidden(*r, !lamps_on);
+            }
+        }
+        self.frame_lights.clear();
+        self.frame_pools.clear();
+        if lamps_on {
+            // the player's hand lantern: a light circle around her, always (NIGHT-005)
+            // (centre above her hands: she is lit from head to toe, her pool on the ground
+            // ≈ 1.8 m around her; eyes shine within LANTERN_RADIUS_M, NIGHT-006)
+            self.frame_lights.push(PointLight {
+                pos: player + Vec3::Y * 1.4,
+                radius: 2.3,
+                color: Vec3::new(1.0, 0.95, 0.84),
+                strength: 1.0,
+                // (a lamp: flat cream pool on the ground; she keeps her colours, NIGHT-005)
+                tinted: false,
+            });
+            // the hand lantern (placeholder until `hand_lantern`, Q-117): left hand
+            if !self.camera.hides_player() {
+                let yaw = self.player_yaw;
+                let left = Quat::from_rotation_y(yaw) * Vec3::X;
+                let fwd = Quat::from_rotation_y(yaw) * Vec3::Z;
+                let hand = player + left * 0.3 + fwd * 0.08 + Vec3::Y * 0.42;
+                self.glows.push(Instance::glow(
+                    hand,
+                    yaw,
+                    Vec3::new(0.16, 0.2, 0.16),
+                    nightfx::LAMP_GLOW.to_array(),
+                ));
+            }
+            nightfx::pick_lamps(
+                &self.lamps,
+                self.camera.target,
+                nightfx::LAMP_CULL_M,
+                1,
+                &mut self.lamp_order,
+                &mut self.frame_lights,
+                &mut self.frame_pools,
+            );
+            // fireflies: tiny blinking dots (Q-115)
+            let t = self.time as f32;
+            for (c, ph) in &self.fireflies {
+                let blink = (t * 1.3 + ph).sin();
+                if blink < -0.2 {
+                    continue;
+                }
+                let p = *c
+                    + Vec3::new(
+                        (t * 0.7 + ph).sin() * 0.8,
+                        (t * 1.1 + ph * 2.0).sin() * 0.25,
+                        (t * 0.5 + ph * 3.0).cos() * 0.8,
+                    );
+                self.glows.push(Instance::glow(
+                    p,
+                    0.0,
+                    Vec3::splat(0.07),
+                    nightfx::FIREFLY_GLOW.to_array(),
+                ));
+            }
+        }
+        self.renderer.set_point_lights(&self.frame_lights);
+        self.renderer.set_light_pools(&self.frame_pools);
+        self.renderer.set_dynamic_instances(DYN_GLOW, &self.glows);
+        self.ambient.night = self.game.daytime.is_dark();
+    }
+
     /// Switches the camera view; leaving first person unlocks the facing (GAME-CAMERA-VIEWS).
     fn set_view(&mut self, mode: ViewMode) {
         let facing = views::level_to_yaw(self.game.player.facing);
@@ -1886,6 +2117,10 @@ impl App {
                 js(id),
                 js(action)
             ),
+            Interaction::Sleep => "{\"kind\":\"sleep\"}".to_owned(),
+            Interaction::MoonDoor { into_night_zoo } => {
+                format!("{{\"kind\":\"moon_door\",\"into_night_zoo\":{into_night_zoo}}}")
+            }
         }
     }
 
@@ -1987,9 +2222,24 @@ impl App {
                     ));
                 }
                 GameEvent::LevelComplete { level } => {
+                    // the night zoo is complete: a gentle "time to sleep" text (GAME-NIGHT 7)
+                    let night = self
+                        .game
+                        .level
+                        .data
+                        .part_index(&level)
+                        .is_some_and(|k| self.game.level.data.is_night_part(k));
+                    let key = format!("night-complete-{}", self.game.settings.reading_level.id());
+                    let text = if night {
+                        self.text_now(&key)
+                    } else {
+                        String::new()
+                    };
                     self.outbox.push(format!(
-                        "{{\"type\":\"level_complete\",\"level\":{}}}",
-                        js(&level)
+                        "{{\"type\":\"level_complete\",\"level\":{},\"key\":{},\"text\":{}}}",
+                        js(&level),
+                        js(&key),
+                        js(&text)
                     ));
                 }
                 GameEvent::MissionComplete { animal } => {
@@ -2013,6 +2263,44 @@ impl App {
                     self.outbox.push(format!(
                         "{{\"type\":\"panel_close\",\"key\":{}}}",
                         js(&target_key(&target))
+                    ));
+                }
+                GameEvent::DuskStarted => {
+                    // a gentle cut-in text per reading level (GAME-NIGHT rule 2, Fluent)
+                    let key = format!("night-dusk-{}", self.game.settings.reading_level.id());
+                    let text = self.text_now(&key);
+                    self.outbox.push(format!(
+                        "{{\"type\":\"dusk\",\"key\":{},\"text\":{}}}",
+                        js(&key),
+                        js(&text)
+                    ));
+                }
+                GameEvent::NightFell => self.outbox.push("{\"type\":\"night\"}".to_owned()),
+                GameEvent::SleepStarted => self.outbox.push("{\"type\":\"sleep\"}".to_owned()),
+                GameEvent::Morning => {
+                    self.camera.snap(level_to_world(self.game.player.pos));
+                    let key = format!("night-morning-{}", self.game.settings.reading_level.id());
+                    let text = self.text_now(&key);
+                    self.outbox.push(format!(
+                        "{{\"type\":\"morning\",\"key\":{},\"text\":{}}}",
+                        js(&key),
+                        js(&text)
+                    ));
+                }
+                GameEvent::DayStarted => self.outbox.push("{\"type\":\"day\"}".to_owned()),
+                GameEvent::MoonDoor { into_night_zoo } => {
+                    self.camera.snap(level_to_world(self.game.player.pos));
+                    self.player_yaw = facing_to_yaw(self.game.player.facing);
+                    let key = format!("night-welcome-{}", self.game.settings.reading_level.id());
+                    let text = if into_night_zoo {
+                        self.text_now(&key)
+                    } else {
+                        String::new()
+                    };
+                    self.outbox.push(format!(
+                        "{{\"type\":\"moon_door\",\"into_night_zoo\":{into_night_zoo},\"key\":{},\"text\":{}}}",
+                        js(&key),
+                        js(&text)
                     ));
                 }
                 GameEvent::FoodTaken { food, .. } => {
@@ -2269,6 +2557,126 @@ fn animal_placeholder(
     push(Vec3::new(0.0, hy, 1.02), Vec3::new(0.25, 0.2, 0.08), dark); // muzzle
 }
 
+/// Night animals without a model yet (GAME-NIGHT rule 6): coloured placeholder shapes.
+fn is_night_placeholder(id: &str) -> bool {
+    matches!(id, "hedgehog" | "bat" | "owl")
+}
+
+/// Placeholder night animal (no 3D model yet): a small coloured body in the animal's colour
+/// with big round eyes — dark by default, shining `#E6F7A0` inside the lantern light
+/// (NIGHT-006). `happy` hops, `refuse` shakes.
+fn night_animal_placeholder(
+    out: &mut Vec<Instance>,
+    glows: &mut Vec<Instance>,
+    pos: Vec3,
+    a: &AnimalView,
+    action: Option<&str>,
+    t: f32,
+    shine: bool,
+) {
+    let phase = t * std::f32::consts::TAU;
+    let (hop, shake) = match action {
+        Some("happy") => ((phase * 2.0).sin().abs() * 0.15, 0.0),
+        Some("refuse") => (0.0, (phase * 3.0).sin() * 0.35),
+        _ => ((a.walk_time * 10.0).sin().abs() * 0.03 * a.walk_blend, 0.0),
+    };
+    let yaw = a.yaw + shake * 0.3;
+    let rot = Quat::from_rotation_y(yaw);
+    let base = pos + Vec3::Y * hop;
+    let mut push = |local: Vec3, size: Vec3, color: [f32; 3]| {
+        out.push(Instance::flat(base + rot * local, yaw, size, color, false));
+    };
+    // (body colour, face colour, eye height, eye spacing, eye forward, eye size)
+    // (eyes big and a little proud of the face so they read from the 55° zoo camera)
+    let (eye_y, eye_dx, eye_z, eye_s) = match a.id {
+        "hedgehog" => {
+            let spikes = [0.36, 0.27, 0.20];
+            push(
+                Vec3::new(0.0, 0.0, 0.0),
+                Vec3::new(0.46, 0.30, 0.56),
+                [0.66, 0.50, 0.36],
+            );
+            push(
+                Vec3::new(0.0, 0.2, -0.04),
+                Vec3::new(0.52, 0.18, 0.56),
+                spikes,
+            );
+            push(
+                Vec3::new(0.0, 0.08, 0.34),
+                Vec3::new(0.24, 0.18, 0.2),
+                [0.86, 0.72, 0.56],
+            );
+            push(
+                Vec3::new(0.0, 0.12, 0.46),
+                Vec3::new(0.07, 0.06, 0.06),
+                [0.17, 0.12, 0.10],
+            );
+            (0.24, 0.09, 0.44, 0.1)
+        }
+        "bat" => {
+            let fur = [0.42, 0.34, 0.44];
+            let wing = [0.30, 0.24, 0.34];
+            push(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.26, 0.36, 0.22), fur);
+            push(
+                Vec3::new(0.0, 0.36, 0.0),
+                Vec3::new(0.24, 0.2, 0.2),
+                [0.56, 0.44, 0.50],
+            );
+            for sx in [-1.0f32, 1.0] {
+                push(
+                    Vec3::new(sx * 0.3, 0.08, -0.02),
+                    Vec3::new(0.36, 0.28, 0.04),
+                    wing,
+                );
+                push(
+                    Vec3::new(sx * 0.08, 0.56, 0.0),
+                    Vec3::new(0.07, 0.12, 0.04),
+                    fur,
+                );
+            }
+            (0.47, 0.065, 0.11, 0.085)
+        }
+        _ => {
+            // owl
+            let body = [0.66, 0.50, 0.34];
+            push(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.40, 0.56, 0.34), body);
+            push(
+                Vec3::new(0.0, 0.08, 0.14),
+                Vec3::new(0.26, 0.3, 0.08),
+                [0.90, 0.80, 0.62],
+            );
+            push(Vec3::new(0.0, 0.56, 0.0), Vec3::new(0.40, 0.28, 0.32), body);
+            push(
+                Vec3::new(0.0, 0.58, 0.14),
+                Vec3::new(0.34, 0.22, 0.06),
+                [0.92, 0.84, 0.70],
+            );
+            for sx in [-1.0f32, 1.0] {
+                push(
+                    Vec3::new(sx * 0.13, 0.82, 0.0),
+                    Vec3::new(0.08, 0.1, 0.08),
+                    body,
+                );
+            }
+            push(
+                Vec3::new(0.0, 0.62, 0.18),
+                Vec3::new(0.05, 0.07, 0.05),
+                [0.95, 0.72, 0.30],
+            );
+            (0.72, 0.09, 0.19, 0.11)
+        }
+    };
+    for sx in [-1.0f32, 1.0] {
+        let p = base + rot * Vec3::new(sx * eye_dx, eye_y - eye_s / 2.0, eye_z);
+        let size = Vec3::new(eye_s, eye_s, 0.06);
+        if shine {
+            glows.push(Instance::glow(p, yaw, size, nightfx::EYE_GLOW.to_array()));
+        } else {
+            out.push(Instance::flat(p, yaw, size, [0.12, 0.10, 0.12], false));
+        }
+    }
+}
+
 /// Texture id of a text decal (`text:<fluent key>`).
 fn text_texture_id(key: &str) -> String {
     format!("text:{key}")
@@ -2283,6 +2691,8 @@ fn target_key(t: &Target) -> String {
         Target::Item { id } => format!("item:{id}"),
         Target::Water { source } => format!("water:{source}"),
         Target::PutDown => "put_down".to_owned(),
+        Target::Bed => "bed".to_owned(),
+        Target::MoonDoor { id } => format!("moon_door:{id}"),
     }
 }
 
@@ -2335,10 +2745,11 @@ mod tests {
     }
 
     fn level_tomls() -> Vec<String> {
-        (1..=3)
+        ["level-1", "level-2", "level-3", "night-1"]
+            .iter()
             .map(|n| {
                 std::fs::read_to_string(format!(
-                    "{}/../../assets/levels/level-{n}.toml",
+                    "{}/../../assets/levels/{n}.toml",
                     env!("CARGO_MANIFEST_DIR")
                 ))
                 .unwrap()

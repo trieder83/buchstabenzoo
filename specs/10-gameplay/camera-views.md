@@ -93,7 +93,10 @@ a hiding place is never visible from its own info board), stay comfortable for c
    No sun disc. The fog colour is the sky gradient in the same direction; in the last part of
    the fog (amount 0.85 → 1) it blends to the full sky including clouds, so a fully hidden
    object is exactly the sky (no silhouette cut into a cloud) while half-hidden houses never
-   show ghost clouds. Night mode (GAME-NIGHT, later) recolours the sky and haze. The sky costs no
+   show ghost clouds. Night mode (GAME-NIGHT, Q-126) recolours the sky and haze: dark-blue
+   gradient `#1E2A5A` → `#3B4C8C` (the haze = the horizon blue, fog end 16 m kept), blue
+   clouds, an outlined comic moon and a few 4-point stars; shining animal eyes (NIGHT-006) are
+   hidden by the haze beyond 16 m like all geometry (Q-126 answered). The sky costs no
    extra draw call (drawn in the outline pass where there is no geometry).
 8. **Near plane and occluders.** The close views use a **0.05 m near plane**, so walls in
    front of the eye are not cut open. The occluder fade (GAME-PLAYER §2) stays on in
@@ -141,6 +144,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
 | CAMV-018 | Given every view change (zoo ↔ look-around, zoo ↔ first person, look-around → release) at any yaw and zoom, then at every frame of the glide the eye stays above the ground (eye height > 0.05 m, the close-view near plane) and moves smoothly: no 1/60 s step larger than 1.6 × the average step of the 0.4 s glide (eased, no cut, never through the ground; at 20 m zoom the peak is ≈ 1.25 m per frame). | unit |
 | CAMV-019 | Given a touch device, then the 👓 first-person button is in the bottom-right thumb zone (above the interact button, fully inside the safe area); tapping it toggles first person on and off exactly like `V`, while the left thumb keeps walking. | e2e |
 | CAMV-020 | Given first person, then the eye button is hidden and holding `F` or the right mouse button (`look_hold(true)`) leaves the view in first person; given the zoo view, then the 👓 button is shown on desktop and on touch and not highlighted. | unit |
+| CAMV-021 | Given night (GAME-NIGHT), then the close-view sky is a dark-blue gradient (`#1E2A5A` top → `#3B4C8C` horizon), the haze equals the horizon colour and the fog end stays 16 m (shining eyes beyond it are hidden); by day the day sky colours are unchanged (rule 7, Q-126). | unit |
 
 ## Open questions
 
@@ -157,7 +161,7 @@ a hiding place is never visible from its own info board), stay comfortable for c
   changes them while a close view is shown).
 - Q-124 `V` pressed while look-around is held (implemented: switches to first person).
 - Q-125 Camera views while driving a golf cart (GAME-CART).
-- Q-126 Night colours of the comic sky and haze (GAME-NIGHT).
+- Q-126 (answered 2026-09-27, as recommended) Night colours of the comic sky and haze (GAME-NIGHT).
 
 ## Implementation (2026-09-26)
 

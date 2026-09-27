@@ -18,6 +18,8 @@ fn unlocked_game(seed: u64) -> Game {
     ] {
         assert!(g.debug_send_home(a), "{a}");
     }
+    // the barriers open the next morning (GAME-NIGHT, Q-091)
+    g.debug_next_morning();
     g.drain_events();
     assert!(g.level_unlocked("level_3"));
     g
@@ -97,6 +99,13 @@ fn missions_in_scope_are_the_unlocked_levels() {
     assert!(ev.contains(&GameEvent::LevelComplete {
         level: "level_1".into()
     }));
+    assert!(
+        !ev.contains(&GameEvent::BarrierOpened {
+            id: "barrier_ne_tree".into()
+        }),
+        "the barrier opens the next morning (Q-091)"
+    );
+    let ev = g.debug_next_morning();
     assert!(ev.contains(&GameEvent::BarrierOpened {
         id: "barrier_ne_tree".into()
     }));
@@ -165,6 +174,7 @@ fn perch_animals_sit_up_and_come_down() {
         for a in ["zebra", "hippo", "panda"] {
             h.debug_send_home(a);
         }
+        h.debug_next_morning();
         let _ = &g;
         h
     };
@@ -386,6 +396,7 @@ fn fam_002_pair_follows_and_completes_together() {
     for a in ["zebra", "hippo", "panda"] {
         g.debug_send_home(a);
     }
+    g.debug_next_morning();
     g.drain_events();
     let second = g.group("koala")[1];
     g.player.pos = g.animals[second].pos + Vec2::new(0.0, -1.0);

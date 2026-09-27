@@ -6,7 +6,7 @@ module: missions
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-FEED, CONT-READING, CONT-MATH, CONT-L10N]
 test_prefix: MISS
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Start missions — 10 animals
@@ -638,6 +638,291 @@ Math (`mathe4`): *Im Zoo gibt es 4 Körbe mit je 250 Beeren. Wie viele Beeren si
 
 ---
 
+## Night level 1 — hedgehog, bat, owl (GAME-NIGHT, GAME-LEVEL-NIGHT-1)
+
+Night missions follow the same rules as the day missions (GAME-NIGHT rule 9; riddle and facts rules at the top of this
+spec). Riddles use **night clues** — moonlight, sounds, smells (GAME-NIGHT rule 5). Places: GAME-LEVEL-NIGHT-1
+"Hiding places". Fluent file: `assets/i18n/{de,en}/night.ftl` (same key scheme as `missions.ftl`).
+Night riddles avoid every `kiga` place word of the day levels too (zoo-wide, as MISS-011), although the night
+zoo is a riddle scope of its own for scenery kinds (*proposal Q-136*). The owl's `kiga` word *Teich* / *pond*
+equals the hippo's (`loc_pond`) — allowed because the two riddles are never active at the same time (Q-136).
+
+| # | Animal id | Food box (de / en) | Hiding place id | Place (for designers only) |
+|---|---|---|---|---|
+| N1 | `hedgehog` | Käfer / beetles | `loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms` | heap of dry twigs and sticks in the corner where two hedges meet; rustling · potting bench with stacked clay flowerpots, white night-scented flowers (sweet smell at night) · ring of brown/cream mushrooms on moss at the foot of a big old tree; earthy smell |
+| N2 | `bat` | Obst / fruit | `loc_windmill`, `loc_fireflies`, `loc_hollow_tree` | little wooden garden windmill, four sails turning, soft whirring · low meadow with many fireflies (the only firefly place, Q-115), small crooked tree · very thick old tree with a big round knothole at 2.5 m |
+| N3 | `owl` | Käfer / beetles | `loc_moon_pond`, `loc_hilltop`, `loc_fir` | small still pond mirroring the moon and stars, reeds, owl on a wooden post at the shore · small grassy hill with a big round stone on top, no trees, brightest moonlight · the one tall dark pointed fir tree with cones |
+
+**Night food storage** (`food_storage_n1`, proposal Q-135): four boxes — *Käfer* / *beetles* (hedgehog **and** owl:
+two animals share one food, so the child takes a beetle box twice), *Obst* / *fruit* (bat), and two distractors for
+later night levels, *Würmer* / *worms* and *Nektar* / *nectar*. Keys `food-beetles`, `food-fruit`, `food-worms`,
+`food-nectar`. MISS-004 extends to all 14 food words (distinct).
+
+### N1. Igel / Hedgehog — `loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms`
+
+Riddle — `loc_brush_pile` (heap of dry twigs and sticks in the corner where two hedges meet; rustling; keys `mission-hedgehog-riddle-loc_brush_pile-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 heap of dry twigs in the hedge corner · **Reisig** | 🖼 heap of dry twigs in the hedge corner · **twigs** |
+| klasse1 | Ich bin klein und stachelig. Ich liege unter trockenen Ästen. Es raschelt leise. | I am small and spiky. I sleep under dry sticks. It rustles softly. |
+| klasse2 | Der Igel hat sich in der Ecke an der Hecke versteckt, unter einem Haufen aus trockenen Ästen. Hör genau hin: Dort raschelt es leise. | The hedgehog is hiding in the corner by the hedge, under a heap of dry sticks. Listen closely: something rustles there softly. |
+| klasse3 | Igel schlafen am Tag und werden erst in der Nacht munter. Unser Igel hat sich ein gemütliches Versteck gebaut: ganz hinten in der Ecke, wo zwei Hecken zusammenstoßen. Dort liegt ein großer Haufen aus trockenen Ästen und Stöcken. Wenn der Igel sich bewegt, knackt und raschelt es leise. | Hedgehogs sleep during the day and only wake up at night. Our hedgehog has built a cosy hiding spot: far back in the corner where two hedges meet. A big heap of dry sticks and branches lies there. When the hedgehog moves, it cracks and rustles softly. |
+
+Place words: *Reisig*, *Reisighaufen* / *twigs*.
+
+Riddle — `loc_flowerpots` (potting bench with stacked clay flowerpots, white night-scented flowers (sweet smell at night); keys `mission-hedgehog-riddle-loc_flowerpots-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 old clay flowerpots on and under a potting bench, white flowers · **Blumentöpfe** | 🖼 old clay flowerpots on and under a potting bench, white flowers · **flowerpots** |
+| klasse1 | Ich schnuppere gern. Hier riecht es süß. Weiße Blumen blühen nachts. | I like to sniff. It smells sweet here. White flowers bloom at night. |
+| klasse2 | Der Igel schnuppert an alten Töpfen aus Ton. Darin wachsen weiße Blumen, die nur in der Nacht so süß duften. | The hedgehog is sniffing at old clay pots. White flowers grow in them that only smell so sweet at night. |
+| klasse3 | Am Tag riecht man hier fast nichts. Doch wenn es dunkel wird, öffnen sich kleine weiße Blumen und duften süß. Sie wachsen in alten Tontöpfen, die auf und unter einem Holztisch stehen. Zwischen den Töpfen schnuppert unser Igel mit seiner kleinen Nase. | During the day you can hardly smell anything here. But when it gets dark, little white flowers open and smell sweet. They grow in old clay pots that stand on and under a wooden table. Our hedgehog is sniffing between the pots with its little nose. |
+
+Place words: *Blumentöpfe*, *Töpfe*, *Tontöpfe* / *flowerpots*, *pots*.
+
+Riddle — `loc_mushrooms` (ring of brown/cream mushrooms on moss at the foot of a big old tree; earthy smell; keys `mission-hedgehog-riddle-loc_mushrooms-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 ring of brown mushrooms on green moss under a big old tree · **Pilze** | 🖼 ring of brown mushrooms on green moss under a big old tree · **mushrooms** |
+| klasse1 | Der Boden ist weich. Es riecht nach Erde. Hier wächst grünes Moos. | The ground is soft. It smells of damp earth. Green moss grows here. |
+| klasse2 | Der Igel sitzt auf weichem, grünem Moos unter einem alten, dicken Baum. Rund um ihn stehen kleine braune Hüte im Kreis, und es riecht nach feuchter Erde. | The hedgehog sits on soft green moss under a thick old tree. Little brown caps stand in a circle around it, and it smells of damp earth. |
+| klasse3 | Unter einem großen alten Baum ist der Boden weich wie ein Kissen. Dort wächst grünes Moos, und es riecht nach feuchter Erde und altem Holz. Kleine braune und cremefarbene Hüte stehen im Kreis wie ein Ring. Mitten in diesem Ring hat sich unser Igel zusammengerollt. | Under a big old tree the ground is as soft as a pillow. Green moss grows there, and it smells of damp earth and old wood. Little brown and pale caps stand in a circle like a ring. Our hedgehog has curled up right in the middle of this ring. |
+
+Place words: *Pilze*, *Moos* / *mushrooms*, *moss*.
+
+Animal name (`animal-hedgehog`): *Igel* / *Hedgehog*. Heading above the facts (`animal-hedgehog-more`): *Mehr über den Igel* / *More about the hedgehog*.
+
+**Facts** (keys `mission-hedgehog-facts-<reading_level>`; never a place word — ANIM-007 checks *Blumentöpfe*, *Moos*, *Pilze*, *Reisig*, *Reisighaufen*, *Tontöpfe*, *Töpfe* / *flowerpots*, *moss*, *mushrooms*, *pots*, *twigs*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 hedgehog spines · **Stacheln** | 🖼 hedgehog spines · **spines** |
+| klasse1 | Ich habe viele Stacheln. Ich rolle mich ein. Nachts bin ich wach. | I have lots of spines. I curl up tight. I am awake at night. |
+| klasse2 | Igel haben bis zu 8000 Stacheln auf dem Rücken. Bei Gefahr rollen sie sich ganz fest ein, dann sieht man nur noch Stacheln. Am Tag schlafen sie, in der Nacht suchen sie Futter. Sie fressen gern Käfer und Würmer. | Hedgehogs have up to 8,000 spines on their backs. When they are scared, they roll up tight so that only their spines show. They sleep during the day and look for food at night. They like to eat beetles and worms. |
+| klasse3 | Ein Igel hat bis zu 8000 Stacheln. Das sind besondere Haare, die innen hohl und trotzdem sehr fest sind. Mit seiner feinen Nase findet er nachts Käfer, Würmer und Schnecken. Im Winter hält der Igel Winterschlaf und wacht erst im Frühling wieder auf. Wenn er Futter sucht, schnauft und schmatzt er so laut, dass man ihn hören kann. | A hedgehog has up to 8,000 spines. They are special hairs that are hollow inside but still very strong. With its fine nose it finds beetles, worms and snails at night. In winter the hedgehog hibernates and only wakes up again in spring. When it looks for food, it snuffles and smacks its lips so loudly that you can hear it. |
+
+Mission complete (`mission-hedgehog-home`): *Super! Der Igel ist wieder zu Hause.* / *Great! The hedgehog is home again.*
+
+Math (`mathe1`): *Der Igel findet 4 Käfer. Dann findet er noch 3. Wie viele Käfer sind es?* / *The hedgehog finds 4 beetles. Then it finds 3 more. How many beetles are there?* → **7**
+
+### N2. Fledermaus / Bat — `loc_windmill`, `loc_fireflies`, `loc_hollow_tree`
+
+Riddle — `loc_windmill` (little wooden garden windmill, four sails turning, soft whirring; keys `mission-bat-riddle-loc_windmill-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 little wooden windmill with four turning sails at night · **Windmühle** | 🖼 little wooden windmill with four turning sails at night · **windmill** |
+| klasse1 | Ich hänge kopfüber. Große Flügel drehen sich. Es surrt leise. | I hang upside down. Big sails turn round. It whirs softly. |
+| klasse2 | Die Fledermaus hängt kopfüber unter einem kleinen Holzhaus, auf dem sich vier große Flügel im Wind drehen. Man hört ein leises Surren. | The bat hangs upside down under a small wooden house with four big sails turning in the wind. You can hear a soft whirring. |
+| klasse3 | Fledermäuse ruhen sich gern kopfüber aus. Unsere Fledermaus hat sich einen Platz gesucht, an dem sich etwas im Wind dreht. Vier große hölzerne Flügel gehen rundherum, immer im Kreis. Dabei surrt und knarrt es leise, und die Fledermaus schaukelt sanft mit. | Bats like to rest upside down. Our bat has found a place where something turns in the wind. Four big wooden sails go round and round, always in a circle. It whirs and creaks softly, and the bat sways gently along. |
+
+Place words: *Windmühle*, *Mühle* / *windmill*, *mill*.
+
+Riddle — `loc_fireflies` (low meadow with many fireflies (the only firefly place, Q-115), small crooked tree; keys `mission-bat-riddle-loc_fireflies-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 short meadow full of glowing fireflies, small crooked tree · **Glühwürmchen** | 🖼 short meadow full of glowing fireflies, small crooked tree · **fireflies** |
+| klasse1 | Kleine Lichter tanzen hier. Ich hänge an einem Ast. Es blinkt überall. | Little lights dance here. I hang from a branch. It twinkles everywhere. |
+| klasse2 | Die Fledermaus hängt an einem krummen kleinen Baum. Um sie herum tanzen viele kleine gelbe Lichter durch die Nacht. | The bat hangs from a small crooked tree. Lots of little yellow lights dance around it through the night. |
+| klasse3 | Heute Nacht leuchtet es an einem Ort im Garten ganz besonders. Viele winzige Tierchen fliegen dort herum, und jedes hat ein kleines gelbes Licht am Bauch. Sie blinken und tanzen durch die Luft. Mitten darin hängt unsere Fledermaus kopfüber an einem krummen Baum und schaut dem Lichtertanz zu. | Tonight one place in the garden glows in a very special way. Lots of tiny creatures fly around there, and each one has a little yellow light on its tummy. They blink and dance through the air. Right in the middle our bat hangs upside down from a crooked tree and watches the dance of lights. |
+
+Place words: *Glühwürmchen*, *Lichter* / *fireflies*, *lights*.
+
+Riddle — `loc_hollow_tree` (very thick old tree with a big round knothole at 2.5 m; keys `mission-bat-riddle-loc_hollow_tree-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 very thick old tree with a big round knothole · **Astloch** | 🖼 very thick old tree with a big round knothole · **knothole** |
+| klasse1 | Der Baum ist sehr dick. Er hat ein rundes Loch. Dort hänge ich. | The tree is very thick. It has a round hole. I hang there. |
+| klasse2 | Die Fledermaus hängt an einem uralten, sehr dicken Baum. In seinem Stamm ist ein großes rundes Loch, wie ein kleines Fenster. | The bat hangs on a very old, very thick tree. In its trunk there is a big round hole, like a little window. |
+| klasse3 | Dieser Baum ist der dickste und älteste im ganzen Garten. Drei Kinder könnten ihn zusammen kaum umarmen. Weit oben hat sein Stamm ein großes rundes Loch, dunkel und gemütlich. Genau davor hängt unsere Fledermaus kopfüber und hält sich mit ihren kleinen Krallen fest. | This tree is the thickest and oldest in the whole garden. Three children together could hardly hug it. High up, its trunk has a big round hole, dark and cosy. Our bat hangs upside down right in front of it, holding on with its little claws. |
+
+Place words: *Astloch*, *Loch* / *knothole*, *hole*.
+
+Animal name (`animal-bat`): *Fledermaus* / *Bat*. Heading above the facts (`animal-bat-more`): *Mehr über die Fledermaus* / *More about the bat*.
+
+**Facts** (keys `mission-bat-facts-<reading_level>`; never a place word — ANIM-007 checks *Astloch*, *Glühwürmchen*, *Lichter*, *Loch*, *Mühle*, *Windmühle* / *fireflies*, *hole*, *knothole*, *lights*, *mill*, *windmill*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 bat with open wings · **Flügel** | 🖼 bat with open wings · **wings** |
+| klasse1 | Ich kann fliegen. Ich hänge kopfüber. Ich esse gern Obst. | I can fly. I hang upside down. I like to eat fruit. |
+| klasse2 | Fledermäuse sind die einzigen Säugetiere, die richtig fliegen können. Ihre Flügel sind aus dünner Haut zwischen langen Fingern. Unsere Fledermaus ist ein Flughund und frisst am liebsten süßes Obst. | Bats are the only mammals that can really fly. Their wings are made of thin skin between long fingers. Our bat is a fruit bat and loves to eat sweet fruit. |
+| klasse3 | Fledermäuse schlafen am Tag kopfüber und halten sich dabei mit den Krallen ihrer Füße fest. Nachts wachen sie auf und fliegen los. Flughunde wie unsere Fledermaus haben große Augen und eine gute Nase, damit finden sie reifes Obst. Zum Schlafen wickeln sie sich in ihre Flügel ein wie in eine Decke. | Bats sleep upside down during the day and hold on with the claws of their feet. At night they wake up and fly off. Fruit bats like ours have big eyes and a good nose, which help them find ripe fruit. To sleep, they wrap themselves in their wings like in a blanket. |
+
+Mission complete (`mission-bat-home`): *Super! Die Fledermaus ist wieder zu Hause.* / *Great! The bat is home again.*
+
+Math (`mathe2`): *Im Nachtzoo hängen 3 Fledermäuse. Jede frisst 5 Stück Obst. Wie viele Stück Obst sind es zusammen?* / *3 bats hang in the night zoo. Each one eats 5 pieces of fruit. How many pieces of fruit is that altogether?* → **15**
+
+### N3. Eule / Owl — `loc_moon_pond`, `loc_hilltop`, `loc_fir`
+
+Riddle — `loc_moon_pond` (small still pond mirroring the moon and stars, reeds, owl on a wooden post at the shore; keys `mission-owl-riddle-loc_moon_pond-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 still pond at night with the moon and stars mirrored in it, reeds, a wooden post · **Teich** | 🖼 still pond at night with the moon and stars mirrored in it, reeds, a wooden post · **pond** |
+| klasse1 | Der Mond schwimmt im Wasser. Ich sitze auf einem Pfahl. Das Schilf rauscht. | The moon floats on water. I sit on a post. The reeds rustle. |
+| klasse2 | Die Eule sitzt auf einem Holzpfahl am Wasser. Unter ihr glitzern die Sterne, und der Mond scheint im stillen Wasser zu schwimmen. | The owl sits on a wooden post by the water. Below it the stars glitter, and the moon seems to swim in the still water. |
+| klasse3 | Wenn die Luft ganz still ist, wird das Wasser glatt wie ein Spiegel. Dann sieht man darin den Mond und viele Sterne, als ob der Himmel auf dem Boden liegt. Am Ufer wiegt sich das Schilf, und ein kleiner Steg führt ein Stück hinaus. Auf einem Holzpfahl daneben sitzt unsere Eule und bewundert den Mond. | When the air is completely still, the water becomes as smooth as a mirror. Then you can see the moon and lots of stars in it, as if the sky were lying on the ground. Reeds sway on the bank, and a small jetty leads out a little way. Our owl sits on a wooden post next to it and admires the moon. |
+
+Place words: *Teich*, *Wasser*, *Steg* / *pond*, *water*, *jetty*.
+
+Riddle — `loc_hilltop` (small grassy hill with a big round stone on top, no trees, brightest moonlight; keys `mission-owl-riddle-loc_hilltop-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 small round grassy hill with a big round stone on top in bright moonlight · **Hügel** | 🖼 small round grassy hill with a big round stone on top in bright moonlight · **hill** |
+| klasse1 | Ich sitze ganz oben. Hier ist kein Baum. Der Mond scheint hell. | I sit at the top. No tree grows here. The moon shines brightly. |
+| klasse2 | Die Eule sitzt oben auf einem großen runden Stein. Dort stehen keine Bäume, darum scheint der Mond hier am hellsten. | The owl sits on top of a big round stone. No trees stand there, so the moon shines brightest here. |
+| klasse3 | Eulen haben große Augen und sehen im Dunkeln sehr gut. Unsere Eule mag es aber heute besonders hell. Sie ist dorthin geflogen, wo der Boden ein wenig ansteigt und kein Baum den Mond verdeckt. Auf einem großen runden Stein ganz oben sitzt sie im silbernen Mondlicht. | Owls have big eyes and see very well in the dark. But tonight our owl likes it especially bright. It has flown to where the ground rises a little and no tree hides the moon. It sits right at the top on a big round stone in the silvery moonlight. |
+
+Place words: *Hügel*, *Stein* / *hill*, *stone*.
+
+Riddle — `loc_fir` (the one tall dark pointed fir tree with cones; keys `mission-owl-riddle-loc_fir-<reading_level>`):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 tall dark pointed fir tree with cones, owl at the very top · **Tanne** | 🖼 tall dark pointed fir tree with cones, owl at the very top · **fir** |
+| klasse1 | Ich sitze ganz hoch. Der Baum ist spitz. Er hat Zapfen. | I sit very high. The tree is pointed. It has cones. |
+| klasse2 | Die Eule sitzt ganz oben in einem hohen, spitzen Baum mit dunklen Nadeln und Zapfen. Von dort ruft sie: Huhu! | The owl sits at the very top of a tall, pointed tree with dark needles and cones. From up there it calls: hoo-hoo! |
+| klasse3 | Im Garten steht ein Baum, der auch im Winter grün bleibt. Er hat dunkle, spitze Nadeln, und an seinen Ästen hängen braune Zapfen. Seine Spitze zeigt wie ein Pfeil in den Himmel. Ganz oben auf dieser Spitze sitzt unsere Eule und ruft leise: Huhu! | In the garden there is a tree that stays green even in winter. It has dark, sharp needles, and brown cones hang from its branches. Its top points into the sky like an arrow. Our owl sits right up on this top and softly calls: hoo-hoo! |
+
+Place words: *Tanne*, *Zapfen*, *Nadeln* / *fir*, *cones*, *needles*.
+
+Animal name (`animal-owl`): *Eule* / *Owl*. Heading above the facts (`animal-owl-more`): *Mehr über die Eule* / *More about the owl*.
+
+**Facts** (keys `mission-owl-facts-<reading_level>`; never a place word — ANIM-007 checks *Hügel*, *Nadeln*, *Steg*, *Stein*, *Tanne*, *Teich*, *Wasser*, *Zapfen* / *cones*, *fir*, *hill*, *jetty*, *needles*, *pond*, *stone*, *water*):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | 🖼 owl face with big round eyes · **Augen** | 🖼 owl face with big round eyes · **eyes** |
+| klasse1 | Ich habe große Augen. Ich fliege ganz leise. Ich rufe: Huhu! | I have big eyes. I fly very quietly. I call: hoo-hoo! |
+| klasse2 | Eulen sehen und hören in der Nacht sehr gut. Sie können ihren Kopf weit nach hinten drehen. Ihre weichen Federn machen beim Fliegen fast kein Geräusch. | Owls see and hear very well at night. They can turn their heads far round to the back. Their soft feathers make almost no sound when they fly. |
+| klasse3 | Eulen sind Nachtvögel. Mit ihren großen Augen sehen sie im Dunkeln viel besser als wir. Ihren Kopf können sie fast ganz nach hinten drehen, ohne den Körper zu bewegen. Weil ihre Federn so weich sind, fliegen sie fast lautlos. Unsere Eule frisst am liebsten Käfer. | Owls are night birds. With their big eyes they see much better in the dark than we do. They can turn their heads almost all the way to the back without moving their bodies. Because their feathers are so soft, they fly almost silently. Our owl likes to eat beetles best. |
+
+Mission complete (`mission-owl-home`): *Super! Die Eule ist wieder zu Hause.* / *Great! The owl is home again.*
+
+Math (`mathe3`): *Eine Eule ruft in einer Stunde 25-mal Huhu. Wie oft ruft sie in 4 Stunden?* / *An owl calls hoo-hoo 25 times in one hour. How many times does it call in 4 hours?* → **100**
+
+### Night texts (GAME-NIGHT) and burglar texts (GAME-EVENTS)
+
+Per reading level, keys `<key>-<reading_level>`; `kiga` is one word next to an icon/picture, read aloud.
+Night-house sign `sign-night-house`: *Nachttierhaus* / *Night house*.
+
+`night-dusk` — Nightfall, after the last day animal is home (GAME-NIGHT rule 1):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Nacht | night |
+| klasse1 | Alle Tiere sind zu Hause. Es wird Nacht. | All animals are home. Night is falling. |
+| klasse2 | Alle Tiere sind wieder zu Hause. Jetzt wird es dunkel, und die Laternen gehen an. | All the animals are home again. Now it is getting dark, and the lanterns light up. |
+| klasse3 | Geschafft! Alle Tiere sind wieder zu Hause. Die Sonne geht unter, der Himmel wird dunkelblau, und überall gehen die Laternen an. Du kannst jetzt ins Bett gehen oder durch das Mondtor in den Nachtzoo. | You did it! All the animals are home again. The sun goes down, the sky turns deep blue, and lanterns light up everywhere. Now you can go to bed or walk through the moon door into the night zoo. |
+
+`night-bed` — Reading panel at the bed (zookeeper house, NIGHT-003):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Bett | bed |
+| klasse1 | Hier kannst du schlafen. Gute Nacht! | You can sleep here. Good night! |
+| klasse2 | Bist du müde? Leg dich ins Bett. Morgen früh geht es im Zoo weiter. | Are you tired? Lie down in the bed. The zoo will be waiting in the morning. |
+| klasse3 | Das Bett ist weich und warm, und durch das Fenster scheint der Mond. Wenn du dich hinlegst, schläfst du bis zum nächsten Morgen. Dein Spiel wird dabei gespeichert. | The bed is soft and warm, and the moon shines through the window. If you lie down, you will sleep until the next morning. Your game is saved while you sleep. |
+
+`night-moon-door` — Reading panel at the moon door (level 1, GAME-NIGHT rule 3):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Mondtor | moon door |
+| klasse1 | Das Mondtor ist offen! Komm mit! | The moon door is open! Come along! |
+| klasse2 | Das Mondtor leuchtet. Dahinter wohnen Tiere, die nachts wach sind. | The moon door is glowing. Behind it live animals that are awake at night. |
+| klasse3 | Hinter dem Mondtor liegt der Nachtzoo. Dort wohnen Tiere, die am Tag schlafen und in der Nacht wach sind. Doch auch sie sind heute ausgebüxt! | The night zoo lies behind the moon door. Animals live there that sleep during the day and are awake at night. But tonight they have run away too! |
+
+`night-welcome` — First step into night_1 (cut-in):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Nachtzoo | night zoo |
+| klasse1 | Willkommen im Nachtzoo! Wo sind die Tiere? | Welcome to the night zoo! Where are the animals? |
+| klasse2 | Willkommen im Nachtzoo! Der Igel, die Fledermaus und die Eule sind weg. Lies die Schilder am Nachttierhaus. | Welcome to the night zoo! The hedgehog, the bat and the owl are gone. Read the boards at the night house. |
+| klasse3 | Willkommen im Nachtzoo! Hier ist es still, nur die Grillen zirpen. Der Igel, die Fledermaus und die Eule sind aus dem Nachttierhaus ausgebüxt. Lies die Schilder vor dem Haus und nimm deine Laterne mit: Im Licht leuchten die Augen der Tiere. | Welcome to the night zoo! It is quiet here, only the crickets are chirping. The hedgehog, the bat and the owl have run away from the night house. Read the boards in front of the house and take your lantern: in its light the animals' eyes shine. |
+
+`night-complete` — All night_1 animals home (GAME-NIGHT rule 7):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Bett | bed |
+| klasse1 | Alle Nachttiere sind zu Hause. Zeit fürs Bett! | All night animals are home. Time for bed! |
+| klasse2 | Toll! Alle Nachttiere sind wieder zu Hause. Geh jetzt ins Bett, morgen wartet ein neuer Teil des Zoos. | Well done! All the night animals are home again. Now go to bed; tomorrow a new part of the zoo is waiting. |
+| klasse3 | Toll gemacht! Der Igel, die Fledermaus und die Eule sind wieder in ihrem Haus. Es ist schon spät, und die Sterne funkeln. Geh zurück durch das Mondtor und leg dich ins Bett. Morgen früh öffnet sich ein neuer Teil des Zoos. | Well done! The hedgehog, the bat and the owl are back in their house. It is late, and the stars are twinkling. Go back through the moon door and lie down in bed. Tomorrow morning a new part of the zoo will open. |
+
+`night-morning` — Morning after sleeping (NIGHT-003):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Morgen | morning |
+| klasse1 | Guten Morgen! Die Sonne scheint. | Good morning! The sun is shining. |
+| klasse2 | Guten Morgen! Du hast gut geschlafen. Ein neuer Tag im Zoo beginnt. | Good morning! You slept well. A new day at the zoo begins. |
+| klasse3 | Guten Morgen! Die Sonne scheint, die Vögel singen, und die Tiere in den Gehegen sind schon wach. Ein neuer Tag im Zoo beginnt. Schau nach, was es heute zu tun gibt! | Good morning! The sun is shining, the birds are singing, and the animals in their enclosures are already awake. A new day at the zoo begins. Let's see what there is to do today! |
+
+`event-burglar-start` — Cut-in when the burglars are seen (GAME-EVENTS rules 2, 5):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Diebe | burglars |
+| klasse1 | Pssst! Zwei Diebe sind im Zoo! | Shh! Two burglars are here! |
+| klasse2 | Zwei Langfinger haben sich in den Zoo geschlichen und eine Futterkiste mitgenommen. Folge ihren Spuren! | Two sneaky burglars have crept into the zoo and taken a food box. Follow their footprints! |
+| klasse3 | Hast du das gehört? Zwei tollpatschige Langfinger sind über die Mauer geklettert und haben eine Futterkiste mitgenommen. Folge ihren Fußspuren und leuchte sie mit deiner Laterne an, bevor sie wieder verschwinden! | Did you hear that? Two clumsy burglars have climbed over the wall and taken a food box. Follow their footprints and shine your lantern on them before they disappear again! |
+
+`event-burglar-note-level_1` — Dropped note, level 1 (hideout between the west wall and the pond):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Mauer | wall |
+| klasse1 | Wir warten an der Mauer. Hinter dem Teich. | We wait at the wall. Behind the pond. |
+| klasse2 | Treffpunkt: an der großen Mauer, gleich hinter dem Teich mit den Seerosen. | Meeting point: at the big wall, just behind the pond with the water lilies. |
+| klasse3 | Hallo Kumpel! Wir treffen uns heute Nacht an der großen Zoomauer. Geh am Teich mit den Fröschen vorbei, dann findest du uns hinter dem Schilf. Bring den Sack mit! | Hi pal! We'll meet tonight at the big zoo wall. Walk past the pond with the frogs, and you'll find us behind the reeds. Bring the sack! |
+
+`event-burglar-note-level_2` — Dropped note, level 2 (hideout between the elephant enclosure and the east wall):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Elefant | elephant |
+| klasse1 | Wir warten bei den Elefanten. An der Mauer. | We wait by the elephants. At the wall. |
+| klasse2 | Treffpunkt: hinter dem Gehege der Elefanten, ganz nah an der Mauer. | Meeting point: behind the elephants' enclosure, right next to the wall. |
+| klasse3 | Hallo Kumpel! Wir verstecken uns hinter dem großen Gehege mit den grauen Riesen. Dort, wo die Zoomauer ist, sieht uns keiner. Sei leise, sonst trompeten sie! | Hi pal! We are hiding behind the big enclosure with the grey giants. Nobody can see us there by the zoo wall. Be quiet, or they will trumpet! |
+
+`event-burglar-note-level_3` — Dropped note, level 3 (hideout between the monkey enclosure and the north wall):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Affen | monkeys |
+| klasse1 | Wir warten bei den Affen. An der Mauer. | We wait by the monkeys. At the wall. |
+| klasse2 | Treffpunkt: hinter dem Affengehege, ganz oben an der Mauer. | Meeting point: behind the monkey enclosure, right up by the wall. |
+| klasse3 | Hallo Kumpel! Wir warten hinter dem Gehege, in dem es tagsüber so laut kreischt und klettert. Ganz hinten an der Zoomauer ist unser Versteck. Pass auf, dass dich niemand sieht! | Hi pal! We are waiting behind the enclosure where it screeches and climbs so loudly during the day. Our hideout is right at the back by the zoo wall. Make sure nobody sees you! |
+
+`event-burglar-caught` — Burglars caught in time (EVT-003):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Polizei | police |
+| klasse1 | Erwischt! Die Polizei kommt. | Caught! The police are coming. |
+| klasse2 | Erwischt! Die Diebe erschrecken sich, und die Polizei nimmt sie mit. Die Futterkiste ist wieder da. | Caught! The burglars get a fright, and the police take them away. The food box is back. |
+| klasse3 | Erwischt! Im Licht deiner Laterne bleiben die zwei Langfinger wie angewurzelt stehen. Mit Blaulicht kommt die Polizei und nimmt sie mit. Die Futterkiste ist wieder da, und alle Tiere schlafen ruhig weiter. | Caught! In the light of your lantern the two burglars freeze on the spot. The police arrive with flashing blue lights and take them away. The food box is back, and all the animals sleep on peacefully. |
+
+`event-burglar-late` — Time window over (EVT-004; GAME-EVENTS rule 7):
+
+| Reading level | Deutsch | English |
+|---|---|---|
+| kiga | Polizei | police |
+| klasse1 | Die Polizei fängt sie trotzdem! | The police caught them anyway! |
+| klasse2 | Die Diebe sind über die Mauer geflohen. Aber die Polizei hat sie trotzdem erwischt! Die Futterkiste steht am Eingang. | The burglars escaped over the wall. But the police caught them anyway! The food box is at the entrance. |
+| klasse3 | Die zwei Langfinger sind schnell über die Mauer geklettert. Doch draußen hat die Polizei schon auf sie gewartet und sie trotzdem erwischt! Die Futterkiste haben sie fallen lassen, sie steht jetzt am Zooeingang. | The two burglars quickly climbed over the wall. But the police were already waiting outside and caught them anyway! They dropped the food box; it is now at the zoo entrance. |
+
+---
+
 ## Behaviour
 
 1. Each mission's texts are stored as Fluent keys:
@@ -669,11 +954,15 @@ Math (`mathe4`): *Im Zoo gibt es 4 Körbe mit je 250 Beeren. Wie viele Beeren si
 | MISS-008 | Given every `[[hiding_place]]` of every level and every reading level and language, then the key `mission-<animal>-riddle-<hiding_place>-<reading_level>` exists and is not empty (instance of RESC-003). | unit |
 | MISS-010 | Given the goldfish mission, then the fish-bowl texts `mission-goldfish-needs-bowl`, `mission-goldfish-bowl-empty`, `mission-goldfish-bowl-filled`, `mission-goldfish-in-bowl` and `mission-goldfish-bowl-hint-<reading_level>` (4 reading levels) exist in `de` and `en`, and the `klasse1` hint has ≤ 5 words per sentence. | unit |
 | MISS-011 | Given the riddles of levels 2 and 3, then no `klasse1`–`klasse3` riddle contains (whole word) the `kiga` word of a hiding place of another animal in the same or an earlier level (zoo-wide uniqueness, Q-083). | unit |
+| MISS-012 | Given the night missions `hedgehog`, `bat`, `owl` (section "Night level 1"), then every `[[hiding_place]]` of `night-1.toml` has riddles for all four reading levels in `de` and `en` (`night.ftl`), facts, name, heading and home text exist, and `klasse1` sentences have ≤ 5 words (READ-002). | unit |
+| MISS-013 | Given the night riddles, then none contains (whole word, each word of a two-word label) the `kiga` word of its own place, of another candidate of the same animal, of a place of another night animal, or of a day-level place (Q-083, Q-136); night facts contain no place word of their animal (ANIM-007). | unit |
+| MISS-014 | Given the night texts `night-dusk`, `night-bed`, `night-moon-door`, `night-welcome`, `night-complete`, `night-morning` and the burglar texts `event-burglar-start`, `event-burglar-note-level_1/2/3`, `event-burglar-caught`, `event-burglar-late`, then each exists for all four reading levels in `de` and `en`. | unit |
 | MISS-009 | Given the riddles of one animal's candidates, then a reviewer confirms that each riddle fits only its own place in the level (manual review with the level map, as Q-037). | manual |
 
 ## Open questions
 
 - Q-002 Confirm the 10 animals. Q-036 Goldfish transport (bucket?).
+- Night level 1: Q-135 night foods (hedgehog and owl share *Käfer*), Q-136 riddle scope of night levels (owl `kiga` *Teich* = hippo's), Q-139 burglar note places; teacher review of the night riddles with Q-037.
 - Review by a primary school teacher for age-appropriate wording (Q-037).
 - Q-039 Riddles containing their place word (koala, giraffe, elephant). Q-044 Hiding places in the layout.
 - Q-064 Enclosure sign texts (`sign-<animal>`, picture on `kiga`?).

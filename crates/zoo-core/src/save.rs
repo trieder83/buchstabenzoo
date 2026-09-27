@@ -44,6 +44,10 @@ pub struct SaveState {
     /// The fish bowl (v2).
     #[serde(default)]
     pub bowl: Option<BowlSave>,
+    /// Time of day, nightfalls done, barriers waiting for the morning (GAME-NIGHT §8,
+    /// NIGHT-008). Missing in older saves = day.
+    #[serde(default)]
+    pub daytime: Option<crate::daytime::Daytime>,
 }
 
 /// The fish bowl (GAME-RESCUE "goldfish bowl" 7, RESC-022).
@@ -243,6 +247,7 @@ impl Game {
                 water: b.water,
                 fish: b.fish,
             }),
+            daytime: Some(self.daytime.clone()),
         }
     }
 
@@ -373,6 +378,34 @@ impl Game {
                 an.wander.pause_s = p;
             }
             an.wander.route = a.wander_route.iter().map(|&c| IVec2::from(c)).collect();
+        }
+        // time of day (NIGHT-008): a save made while sleeping wakes up the next morning
+        if let Some(d) = &s.daytime {
+            let mut d = d.clone();
+            d.phase_s = if d.phase_s.is_finite() {
+                d.phase_s.max(0.0)
+            } else {
+                0.0
+            };
+            g.daytime = d;
+            match g.daytime.phase {
+                crate::daytime::Phase::Sleeping => {
+                    g.daytime.force(crate::daytime::Phase::Morning);
+                    g.wake(true);
+                    g.daytime.force(crate::daytime::Phase::Day);
+                }
+                crate::daytime::Phase::Morning => g.daytime.force(crate::daytime::Phase::Day),
+                crate::daytime::Phase::Night => {
+                    for id in g.moon_doors() {
+                        g.level.open_barrier(&id);
+                    }
+                }
+                _ => {
+                    for id in g.moon_doors() {
+                        g.level.close_barrier(&id);
+                    }
+                }
+            }
         }
         g.refresh_areas();
         // escaped animals stay inside their (possibly restored) place's wander area

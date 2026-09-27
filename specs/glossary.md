@@ -6,7 +6,7 @@ module: glossary
 status: draft
 depends_on: []
 test_prefix: GLOS
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Glossary
@@ -54,11 +54,14 @@ language for player-facing text.
 | `explored` | erkundet | explored | A map cell the player has been close to; shown on the map, never hidden again. |
 | `fog` | Nebel | fog | How unexplored cells are drawn on the map. Not the camera's distance fog/haze of the close views (`fog_end`, GAME-CAMERA-VIEWS). |
 | `water_field` | Wasserfeld | water field | Texture baked at level load by the zoo-core level assembly (`zoo_core::water`, one for the joined zoo), uploaded by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
-| `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night after all day animals are home (GAME-NIGHT). |
+| `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night (dusk) after all animals of a day level are home — once per completed day level (GAME-NIGHT). |
 | `night_zoo` | Nachtzoo | night zoo | New area with nocturnal animals, reached through the moon door (GAME-NIGHT). |
 | `moon_door` | Mondtor | moon door | Gate of the day zoo that opens at nightfall and leads to the night zoo. |
 | `lantern` | Laterne | lantern | Light the player carries at night; makes the animals' eyes shine. |
 | `nocturnal_animal` | nachtaktives Tier | nocturnal animal | Animal that is active at night (hedgehog, bat, owl, …). |
+| `daytime` (phases `day`, `dusk`, `night`, `sleeping`, `morning`) | Tageszeit † | time of day | Saved day/night state of the zoo (`zoo_core::daytime`, GAME-NIGHT "Implementation", GAME-SAVE). Not "level". |
+| `night_level` (data `[level] time = "night"`, id `night_<N>`) | Nachtlevel † | night level | A level of the night zoo, reached only through a moon door (GAME-LAYOUT "Moon door and night levels", GAME-LEVEL-NIGHT-1). |
+| `night_house` / `indoor_enclosure` (data `indoor = true`) | Nachthaus / Innengehege † | night house / indoor enclosure | Enterable building of a night level whose dim indoor enclosures open into its visitor hall (GAME-LEVEL-NIGHT-1, proposal Q-134). |
 | `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (proposal Q-093). |
 | `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (proposal Q-093). |
 | `level_entry` (data `[[entry]]`) | Levelzugang † | level entry | Cells of a level directly behind a barrier of an earlier level; the only walkable border cells of a level (GAME-LAYOUT "Joining levels", proposal Q-088). |
@@ -68,7 +71,7 @@ language for player-facing text.
 | `render_region` | — | render region | Group of static batches culled together: one per level, per barrier, per enterable-building roof (GAME-LAYOUT "Joining levels"). Not player-facing. |
 | `perch` (data `perch_height_m`) | Sitzplatz oben † | perch | Raised spot where an escaped animal sits instead of wandering on the ground (koala in a tree, monkey in the crow's nest; proposal Q-094). |
 | `view_mode` (`zoo`, `look_around`, `first_person`) | Ansicht (Zoo-Ansicht, Umschauen, Ich-Ansicht) † | camera view (zoo view, look-around, first person) | The camera view: the high-angle zoo view (default, GAME-PLAYER §2), the look-around view while the eye button is held, and the first-person view (toggle) — GAME-CAMERA-VIEWS. |
-| `fog_end` (`FOG_END_M`) | Sichtweite † | visibility distance | Distance from the eye beyond which the comic haze hides everything in the close views (16 m, proposal Q-109); hiding places must lie beyond it from their own board (CAMV-008). |
+| `fog_end` (`FOG_END_M`) | Sichtweite † | visibility distance | Distance from the eye beyond which the comic haze hides everything in the close views (16 m, Q-109 answered); hiding places must lie beyond it from their own board (CAMV-008). |
 | `golf_cart` | Golfwagen | golf cart | Small zoo vehicle the player can drive; animals do not follow it (GAME-CART). |
 | `flow` (data key) | Fließrichtung † | flow | Direction a `river` / `stream` element flows in level coordinates (`N`/`E`/`S`/`W`); bridges inherit it; the river pieces chain along it (GAME-LAYOUT "Flowing water"). Not player-facing. |
 | `scenery` (data `[[scenery]]`) | Kulisse † | scenery | Non-solid ground dressing a riddle relies on (tall grass, sand, mud, tree shade, leaf pile); `props` may list ambient animals such as `butterfly` (GAME-LAYOUT). |

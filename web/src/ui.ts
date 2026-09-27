@@ -28,6 +28,9 @@ export interface UiApp {
   saved_view_mode?(): string;
   view_mode?(): string;
   toggle_first_person?(): string;
+  /** GAME-NIGHT: time of day and the dream fade of the sleep (0…1). */
+  daytime?(): string;
+  sleep_fade?(): number;
 }
 
 export const LANGUAGES = ['de', 'en'] as const;
@@ -45,6 +48,11 @@ export const FOOD_ICONS: Record<string, string> = {
   leaves: '🍂',
   meat: '🥩',
   berries: '🫐',
+  // night zoo (GAME-NIGHT rule 6)
+  beetles: '🪲',
+  fruit: '🍎',
+  worms: '🪱',
+  nectar: '🌺',
 };
 
 /** Placeholder pictures of hiding places (kiga riddle). */
@@ -80,6 +88,16 @@ export const PLACE_ICONS: Record<string, string> = {
   loc_ice_cream_kiosk: '🍦',
   loc_sprinkler: '🌈',
   loc_laundry: '👕',
+  // night zoo `night_1`
+  loc_brush_pile: '🪵',
+  loc_flowerpots: '🪴',
+  loc_mushrooms: '🍄',
+  loc_windmill: '🌬️',
+  loc_fireflies: '✨',
+  loc_hollow_tree: '🌳',
+  loc_moon_pond: '🌕',
+  loc_hilltop: '⛰️',
+  loc_fir: '🎄',
 };
 
 /** Placeholder pictures of the carried fish bowl (HUD, RESC-020). */
@@ -101,6 +119,9 @@ export const ANIMAL_ICONS: Record<string, string> = {
   giraffe: '🦒',
   lion: '🦁',
   snow_fox: '🦊',
+  hedgehog: '🦔',
+  bat: '🦇',
+  owl: '🦉',
 };
 
 /** Icon of the interact button per target kind. */
@@ -112,6 +133,9 @@ export const TARGET_ICONS: Record<string, string> = {
   item: '🫙',
   water: '💧',
   put_down: '⬇️',
+  // GAME-NIGHT rule 3: the two night choices, no reading needed
+  bed: '🛏️',
+  moon_door: '🌙',
 };
 
 const LEVEL_ICONS: Record<string, string> = { kiga: '🧸', klasse1: '1', klasse2: '2', klasse3: '3' };
@@ -193,6 +217,7 @@ interface GameEventMsg {
   key?: string;
   text?: string;
   food?: string;
+  into_night_zoo?: boolean;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -235,6 +260,8 @@ export class Ui {
   private bubbleTimer = 0;
   private touch = false;
   private lastView = '';
+  private lastDaytime = '';
+  private bannerTimer = 0;
 
   readonly act = document.getElementById('act') as HTMLButtonElement;
   readonly hint = document.getElementById('hint') as HTMLButtonElement;
@@ -247,6 +274,10 @@ export class Ui {
   /** First-person toggle (GAME-CAMERA-VIEWS 3) and the touch eye button (look-around, 2). */
   readonly viewBtn = document.getElementById('view-btn') as HTMLButtonElement | null;
   readonly lookBtn = document.getElementById('look-btn') as HTMLButtonElement | null;
+  /** GAME-NIGHT: dusk cut-in text, dream fade, the night choice icons. */
+  readonly nightBanner = document.getElementById('night-banner') as HTMLDivElement | null;
+  readonly dream = document.getElementById('dream') as HTMLDivElement | null;
+  readonly nightChoices = document.getElementById('night-choices') as HTMLDivElement | null;
 
   constructor(
     private readonly app: UiApp,
@@ -309,6 +340,7 @@ export class Ui {
       // reading panels open/close by themselves: decided in Rust (panel_open/panel_close)
     }
     this.updateView();
+    this.updateNight();
     const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
@@ -342,6 +374,41 @@ export class Ui {
     }
   }
 
+  /**
+   * Night overlays (GAME-NIGHT rule 3): the 🛏/🌙 choice icons while it is night, the dream
+   * fade while sleeping.
+   */
+  private updateNight(): void {
+    const phase = this.app.daytime?.() ?? 'day';
+    if (this.dream) {
+      const fade = this.app.sleep_fade?.() ?? 0;
+      const o = fade.toFixed(3);
+      if (this.dream.style.opacity !== o) this.dream.style.opacity = o;
+    }
+    if (phase === this.lastDaytime) return;
+    this.lastDaytime = phase;
+    document.body.dataset.daytime = phase;
+    if (this.nightChoices) {
+      this.nightChoices.hidden = phase !== 'night';
+      // spoken / screen-reader labels of the two night choices (Fluent)
+      const level = this.app.reading_level();
+      document.getElementById('choice-bed')?.setAttribute('aria-label', this.app.t(`night-bed-${level}`));
+      document.getElementById('choice-moon')?.setAttribute('aria-label', this.app.t(`night-moon-door-${level}`));
+    }
+  }
+
+  /** A gentle text cut-in (dusk, morning) for a few seconds. */
+  private showBanner(text: string, key: string): void {
+    if (!this.nightBanner) return;
+    this.nightBanner.textContent = text;
+    this.nightBanner.dataset.key = key;
+    this.nightBanner.hidden = false;
+    window.clearTimeout(this.bannerTimer);
+    this.bannerTimer = window.setTimeout(() => {
+      if (this.nightBanner) this.nightBanner.hidden = true;
+    }, 6000);
+  }
+
   /** HUD: the carried food and — carried with both hands — the fish bowl (RESC-020). */
   private renderCarry(): void {
     const carry = this.app.carry_food();
@@ -369,6 +436,9 @@ export class Ui {
       else if (e.type === 'mission_complete' && e.text) this.celebrateMission(e.text, e.key ?? '');
       else if (e.type === 'panel_open' && e.panel) this.openPanel(e.panel);
       else if (e.type === 'panel_close' && e.key === this.panelKey) this.hidePanel();
+      else if (['dusk', 'morning', 'moon_door', 'level_complete'].includes(e.type) && e.text)
+        this.showBanner(e.text, e.key ?? '');
+      else if (e.type === 'sleep') this.hidePanel();
     }
   }
 

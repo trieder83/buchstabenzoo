@@ -4,9 +4,9 @@ title: Level 1 — entrance, zebra, hippo, panda
 aspect: gameplay
 module: levels
 status: draft
-depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN]
+depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS]
 test_prefix: LAYOUT-L1
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Level 1 — entrance, zebra, hippo, panda
@@ -26,9 +26,12 @@ three times:
 | `hippo` | `enc_hippo` (east) | Melonen / melons | `loc_pond` (west), `loc_mud` (north-west corner), `loc_shade` (west, at the zoo wall) | still water, water lilies, frogs · brown mud, wet, splashing · shade under big trees, zoo wall, dry grass |
 | `panda` | `enc_panda` (north) | Bambus / bamboo | `loc_cave` (south-east), `loc_bamboo` (south-west corner), `loc_leaves` (north-east corner) | dark, cool, stone, echo · tall green bamboo thicket taller than the wall · red/yellow leaf pile, rake |
 
-Plus the zoo entrance (spawn), the food storage and, in the back, the vegetable garden
-`garden_veg` (GAME-GARDEN, see "Vegetable garden"). Everything else of the zoo is closed off
-by child-friendly barriers.
+Plus the zoo entrance (spawn), the food storage, the small enterable **zookeeper house**
+`zookeeper_house_1` beside the entrance plaza (bed for the night, desk with the "Math Fighter"
+note, cart key box — see "Zookeeper house"), the **moon door** in the west zoo wall (the gate to
+the night zoo `night_1`, see "Moon door") and, in the back, the vegetable garden `garden_veg`
+(GAME-GARDEN, see "Vegetable garden"). Everything else of the zoo is closed off by
+child-friendly barriers.
 
 **Discovery (user decision 2026-09-26, GAME-RESCUE §1):** every animal has 3 candidate
 hiding places; one per animal is picked per playthrough with the seeded RNG. Each animal's
@@ -59,7 +62,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Picking hiding places | *Answered (Q-082):* uniform seeded pick per animal, re-drawn on a conflict; a new game avoids each animal's place of the previous game (see "Hiding places"). | Q-082 |
 | Missions in scope | *Answered (Q-069):* all three level-1 missions are in scope (`[level] missions = ["zebra", "hippo", "panda"]`); only missions in scope are interactable. | Q-069 |
 | Sight test data | Solid elements carry `blocks_view` (and `height_m` for the mockups). | Q-044 |
-| Barrier unlock | `barrier_ne_tree` opens when all three level-1 animals are home; the other two barriers belong to later levels. | Q-022, Q-023 |
+| Barrier unlock | `barrier_ne_tree` opens **the morning after `night_1` is complete** (GAME-NIGHT rule 7, Q-078 answered; data `unlock_after = "night_1"`, `opens_at = "morning"`); the moon door opens at nightfall; the other two barriers belong to later levels. | Q-022, Q-023, Q-133 |
 | Food boxes in level 1 | All 10 food boxes stand in the storage (natural distractors). | Q-047 |
 | Food box positions (PoC) | The storage interior is not modelled yet: the 10 boxes stand in a row in front of the storage's south facade (box centres z = 10.66, x = −3.6 … 3.6 every 0.8 m, labels facing south), on the north row of `path_ring_s`. Order west → east: melons, hay, bananas, bamboo, **grass**, meat, leaves, fish food, berries, eucalyptus. Data: `[[food_box]]` in `level-1.toml`. | Q-065 |
 | Walking speed | 1.93 m/s on paths; grass 0.98 m/s (GAME-PLAYER §6, user decisions 2026-09-26). | Q-024 |
@@ -68,6 +71,10 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Tree areas | `grove_center` `dense` with a bush border; `trees_nw`, `trees_ne` `sparse` with explicit tree/bush positions (see "Woods"); wander areas of hiding places clipped to their `rect`. Implemented in M5a as proposed. | Q-085 |
 | Collision footprints, invisible walls | Footprint values and fixes of GAME-LAYOUT "Collision footprints"; exceptions for this level in "Woods" and "Collision and billboards". Implemented in M5a as proposed (deviations noted there). | Q-087 |
 | Enclosure signs | The sign in front of each gate becomes a gate arch (panel bottom ≥ 2.1 m) so the player never passes through its panel. | Q-086 |
+| Zookeeper house | `zookeeper_house_1` (6 × 5 m, x −14…−9, z 0…4) west of the entrance plaza, enterable (`interior` + `door`, like `zookeeper_house_3`); bed, desk with the note and the key box as `[[item]]`, furniture as `[[prop]]` (see "Zookeeper house"). | Q-096 (answered), Q-092, Q-137 |
+| Moon door | `moon_door` (barrier kind `moon_door`, x −24…−23, z 29…30) in the west zoo wall, reached by `path_moon`; open every night after level 1's nightfall, closed by day; leads to `night_1` (see "Moon door"). | Q-133 |
+| Night lights | `[[light]]` list: lantern posts along the ring (~10 m) and beside every gate, string lights over the entrance plaza, wall lamps, board lamps, the bedside lamp (see "Night lights"). | Q-118 (answered), Q-137 |
+| Burglar event | `[[event_spot]]`: ladder at the west wall, target = food storage, hideout between the west wall and the pond (see "Burglar event"). | Q-139 |
 | Vegetable garden | `garden_veg` (GAME-GARDEN) in the back strip x 6–9, z 36–45 between panda enclosure and river: data lists `[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]` (not elements; fence, beds, signs and tools are prop colliders), a 2 m gate that swings open by itself, animals never enter the garden (see "Vegetable garden"). | Q-102 |
 
 ## Spawn and camera
@@ -77,7 +84,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
   high-angle ≈ 55° follow camera of GAME-PLAYER §2 (Q-049 answered), default distance.
 - First view: the entrance gate below the player, the food storage straight ahead (8 m), the zebra enclosure fence on the
   left, the grey rock hill on the right (its cave mouth faces north, away from the spawn),
-  the map board to the left of the plaza.
+  the map board to the left of the plaza and, beyond it, the zookeeper house.
 
 ## Map
 
@@ -102,8 +109,8 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
   33 ##,,:t::t::t...===pppppppppppp....~~~=="""""""%%
   32 ##..::::::::...===pppppggppppp..1.~~~==""4""""%%
   31 ##.............===................~~~=="""""""%%
-  30 ##.............===..i...........==HHH=========XX
-  29 ##..............==================HHH=========XX
+  30 @@================..i...........==HHH=========XX
+  29 @@=============.==================HHH=========XX
   28 ##..............==================HHH=========XX
   27 ##...oooooooo...================..~~~.........%%
   26 ##...oooooooobb.===TTTTTTTTTT===..~~~~~~~~~~~~~~
@@ -126,13 +133,13 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
    9 ##..zzzzzzzzzzz.==============================XX
    8 ##..zzzzzzzzzzz.==============================XX
    7 ##..zzzzzzzzzzz....==========....^ccc^^^^^^^^^%%
-   6 ##.................==========....^ccc^^^^^^^^^%%
-   5 ##.................==========....^3cc^^^^^^^^^%%
-   4 ##...............M.==========.bb.^^^^^^^^^^^^^%%
-   3 ##...............M.==========....^^^^^^^^^^^^^%%
-   2 ##YYYY8............=====S====....^^^^^^^^^^^^^%%
-   1 ##YYYY.............==========....^^^^^^^^^^^^^%%
-   0 ##YYYY.............==========....^^^^^^^^^^^^^%%
+   6 ##........===================....^ccc^^^^^^^^^%%
+   5 ##........===================....^3cc^^^^^^^^^%%
+   4 ##........QQQQQQ.M.==========.bb.^^^^^^^^^^^^^%%
+   3 ##........QqqqqQ.M.==========....^^^^^^^^^^^^^%%
+   2 ##YYYY8...Qqqqqq========S====....^^^^^^^^^^^^^%%
+   1 ##YYYY....QqqqqQ=============....^^^^^^^^^^^^^%%
+   0 ##YYYY....QQQQQQ...==========....^^^^^^^^^^^^^%%
   -1 #####################EEEEEE#####################
   -2 #####################EEEEEE#####################
      |...|...|...|...|...|...|...|...|...|...|...|...|
@@ -161,6 +168,7 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
 | `K` / `P` | carrot bed / potato bed of the vegetable garden `garden_veg` (solid bed frames) | `!` | garden sign (one per bed, faces the garden path) |
 | `n` | garden gate (path cells just inside the 2 m opening on the south fence line z = 36) | `_` | grass inside the garden fence |
 | `w` / `a` | wheelbarrow / watering can (tool corner of the garden) | | |
+| `Q` / `q` | zookeeper house `zookeeper_house_1` (walls) / its interior and door (walkable floor, surface `path`) | `@` | moon door `moon_door` (barrier in the west wall, opens at nightfall → `night_1`) |
 | `.` | grass (walkable, slower — Q-046) | | |
 
 The low garden fence runs on cell edges (not drawn): along z = 36 on both sides of the gate,
@@ -183,7 +191,9 @@ Solid = every type except `path` and `hiding_place`.
 | `wall_south_w` | boundary (zoo_wall) | -24, -2, 21, 2 | Outer zoo wall (stone blocks + hedge top), permanent. |
 | `entrance_gate` | building (entrance) | -3, -2, 6, 2 | Entrance arch with blank sign board; turnstiles behind the player are closed. |
 | `wall_south_e` | boundary (zoo_wall) | 3, -2, 21, 2 | Outer zoo wall, permanent. |
-| `wall_west` | boundary (zoo_wall) | -24, 0, 2, 48 | Outer zoo wall, permanent. |
+| `wall_west_s` | boundary (zoo_wall) | -24, 0, 2, 29 | Outer zoo wall south of the moon door, permanent (split from `wall_west` for the moon door; `loc_bamboo` leans on it). |
+| `moon_door` | barrier (moon_door) | -24, 29, 2, 2 | Moon door (night-zoo gate, `kit_night`): wooden double gate with star-painted blue leaves between two stone pillars with lanterns, round moon sign on top; closed by day, opens at nightfall towards `night_1` (see "Moon door"). |
+| `wall_west` | boundary (zoo_wall) | -24, 31, 2, 17 | Outer zoo wall north of the moon door, permanent (`loc_shade` leans on it). |
 | `hedge_north_a` | decoration (hedge) | -22, 46, 13, 2 | Tall hedge, level edge, permanent. |
 | `barrier_north_gate` | barrier (closed_gate) | -9, 46, 3, 2 | Closed wooden gate in the north hedge (later level). |
 | `hedge_north_b` | decoration (hedge) | -6, 46, 16, 2 | Tall hedge, level edge, permanent. |
@@ -197,6 +207,9 @@ Solid = every type except `path` and `hiding_place`.
 | `path_plaza` | path (plaza) | -5, 0, 10, 8 | Entrance plaza; spawn. |
 | `bamboo_sw` | decoration (bamboo) | -22, 0, 4, 3 | Dense bamboo thicket (3 m, taller than the 2.5 m zoo wall) in the south-west corner; the only growing bamboo outside the panda enclosure (`loc_bamboo`, Q-081). |
 | `map_board` | landmark (map_board) | -7, 3, 1, 2 | Picture map of level 1 (silhouettes, no text). |
+| `zookeeper_house_1` | building (zookeeper_house) | -14, 0, 6, 5 | Small enterable zookeeper house (Q-096, Q-092): `interior` (-13, 1, 4, 3), `door` (-9, 2) on the east facade; bed, night table, window with the moon, rug, toy chest, desk with the "Math Fighter" note inside; key box on the outside wall south of the door (see "Zookeeper house"). |
+| `path_house` | path | -8, 1, 3, 2 | From the plaza west to the zookeeper-house door. |
+| `path_house_n` | path | -14, 5, 9, 2 | Along the north side of the house towards the bamboo corner (keeps `loc_bamboo` ≤ 10 s from the map board). |
 | `bench_plaza` | decoration (bench) | 6, 4, 2, 1 | Bench. |
 | `path_ring_s` | path | -8, 8, 16, 3 | Ring path, south side; food storage door. |
 | `path_ring_w` | path | -8, 11, 3, 16 | Ring path, west side; zebra gate, pond jetty. |
@@ -213,6 +226,7 @@ Solid = every type except `path` and `hiding_place`.
 | `bench_pond` | decoration (bench) | -11, 26, 2, 1 | Bench on the pond shore. |
 | `enc_panda` | enclosure | -6, 32, 12, 10 | Panda enclosure; gate (-1, 32, 2, 1) on the south fence; cut bamboo on a feeding rack (proposal Q-081 — no growing bamboo clumps), wooden platform and shelter, **no stone/cave**. |
 | `board_panda` | decoration (info_board) | -4, 30, 1, 1 | Info board of `enc_panda`, next to the gate. |
+| `path_moon` | path | -22, 29, 13, 2 | Side path from `path_north` / the ring west along the pond to the moon door. |
 | `path_north` | path | -9, 30, 3, 16 | Side path to `barrier_north_gate`. |
 | `trees_nw` | decoration (trees) | -20, 32, 8, 10 | Open wood, `density = "sparse"`: walkable between 8 `tree_round` and 2 bushes (positions in "Woods"); its west row overhangs `shade_w` (`loc_shade`). Not solid as an element. |
 | `path_bridge_w` | path | 8, 28, 2, 3 | Short path from the ring to the bridge. |
@@ -250,7 +264,7 @@ The `kiga` board shows the picture of the chosen place (`loc_*` picture id).
 | `loc_mud` | hippo | -20, 42, 7, 4 | (-17, 44) | grass | 22 | mud, brown_ground, wet, splashing | `mud_nw` | 36.8 m | 25.3 s |
 | `loc_shade` | hippo | -22, 33, 2, 7 | (-22, 36) | grass | 12 | shade, big_trees, zoo_wall, dry_grass | `shade_w`, `trees_nw`, `wall_west` | 35.5 m | 26.5 s |
 | `loc_cave` | panda | 10, 5, 3, 3 | (10, 5) | cave | 9 | dark, cool, stone, echo | `path_cave_floor`, `rock_hill_back` | 28.7 m | 16.8 s |
-| `loc_bamboo` | panda | -22, 0, 8, 6 | (-18, 2) | grass | 21 | bamboo_thicket, green_stalks, taller_than_wall, rattling | `bamboo_sw`, `wall_west`, `wall_south_w` | 31.3 m | 22.7 s |
+| `loc_bamboo` | panda | -22, 0, 8, 6 | (-18, 2) | grass | 21 | bamboo_thicket, green_stalks, taller_than_wall, rattling | `bamboo_sw`, `wall_west_s`, `wall_south_w` | 31.3 m | 22.7 s |
 | `loc_leaves` | panda | 14, 43, 7, 3 | (17, 44) | grass | 17 | leaf_pile, red_yellow_leaves, rake, under_trees | `leaf_pile_ne`, `trees_ne` | 25.2 m | 17.5 s |
 
 "Spot → own info board" = straight distance between the spot and the info-board cell
@@ -294,8 +308,9 @@ host (`?seed=N` in the page URL fixes it for tests; seed 17 = river, pond, cave)
 **Nearest neighbour of each new place** (fastest walk, ≤ 10 s — "Walking distances" rule;
 1.93 m/s paths, woods open, M5a): `loc_meadow` → bridge 1.8 s; `loc_sand` →
 `barrier_north_gate` (end of `path_north`) 7.2 s; `loc_mud` → `barrier_north_gate` 6.2 s;
-`loc_shade` → `loc_mud` 6.8 s; `loc_bamboo` → `map_board` 8.6 s; `loc_leaves` → `loc_meadow`
-7.8 s.
+`loc_shade` → `loc_mud` 6.8 s; `loc_bamboo` → `map_board` 8.6 s (with the zookeeper house:
+≈ 6.8 s over `path_house_n`, scratch estimate — without that path the house would push it to
+≈ 10 s); `loc_leaves` → `loc_meadow` 7.8 s.
 
 **Sight test.** For every candidate, no cell of its wander area (0.5 m above ground) is on
 screen while the player stands next to its own info board or enclosure gate, for every
@@ -339,11 +354,13 @@ Riddle guards (so the riddle points to exactly one place):
 
 | Id | Kind | Cells (x, z, w, d) | Unlock condition — **proposal (Q-022)** | In-world explanation |
 |---|---|---|---|---|
-| `barrier_ne_tree` | fallen tree | 22, 28, 2, 3 | Level 1 → level 2: all three level-1 missions complete (`zebra`, `hippo`, `panda` in `in_enclosure`). | A storm knocked the tree over. When all three animals are home, a zookeeper saws it up and rolls the logs aside (GAME-LAYOUT §3). |
-| `barrier_north_gate` | closed gate | -9, 46, 3, 2 | Second entry of level 3 (proposal Q-090, implemented in M5b): opens together with `barrier_l2_construction` when level 2 is complete (temporary Q-091 rule: right after its last celebration). | Wooden gate with a padlock and a "closed" icon sign (no text). |
+| `barrier_ne_tree` | fallen tree | 22, 28, 2, 3 | Level 1 → level 2: **the morning after `night_1` is complete** (GAME-NIGHT rule 7, Q-078 answered; `unlock_after = "night_1"`, `opens_at = "morning"`, proposal Q-133). | A storm knocked the tree over. In the morning after the night zoo, a zookeeper has sawn it up and carted the logs away (GAME-LAYOUT §3). |
+| `moon_door` | closed gate (moon door) | -24, 29, 2, 2 | Level 1 → `night_1` (`transition = "level_1->night_1"`): **open during every night** once level 1's nightfall has happened (all level-1 missions complete, GAME-NIGHT rules 1, 3, 7; Q-079: every night until the night zoo is done — and afterwards too, proposal Q-133); **closed by day**. Unlike the other barriers it never disappears: the leaves swing open and shut. | Big wooden moon door in the zoo wall; by day its moon sign is dark. At nightfall the sign glows, the lanterns on its pillars light up and the leaves swing open. |
+| `barrier_north_gate` | closed gate | -9, 46, 3, 2 | Second entry of level 3 (proposal Q-090, implemented in M5b): opens together with `barrier_l2_construction` the morning after level 2 is complete (Q-091 answered). | Wooden gate with a padlock and a "closed" icon sign (no text). |
 | `barrier_east_repair` | road block | 22, 8, 2, 3 | Later level (to be defined with Q-023). | "Path under repair": striped road block, blank sign with a shovel icon, zookeeper cart with traffic cones. |
 
-The west and south sides are the permanent outer zoo wall. North and east are sealed by
+The west and south sides are the permanent outer zoo wall; the only opening in it is the moon
+door (at night). North and east are sealed by
 permanent tall hedges and the three barriers; the river leaves the level through a grate
 under the east hedge and enters from under the north hedge (water is not walkable).
 
@@ -369,8 +386,15 @@ animal spot. Shortest distance (any surface) given for reference.
 | spawn → map board | 6.4 m | 3.6 s |
 | bridge (`path_bridge_w`) → garden gate (inside, cells (7, 36), (8, 36)) | 6.0 m | 5.6 s |
 | garden gate → farthest harvest place (`stand` of `potato_w2` / `potato_e2`) | 8.0 m | 4.1 s |
+| spawn → zookeeper-house door (-9, 2) | 9.0 m | ≈ 4.7 s |
+| zookeeper-house door → food storage door | 13 m | ≈ 7.0 s |
+| panda info board → moon door (cells (-22, 29..30)) | 18 m | ≈ 9.0 s |
+| `loc_shade` → moon door | 5 m | ≈ 3.8 s |
 
-All neighbour pairs are ≤ 10 s (longest: river → hippo info board 7.0 s; 7.7 s at 1.75 m/s).
+All neighbour pairs are ≤ 10 s (longest: river → hippo info board 7.0 s; 7.7 s at 1.75 m/s;
+the four new rows are scratch estimates of 2026-09-27 — the LAYOUT-L1-005 test prints the exact
+values; panda board → moon door is the tightest). The moon door is ≈ 24 s from the bed on
+purpose: the two night choices are separate places (the HUD shows both icons, GAME-NIGHT rule 3).
 Not neighbours (for information): panda info board → food storage 13.4 s (14.8 s at
 1.75 m/s); zebra board → panda board 8.6 s (9.5 s); hippo board → zebra board 12.3 s
 (13.5 s). The
@@ -451,6 +475,17 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
     plant spot has a reachable standing cell on `path_garden` in front of it; the garden
     overlaps no hiding place, scenery, solid element or other path, changes no wander area
     and opens no route past a barrier ("Vegetable garden").
+21. The zookeeper house `zookeeper_house_1` is enterable (interior and door walkable, surface
+    `path`, LAYOUT-023); its bed, note and key box are reachable within 2 m from a walkable cell
+    ("Zookeeper house").
+22. The moon door is closed by day and open at night once level 1's nightfall has happened; its
+    level-1 side is reachable from the spawn over `path_moon`, its other side is the `night_1`
+    entry `entry_n1_moon` ("Moon door").
+23. Every lantern post stands on a path cell 0.25 m inside its edge or on grass beside a gate,
+    never inside a hiding-place `rect`, a scenery rect or the garden; every board has a board lamp
+    ("Night lights").
+24. The burglar hideout is walkable grass reachable from the food storage and overlaps no hiding
+    place, scenery, garden or path ("Burglar event").
 
 
 ## Hippo enclosure pool (user decision 2026-09-26)
@@ -649,6 +684,103 @@ grows from 16.0 s to 25.9 s (not a neighbour pair; only one zebra place is used 
   no sprinkler, no hose spray, no water trough.
 - No hiding place lies in the garden; animals are never found there.
 
+## Zookeeper house (Q-096 answered; GAME-NIGHT rule 3, GAME-CART 12–16)
+
+A small enterable wooden zookeeper house `zookeeper_house_1` stands **west of the entrance
+plaza**, between the map board and the bamboo corner — the child passes it at the start, and
+the bed is close to the entrance. It is enterable like `zookeeper_house_3` (proposal Q-092):
+interior and door cells are walkable floor (surface `path`), the roof and the walls above 1 m
+disappear while the player is inside (PLAY-028).
+
+```
+        x: -14 -13 -12 -11 -10  -9  -8  -7  -6      (1 char = 1 m, north up)
+   z  6     =   =   =   =   =   =   =   =   =        path_house_n (to the bamboo corner)
+      5     =   =   =   =   =   =   =   =   =
+      4     Q   Q   Q   Q   Q   Q   .   M   .        M = map board
+      3     Q   c   .   n   d   Q   L   M   .        c toy chest, d/n desk + note, L wall lamp (outside)
+      2     Q   t   .   r   .   D   =   =   =   ->   plaza; D = door (-9, 2), t night table + lamp, window in the west wall
+      1     Q   b   b   .   .   Q   =   =   =        b bed (x -13.0..-11.0), K key box outside at (-7.95, 1.5)
+      0     Q   Q   Q   Q   Q   Q   .   .   .
+```
+
+| Part | Data | Position (level) | Notes |
+|---|---|---|---|
+| House | `[[element]] zookeeper_house_1` (building, kind `zookeeper_house`) | rect (-14, 0, 6, 5), interior (-13, 1, 4, 3), door (-9, 2) | 6 × 5 m, red roof like `env_zookeeper_house`; door on the east facade towards the plaza. |
+| Bed | `[[item]] bed_l1`, kind `bed` | (-12.0, 1.5), `facing = "+z"`, stand (-12, 2) | `kit_bedroom` `bed` 1.0 × 2.0 m along the south wall, headboard west; used from its north long side. NIGHT-003. |
+| Night table + bedside lamp | `[[prop]] night_table_l1` + `[[light]] l1_indoor_bedside` (kind `indoor`, `#FFC46E`, r 2 m) | (-12.72, 2.3) | Warm light pool over the bed at night. |
+| Window with the moon | `[[prop]] window_moon_l1` | (-13.0, 2.5), in the west wall, facing +x | Shows a moon and stars at night (texture). |
+| Rug, toy chest | `[[prop]] rug_l1`, `toy_chest_l1` | (-11.0, 2.4); (-12.45, 3.72) | Rug flat (no collider). |
+| Desk | `[[prop]] desk_l1` | (-10.5, 3.7), `facing = "-z"`, 1.2 × 0.6 m | Against the north wall. |
+| "Math Fighter" note | `[[item]] note_math_fighter`, kind `note_math_fighter` | on the desk (-10.5, 3.7), stand (-11, 2) | Reading panel with the math task (GAME-CART 13, CART-012). |
+| Key box | `[[item]] key_box_l1`, kind `key_box` | (-7.95, 1.5) on the outside of the east facade, south of the door, `facing = "+x"`, stand (-8, 1) on `path_house` | Combination lock panel (GAME-CART 12, 14; CART-013). |
+| Wall lamp | `[[light]] l1_wall_zookeeper_house` | (-7.95, 3.4), north of the door | Lights door and key box at night. |
+
+Free floor cells: (-12, 2), (-11, 1), (-11, 2), (-10, 1), (-10, 2), (-12, 3) partly — the bed is
+reached from (-12, 2)/(-11, 1), the desk from (-11, 2)/(-10, 2). Furniture colliders are props
+(`[[prop]]` with `size_m`, proposal Q-137), not grid cells.
+
+**Why here.** The only free field near the plaza that is no hiding place, scenery, wander area
+or path (x −14…−6, z 0…6 between `loc_bamboo` and the plaza). The house blocks the direct grass
+walk `loc_bamboo` → `map_board` (8.6 s → ≈ 10 s), so `path_house_n` runs along its north side
+(≈ 6.8 s). All wander areas and the sight/fog tests are unchanged (no standing point and no
+hiding place moved). Riddle guard: the house is wood with a red roof — no bamboo, not taller
+than the thicket (4 m house vs. `loc_bamboo` "taller than the wall" still holds: the bamboo is
+3 m, the wall 2.5 m; the house stands 5 m east of the thicket).
+
+## Moon door (GAME-NIGHT rules 3, 7; proposal Q-133)
+
+The **moon door** `moon_door` sits in the **west zoo wall** at x −24…−23, z 29…30 (the wall
+is split into `wall_west_s` and `wall_west`). On the level-1 side `path_moon` (x −22…−10,
+z 29…30) leads to it from the ring corner at `path_north`, along the north shore of the pond;
+behind it lies the night zoo `night_1` (GAME-LEVEL-NIGHT-1), whose entry cells (−25, 29…30)
+are edge-adjacent to the door's cells (LAYOUT-021).
+
+- **States** (`kit_night` `moon_door`): closed by day (dark moon sign), opening at nightfall
+  (sign glows, leaves swing west into the night zoo), open at night (glowing sign, lanterns on
+  both pillars, soft blue sparkle). Its cells are walkable while open; the model never
+  disappears (unlike the other barriers).
+- **Data** (proposal Q-133): `kind = "moon_door"`, `transition = "level_1->night_1"`,
+  `unlock_after = "level_1"`, `opens_at = "night"`. It is **not** an exit barrier in the sense
+  of the Q-091 rule (barriers open the next morning): it opens at nightfall and closes again in
+  the morning.
+- **Why here.** The west wall is the only outer edge with no later day level behind it (north:
+  level 3, east: level 2 and the free area behind `barrier_east_repair`, south: the entrance).
+  The spot z 29…30 is the one stretch of the wall next to free grass that is no hiding place:
+  south of `loc_shade` (z 33…39), north of `loc_pond`'s rect (z ≤ 28). The door is 9 s from
+  the panda board and 4 s from `loc_shade`; `path_moon` touches no hiding-place rect or wander
+  area (all wander counts unchanged) and opens no route past a barrier by day.
+- **Riddle guards:** `loc_shade` keeps its "big trees at the zoo wall" (the door has no trees);
+  the moon door is the only gate in the wall — its lanterns are night-only.
+
+## Night lights (GAME-NIGHT rule 1; Q-118 answered; data shape proposal Q-137)
+
+`[[light]]` in `level-1.toml` (night-only props; hidden by day):
+
+| Kind | Where (level x, z) | Count |
+|---|---|---|
+| `string_lights` | an X over the entrance plaza between its corner posts (−4.75, 7.75) → (4.75, 0.25) and (4.75, 7.75) → (−4.75, 0.25) | 2 |
+| `lantern_post` along the ring (~10 m) | (−7.75, 8.25), (7.75, 11.5), (−7.75, 18.5), (−7.75, 27.25), (7.75, 26.75) | 5 |
+| `lantern_post` beside every gate (lights gate + sign) | zebra (−8.6, 11.6), hippo (8.5, 18.5), panda (1.4, 31.6) | 3 |
+| `lantern_post` on `path_moon` and `path_north` | (−11.5, 30.75), (−19.5, 30.75), (−6.25, 38.0) | 3 |
+| `wall_lamp` | zookeeper house (−7.95, 3.4), food storage (1.3, 10.95) | 2 |
+| `board_lamp` | `board_zebra`, `board_hippo`, `board_panda`, `map_board` | 4 |
+| `indoor` | bedside lamp (−12.72, 2.3), `#FFC46E` | 1 |
+
+The moon door carries its own two pillar lanterns (part of the model). Posts stand 0.25 m
+inside a path edge (or on grass beside a gate), never in a hiding-place rect, scenery or the
+garden, never on a gate's leading cells; collider C(0, 0, 0.12) while visible. 11 posts + 2
+strings — within the Q-114 budget (point lights for the nearest ≤ 8, decals for the rest).
+
+## Burglar event (GAME-EVENTS rules 4–7; proposal Q-139)
+
+`[[event_spot]]` in `level-1.toml`: the two burglars climb in over a **ladder** on the inside of
+`wall_west_s` at (−21.6, 24.0), take a food box from the row in front of the **food storage**
+(`burglar_target`), and hide in the grass corridor between the west wall and the pond
+(`burglar_hideout` rect (−22, 21, 3, 6), x −22…−20, z 21…26 — outside `loc_pond`'s rect, no path,
+no scenery). Their footprints run along the fastest walk storage → ring → grass row z 19 →
+corridor (≈ 20 m). The dropped note's clue (`event-burglar-note-level_1-<reading_level>`,
+CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out over the ladder.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -662,7 +794,7 @@ grows from 16.0 s to 25.9 s (not a neighbour pair; only one zebra place is used 
 | LAYOUT-L1-007 | Given the hiding places of level 1, then their `features` contain the CONT-MISSIONS details (river: flowing_water, bridge, ducks; pond: still_water, water_lilies, frogs; cave: dark, cool, stone, echo; meadow: tall_grass, wildflowers, butterflies; sand: sand, dry, yellow_ground; mud: mud, brown_ground, wet; shade: shade, big_trees, zoo_wall; bamboo: bamboo_thicket, green_stalks, taller_than_wall; leaves: leaf_pile, red_yellow_leaves, rake), a `bridge` path lies within 4 m of the river animal spot, no bridge/river cell lies inside `loc_pond`, and every `scenery` id a hiding place names exists (`[[scenery]]` or `[[element]]`). | unit |
 | LAYOUT-L1-008 | Given `level-1.toml`, then the only water elements are `river_*` and `pond_water`, the only other water is the `hippo_pool` enclosure feature inside `enc_hippo` (no lily/frog/reed/duck props on it), and the only `bridge` is `bridge_river`. | unit |
 | LAYOUT-L1-009 | Given each level-1 hiding place (every `[[hiding_place]]` candidate), then at least one walkable cell centre is within 2 m of its animal spot. | unit |
-| LAYOUT-L1-010 | Given missions `zebra`, `hippo`, `panda` complete, then `barrier_ne_tree` cells are walkable, `barrier_north_gate` and `barrier_east_repair` are still solid (depends on Q-022). | unit |
+| LAYOUT-L1-010 | Given missions `zebra`, `hippo`, `panda` complete, then `barrier_ne_tree` stays solid until the next morning (with `night_1` joined: the morning after `night_1` is complete, NIGHT-010); then its cells are walkable, `barrier_north_gate` and `barrier_east_repair` are still solid (depends on Q-022). | unit |
 | LAYOUT-L1-011 | Given level 1 starts on a 1080×2340 viewport, then the player stands on the plaza facing north with the camera at maximum zoom-out (20 m) and the food storage is on screen. | e2e |
 | LAYOUT-L1-012 | Given the approved mockups `loc_river` and `loc_pond`, then a reviewer can tell river and pond apart without text (flow + bridge + ducks vs. still + lilies + frogs), and `env_zebra` shows no water, `env_panda` no stone cave. | manual |
 | LAYOUT-L1-013 | Given `level-1.toml`, then it has 10 `food_box` entries (one per food) in front of the food storage, and a walkable cell centre within 2 m in front of each box is reachable from the spawn. | unit |
@@ -684,11 +816,17 @@ grows from 16.0 s to 25.9 s (not a neighbour pair; only one zebra place is used 
 | LAYOUT-L1-029 | Given the garden, then its `rect` overlaps no `[[hiding_place]]` or `[[scenery]]` rect, no solid element and no path except `path_garden`, touches no barrier and no border cell; every garden collider (fence, beds, signs, props) lies inside the `rect`; all wander areas keep the counts of LAYOUT-L1-024; and the reachable cells with all barriers closed are a subset of those without the garden (no new route past a barrier). | unit |
 | LAYOUT-L1-030 | Given each `[[garden_bed]]`, then it has a sign with `sign_key` `garden-carrot` / `garden-potato` matching its `plant`, the key exists in every locale (L10N), and the sign's readable side faces an adjacent `path_garden` cell. | unit |
 | LAYOUT-L1-031 | Given an animal following the player and the player inside the garden, then the animal's grid path never enters a garden cell (it waits outside the gate), and no wander area contains a garden cell (proposal Q-102). | unit |
+| LAYOUT-L1-033 | Given `level-1.toml`, then `zookeeper_house_1` has `interior` (-13, 1, 4, 3) and `door` (-9, 2) (LAYOUT-023), its door is reachable from the spawn in ≤ 10 s, and the `[[item]]`s `bed_l1`, `note_math_fighter` and `key_box_l1` each have a reachable `stand` cell ≤ 2 m from their `pos` (the bed and note inside the house, the key box on `path_house`); `loc_bamboo` → `map_board` stays ≤ 10 s. | unit |
+| LAYOUT-L1-034 | Given `level-1.toml` by day, then `moon_door` is solid and no cell of `night_1` is reachable; at night after nightfall its cells are walkable and `entry_n1_moon` is reachable from the spawn; in the morning it is solid again (NIGHT-002, proposal Q-133). | unit |
+| LAYOUT-L1-035 | Given the level-1 changes of 2026-09-27 (house, moon door, `path_moon`, `path_house`, `path_house_n`), then all 9 wander areas keep their cell counts (LAYOUT-L1-024), LAYOUT-L1-006 and CAMV-008 still hold, and every border cell except the moon door's is solid. | unit |
+| LAYOUT-L1-036 | Given the `[[light]]` list, then every `lantern_post` / string-light end stands on a walkable cell outside every hiding-place `rect`, scenery rect and the garden, ≥ 0.7 m from every food box; every info board and the map board has one `board_lamp` whose `attach` names it; every `attach` id exists. | unit |
+| LAYOUT-L1-037 | Given the `[[event_spot]]` list, then `l1_burglar_hideout` is walkable grass reachable from `l1_burglar_target` with all barriers closed, and overlaps no hiding-place rect, scenery, garden or path. | unit |
 | LAYOUT-L1-032 | Given the approved `env_garden` mockup, then a reviewer sees carrot and potato beds as clearly different from the 55° camera, the soil does not look like `loc_mud` (dry, not glossy), and no rake, butterflies, wildflowers or running water appear. | manual |
 
 ## Open questions
 
 - Q-022 barrier unlock conditions, Q-023 number of levels and their areas.
+- Q-096 answered (bed in a level-1 zookeeper house). Q-133 moon door data and opening rule (`opens_at`, `unlock_after`; open every night, also after the night zoo is done). Q-137 `[[item]]` / `[[prop]]` / `[[light]]` data shape. Q-139 burglar event spots.
 - Q-102 vegetable garden data shape (`[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]`, fence as prop colliders + blocked cell edges, self-opening gate, animals never enter). Q-103 garden sign texts per reading level. Q-100, Q-101 treats (GAME-GARDEN).
 - Q-085 data shape for woods, hippo pool and home wandering (`density`, `trees`, `edge`, `[[enclosure_feature]]`, `home_wander_on`, wander clip to `rect`, 7/10 water targets) — implemented as proposed in M5a. Q-086 enclosure sign as a gate arch. Q-087 collision footprint values and invisible-wall fixes — implemented as proposed in M5a. Q-097 animals out of reach come to the player. Q-098 `hut` enclosure feature. Q-099 accepted invisible walls (map board back, fallen tree).
 - Q-069 answered: all three level-1 missions in scope.

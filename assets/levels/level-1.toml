@@ -68,12 +68,33 @@ blocks_view = true
 height_m = 2.5
 
 [[element]]
+id = "wall_west_s"
+type = "boundary"
+kind = "zoo_wall"
+rect = [-24, 0, 2, 29]
+blocks_view = true
+height_m = 2.5
+notes = "Outer zoo wall, west side south of the moon door (split from wall_west for the moon door, GAME-NIGHT). loc_bamboo leans on it."
+
+[[element]]
+id = "moon_door"
+type = "barrier"
+kind = "moon_door"
+rect = [-24, 29, 2, 2]
+transition = "level_1->night_1"
+opens_at = "night"            # proposal Q-133: open during every night once level 1's nightfall has happened (NIGHT-002), closed by day; the model stays (it swings open/closed, never disappears)
+unlock_after = "level_1"      # nightfall of level 1 = all level-1 missions complete (GAME-NIGHT rule 1)
+unlock = "proposal Q-133: open at night after level 1's nightfall (every night, Q-079), closed by day"
+notes = "Moon door (night-zoo gate, kit_night `moon_door`): big wooden double gate with blue plank leaves and painted stars between two stone pillars with lanterns, a round moon sign on top. By day closed with a dark sign; at nightfall the sign glows and the leaves swing open towards the night zoo (west). Walking through it enters night_1 (entry_n1_moon)."
+
+[[element]]
 id = "wall_west"
 type = "boundary"
 kind = "zoo_wall"
-rect = [-24, 0, 2, 48]
+rect = [-24, 31, 2, 17]
 blocks_view = true
 height_m = 2.5
+notes = "Outer zoo wall, west side north of the moon door (the id is kept for loc_shade and the modular-run test)."
 
 [[element]]
 id = "hedge_north_a"
@@ -148,7 +169,9 @@ type = "barrier"
 kind = "fallen_tree"
 rect = [22, 28, 2, 3]
 transition = "level_1->level_2"
-unlock = "proposal: missions zebra, hippo and panda complete (all level-1 animals in_enclosure) (Q-022)"
+unlock = "proposal: the morning after night_1 is complete (GAME-NIGHT rule 7, Q-078 answered; before the night existed: right after the level-1 celebration, Q-091)"
+unlock_after = "night_1"      # proposal Q-133: completing night_1 unlocks it ...
+opens_at = "morning"          # ... and it opens the next morning (after sleeping in the bed)
 notes = "Storm-felled tree across the path behind the bridge; a zookeeper saws it away when unlocked."
 
 [[element]]
@@ -182,6 +205,31 @@ kind = "map_board"
 rect = [-7, 3, 1, 2]
 blocks_view = false
 notes = "Picture map of level 1 with animal silhouettes; no text needed."
+
+[[element]]
+id = "zookeeper_house_1"
+type = "building"
+kind = "zookeeper_house"
+rect = [-14, 0, 6, 5]
+interior = [-13, 1, 4, 3]     # 4 x 3 m room: bedroom corner (west) + desk (north-east)
+door = [-9, 2]                # east facade, onto path_house
+blocks_view = true
+height_m = 4.0
+notes = "Small enterable zookeeper house by the entrance plaza (Q-096 answered: bed in level 1; enterable like zookeeper_house_3, Q-092): bed, night table with bedside lamp, window with the moon, rug, toy chest (kit_bedroom); desk with the 'Math Fighter' note (GAME-CART 13); key box with a combination lock on the outside wall south of the door (GAME-CART 12). Roof cut away while the player is inside (PLAY-028)."
+
+[[element]]
+id = "path_house"
+type = "path"
+kind = "side"
+rect = [-8, 1, 3, 2]
+notes = "From the plaza west to the zookeeper-house door (-9, 2)."
+
+[[element]]
+id = "path_house_n"
+type = "path"
+kind = "side"
+rect = [-14, 5, 9, 2]
+notes = "Along the north side of the zookeeper house from the plaza west towards the bamboo thicket (keeps loc_bamboo <= 10 s from the map board with the house in place)."
 
 [[element]]
 id = "bench_plaza"
@@ -308,6 +356,13 @@ type = "decoration"
 kind = "info_board"
 rect = [-4, 30, 1, 1]
 enclosure = "enc_panda"
+
+[[element]]
+id = "path_moon"
+type = "path"
+kind = "side"
+rect = [-22, 29, 13, 2]
+notes = "From path_north / the ring west along the north shore of the pond to the moon door (GAME-NIGHT)."
 
 [[element]]
 id = "path_north"
@@ -693,7 +748,7 @@ animal_spot = [-18, 2]
 wander_radius_m = 3.0
 wander_on = "grass"
 features = ["bamboo_thicket", "green_stalks", "taller_than_wall", "rattling"]
-scenery = ["bamboo_sw", "wall_west", "wall_south_w"]
+scenery = ["bamboo_sw", "wall_west_s", "wall_south_w"]
 pose = "eat"
 
 [[hiding_place]]
@@ -929,3 +984,243 @@ kind = "potato"
 pos = [9.5, 44.25]
 start_stage = "ripe"
 stand = [8, 44]
+
+# ================================================================ zookeeper house 1: bed, desk note, key box (GAME-NIGHT rule 3, GAME-CART 12-16)
+# Proposal Q-137 (data shape). [[item]] = interactable things the game logic uses (same list as the
+# level-3 fish bowl, Q-093): `bed` (sleep, NIGHT-003), `note_math_fighter` (reading panel with the
+# math task, CART-012), `key_box` (combination lock panel, CART-013). pos = level (x, z) centre;
+# facing = the side the child uses / reads (+x/-x/+z/-z); stand = the walkable cell the child
+# stands on to use it (for tests and a scripted player).
+[[item]]
+id = "bed_l1"
+kind = "bed"
+pos = [-12.0, 1.5]            # bed 1.0 x 2.0 m along the south wall, headboard west (x -13.0 .. -11.0, z 1.0 .. 2.0)
+building = "zookeeper_house_1"
+facing = "+z"                 # used from its long north side
+stand = [-12, 2]
+notes = "Child-size bed with the blue star blanket (kit_bedroom `bed`); interacting at night -> sleep -> next morning (GAME-NIGHT rule 3). Usable any time at night (Q-079)."
+
+[[item]]
+id = "note_math_fighter"
+kind = "note_math_fighter"
+pos = [-10.5, 3.7]            # on the desk
+building = "zookeeper_house_1"
+facing = "-z"
+stand = [-11, 2]
+notes = "Sheet of paper titled 'Math Fighter' with one math task for the child's math_level (CONT-MATH); its result is the key-box combination (GAME-CART 13, Q-132)."
+
+[[item]]
+id = "key_box_l1"
+kind = "key_box"
+pos = [-7.95, 1.5]            # on the outside of the east facade (x = -8.0), south of the door (door cell z 2..3)
+building = "zookeeper_house_1"
+facing = "+x"
+stand = [-8, 1]               # path_house
+notes = "Wall key box with a 3-wheel combination lock holding the golf-cart key (GAME-CART 12, 14)."
+
+# Furniture (proposal Q-137): props with a collider, inside the building interior; not grid
+# elements (like [[food_box]]). model = kit_bedroom / kit_furniture asset id; size_m = footprint
+# (x along facing's right, z along facing) for the collider until the model exists.
+[[prop]]
+id = "desk_l1"
+model = "desk"
+pos = [-10.5, 3.7]
+facing = "-z"
+size_m = [1.2, 0.6]
+building = "zookeeper_house_1"
+
+[[prop]]
+id = "night_table_l1"
+model = "night_table"
+pos = [-12.72, 2.3]
+facing = "+x"
+size_m = [0.5, 0.4]
+building = "zookeeper_house_1"
+
+[[prop]]
+id = "window_moon_l1"
+model = "window_moon"
+pos = [-13.0, 2.5]            # in the inner face of the west wall, above the night table
+facing = "+x"
+size_m = [1.0, 0.1]
+building = "zookeeper_house_1"
+
+[[prop]]
+id = "rug_l1"
+model = "rug_round"
+pos = [-11.0, 2.4]
+facing = "-z"
+size_m = [0.0, 0.0]           # flat, no collider
+building = "zookeeper_house_1"
+
+[[prop]]
+id = "toy_chest_l1"
+model = "toy_chest"
+pos = [-12.45, 3.72]
+facing = "-z"
+size_m = [0.8, 0.45]
+building = "zookeeper_house_1"
+
+# ================================================================ lights (GAME-NIGHT rule 1; Q-118 answered; data shape proposal Q-137)
+# Night-only light props (hidden by day). kind: lantern_post (post + hanging lantern, collider
+# C(0, 0, 0.12) while visible), string_lights (bulbs on a line between two posts pos -> to),
+# wall_lamp (on the facade of `attach`), board_lamp (on the info/map board `attach`), indoor
+# (a room lamp inside `attach`, colour `color`). pos = level (x, z); facing = direction of the
+# lamp arm / lit side. Posts stand 0.25 m inside a path edge (or on the grass beside a gate),
+# never inside a hiding-place rect, scenery or the garden.
+[[light]]
+id = "l1_string_plaza_a"
+kind = "string_lights"
+pos = [-4.75, 7.75]
+to = [4.75, 0.25]
+facing = "-z"
+
+[[light]]
+id = "l1_string_plaza_b"
+kind = "string_lights"
+pos = [4.75, 7.75]
+to = [-4.75, 0.25]
+facing = "-z"
+
+[[light]]
+id = "l1_lantern_ring_sw"
+kind = "lantern_post"
+pos = [-7.75, 8.25]
+facing = "+x"
+
+[[light]]
+id = "l1_lantern_ring_se"
+kind = "lantern_post"
+pos = [7.75, 11.5]
+facing = "-x"
+
+[[light]]
+id = "l1_lantern_ring_w"
+kind = "lantern_post"
+pos = [-7.75, 18.5]
+facing = "+x"
+
+[[light]]
+id = "l1_lantern_ring_nw"
+kind = "lantern_post"
+pos = [-7.75, 27.25]
+facing = "+x"
+
+[[light]]
+id = "l1_lantern_ring_ne"
+kind = "lantern_post"
+pos = [7.75, 26.75]
+facing = "-x"
+
+[[light]]
+id = "l1_lantern_gate_zebra"
+kind = "lantern_post"
+pos = [-8.6, 11.6]
+facing = "-x"
+
+[[light]]
+id = "l1_lantern_gate_hippo"
+kind = "lantern_post"
+pos = [8.5, 18.5]
+facing = "+x"
+
+[[light]]
+id = "l1_lantern_gate_panda"
+kind = "lantern_post"
+pos = [1.4, 31.6]
+facing = "-x"
+
+[[light]]
+id = "l1_lantern_moon_path_e"
+kind = "lantern_post"
+pos = [-11.5, 30.75]
+facing = "-z"
+
+[[light]]
+id = "l1_lantern_moon_path_w"
+kind = "lantern_post"
+pos = [-19.5, 30.75]
+facing = "-z"
+
+[[light]]
+id = "l1_lantern_north"
+kind = "lantern_post"
+pos = [-6.25, 38.0]
+facing = "-x"
+
+[[light]]
+id = "l1_wall_zookeeper_house"
+kind = "wall_lamp"
+pos = [-7.95, 3.4]
+facing = "+x"
+attach = "zookeeper_house_1"
+
+[[light]]
+id = "l1_wall_food_storage"
+kind = "wall_lamp"
+pos = [1.3, 10.95]
+facing = "-z"
+attach = "food_storage"
+
+[[light]]
+id = "l1_indoor_bedside"
+kind = "indoor"
+pos = [-12.72, 2.3]
+facing = "+x"
+attach = "zookeeper_house_1"
+radius_m = 2.0
+color = "#FFC46E"
+
+[[light]]
+id = "l1_board_lamp_zebra"
+kind = "board_lamp"
+pos = [-8.5, 14.5]
+facing = "+x"
+attach = "board_zebra"
+
+[[light]]
+id = "l1_board_lamp_hippo"
+kind = "board_lamp"
+pos = [8.5, 17.5]
+facing = "-x"
+attach = "board_hippo"
+
+[[light]]
+id = "l1_board_lamp_panda"
+kind = "board_lamp"
+pos = [-3.5, 30.5]
+facing = "-z"
+attach = "board_panda"
+
+[[light]]
+id = "l1_board_lamp_map"
+kind = "board_lamp"
+pos = [-6.5, 4.0]
+facing = "+x"
+attach = "map_board"
+
+# ================================================================ burglar event (GAME-EVENTS rules 4-7; proposal Q-139)
+# kind: burglar_entry (where the two burglars climb in: a ladder leaning on the inside of the
+# wall/hedge, pos + facing into the level), burglar_target (what they take: `target` = building
+# whose food boxes / item they take), burglar_hideout (catch area: walkable grass rect where they
+# crouch with their sack; the child catches them there; never a hiding-place rect, scenery,
+# garden or path). The footprint trail runs along the fastest walk target -> hideout.
+[[event_spot]]
+id = "l1_burglar_entry"
+kind = "burglar_entry"
+pos = [-21.6, 24.0]
+facing = "+x"
+notes = "Wooden ladder on the inside of wall_west_s behind the pond reeds."
+
+[[event_spot]]
+id = "l1_burglar_target"
+kind = "burglar_target"
+target = "food_storage"
+pos = [0.0, 10.66]
+notes = "They take a food box from the row in front of the food storage."
+
+[[event_spot]]
+id = "l1_burglar_hideout"
+kind = "burglar_hideout"
+rect = [-22, 21, 3, 6]
+notes = "Grass corridor between the west zoo wall and the pond (x -22..-20, z 21..26), reached from the ring over the grass row z 19 or from path_moon; outside loc_pond's rect."

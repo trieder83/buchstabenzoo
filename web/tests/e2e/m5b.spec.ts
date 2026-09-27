@@ -50,9 +50,21 @@ async function standFacing(page: Page, x: number, z: number, fx: number, fz: num
   await nextFrames(page, 2);
 }
 
-/** Completes the missions of a level at once (debug: the animals walk home). */
+/**
+ * Completes the missions of a level at once (debug: the animals walk home), then the night
+ * passes: the barriers open the next morning (GAME-NIGHT, replaces the Q-091 rule). Level 2
+ * opens the morning after the night zoo is complete (Q-078, `unlock_after = "night_1"`), so
+ * the night animals are sent home that night too.
+ */
 async function finish(page: Page, animals: string[]) {
   for (const a of animals) expect(await app<boolean>(page, 'debug_send_home', a), a).toBe(true);
+  await nextFrames(page, 3);
+  await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    a.debug_set_daytime('night');
+    for (const n of ['hedgehog', 'bat', 'owl']) a.debug_send_home(n);
+    a.debug_next_morning();
+  });
   await nextFrames(page, 3);
 }
 
@@ -61,7 +73,7 @@ const L2 = ['koala', 'elephant', 'giraffe', 'lion'];
 
 test('LAYOUT-022 / LAYOUT-L2-010: finishing level 1 opens the fallen tree; walk into level 2 and back', async ({ page }) => {
   const errors = await start(page);
-  expect(await app<string>(page, 'level_ids')).toBe('level_1\nlevel_2\nlevel_3');
+  expect(await app<string>(page, 'level_ids')).toBe('level_1\nlevel_2\nlevel_3\nnight_1');
   expect(await app<boolean>(page, 'level_unlocked', 'level_2')).toBe(false);
   // the level-2 animals wait asleep and hidden while their level is locked
   expect(await app<boolean>(page, 'animal_visible', 'giraffe')).toBe(false);

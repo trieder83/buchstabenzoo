@@ -18,9 +18,24 @@ pub fn level1() -> LevelData {
     LevelData::from_toml_str(&read("assets/levels/level-1.toml")).expect("level-1.toml parses")
 }
 
+/// Every Fluent file of a language (`assets/i18n/<lang>/*.ftl`, sorted), as the host loads them.
+pub fn ftl_text(lang: &str) -> String {
+    let dir = repo_root().join("assets/i18n").join(lang);
+    let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("{}: {e}", dir.display()))
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "ftl"))
+        .collect();
+    files.sort();
+    files
+        .iter()
+        .map(|p| std::fs::read_to_string(p).unwrap() + "\n")
+        .collect()
+}
+
 pub fn content() -> Content {
-    let de = read("assets/i18n/de/missions.ftl");
-    let en = read("assets/i18n/en/missions.ftl");
+    let de = ftl_text("de");
+    let en = ftl_text("en");
     Content::from_sources(&[(Language::De, &de), (Language::En, &en)]).expect("ftl parses")
 }
 
@@ -43,4 +58,17 @@ pub fn zoo() -> LevelData {
 
 pub fn zoo_game(seed: u64) -> Game {
     Game::new(zoo(), seed).expect("zoo game starts")
+}
+
+pub fn night1() -> LevelData {
+    LevelData::from_toml_str(&read("assets/levels/night-1.toml")).expect("night-1.toml parses")
+}
+
+/// The day levels 1–3 and the night zoo `night_1` joined (GAME-NIGHT rule 4, NIGHT-004).
+pub fn zoo_with_night() -> LevelData {
+    LevelData::join(vec![level1(), level2(), level3(), night1()]).expect("levels join")
+}
+
+pub fn night_game(seed: u64) -> Game {
+    Game::new(zoo_with_night(), seed).expect("zoo with night starts")
 }

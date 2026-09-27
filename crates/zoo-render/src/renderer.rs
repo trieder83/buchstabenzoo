@@ -18,6 +18,7 @@ use zoo_assets::{MeshData, Model, Pose, Skeleton};
 use zoo_core::water::{bob_params, water_time, TileShape, WaterField};
 
 use crate::camera::{project, FollowCamera};
+use crate::night::{self, DayLight, PointLight, MAX_LIGHT_POOLS, MAX_POINT_LIGHTS};
 use crate::shaders;
 
 /// Sun direction (towards the sun): high, from the west and slightly behind the default
@@ -62,6 +63,16 @@ impl Instance {
             pos_yaw: [pos.x, pos.y, pos.z, yaw],
             scale_fade: [1.0, 1.0, 1.0, f32::from(u8::from(fadeable))],
             color: [1.0, 1.0, 1.0, 0.0],
+        }
+    }
+
+    /// Emissive flat colour (lamp glass, lit windows, eyeshine, fireflies; GAME-NIGHT §10):
+    /// drawn unlit with its colour.
+    pub fn glow(pos: Vec3, yaw: f32, scale: Vec3, color: [f32; 3]) -> Self {
+        Self {
+            pos_yaw: [pos.x, pos.y, pos.z, yaw],
+            scale_fade: [scale.x, scale.y, scale.z, 0.0],
+            color: [color[0], color[1], color[2], night::EMISSIVE_ALPHA],
         }
     }
 
@@ -368,6 +379,13 @@ pub struct Renderer {
     ripple_b: [f32; 32],
     ripple_count: i32,
     crowd_names: Vec<&'static str>,
+    /// Night mode (GAME-NIGHT §10): global light, point lights and light pools of the frame.
+    light: DayLight,
+    light_u: [f32; MAX_POINT_LIGHTS * 4],
+    light_col_u: [f32; MAX_POINT_LIGHTS * 4],
+    light_count: i32,
+    pool_u: [f32; MAX_LIGHT_POOLS * 4],
+    pool_count: i32,
 }
 
 /// Name of the built-in unit box batch (placeholders).
@@ -398,6 +416,12 @@ impl Renderer {
             "u_fade",
             "u_dither",
             "u_tint",
+            "u_night",
+            "u_lights",
+            "u_light_colors",
+            "u_light_count",
+            "u_pools",
+            "u_pool_count",
         ];
         let mut static_names = common.to_vec();
         static_names.extend(["u_time", "u_bob"]);
@@ -456,6 +480,9 @@ impl Renderer {
                 "u_inv_view_proj",
                 "u_eye",
                 "u_fog",
+                "u_sky_top",
+                "u_sky_horizon",
+                "u_sky_night",
             ],
         )
         .map_err(err)?;
@@ -470,6 +497,7 @@ impl Renderer {
                 "u_normal",
                 "u_sun_dir",
                 "u_shadow_tint",
+                "u_night",
             ],
         )
         .map_err(err)?;
@@ -508,6 +536,12 @@ impl Renderer {
             ripple_b: [0.0; 32],
             ripple_count: 0,
             crowd_names: Vec::with_capacity(4),
+            light: DayLight::default(),
+            light_u: [0.0; MAX_POINT_LIGHTS * 4],
+            light_col_u: [0.0; MAX_POINT_LIGHTS * 4],
+            light_count: 0,
+            pool_u: [0.0; MAX_LIGHT_POOLS * 4],
+            pool_count: 0,
         };
         r.add_mesh(BOX, &box_mesh(), 1.0)?;
         r.add_mesh(CAPSULE, &capsule_mesh(0.3, 1.2), 1.0)?;
@@ -1118,6 +1152,66 @@ impl Renderer {
         Ok(())
     }
 
+    /// Global light of the next frames (GAME-NIGHT §10): 0 = day … 1 = night, `warm` = dusk.
+    pub fn set_daylight(&mut self, light: DayLight) {
+        self.light = light;
+    }
+
+    pub fn daylight(&self) -> DayLight {
+        self.light
+    }
+
+    /// Point lights of this frame (hard cartoon falloff, at most [`MAX_POINT_LIGHTS`]).
+    pub fn set_point_lights(&mut self, lights: &[PointLight]) {
+        self.light_count = 0;
+        for (k, l) in lights.iter().take(MAX_POINT_LIGHTS).enumerate() {
+            self.light_u[k * 4..k * 4 + 4].copy_from_slice(&[l.pos.x, l.pos.y, l.pos.z, l.radius]);
+            self.light_col_u[k * 4..k * 4 + 4].copy_from_slice(&[
+                l.color.x,
+                l.color.y,
+                l.color.z,
+                l.strength + if l.tinted { 2.0 } else { 0.0 },
+            ]);
+            self.light_count = k as i32 + 1;
+        }
+    }
+
+    /// Light-pool decals of this frame (lamps beyond the point-light budget, Q-114): flat
+    /// warm pools on the ground (`pos.xz`, radius, strength).
+    pub fn set_light_pools(&mut self, pools: &[PointLight]) {
+        self.pool_count = 0;
+        for (k, l) in pools.iter().take(MAX_LIGHT_POOLS).enumerate() {
+            self.pool_u[k * 4..k * 4 + 4]
+                .copy_from_slice(&[l.pos.x, l.pos.z, l.radius, l.strength]);
+            self.pool_count = k as i32 + 1;
+        }
+    }
+
+    /// Point lights / light pools set for this frame (stats, NIGHT perf report).
+    pub fn light_counts(&self) -> (u32, u32) {
+        (self.light_count as u32, self.pool_count as u32)
+    }
+
+    /// Adds an emissive box (lamp glass, lit window) to a render region.
+    pub fn add_glow_box_in(
+        &mut self,
+        region: u16,
+        pos: Vec3,
+        size: Vec3,
+        yaw: f32,
+        color: [f32; 3],
+    ) {
+        let Some(i) = self.batch_for(BOX, region) else {
+            return;
+        };
+        let b = &mut self.batches[i];
+        b.instances.push(Instance::glow(pos, yaw, size, color));
+        b.uploaded = usize::MAX;
+        let radius = (size.x * size.x + size.z * size.z).sqrt() * 0.5;
+        self.grow_region(region, pos, radius, size.y);
+        self.grow_batch(i, pos, radius, size.y);
+    }
+
     /// Sets the water clock from the elapsed game time (TECH-WATER behaviour 9).
     pub fn set_time(&mut self, elapsed_s: f64) {
         self.time = water_time(elapsed_s);
@@ -1242,6 +1336,12 @@ impl Renderer {
         gl.uniform1f(p.u("u_dither"), self.outline_px() * 0.5);
         gl.uniform1i(p.u("u_palette"), 0);
         gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
+        gl.uniform4f(p.u("u_night"), self.light.night, self.light.warm, 0.0, 0.0);
+        gl.uniform4fv_with_f32_array(p.u("u_lights"), &self.light_u);
+        gl.uniform4fv_with_f32_array(p.u("u_light_colors"), &self.light_col_u);
+        gl.uniform1i(p.u("u_light_count"), self.light_count);
+        gl.uniform4fv_with_f32_array(p.u("u_pools"), &self.pool_u);
+        gl.uniform1i(p.u("u_pool_count"), self.pool_count);
     }
 
     /// Outline sample offset in device pixels (even, so the fade pattern stays line-free).
@@ -1300,7 +1400,8 @@ impl Renderer {
         gl.enable(Gl::CULL_FACE);
         gl.cull_face(Gl::BACK);
         gl.disable(Gl::BLEND);
-        gl.clear_bufferfv_with_f32_array(Gl::COLOR, 0, &CLEAR);
+        let clear = Vec3::from_slice(&CLEAR[..3]).lerp(night::NIGHT_CLEAR, self.light.night);
+        gl.clear_bufferfv_with_f32_array(Gl::COLOR, 0, &[clear.x, clear.y, clear.z, 1.0]);
         gl.clear_bufferfv_with_f32_array(Gl::COLOR, 1, &[0.5, 1.0, 0.5, 0.0]);
         gl.clear_bufferfi(Gl::DEPTH_STENCIL, 0, 1.0, 0);
 
@@ -1558,6 +1659,7 @@ impl Renderer {
                 SHADOW_TINT.z,
             );
             gl.uniform1i(p.u("u_tex"), 0);
+            gl.uniform4f(p.u("u_night"), self.light.night, self.light.warm, 0.0, 0.0);
             gl.active_texture(Gl::TEXTURE0);
             gl.enable(Gl::BLEND);
             // colour and normal rgb blend by the decal alpha; the edge mask (dst alpha) stays
@@ -1627,6 +1729,10 @@ impl Renderer {
             camera.sky_amount(),
         );
         gl.uniform3f(p.u("u_line_color"), OUTLINE.x, OUTLINE.y, OUTLINE.z);
+        let (top, horizon) = crate::sky::sky_colors(self.light.night);
+        gl.uniform3f(p.u("u_sky_top"), top.x, top.y, top.z);
+        gl.uniform3f(p.u("u_sky_horizon"), horizon.x, horizon.y, horizon.z);
+        gl.uniform1f(p.u("u_sky_night"), self.light.night);
         gl.draw_arrays(Gl::TRIANGLES, 0, 3);
         stats.draw_calls += 1;
         self.stats = stats;

@@ -6,7 +6,7 @@ module: environment
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS]
 test_prefix: AENV
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Environment — mockups and models
@@ -53,6 +53,8 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_level2_overview` | Whole level 2 (GAME-LEVEL-2) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-2 ASCII map (also the GAME-MAP art) |
 | `env_level3_overview` | Whole level 3 (GAME-LEVEL-3) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-3 ASCII map |
 | `env_zookeeper_house` | Zookeeper house of level 3 (`zookeeper_house_3`) | closed house + roof cut-away with the big empty glass fish bowl on the table, bed, shelves; water tap with a small basin next to the door; food storage 3 next door |
+| `env_zookeeper_house_1` | Zookeeper house of level 1 (`zookeeper_house_1`, west of the entrance plaza — GAME-LEVEL-1, GAME-NIGHT, GAME-CART) | closed house + roof cut-away: child-size bed with the blue star blanket, night table with bedside lamp, window, rug, toy chest, desk with one blank sheet (the "Math Fighter" note), key box with a 3-wheel lock outside by the door; plus a night view of the bedroom corner — no fish bowl, no bamboo at the house |
+| `env_night1_overview` | Whole night level 1 (GAME-LEVEL-NIGHT-1), layout-true (the approved `env_night_overview` is the mood image) | at night, camera yaw west: open moon door at the bottom, plaza with string lights, food hut, night house with three lit boards, lantern-lit loop around an old-tree grove, and all 9 night hiding places with their clues (twig heap, flowerpots with white flowers, mushroom ring, hill with a big stone, fir, windmill, firefly meadow, pond mirroring the moon, knothole tree); + orthographic `top_down.png` |
 | `env_garden` | Vegetable garden `garden_veg`, level 1 (north, between the panda enclosure and the river — GAME-LEVEL-1, GAME-GARDEN) | low picket fence with a small open gate, 2 m path, two carrot beds and two potato beds (clearly different from above), a picture stake sign per bed, empty wheelbarrow and watering can at the hedge, the girl pulling a carrot — dry soil (not `loc_mud`), no rake, butterflies, wildflowers or water spray (riddle guards) |
 | `loc_treehouse` | Koala hiding place, level 2 (south-west) | old oak with a wooden tree house (roof, round window) at 3.5 m and a rope ladder; the koala pair on the porch |
 | `loc_tallest_tree` | Koala hiding place, level 2 (east) | a 12 m giant tree, twice as tall as all other trees, thick trunk; the koala pair at the very top |

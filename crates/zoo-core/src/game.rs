@@ -10,6 +10,7 @@ use crate::animals::{animal_info, AnimalInfo, AnimalState};
 use crate::content::{
     animal_more_key, animal_name_key, facts_key, riddle_key, Language, ReadingLevel,
 };
+use crate::daytime::Daytime;
 use crate::food::{Carry, Food, FoodBox, FoodLabel, FoodStorage};
 use crate::level::{
     cell_center, cell_of, facing_vec, CellKind, ElementType, Level, LevelData, Surface,
@@ -88,9 +89,23 @@ pub enum GameEvent {
     BarrierOpened {
         id: String,
     },
-    /// Every mission of a level is complete (its exit barrier opens, Q-091 temporary rule).
+    /// Every mission of a level is complete (its exit barriers open the next morning, Q-091).
     LevelComplete {
         level: String,
+    },
+    /// Dusk starts after the celebration of a day level's last mission (NIGHT-001).
+    DuskStarted,
+    /// Full night: the moon door is open, the bed is usable (NIGHT-002).
+    NightFell,
+    /// The child went to bed (NIGHT-003); the game is saved.
+    SleepStarted,
+    /// The next morning: pending barriers opened (Q-091), autosave.
+    Morning,
+    /// Full daylight again.
+    DayStarted,
+    /// The player went through the open moon door (`into_night_zoo`: towards the night zoo).
+    MoonDoor {
+        into_night_zoo: bool,
     },
     /// The player picked up a carryable item (the fish bowl).
     ItemTaken {
@@ -190,6 +205,12 @@ pub enum Target {
     },
     /// Put the carried item down here (lowest priority, only when nothing else is available).
     PutDown,
+    /// The bed in the zookeeper house (only at night, GAME-NIGHT rule 3).
+    Bed,
+    /// The open moon door (only at night): goes through it (GAME-NIGHT rule 3).
+    MoonDoor {
+        id: String,
+    },
 }
 
 impl Target {
@@ -208,6 +229,8 @@ impl Target {
             Target::Item { .. } => "item",
             Target::Water { .. } => "water",
             Target::PutDown => "put_down",
+            Target::Bed => "bed",
+            Target::MoonDoor { .. } => "moon_door",
         }
     }
 }
@@ -237,6 +260,10 @@ pub enum Interaction {
     Gate { enclosure: String, entered: bool },
     /// Picked up / put down / filled a carryable item.
     Item { id: String, action: &'static str },
+    /// Went to bed (GAME-NIGHT rule 3, NIGHT-003).
+    Sleep,
+    /// Went through the moon door.
+    MoonDoor { into_night_zoo: bool },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -421,7 +448,7 @@ pub struct Game {
     pub settings: Settings,
     pub move_params: MoveParams,
     pub follow_params: FollowParams,
-    events: Vec<GameEvent>,
+    pub(crate) events: Vec<GameEvent>,
     /// Gate cell the player stood on in the last update (for once-per-entry events).
     pub(crate) last_gate: Option<usize>,
     pub(crate) all_home: bool,
@@ -437,6 +464,8 @@ pub struct Game {
     /// The fish bowl (`[[item]]` of kind `fish_bowl`, GAME-RESCUE "goldfish bowl"), if the
     /// joined levels have one.
     pub bowl: Option<Bowl>,
+    /// Time of day (GAME-NIGHT).
+    pub daytime: Daytime,
 }
 
 /// Walking speed factor while carrying an animal in its container (proposal Q-084, RESC-023).
@@ -498,6 +527,10 @@ impl GameEvent {
                 | GameEvent::ItemPutDown { .. }
                 | GameEvent::ContainerFilled { .. }
                 | GameEvent::InContainer { .. }
+                | GameEvent::NightFell
+                | GameEvent::SleepStarted
+                | GameEvent::Morning
+                | GameEvent::MoonDoor { .. }
         )
     }
 }
@@ -633,6 +666,7 @@ impl Game {
             time_s: 0.0,
             autosave: Autosave::default(),
             bowl,
+            daytime: Daytime::default(),
         })
     }
 
@@ -1083,6 +1117,33 @@ impl Game {
                 }
             }
         }
+        if self.bed_usable() {
+            for point in self.beds() {
+                out.push(Interactable {
+                    target: Target::Bed,
+                    point,
+                    readable: None,
+                });
+            }
+        }
+        if self.daytime.is_night() {
+            for id in self.moon_doors() {
+                if let Some(e) = data
+                    .element(&id)
+                    .filter(|_| self.level.is_barrier_open(&id))
+                {
+                    let r = e.rect;
+                    out.push(Interactable {
+                        target: Target::MoonDoor { id: id.clone() },
+                        point: Vec2::new(
+                            r.x as f32 + r.w as f32 / 2.0,
+                            r.z as f32 + r.d as f32 / 2.0,
+                        ),
+                        readable: None,
+                    });
+                }
+            }
+        }
         if self.is_leading() || self.carrying_animal() {
             for e in data.elements_of(ElementType::Enclosure) {
                 if let Some(g) = e.gate {
@@ -1203,6 +1264,10 @@ impl Game {
                     action: "put_down",
                 })
             }
+            Target::Bed => self.sleep().then_some(Interaction::Sleep),
+            Target::MoonDoor { id } => self
+                .go_through_moon_door(&id)
+                .map(|into_night_zoo| Interaction::MoonDoor { into_night_zoo }),
         }
     }
 
@@ -1296,6 +1361,7 @@ impl Game {
         self.check_gate();
         self.update_followers(dt);
         self.update_wander(dt);
+        self.update_daytime(dt);
         self.update_panel(dt);
         self.time_s += f64::from(dt);
         if self.player.last_speed > 0.01 {
@@ -1443,8 +1509,8 @@ impl Game {
 
     /// GAME-RESCUE §8/§9, GAME-FAMILY §2: the mission completes when every animal of the
     /// species is home; a level whose missions are all complete opens its exit barrier and
-    /// the entry barriers of the next level (temporary rule for Q-091: right after the last
-    /// celebration, until nightfall exists).
+    /// the entry barriers of the next level **the next morning** (GAME-NIGHT, Q-091); a day
+    /// level brings nightfall after its celebration (NIGHT-001).
     fn complete_group(&mut self, animal: &str) {
         let group = self.group(animal);
         if group.is_empty()
@@ -1474,16 +1540,19 @@ impl Game {
             self.events.push(GameEvent::LevelComplete {
                 level: level_id.clone(),
             });
-            self.open_exits(&level_id);
+            // the exits open the next morning; a day level brings nightfall (GAME-NIGHT, Q-091)
+            let night = self.level.data.is_night_part(part);
+            self.daytime.level_complete(&level_id, night);
         }
     }
 
-    /// Opens the exit barriers of a completed level (`<level>-><next>`, proposal Q-022) and
-    /// every entry barrier of the next level if it is joined (level 3 is also entered
-    /// through the level-1 north gate, proposal Q-090).
-    fn open_exits(&mut self, level_id: &str) {
+    /// Opens the barriers a completed level unlocks (its exits `<level>-><next>`, proposal
+    /// Q-022, or barriers with `unlock_after = <level>`, Q-133) and every entry barrier of
+    /// the next level if it is joined (level 3 is also entered through the level-1 north
+    /// gate, proposal Q-090).
+    pub(crate) fn open_exits(&mut self, level_id: &str) {
         let mut ids = Vec::new();
-        for b in self.level.exit_barriers_of(level_id) {
+        for b in self.level.barriers_unlocked_by(level_id) {
             let next = self
                 .level
                 .data
@@ -1564,6 +1633,8 @@ impl Game {
     /// at home (inside their enclosure), GAME-ANIMALS "Animal states", ANIM-008…012.
     fn update_wander(&mut self, dt: f32) {
         let p = self.player.pos;
+        let night_part: Vec<bool> = self.level.data.parts.iter().map(|pt| pt.night).collect();
+        let dark = self.daytime.is_dark();
         for i in 0..self.animals.len() {
             let state = self.animals[i].state;
             if matches!(state, AnimalState::Following | AnimalState::InBowl)
@@ -1571,6 +1642,9 @@ impl Game {
                 || !self.part_unlocked(self.animals[i].part)
             {
                 continue; // locked levels are asleep (not simulated)
+            }
+            if state == AnimalState::InEnclosure && dark && !night_part[self.animals[i].part] {
+                continue; // day animals lie down in their enclosures at night (rule 1)
             }
             if self.perch(&self.animals[i]).is_some() {
                 // up in the tree / crow's nest: looks at the player when she is near (Q-094)
@@ -1609,7 +1683,8 @@ impl Game {
                 }
             }
             if a.wander.route.is_empty() {
-                a.wander.pause_s -= dt;
+                // night animals are awake and wander more at night (GAME-NIGHT rule 5)
+                a.wander.pause_s -= if night_part[a.part] { 2.0 * dt } else { dt };
                 if a.wander.pause_s > 0.0 {
                     continue;
                 }
@@ -1635,6 +1710,11 @@ impl Game {
     pub fn rest_clip(&self, a: &Animal) -> &str {
         if a.state == AnimalState::InBowl {
             return "swim";
+        }
+        if a.state == AnimalState::InEnclosure && self.daytime.is_dark() && !self.is_night_animal(a)
+        {
+            // the animals in their enclosures lie down at night (GAME-NIGHT rule 1)
+            return "sleep";
         }
         if self.water_depth(a) > 0.5 && a.state != AnimalState::Following {
             return "swim";

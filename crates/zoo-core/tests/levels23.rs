@@ -175,14 +175,16 @@ fn layout_022_joined_levels_unlock_in_order() {
 // outside.
 #[test]
 fn layout_023_enterable_building() {
-    let zoo = common::zoo();
+    let zoo = common::zoo_with_night();
     let level = Level::new(zoo.clone());
     let grid = level.grid();
     let houses: Vec<_> = zoo.elements.iter().filter(|e| e.is_enterable()).collect();
+    let mut ids: Vec<&str> = houses.iter().map(|e| e.id.as_str()).collect();
+    ids.sort_unstable();
+    // the zookeeper houses of levels 1 (bed, GAME-NIGHT) and 3, the night house of night_1
     assert_eq!(
-        houses.len(),
-        1,
-        "zookeeper_house_3 is the only enterable building"
+        ids,
+        ["night_house", "zookeeper_house_1", "zookeeper_house_3"]
     );
     for e in houses {
         let inner = e.interior.unwrap();
@@ -1038,15 +1040,20 @@ fn layout_l3_010_bowl_tap_banks_step() {
     assert!(banks > 20, "{banks} bank cells");
 }
 
-// LAYOUT-L2-010: with the four level-2 missions complete the construction fence opens (Q-091
-// temporary rule: right after the last celebration) and the level-3 spawn is reachable; the
-// fallen tree never closes again.
+// LAYOUT-L2-010: with the four level-2 missions complete the construction fence opens (the
+// next morning, GAME-NIGHT / Q-091) and the level-3 spawn is reachable; the fallen tree never
+// closes again.
 #[test]
 fn layout_l2_010_construction_fence_opens_after_level_2() {
     let mut g = common::zoo_game(3);
     for a in ["zebra", "hippo", "panda"] {
         assert!(g.debug_send_home(a));
     }
+    assert!(
+        !g.level.is_barrier_open("barrier_ne_tree"),
+        "only the next morning"
+    );
+    g.debug_next_morning();
     assert!(g.level.is_barrier_open("barrier_ne_tree"));
     assert!(!g.level.is_barrier_open("barrier_l2_construction"));
     assert!(g.level_unlocked("level_2") && !g.level_unlocked("level_3"));
@@ -1058,6 +1065,8 @@ fn layout_l2_010_construction_fence_opens_after_level_2() {
         );
     }
     assert!(g.debug_send_home("lion"));
+    assert!(!g.level.is_barrier_open("barrier_l2_construction"));
+    g.debug_next_morning();
     assert!(g.level.is_barrier_open("barrier_l2_construction"));
     assert!(
         g.level.is_barrier_open("barrier_north_gate"),

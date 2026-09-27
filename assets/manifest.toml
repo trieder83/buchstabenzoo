@@ -643,3 +643,17 @@ kind = "environment"
 spec = "GAME-NIGHT"
 concept_approved = true
 animations = []
+
+[[asset]]
+id = "env_night1_overview"
+kind = "environment"
+spec = "GAME-LEVEL-NIGHT-1"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "env_zookeeper_house_1"
+kind = "environment"
+spec = "GAME-LEVEL-1"
+concept_approved = false
+animations = []

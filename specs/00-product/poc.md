@@ -6,7 +6,7 @@ module: poc
 status: draft
 depends_on: [PROD-VISION, GAME-RESCUE, GAME-PLAYER, GAME-LEVEL-1, CONT-MISSIONS, TECH-ARCH, ART-PIPELINE]
 test_prefix: POC
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Proof of concept — level-1 rescue missions
@@ -37,7 +37,8 @@ German and English. Scope is deliberately small; everything else is out.
 Boy,
 map (GAME-MAP), math tasks, visitors/quests, audio/read-aloud, mobile packaging
 (Capacitor), final building models, night levels and the morning cut-scene (level
-transitions open with the temporary rule of the M5b notes).
+transitions used the temporary rule of the M5b notes; since 2026-09-27 they open the next
+morning, GAME-NIGHT).
 
 ## Placeholders
 
@@ -84,7 +85,7 @@ Placeholders are logged as warnings and must be gone for POC-004.
 ## M5b notes (2026-09-26)
 
 - All ten animals are in the game: `levels/level-{1,2,3}.toml` are joined (GAME-LAYOUT
-  "Joining levels"). **Temporary rule (Q-091 open):** a level's exit barrier — and every
+  "Joining levels"). **Temporary rule (Q-091 open at the time; superseded 2026-09-27 — barriers now open the next morning, GAME-NIGHT):** a level's exit barrier — and every
   entry barrier of the next level — opens right after the celebration of its last mission
   (nightfall / "the next morning" is not implemented yet). Level 1 → fallen tree →
   level 2; level 2 → construction fence and level-1 north gate → level 3.

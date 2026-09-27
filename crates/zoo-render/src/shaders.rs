@@ -16,8 +16,10 @@ in vec2 v_uv;
 in vec4 v_color;
 in float v_view_depth;
 in float v_fadeable;
+in vec3 v_world;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_normal;
+// @night (GAME-NIGHT §10; night.rs)
 void main() {
     if (v_fadeable > 0.5 && u_fade.z > 0.0) {
         vec2 d = gl_FragCoord.xy - u_fade.xy;
@@ -34,14 +36,19 @@ void main() {
         ivec2 p = ivec2(gl_FragCoord.xy / u_dither) & 1;
         if (p.x == p.y) discard;
     }
+    vec3 n = normalize(v_normal);
+    if (v_color.a > 1.5) {
+        // emissive (lamp glass, lit windows, eyeshine, fireflies): flat, unlit (night.rs)
+        o_color = vec4(v_color.rgb, 1.0);
+        o_normal = vec4(n * 0.5 + 0.5, u_edge_mask);
+        return;
+    }
     vec4 tex = texture(u_palette, v_uv);
     if (v_color.a < 0.25 && tex.a < 0.5) discard; // alpha-tested decals (faces, ART-RIG §6)
     vec3 albedo = v_color.a > 0.25 ? v_color.rgb : tex.rgb;
     albedo = mix(albedo, u_tint.rgb, u_tint.a);
-    vec3 n = normalize(v_normal);
     float lit = step(0.12, dot(n, u_sun_dir));
-    vec3 c = albedo * mix(u_shadow_tint, vec3(1.0), lit);
-    o_color = vec4(c, 1.0);
+    o_color = vec4(shade(albedo, lit, n, v_world), 1.0);
     o_normal = vec4(n * 0.5 + 0.5, u_edge_mask);
 }
 "#;
@@ -64,11 +71,9 @@ float bob_hash(vec3 o) {
 "#;
 
 fn static_vs_src(water: bool) -> String {
-    let (decl, set) = if water {
-        ("out vec3 v_world;", "v_world = w;")
-    } else {
-        ("", "")
-    };
+    // every static batch outputs its world position (night point lights, GAME-NIGHT §10)
+    let _ = water;
+    let (decl, set) = ("out vec3 v_world;", "v_world = w;");
     format!(
         r#"#version 300 es
 layout(location = 0) in vec3 a_pos;
@@ -124,7 +129,10 @@ pub fn water_vs() -> String {
 }
 
 pub fn static_fs() -> String {
-    format!("#version 300 es\n{CEL_FRAGMENT}")
+    format!("#version 300 es\n{CEL_FRAGMENT}").replace(
+        "// @night (GAME-NIGHT §10; night.rs)\n",
+        &crate::night::night_glsl(),
+    )
 }
 
 pub fn skinned_vs() -> String {
@@ -146,6 +154,7 @@ out vec2 v_uv;
 out vec4 v_color;
 out float v_view_depth;
 out float v_fadeable;
+out vec3 v_world;
 mat4 joint(float j) {
     int x = int(j) * 4;
     return mat4(texelFetch(u_joint_tex, ivec2(x, 0), 0),
@@ -163,6 +172,7 @@ void main() {
     v_color = u_color;
     v_fadeable = 0.0;
     v_view_depth = -(u_view * w).z;
+    v_world = w.xyz;
     vec4 p = u_view_proj * w;
     if (u_depth_bias > 0.0) {
         vec4 q = u_view_proj * vec4(w.xyz + normalize(u_eye - w.xyz) * u_depth_bias, 1.0);
@@ -199,6 +209,7 @@ uniform sampler2D u_tex;
 uniform vec3 u_normal;
 uniform vec3 u_sun_dir;
 uniform vec3 u_shadow_tint;
+uniform vec4 u_night;   // x night, y warm (night.rs)
 in vec2 v_uv;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_normal;
@@ -206,7 +217,11 @@ void main() {
     vec4 t = texture(u_tex, v_uv);
     if (t.a < 0.02) discard;
     float lit = step(0.12, dot(u_normal, u_sun_dir));
-    o_color = vec4(t.rgb * mix(u_shadow_tint, vec3(1.0), lit), t.a);
+    vec3 c = t.rgb * mix(u_shadow_tint, vec3(1.0), lit);
+    // signs stay readable at night: lit by their lamp / the lantern post at every gate
+    // (GAME-NIGHT rule 5, Q-118) — warm lamp light instead of the night grading
+    c = mix(c, t.rgb * vec3(0.98, 0.90, 0.74), max(u_night.x, u_night.y * 0.5));
+    o_color = vec4(c, t.a);
     o_normal = vec4(u_normal * 0.5 + 0.5, t.a);
 }
 "#
@@ -311,6 +326,7 @@ in float v_fadeable;
 in vec3 v_world;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_normal;
+// @night (GAME-NIGHT §10; night.rs)
 
 const float TAU = 6.2831853;
 const float PI = 3.14159265;
@@ -460,7 +476,7 @@ void main() {
         // bank grass / soil slope: normal 2-tone cel path
         vec3 albedo = v_color.a > 0.25 ? v_color.rgb : textureLod(u_palette, v_uv, 0.0).rgb;
         float lit = step(0.12, dot(n, u_sun_dir));
-        o_color = vec4(albedo * mix(u_shadow_tint, vec3(1.0), lit), 1.0);
+        o_color = vec4(shade(albedo, lit, n, v_world), 1.0);
         o_normal = vec4(n * 0.5 + 0.5, u_edge_mask);
         return;
     }
@@ -479,12 +495,29 @@ void main() {
         col = ripples(p, t, POND_L, col);
     }
     col = obstacleFoam(p, s, c, river, t, col);
+    if (u_night.x > 0.0 || u_night.y > 0.0) {
+        // night (GAME-NIGHT rule 1): blue-violet water, lantern pools as warm reflections,
+        // reflected stars as small 4-point comic sparkles that twinkle
+        col = shade(col, 1.0, vec3(0.0, 1.0, 0.0), v_world);
+        vec2 sg = p / 1.3;
+        vec2 si = floor(sg);
+        float h = hash2(si + 17.0);
+        vec2 sp = (si + 0.25 + 0.5 * vec2(hash2(si + 3.0), hash2(si + 9.0))) * 1.3;
+        vec2 sd = abs(p - sp);
+        float tw = 0.6 + 0.4 * sin(TAU * (t / 3.0 + h));
+        float star = max(1.0 - aastep(0.018, sd.y + sd.x * 0.16), 1.0 - aastep(0.018, sd.x + sd.y * 0.16));
+        star *= step(sd.x, 0.11 * tw) * step(sd.y, 0.11 * tw) * step(0.55, h) * step(0.2, shore);
+        col = mix(col, vec3(1.0, 0.97, 0.80), star * u_night.x);
+    }
     // flat, always lit surface: colour only, the outline pass sees a static plane
     o_color = vec4(col, 1.0);
     o_normal = vec4(0.5, 1.0, 0.5, u_edge_mask);
 }
 "#
-    .to_owned()
+    .replace(
+        "// @night (GAME-NIGHT §10; night.rs)\n",
+        &crate::night::night_glsl(),
+    )
 }
 
 /// Vertex shader of instanced skinned characters (ambient animals, GAME-AMBIENT rule 10):

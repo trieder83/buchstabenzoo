@@ -53,7 +53,16 @@ pub mod colors {
 /// Landmark / decoration kinds of levels 2–3 drawn as coloured placeholder boxes (PROD-POC
 /// "Placeholders"; the real models come after concept approval).
 pub fn placeholder_kind(kind: &str) -> Option<&'static str> {
-    const KINDS: [&str; 19] = [
+    const KINDS: [&str; 27] = [
+        // night zoo `night_1` (GAME-LEVEL-NIGHT-1)
+        "telescope",
+        "windmill",
+        "tree_crooked",
+        "tree_hollow",
+        "potting_bench",
+        "tree_old",
+        "hill",
+        "fir_tree",
         "fountain",
         "waterfall",
         "stream",
@@ -192,6 +201,8 @@ impl Decal {
 
 /// Fluent key of the food storage sign (ART-ENVIRONMENT behaviour 7).
 pub const FOOD_STORAGE_SIGN_KEY: &str = "sign-food-storage";
+/// Fluent key of the night house sign (GAME-LEVEL-NIGHT-1).
+pub const NIGHT_HOUSE_SIGN_KEY: &str = "sign-night-house";
 
 /// Asset path of an enclosure sign silhouette (ART-ENVIRONMENT behaviour 6).
 pub fn silhouette_path(animal: &str) -> String {
@@ -506,6 +517,52 @@ pub fn walkable_row_center(rect: Rect, grid: &Grid) -> Vec2 {
         .map_or(c, |(_, p)| *p)
 }
 
+/// The bed of an enterable zookeeper house (GAME-NIGHT rule 3, Q-096): centre (level) and
+/// size (level x, z). Door in the east / west facade: along the opposite wall (the bedroom
+/// corner of `zookeeper_house_1`); else in the north-east corner.
+pub fn bed_pose(e: &Element) -> Option<(Vec2, Vec2)> {
+    if e.kind.as_deref() != Some("zookeeper_house") {
+        return None;
+    }
+    let inner = e.interior?;
+    let ix0 = inner.x as f32;
+    let (ix1, iz1) = ((inner.x + inner.w) as f32, (inner.z + inner.d) as f32);
+    let door = e.door_cell();
+    match door {
+        Some(d) if d.x >= inner.x + inner.w => {
+            let len = (inner.d as f32 - 0.2).min(1.9);
+            Some((
+                Vec2::new(ix0 + 0.55, iz1 - 0.1 - len / 2.0),
+                Vec2::new(0.95, len),
+            ))
+        }
+        Some(d) if d.x < inner.x => {
+            let len = (inner.d as f32 - 0.2).min(1.9);
+            Some((
+                Vec2::new(ix1 - 0.55, iz1 - 0.1 - len / 2.0),
+                Vec2::new(0.95, len),
+            ))
+        }
+        _ => Some((Vec2::new(ix1 - 0.55, iz1 - 0.5), Vec2::new(0.95, 0.9))),
+    }
+}
+
+/// Centre (level) of a moon door and whether its opening runs along level z (a door in a
+/// west / east wall, entered from the west or east): from its `[[entry]]` cells.
+pub fn moon_door_axis(e: &Element, data: &LevelData) -> (Vec2, bool) {
+    let c = rect_center(e.rect);
+    let along_z = data
+        .entries
+        .iter()
+        .find(|en| en.barrier == e.id)
+        .map(|en| {
+            let d = rect_center(en.cells) - c;
+            d.x.abs() > d.y.abs()
+        })
+        .unwrap_or(e.rect.d > e.rect.w);
+    (c, along_z)
+}
+
 /// Position (level) and readable-side direction of an info board element: at the rect
 /// centre, facing away from its enclosure (GAME-PLAYER §5 uses the same pose).
 pub fn info_board_pose(e: &Element, data: &LevelData) -> (Vec2, Dir) {
@@ -614,6 +671,17 @@ impl LevelScene {
                 bx.part = part;
             }
         }
+        // moon door frame (GAME-NIGHT rule 3): pillars, arch and the moon sign stay when the
+        // leaves swing open
+        for e in data.elements_of(ElementType::Barrier) {
+            if e.kind.as_deref() == Some("moon_door") {
+                let first_box = s.boxes.len();
+                s.moon_door_frame(e, data);
+                for bx in &mut s.boxes[first_box..] {
+                    bx.part = e.part as u8;
+                }
+            }
+        }
         // perches (proposal Q-094): a branch / platform under every perch point
         for h in &data.hiding_places {
             if let Some(height) = h.perch_height_m {
@@ -635,12 +703,27 @@ impl LevelScene {
         // Carryable items stand on a table / the ground; the item itself is drawn by the
         // presentation (it moves). Water taps are small props (proposal Q-093).
         for it in &data.items {
-            if it.building.is_some() {
+            if it.building.is_some() && it.kind == "fish_bowl" {
                 let first = s.placements.len();
                 s.model_at("table_wood", it.pos(), 0.0);
                 for p in &mut s.placements[first..] {
                     p.part = it.part as u8;
                 }
+            }
+        }
+        // The bed (GAME-NIGHT rule 3) and furniture placeholders (proposal Q-137).
+        for it in data.items.iter().filter(|it| it.kind == "bed") {
+            let first_box = s.boxes.len();
+            s.bed_box(&it.id, it.pos(), Vec2::new(2.0, 1.0));
+            for bx in &mut s.boxes[first_box..] {
+                bx.part = it.part as u8;
+            }
+        }
+        for p in &data.props {
+            let first_box = s.boxes.len();
+            s.prop_placeholder(p);
+            for bx in &mut s.boxes[first_box..] {
+                bx.part = p.part as u8;
             }
         }
         // Rivers (flow order, Q-066) and foam obstacles standing in the water (Q-068).
@@ -833,13 +916,25 @@ impl LevelScene {
             .iter()
             .find(|b| r.distance_to(b.pos()) < 2.0)
             .map_or(Dir::S, |b| Dir::from_vec(b.facing()));
+        let bottom = STORAGE_SIGN_BOTTOM_M.min(wall_height - STORAGE_SIGN_BOARD.y - 0.15);
+        self.building_sign(e, dir, bottom, STORAGE_SIGN_BOARD, FOOD_STORAGE_SIGN_KEY);
+    }
+
+    /// Wooden name board on a facade with a Fluent text decal (ART-ENVIRONMENT behaviour 7).
+    fn building_sign(
+        &mut self,
+        e: &Element,
+        dir: Dir,
+        bottom: f32,
+        board: Vec3,
+        key: &'static str,
+    ) {
+        let r = e.rect;
         let out = dir.offset().as_vec2();
         let c = rect_center(r);
         // facade of the (inset) building box, 0.05 m inside the rect edge
         let half_ext = Vec2::new(r.w as f32, r.d as f32) / 2.0 - Vec2::splat(0.05);
         let facade = c + out * half_ext;
-        let board = STORAGE_SIGN_BOARD;
-        let bottom = STORAGE_SIGN_BOTTOM_M.min(wall_height - board.y - 0.15);
         let center = facade + out * (board.z / 2.0);
         let along_z = matches!(dir, Dir::E | Dir::W);
         self.boxes.push(BoxPlacement {
@@ -867,7 +962,7 @@ impl LevelScene {
         self.decals.push(Decal {
             id: format!("sign:{}", e.id),
             image: DecalImage::Text {
-                key: FOOD_STORAGE_SIGN_KEY,
+                key,
                 width_px: w,
                 height_px: h,
             },
@@ -1294,6 +1389,48 @@ impl LevelScene {
                     SHADE,
                 );
             }
+            "brush_pile" => {
+                for k in 0..6 {
+                    let h = hash01(k, r.x);
+                    let p = rect_center(r)
+                        + Vec2::new((h - 0.5) * (r.w as f32 - 0.6), (hash01(r.z, k) - 0.5) * 0.8);
+                    self.flat(
+                        id,
+                        p,
+                        Vec3::new(1.2, 0.12, 0.14),
+                        0.25 + h * 0.3,
+                        colors::BARK,
+                    );
+                }
+                self.flat(
+                    id,
+                    rect_center(r),
+                    Vec3::new(r.w as f32 - 0.6, 0.35, r.d as f32 - 0.6),
+                    0.0,
+                    colors::TREE_TRUNK,
+                );
+            }
+            "mushroom_ring" => {
+                let c = rect_center(r);
+                for k in 0..7 {
+                    let a = k as f32 / 7.0 * std::f32::consts::TAU;
+                    let p = c + Vec2::new(a.cos(), a.sin()) * 0.75;
+                    self.flat(id, p, Vec3::new(0.08, 0.18, 0.08), 0.0, colors::WHITE);
+                    self.flat(id, p, Vec3::new(0.24, 0.1, 0.24), 0.18, [0.86, 0.28, 0.22]);
+                }
+            }
+            "firefly_meadow" => {
+                // low grass tufts; the fireflies themselves glow at night (Q-115)
+                for k in 0..8 {
+                    let h = hash01(k, r.z);
+                    let p = rect_center(r)
+                        + Vec2::new(
+                            (h - 0.5) * (r.w as f32 - 1.0),
+                            (hash01(r.x, k) - 0.5) * (r.d as f32 - 1.0),
+                        );
+                    self.model_scaled("grass_tuft", p, h * 6.0, 2.0);
+                }
+            }
             "leaf_pile" => {
                 const LEAVES: [[f32; 3]; 3] =
                     [[0.88, 0.36, 0.18], [0.95, 0.72, 0.20], [0.66, 0.40, 0.20]];
@@ -1675,7 +1812,21 @@ impl LevelScene {
                     [0.70, 0.72, 0.76],
                 );
             }
-            (ElementType::Building, _) if e.is_enterable() => self.enterable_building(e),
+            (ElementType::Building, _) if e.is_enterable() => {
+                self.enterable_building(e, data);
+                if kind == "night_house" {
+                    // name board over the door (south facade)
+                    let wall_h = e.height_m.unwrap_or(4.0) * 0.7;
+                    let board = Vec3::new(2.6, 0.8, 0.08);
+                    self.building_sign(
+                        e,
+                        Dir::S,
+                        (wall_h - board.y - 0.1).max(2.25),
+                        board,
+                        NIGHT_HOUSE_SIGN_KEY,
+                    );
+                }
+            }
             (ElementType::Building, "kiosk") => self.kiosk(e),
             (ElementType::Landmark | ElementType::Decoration, _)
                 if placeholder_kind(kind).is_some() =>
@@ -1686,7 +1837,7 @@ impl LevelScene {
             (ElementType::Building, _) => {
                 let height = h.unwrap_or(4.0);
                 self.rect_box(e, 0.0, height * 0.7, colors::BUILDING);
-                if kind == "food_storage" {
+                if kind == "food_storage" || kind == "food_hut" {
                     self.food_storage_sign(e, data, height * 0.7);
                 }
                 let r = e.rect;
@@ -1723,6 +1874,27 @@ impl LevelScene {
                 self.model_at("zookeeper_cart", block + Vec2::new(1.1, 0.95), west);
                 self.model_at("traffic_cone", block + Vec2::new(0.7, 0.35), 0.0);
                 self.model_at("traffic_cone", block + Vec2::new(1.25, -1.2), 0.0);
+            }
+            (ElementType::Barrier, "moon_door") => {
+                // the two door leaves (they swing open at night: hidden with the barrier);
+                // pillars and the moon sign stay (added after the elements, `moon_door_frame`)
+                let (c, along_z) = moon_door_axis(e, data);
+                let half = if along_z { Vec2::Y } else { Vec2::X } * 0.5;
+                let leaf = if along_z {
+                    Vec3::new(0.18, 2.6, 0.96)
+                } else {
+                    Vec3::new(0.96, 2.6, 0.18)
+                };
+                for s in [-1.0f32, 1.0] {
+                    self.push_box(&e.id, c + half * s, 0.0, leaf, [0.28, 0.40, 0.72]);
+                    // painted star on each leaf
+                    let star = if along_z {
+                        Vec3::new(0.22, 0.24, 0.24)
+                    } else {
+                        Vec3::new(0.24, 0.24, 0.22)
+                    };
+                    self.push_box(&e.id, c + half * s, 1.5, star, colors::GOLD);
+                }
             }
             (ElementType::Barrier, _) => self.rect_box(e, 0.0, h.unwrap_or(1.2), colors::BARRIER),
             _ => self.rect_box(e, 0.0, h.unwrap_or(1.0), colors::DEFAULT),
@@ -1876,6 +2048,116 @@ impl LevelScene {
                 }
             }
             "pirate_ship" => self.pirate_ship(e, data),
+            "windmill" => {
+                // small garden windmill: tower, cap, four sails (turning comes with the model)
+                self.part_box(id, c, 0.0, Vec3::new(w - 0.3, 3.0, d - 0.3), colors::WHITE);
+                self.part_box(id, c, 3.0, Vec3::new(w - 0.1, 0.8, d - 0.1), colors::ROOF);
+                let hub = c + Vec2::new(0.0, -d / 2.0);
+                self.part_box(id, hub, 3.2, Vec3::new(0.2, 0.2, 0.3), colors::WOOD);
+                self.part_box(
+                    id,
+                    hub + Vec2::new(0.0, -0.15),
+                    2.05,
+                    Vec3::new(0.3, 2.5, 0.06),
+                    colors::WOOD_LIGHT,
+                );
+                self.part_box(
+                    id,
+                    hub + Vec2::new(0.0, -0.18),
+                    3.2,
+                    Vec3::new(2.5, 0.3, 0.06),
+                    colors::WOOD_LIGHT,
+                );
+            }
+            "telescope" => {
+                // toy star telescope on a tripod (decoration, Q-138)
+                for (dx, dz) in [(-0.2, -0.15), (0.2, -0.15), (0.0, 0.22)] {
+                    self.part_box(
+                        id,
+                        c + Vec2::new(dx, dz),
+                        0.0,
+                        Vec3::new(0.06, 1.0, 0.06),
+                        colors::WOOD,
+                    );
+                }
+                self.part_box(id, c, 1.0, Vec3::new(0.18, 0.18, 0.9), colors::GOLD);
+                self.part_box(
+                    id,
+                    c + Vec2::new(0.0, 0.45),
+                    1.02,
+                    Vec3::new(0.26, 0.26, 0.1),
+                    colors::WAGON_BLUE,
+                );
+            }
+            "tree_crooked" => {
+                self.part_box(id, c, 0.0, Vec3::new(0.3, 1.6, 0.3), colors::BARK);
+                self.part_box(
+                    id,
+                    c + Vec2::new(0.35, 0.0),
+                    1.4,
+                    Vec3::new(0.8, 0.25, 0.25),
+                    colors::BARK,
+                );
+                self.part_box(
+                    id,
+                    c + Vec2::new(0.7, 0.1),
+                    1.6,
+                    Vec3::new(1.3, 0.9, 1.1),
+                    colors::TREE_CROWN,
+                );
+            }
+            "tree_hollow" | "tree_old" => {
+                let trunk = Vec3::new(w - 0.5, 2.6, d - 0.5);
+                self.part_box(id, c, 0.0, trunk, colors::BARK);
+                if kind == "tree_hollow" {
+                    // the knot hole (dark) on the south side
+                    let hole = c + Vec2::new(0.0, -(d - 0.5) / 2.0 - 0.02);
+                    self.part_box(id, hole, 1.3, Vec3::new(0.45, 0.6, 0.06), colors::BLACK);
+                }
+                self.part_box(
+                    id,
+                    c,
+                    2.6,
+                    Vec3::new(w + 1.6, 2.2, d + 1.6),
+                    colors::TREE_CROWN,
+                );
+            }
+            "fir_tree" => {
+                self.part_box(id, c, 0.0, Vec3::new(0.4, 1.4, 0.4), colors::TREE_TRUNK);
+                for (k, (y, s)) in [(1.2, 2.4), (3.4, 1.8), (5.4, 1.2), (7.2, 0.6)]
+                    .iter()
+                    .enumerate()
+                {
+                    let _ = k;
+                    self.part_box(id, c, *y, Vec3::new(*s, 2.0, *s), [0.24, 0.50, 0.30]);
+                }
+            }
+            "hill" => {
+                self.part_box(
+                    id,
+                    c,
+                    0.0,
+                    Vec3::new(w - 0.1, 0.9, d - 0.1),
+                    colors::WET_GRASS,
+                );
+                self.part_box(
+                    id,
+                    c,
+                    0.9,
+                    Vec3::new(w - 1.2, 0.8, d - 1.2),
+                    colors::WET_GRASS,
+                );
+                // the big stone on top
+                self.part_box(id, c, 1.7, Vec3::new(0.9, 0.6, 0.8), colors::ROCK);
+            }
+            "potting_bench" => {
+                self.part_box(id, c, 0.0, Vec3::new(w - 0.3, 0.85, d - 0.2), colors::WOOD);
+                for k in 0..3 {
+                    let p = c + Vec2::new(0.0, (k as f32 - 1.0) * 0.55);
+                    self.part_box(id, p, 0.85, Vec3::new(0.3, 0.3, 0.3), [0.80, 0.45, 0.30]);
+                    self.part_box(id, p, 1.15, Vec3::new(0.34, 0.2, 0.34), colors::BLOSSOM);
+                }
+            }
             "carousel" => {
                 self.part_box(
                     id,
@@ -2454,7 +2736,15 @@ impl LevelScene {
     /// Enterable building (Q-092): walls around the interior with the door gap, the upper
     /// walls and the roof in [`LevelScene::roof_boxes`] (hidden while inside, PLAY-028),
     /// shelves and a bed inside.
-    fn enterable_building(&mut self, e: &Element) {
+    fn enterable_building(&mut self, e: &Element, data: &LevelData) {
+        let furnished = data
+            .props
+            .iter()
+            .any(|p| p.building.as_deref() == Some(e.id.as_str()))
+            || data
+                .items
+                .iter()
+                .any(|it| it.kind == "bed" && it.building.as_deref() == Some(e.id.as_str()));
         let r = e.rect;
         let id = e.id.as_str();
         let height = e.height_m.unwrap_or(4.0);
@@ -2466,19 +2756,46 @@ impl LevelScene {
         let (x1, z1) = ((r.x + r.w) as f32 - 0.05, (r.z + r.d) as f32 - 0.05);
         let (ix0, iz0) = (inner.x as f32, inner.z as f32);
         let (ix1, iz1) = ((inner.x + inner.w) as f32, (inner.z + inner.d) as f32);
-        // wall slabs between the outer rect and the interior, split around the door
-        let mut slabs: Vec<(Vec2, Vec2)> = vec![
-            (Vec2::new(x0, iz1), Vec2::new(x1, z1)),  // north
-            (Vec2::new(x0, z0), Vec2::new(ix0, iz1)), // west
-            (Vec2::new(ix1, z0), Vec2::new(x1, iz1)), // east
-        ];
-        match door {
-            Some(dc) if dc.y < inner.z => {
-                slabs.push((Vec2::new(ix0, z0), Vec2::new(dc.x as f32, iz0)));
-                slabs.push((Vec2::new(dc.x as f32 + 1.0, z0), Vec2::new(ix1, iz0)));
+        // wall slabs between the outer rect and the interior, split around the door (on any
+        // facade: south, north, east or west)
+        let south = (Vec2::new(ix0, z0), Vec2::new(ix1, iz0));
+        let north = (Vec2::new(ix0, iz1), Vec2::new(ix1, z1));
+        let west = (Vec2::new(x0, z0), Vec2::new(ix0, z1));
+        let east = (Vec2::new(ix1, z0), Vec2::new(x1, z1));
+        let mut slabs: Vec<(Vec2, Vec2)> = Vec::new();
+        let split = |(a, b): (Vec2, Vec2), along_x: bool, at: f32| -> [(Vec2, Vec2); 2] {
+            if along_x {
+                [(a, Vec2::new(at, b.y)), (Vec2::new(at + 1.0, a.y), b)]
+            } else {
+                [(a, Vec2::new(b.x, at)), (Vec2::new(a.x, at + 1.0), b)]
             }
-            _ => slabs.push((Vec2::new(ix0, z0), Vec2::new(ix1, iz0))),
+        };
+        let side = door.map(|dc| {
+            if dc.y < inner.z {
+                'S'
+            } else if dc.y >= inner.z + inner.d {
+                'N'
+            } else if dc.x < inner.x {
+                'W'
+            } else {
+                'E'
+            }
+        });
+        for (slab, key, along_x) in [
+            (south, 'S', true),
+            (north, 'N', true),
+            (west, 'W', false),
+            (east, 'E', false),
+        ] {
+            match (side, door) {
+                (Some(k), Some(dc)) if k == key => {
+                    let at = if along_x { dc.x as f32 } else { dc.y as f32 };
+                    slabs.extend(split(slab, along_x, at));
+                }
+                _ => slabs.push(slab),
+            }
         }
+        slabs.retain(|(a, b)| b.x - a.x > 0.01 && b.y - a.y > 0.01);
         for (a, b) in &slabs {
             let size = Vec3::new(b.x - a.x, low, b.y - a.y);
             self.push_box(id, (*a + *b) / 2.0, 0.0, size, colors::BUILDING);
@@ -2488,39 +2805,177 @@ impl LevelScene {
             let size = Vec3::new(b.x - a.x, wall_h - low, b.y - a.y);
             self.push_box(id, (*a + *b) / 2.0, low, size, colors::BUILDING);
         }
-        if let Some(dc) = door.filter(|dc| dc.y < inner.z) {
+        if let (Some(dc), Some(k)) = (door, side) {
             // lintel over the door
-            let p = Vec2::new(dc.x as f32 + 0.5, (z0 + iz0) / 2.0);
+            let c = cell_center(dc);
+            let (p, size) = match k {
+                'S' => (Vec2::new(c.x, (z0 + iz0) / 2.0), Vec2::new(1.0, iz0 - z0)),
+                'N' => (Vec2::new(c.x, (iz1 + z1) / 2.0), Vec2::new(1.0, z1 - iz1)),
+                'W' => (Vec2::new((x0 + ix0) / 2.0, c.y), Vec2::new(ix0 - x0, 1.0)),
+                _ => (Vec2::new((ix1 + x1) / 2.0, c.y), Vec2::new(x1 - ix1, 1.0)),
+            };
             self.push_box(
                 id,
                 p,
                 2.2,
-                Vec3::new(1.0, wall_h - 2.2, iz0 - z0),
+                Vec3::new(size.x, wall_h - 2.2, size.y),
                 colors::BUILDING,
             );
         }
-        let roof = Vec3::new(r.w as f32 + 0.3, height * 0.3, r.d as f32 + 0.3);
-        self.push_box(id, rect_center(r), wall_h, roof, colors::ROOF);
+        // the whole model (night house: hall + indoor enclosure wing, proposal Q-134)
+        let m = e.model_rect.unwrap_or(r);
+        if m != r {
+            let mx0 = m.x as f32 + 0.05;
+            let (mx1, mz1) = ((m.x + m.w) as f32 - 0.05, (m.z + m.d) as f32 - 0.05);
+            let t = 0.3;
+            for (a, b) in [
+                (Vec2::new(mx0, z1), Vec2::new(mx0 + t, mz1)),  // west
+                (Vec2::new(mx1 - t, z1), Vec2::new(mx1, mz1)),  // east
+                (Vec2::new(mx0, mz1 - t), Vec2::new(mx1, mz1)), // north
+            ] {
+                let size = Vec3::new(b.x - a.x, wall_h, b.y - a.y);
+                self.push_box(id, (a + b) / 2.0, 0.0, size, colors::BUILDING);
+            }
+        }
+        let roof = Vec3::new(m.w as f32 + 0.3, height * 0.3, m.d as f32 + 0.3);
+        self.push_box(id, rect_center(m), wall_h, roof, colors::ROOF);
         for b in &mut self.boxes[first..] {
             b.fadeable = false;
         }
         self.roof_boxes
             .push((e.id.clone(), first..self.boxes.len()));
         // furniture along the walls (not on the walkable cells in front of the door)
-        self.push_box(
-            id,
-            Vec2::new(ix0 + 0.25, (iz0 + iz1) / 2.0),
-            0.0,
-            Vec3::new(0.4, 1.6, inner.d as f32 - 0.6),
-            colors::WOOD,
-        );
-        self.push_box(
-            id,
-            Vec2::new(ix1 - 0.55, iz1 - 0.5),
-            0.0,
-            Vec3::new(0.95, 0.5, 0.9),
-            colors::WAGON_BLUE,
-        );
+        let side_door = door.is_some_and(|d| d.x < inner.x || d.x >= inner.x + inner.w);
+        if furnished {
+            // furniture and the bed come from the level data ([[prop]], [[item]] bed)
+        } else if side_door {
+            // door in the east / west facade: the shelf along the north wall
+            self.push_box(
+                id,
+                Vec2::new((ix0 + ix1) / 2.0 + 0.5, iz1 - 0.25),
+                0.0,
+                Vec3::new(inner.w as f32 - 1.6, 1.6, 0.4),
+                colors::WOOD,
+            );
+        } else {
+            self.push_box(
+                id,
+                Vec2::new(ix0 + 0.25, (iz0 + iz1) / 2.0),
+                0.0,
+                Vec3::new(0.4, 1.6, inner.d as f32 - 0.6),
+                colors::WOOD,
+            );
+        }
+        if let Some((c, size)) = bed_pose(e).filter(|_| !furnished) {
+            self.bed_box(id, c, size);
+        }
+    }
+
+    /// A bed (placeholder, kit_bedroom `bed`): frame, blanket, pillow; `size` = level x, z,
+    /// the headboard at the west / south end.
+    fn bed_box(&mut self, id: &str, c: Vec2, size: Vec2) {
+        self.push_box(id, c, 0.0, Vec3::new(size.x, 0.4, size.y), colors::WOOD);
+        let head = if size.y > size.x {
+            Vec2::new(0.0, -(size.y / 2.0 - 0.25))
+        } else {
+            Vec2::new(-(size.x / 2.0 - 0.25), 0.0)
+        };
+        let blanket = Vec3::new(size.x - 0.08, 0.14, size.y - 0.08);
+        self.push_box(id, c, 0.4, blanket, colors::WAGON_BLUE);
+        let pillow = if size.y > size.x {
+            Vec3::new(size.x - 0.3, 0.14, 0.34)
+        } else {
+            Vec3::new(0.34, 0.14, size.y - 0.3)
+        };
+        self.push_box(id, c + head, 0.5, pillow, colors::WHITE);
+    }
+
+    /// Furniture placeholder of a `[[prop]]` (until its model exists).
+    fn prop_placeholder(&mut self, p: &crate::level::PropData) {
+        let f = crate::level::facing_vec(&p.facing);
+        let [across, along] = p.size_m.unwrap_or([0.6, 0.6]);
+        let (sx, sz) = if f.x.abs() > 0.5 {
+            (along, across)
+        } else {
+            (across, along)
+        };
+        let c = p.pos();
+        let id = p.id.as_str();
+        match p.model.as_str() {
+            "desk" => {
+                self.push_box(id, c, 0.0, Vec3::new(sx, 0.72, sz), colors::WOOD);
+                self.push_box(id, c, 0.72, Vec3::new(0.3, 0.02, 0.22), colors::WHITE);
+            }
+            "night_table" => {
+                self.push_box(id, c, 0.0, Vec3::new(sx, 0.5, sz), colors::WOOD_LIGHT);
+                self.push_box(id, c, 0.5, Vec3::new(0.16, 0.3, 0.16), colors::GOLD);
+            }
+            "window_moon" => {
+                let (wx, wz) = if f.x.abs() > 0.5 {
+                    (0.12, across)
+                } else {
+                    (across, 0.12)
+                };
+                self.push_box(id, c, 1.0, Vec3::new(wx, 0.9, wz), [0.16, 0.22, 0.46]);
+                let m = c + f * 0.05;
+                self.push_box(
+                    id,
+                    m,
+                    1.5,
+                    Vec3::new(wx * 0.6 + 0.1, 0.24, wz * 0.25 + 0.05),
+                    [1.0, 0.96, 0.79],
+                );
+            }
+            "rug_round" => {
+                self.flat(id, c, Vec3::new(1.4, 0.02, 1.0), 0.0, [0.86, 0.36, 0.36]);
+            }
+            "toy_chest" => {
+                self.push_box(id, c, 0.0, Vec3::new(sx, 0.45, sz), [0.86, 0.36, 0.30]);
+                self.push_box(
+                    id,
+                    c,
+                    0.45,
+                    Vec3::new(sx + 0.04, 0.06, sz + 0.04),
+                    colors::GOLD,
+                );
+            }
+            _ => self.push_box(
+                id,
+                c,
+                0.0,
+                Vec3::new(sx.max(0.2), 0.6, sz.max(0.2)),
+                colors::WOOD,
+            ),
+        }
+    }
+
+    /// Pillars, arch and the (dark by day) moon sign of a moon door.
+    fn moon_door_frame(&mut self, e: &Element, data: &LevelData) {
+        let (c, along_z) = moon_door_axis(e, data);
+        let side = if along_z { Vec2::Y } else { Vec2::X };
+        let pillar = Vec3::new(0.7, 3.1, 0.7);
+        for s in [-1.0f32, 1.0] {
+            self.push_box(&e.id, c + side * s * 1.35, 0.0, pillar, colors::STONE);
+            self.push_box(
+                &e.id,
+                c + side * s * 1.35,
+                3.1,
+                Vec3::new(0.8, 0.14, 0.8),
+                colors::ROCK,
+            );
+        }
+        let beam = if along_z {
+            Vec3::new(0.6, 0.35, 3.3)
+        } else {
+            Vec3::new(3.3, 0.35, 0.6)
+        };
+        self.push_box(&e.id, c, 2.7, beam, colors::WOOD);
+        let sign = if along_z {
+            Vec3::new(0.1, 0.9, 0.9)
+        } else {
+            Vec3::new(0.9, 0.9, 0.1)
+        };
+        self.push_box(&e.id, c, 2.9, sign, [0.36, 0.38, 0.52]);
     }
 
     /// Construction fence (level-2 exit): striped panels on the walkable side, a sign with

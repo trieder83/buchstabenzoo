@@ -573,3 +573,142 @@ hiding_place = "loc_sprinkler"
 props = ["sprinkler", "grass_tuft", "water_drops"]
 notes = "Lawn with a turning garden sprinkler in the middle: arcs of cold water drops, a small rainbow in the spray, glossy wet grass. The only sprinkler in the zoo."
 
+# ================================================================ lights (GAME-NIGHT rule 1; Q-118 answered; data shape proposal Q-137)
+# Same fields as level-1.toml [[light]]: lantern posts along the main paths (~10 m) and one beside
+# every enclosure gate, a wall lamp at every building door, a board lamp on every info/map board.
+# No string lights here (Q-118: string lights only at the level-1 entrance plaza).
+[[light]]
+id = "l3_lantern_entry_e"
+kind = "lantern_post"
+pos = [18.0, 52.25]
+facing = "+z"
+
+[[light]]
+id = "l3_lantern_entry_w"
+kind = "lantern_post"
+pos = [8.0, 52.25]
+facing = "+z"
+
+[[light]]
+id = "l3_lantern_ring_s"
+kind = "lantern_post"
+pos = [-13.0, 58.25]
+facing = "+z"
+
+[[light]]
+id = "l3_lantern_ring_w"
+kind = "lantern_post"
+pos = [-13.75, 72.0]
+facing = "+x"
+
+[[light]]
+id = "l3_lantern_ring_e_s"
+kind = "lantern_post"
+pos = [7.25, 62.0]
+facing = "+x"
+
+[[light]]
+id = "l3_lantern_ring_e_n"
+kind = "lantern_post"
+pos = [7.25, 72.0]
+facing = "+x"
+
+[[light]]
+id = "l3_lantern_ring_n_w"
+kind = "lantern_post"
+pos = [-10.5, 77.25]
+facing = "+z"
+
+[[light]]
+id = "l3_lantern_ring_n_m"
+kind = "lantern_post"
+pos = [-3.0, 77.25]
+facing = "+z"
+
+[[light]]
+id = "l3_lantern_ring_n_e"
+kind = "lantern_post"
+pos = [7.0, 79.75]
+facing = "-z"
+
+[[light]]
+id = "l3_lantern_gate_goldfish"
+kind = "lantern_post"
+pos = [10.7, 66.65]
+facing = "+x"
+
+[[light]]
+id = "l3_lantern_gate_monkey"
+kind = "lantern_post"
+pos = [0.65, 81.7]
+facing = "+z"
+
+[[light]]
+id = "l3_lantern_gate_snow_fox"
+kind = "lantern_post"
+pos = [-1.35, 57.3]
+facing = "-z"
+
+[[light]]
+id = "l3_wall_zookeeper_house"
+kind = "wall_lamp"
+pos = [-8.3, 60.95]
+facing = "-z"
+attach = "zookeeper_house_3"
+
+[[light]]
+id = "l3_wall_food_storage"
+kind = "wall_lamp"
+pos = [4.3, 60.95]
+facing = "-z"
+attach = "food_storage_3"
+
+[[light]]
+id = "l3_board_lamp_map"
+kind = "board_lamp"
+pos = [19.0, 55.5]
+facing = "-z"
+attach = "map_board_l3"
+
+[[light]]
+id = "l3_board_lamp_goldfish"
+kind = "board_lamp"
+pos = [10.5, 70.5]
+facing = "-x"
+attach = "board_goldfish"
+
+[[light]]
+id = "l3_board_lamp_monkey"
+kind = "board_lamp"
+pos = [-1.5, 80.5]
+facing = "-z"
+attach = "board_monkey"
+
+[[light]]
+id = "l3_board_lamp_snow_fox"
+kind = "board_lamp"
+pos = [-2.5, 57.5]
+facing = "+z"
+attach = "board_snow_fox"
+
+# ================================================================ burglar event (GAME-EVENTS rules 4-7; proposal Q-139)
+# Same kinds as level-1.toml [[event_spot]].
+[[event_spot]]
+id = "l3_burglar_entry"
+kind = "burglar_entry"
+pos = [9.5, 91.7]
+facing = "-z"
+notes = "Ladder on the inside of wall_l3_north, east of the monkey enclosure."
+
+[[event_spot]]
+id = "l3_burglar_target"
+kind = "burglar_target"
+target = "food_storage_3"
+pos = [3.0, 60.66]
+notes = "A food box from the row in front of food_storage_3 (proposal; the fish bowl is not taken — it may hold the goldfish)."
+
+[[event_spot]]
+id = "l3_burglar_hideout"
+kind = "burglar_hideout"
+rect = [8, 87, 3, 5]
+notes = "Grass corner between the monkey enclosure and the north wall (x 8..10, z 87..91); no hiding place, scenery or path."

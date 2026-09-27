@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L3
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Level 3 — monkey, goldfish, snow fox (adventure playground and stream)
@@ -338,6 +338,21 @@ storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes abou
     walkable cell within 1.5 m, and `enc_goldfish`'s gate step has a walkable cell in front.
 11. The 10 food boxes of food storage 3 are props with a walkable standing cell within 2 m.
 
+## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118 answered, proposals Q-137, Q-139)
+
+`[[light]]` in `level-3.toml` (night-only): 9 lantern posts along the entry path and the ring
+((18.0, 52.25), (8.0, 52.25), (−13.0, 58.25), (−13.75, 72.0), (7.25, 62.0), (7.25, 72.0),
+(−10.5, 77.25), (−3.0, 77.25), (7.0, 79.75); 0.25 m inside the path edge — the north-west post
+was moved east so it stays outside `loc_laundry`), one beside every gate (goldfish (10.7, 66.65),
+monkey (0.65, 81.7), snow fox (−1.35, 57.3)), wall lamps at the doors of `zookeeper_house_3`
+(−8.3, 60.95, left of the door — the tap is on the right) and `food_storage_3` (4.3, 60.95), and
+board lamps on the three info boards and `map_board_l3`. No string lights (Q-118).
+
+`[[event_spot]]`: burglars climb in over a ladder on the inside of `wall_l3_north` at (9.5, 91.7),
+take a food box in front of `food_storage_3` (never the fish bowl — proposal Q-139) and hide in the
+grass corner between the monkey enclosure and the north wall (`l3_burglar_hideout` (8, 87, 3, 5));
+note texts `event-burglar-note-level_3-<reading_level>`.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -362,8 +377,8 @@ storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes abou
 ## Implementation status (M5b, 2026-09-26)
 
 - Playable in the joined zoo; entered from level 2 through the construction fence **and**
-  from the level-1 ring through `barrier_north_gate` (both open with the temporary Q-091
-  rule, Q-090 as proposed). No exit barrier.
+  from the level-1 ring through `barrier_north_gate` (both open the morning after level 2
+  is complete, Q-091 answered; Q-090 as proposed). No exit barrier.
 - Goldfish: the bowl flow of GAME-RESCUE (tap `tap_l3`, every bank of `stream_l3` and of the
   other unlocked water bodies fills it; fish food in the pocket; 0.9 × speed; stone step =
   `enc_goldfish` gate) — LAYOUT-L3-014 e2e (seed 4, willow). The monkey sits in the crow's
@@ -385,8 +400,10 @@ storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes abou
 
 ## Open questions
 
+- Q-137 `[[light]]` data shape, Q-139 burglar event spots. The bed of GAME-NIGHT is `bed_l1` in the level-1 `zookeeper_house_1` (Q-096); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`, so the game has one bed).
+
 - Q-088 joining levels; Q-090 second entry through the level-1 north gate;
-  Q-091 unlock timing; Q-089 own food storage; Q-092 enterable
+  Q-091 unlock timing (answered: the next morning); Q-141 night level before level 3; Q-089 own food storage; Q-092 enterable
   buildings; Q-093 fish bowl and water-source data (with Q-084); Q-094 animals up
   in a perch; Q-095 new hiding places; Q-017 pirate ship location (proposal here);
   Q-033 key on the pirate ship (not used); Q-080, Q-082, Q-043.

@@ -318,6 +318,9 @@ pub struct Ambient {
     rng: Pcg32,
     /// Seconds since start (bobbing clock).
     pub time: f64,
+    /// Night (GAME-NIGHT, GAME-AMBIENT): ducks sleep (head tucked, no swimming), butterflies
+    /// are hidden, frogs croak more often.
+    pub night: bool,
 }
 
 fn unit(rng: &mut Pcg32) -> f32 {
@@ -494,6 +497,7 @@ impl Ambient {
             water,
             rng,
             time: 0.0,
+            night: false,
         }
     }
 
@@ -560,6 +564,13 @@ impl Ambient {
     }
 
     fn update_duck(&mut self, i: usize, dt: f32, player: Vec2) {
+        if self.night {
+            // asleep on the water, head tucked: no swimming, no actions, no fleeing
+            let a = &mut self.animals[i];
+            a.action = None;
+            a.swim_blend = (a.swim_blend - dt * 2.0).max(0.0);
+            return;
+        }
         let adult = self.animals[i].kind == AmbientKind::Duck;
         // react to the player (ducklings follow their mother)
         if adult {
@@ -815,7 +826,10 @@ impl Ambient {
                 a.next_action -= dt;
                 if a.next_action <= 0.0 && a.action.is_none() {
                     let roll = unit(&mut self.rng);
-                    let next = range(&mut self.rng, (3.0, 9.0));
+                    // frogs croak more at night (gentle night sounds, GAME-NIGHT rule 2)
+                    let every = if self.night { (1.0, 3.0) } else { (3.0, 9.0) };
+                    let next = range(&mut self.rng, every);
+                    let roll = if self.night { roll.max(0.3) } else { roll };
                     let pad = spot / PAD_SPOTS.len();
                     let other =
                         pad * PAD_SPOTS.len() + self.rng.below(PAD_SPOTS.len() as u32) as usize;
@@ -1003,6 +1017,8 @@ impl Ambient {
             };
             let (idle_clip, walk_clip) = match a.kind {
                 AmbientKind::Frog => (if a.in_water { "swim" } else { "idle" }, "swim"),
+                // asleep at night: `sleep` (head tucked) — the renderer falls back to `idle`
+                _ if self.night => ("sleep", "swim"),
                 _ => ("idle", "swim"),
             };
             out.push(AmbientPose {
@@ -1034,6 +1050,9 @@ impl Ambient {
     /// World-space poses of the butterflies (wing flap 8 Hz in flight, slow on a flower).
     pub fn butterfly_poses(&self, out: &mut Vec<ButterflyPose>) {
         out.clear();
+        if self.night {
+            return; // hidden at night (GAME-AMBIENT, art plan)
+        }
         for b in &self.butterflies {
             let (p, h, rest) = b.at(self.time);
             let (p2, _, _) = b.at(self.time + 0.05);

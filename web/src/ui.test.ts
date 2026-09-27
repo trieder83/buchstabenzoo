@@ -69,3 +69,25 @@ describe('icons', () => {
     }
   });
 });
+
+describe('GAME-NIGHT icons (no reading needed)', async () => {
+  const { ANIMAL_ICONS, PLACE_ICONS, TARGET_ICONS } = await import('./ui');
+  it('the two night choices, the night foods, animals and places have pictures', () => {
+    expect(TARGET_ICONS.bed).toBe('🛏️');
+    expect(TARGET_ICONS.moon_door).toBe('🌙');
+    for (const f of ['beetles', 'fruit', 'worms', 'nectar']) expect(FOOD_ICONS[f], f).toBeTruthy();
+    for (const a of ['hedgehog', 'bat', 'owl']) expect(ANIMAL_ICONS[a], a).toBeTruthy();
+    for (const p of [
+      'loc_brush_pile',
+      'loc_flowerpots',
+      'loc_mushrooms',
+      'loc_windmill',
+      'loc_fireflies',
+      'loc_hollow_tree',
+      'loc_moon_pond',
+      'loc_hilltop',
+      'loc_fir',
+    ])
+      expect(PLACE_ICONS[p], p).toBeTruthy();
+  });
+});

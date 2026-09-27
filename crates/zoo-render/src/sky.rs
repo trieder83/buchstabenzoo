@@ -21,6 +21,17 @@ pub const CLOUD_SHADE: Vec3 = Vec3::new(0.80, 0.82, 0.94);
 /// Elevation (radians) where the gradient reaches [`SKY_TOP`].
 pub const SKY_GRADIENT_TOP_RAD: f32 = 0.9;
 
+/// Sky colours `(top, horizon)` for a night amount 0 (day) … 1 (night): the close views'
+/// sky and haze turn dark blue at night (GAME-NIGHT, Q-126: dark-blue gradient, the haze in
+/// the same blue as the horizon).
+pub fn sky_colors(night: f32) -> (Vec3, Vec3) {
+    let k = night.clamp(0.0, 1.0);
+    (
+        SKY_TOP.lerp(crate::night::NIGHT_SKY_TOP, k),
+        SKY_HORIZON.lerp(crate::night::NIGHT_SKY_HORIZON, k),
+    )
+}
+
 /// Sky gradient colour for a view direction (CPU reference of the shader's gradient).
 pub fn sky_gradient(dir: Vec3) -> Vec3 {
     let d = dir.normalize_or(Vec3::Y);
@@ -41,10 +52,15 @@ pub fn atmosphere_glsl() -> String {
 uniform mat4 u_inv_view_proj;
 uniform vec3 u_eye;
 uniform vec4 u_fog;   // start m, end m, fog amount 0..1, sky amount 0..1
-const vec3 SKY_HORIZON = {horizon};
-const vec3 SKY_TOP = {top};
+uniform vec3 u_sky_top;       // day {top} … night (GAME-NIGHT, Q-126)
+uniform vec3 u_sky_horizon;   // day {horizon} … night; also the haze colour
+uniform float u_sky_night;    // 0 day … 1 night: moon, stars, blue clouds
 const vec3 CLOUD = {cloud};
 const vec3 CLOUD_SHADE = {shade};
+const vec3 NIGHT_CLOUD = vec3(0.30, 0.38, 0.66);
+const vec3 NIGHT_CLOUD_SHADE = vec3(0.22, 0.28, 0.54);
+const vec3 MOON = vec3(1.0, 0.957, 0.788);
+const vec3 MOON_SPOT = vec3(0.918, 0.875, 0.686);
 const float SKY_GRADIENT_TOP = {grad_top:.4};
 float sky_hash(float n) {{
     return fract(sin(n * 12.9898 + 4.1414) * 43758.5453);
@@ -61,8 +77,27 @@ float cloud_sdf(vec2 p, float s) {{
 vec3 sky_color(vec3 dir, out vec3 haze) {{
     float el = asin(clamp(dir.y, -1.0, 1.0));
     float t = pow(clamp(max(el, 0.0) / SKY_GRADIENT_TOP, 0.0, 1.0), 0.8);
-    vec3 c = mix(SKY_HORIZON, SKY_TOP, t);
+    vec3 c = mix(u_sky_horizon, u_sky_top, t);
     haze = c;
+    // night (Q-126): a few 4-point stars and the flat outlined comic moon
+    float eld0 = degrees(el);
+    float az0 = degrees(atan(dir.x, -dir.z)) + 180.0;
+    vec2 sg = vec2(az0, eld0) / 7.0;
+    vec2 si = floor(sg);
+    float sh = sky_hash(si.x * 37.0 + si.y * 101.0);
+    vec2 sd = abs((fract(sg) - 0.5 - (vec2(sky_hash(sh * 91.0), sky_hash(sh * 53.0)) - 0.5) * 0.5) * 7.0);
+    float star = step(sd.y + sd.x * 0.2, 0.28) + step(sd.x + sd.y * 0.2, 0.28);
+    star *= step(0.8, sh) * step(12.0, eld0) * u_sky_night;
+    c = mix(c, vec3(1.0, 0.95, 0.75), min(star, 1.0));
+    vec2 md = vec2(az0 - 150.0, eld0 - 30.0);
+    md.x -= 360.0 * floor(md.x / 360.0 + 0.5);
+    float mr = length(md);
+    float mw = max(fwidth(mr), 1e-4) * 1.6;
+    if (u_sky_night > 0.5 && mr < 5.0 + mw) {{
+        vec3 mc = MOON;
+        if (length(md - vec2(1.4, 1.2)) < 1.1 || length(md - vec2(-1.6, -0.8)) < 0.8) mc = MOON_SPOT;
+        c = mr < 5.0 - mw ? mc : u_line_color;
+    }}
     // (no early return: fwidth below needs uniform control flow)
     // clouds on a ring of 8 cells of 45° azimuth (backdrop, degrees)
     float az = degrees(atan(dir.x, -dir.z)) + 180.0;   // 0..360
@@ -85,12 +120,13 @@ vec3 sky_color(vec3 dir, out vec3 haze) {{
     }}
     float w = max(fwidth(best), 1e-4) * 1.6;   // outline ≈ 1.6 px
     if (best < -w) {{
-        c = by < 0.1 * bs ? CLOUD_SHADE : CLOUD;
+        c = by < 0.1 * bs ? mix(CLOUD_SHADE, NIGHT_CLOUD_SHADE, u_sky_night)
+                          : mix(CLOUD, NIGHT_CLOUD, u_sky_night);
     }} else if (best < w) {{
         c = u_line_color;
     }}
     // clouds sink into the haze near the horizon
-    return mix(SKY_HORIZON, c, smoothstep(0.02, 0.12, el));
+    return mix(u_sky_horizon, c, smoothstep(0.02, 0.12, el));
 }}
 vec3 atmosphere(vec3 col, vec2 uv, float depth) {{
     if (u_fog.z <= 0.0 && u_fog.w <= 0.0) return col;
@@ -134,10 +170,27 @@ mod tests {
         const { assert!(CLOUD_SHADE.z > CLOUD_SHADE.x, "blue-violet shadow tone") };
     }
 
+    // CAMV-021, Q-126: at night the sky and the haze are dark blue (the haze = the horizon colour).
+    #[test]
+    fn night_sky_is_dark_blue() {
+        let (top, horizon) = sky_colors(1.0);
+        assert!(top.abs_diff_eq(crate::night::NIGHT_SKY_TOP, 1e-6));
+        assert!(horizon.z > horizon.x && horizon.z > horizon.y && horizon.z < 0.7);
+        assert_eq!(sky_colors(0.0), (SKY_TOP, SKY_HORIZON));
+    }
+
     #[test]
     fn glsl_declares_the_uniforms() {
         let s = atmosphere_glsl();
-        for u in ["u_inv_view_proj", "u_eye", "u_fog", "vec3 atmosphere("] {
+        for u in [
+            "u_inv_view_proj",
+            "u_eye",
+            "u_fog",
+            "u_sky_top",
+            "u_sky_horizon",
+            "u_sky_night",
+            "vec3 atmosphere(",
+        ] {
             assert!(s.contains(u), "{u}");
         }
     }

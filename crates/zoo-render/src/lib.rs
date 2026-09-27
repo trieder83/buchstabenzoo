@@ -7,6 +7,7 @@
 //! only runs in the browser.
 
 pub mod camera;
+pub mod night;
 pub mod renderer;
 pub mod shaders;
 pub mod sky;

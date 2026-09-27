@@ -8,7 +8,13 @@ import { updateTextTextures } from './text';
 import { loadSettings, Ui } from './ui';
 
 /** The day levels, joined into one zoo (GAME-LAYOUT "Joining levels", proposal Q-088). */
-const LEVELS = ['levels/level-1.toml', 'levels/level-2.toml', 'levels/level-3.toml'];
+const LEVELS = [
+  'levels/level-1.toml',
+  'levels/level-2.toml',
+  'levels/level-3.toml',
+  // the night zoo behind the moon door (GAME-NIGHT rule 4, NIGHT-004)
+  'levels/night-1.toml',
+];
 
 /** Debug handle for e2e tests. */
 export interface ZooDebug {

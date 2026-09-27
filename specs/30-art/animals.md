@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG]
 test_prefix: AANI
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Animals — concept and models
@@ -207,3 +207,4 @@ Game scale of duckling / frog: Q-108. Manifest entries and concept gate: Q-122.
 - Q-040 Monkey baby needed?
 - Q-108 Game scale of the ambient animals (duckling, frog).
 - Q-122 Ambient models: manifest entries, concept gate, which AANI tests apply.
+- Q-143 Night animals (`hedgehog`, `bat`, `owl`), the `sleep` clip and the `eye_glow` slot are not in this asset list yet (GAME-NIGHT, manifest).

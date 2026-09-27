@@ -126,9 +126,21 @@ fn layout_004_opened_barrier_becomes_walkable_and_reachable() {
 fn layout_006_surfaces() {
     let data = common::level1();
     let grid = Level::new(data.clone()).grid().clone();
+    // paths, and the interior and door cells of enterable buildings (LAYOUT-023, Q-092)
     let path_cells: BTreeSet<(i32, i32)> = data
         .elements_of(ElementType::Path)
         .flat_map(|e| e.rect.cells().collect::<Vec<_>>())
+        .chain(
+            data.elements
+                .iter()
+                .filter(|e| e.is_enterable())
+                .flat_map(|e| {
+                    e.rect
+                        .cells()
+                        .filter(|c| e.is_open_cell(*c))
+                        .collect::<Vec<_>>()
+                }),
+        )
         .map(|c| (c.x, c.y))
         .collect();
     let (mut n_path, mut n_grass) = (0, 0);

@@ -1,0 +1,707 @@
+# Night level 1 layout data — mirrors the element table in specs/10-gameplay/levels/night-1.md
+# (GAME-LEVEL-NIGHT-1). LAYOUT-005 checks that ids and rectangles agree with the spec.
+#
+# Grid: 1 m cells in the SAME level coordinates as the day levels (origin = centre of the zoo
+# entrance gate, +X east, +Z north; GAME-LAYOUT). The night zoo lies WEST of level 1, behind the
+# level-1 zoo wall; it is joined to level 1 only through the level-1 barrier `moon_door`
+# (GAME-NIGHT rule 3, GAME-LAYOUT "Joining levels"). It exists only at night: the moon door is
+# open during every night after level 1's nightfall and closed by day (proposal Q-133).
+# rect = [x, z, w, d] → covers cells x .. x+w-1, z .. z+d-1 (x/z = south-west corner).
+#
+# PROPOSALS (not yet decided, see specs/open-questions.md):
+#   - night level data: [level] time = "night", the moon door as entry barrier (Q-133)
+#   - night house: enterable hall (`interior` + `door`, Q-092) with three indoor enclosures
+#     behind glass fronts; `model_rect` = footprint of the whole house model incl. the
+#     enclosure wing, roof hidden while the player is on a hall/door cell; boards outside in
+#     front of the house (Q-134)
+#   - own night food storage with 4 night foods, two animals share `beetles` (Q-135)
+#   - riddle uniqueness scope: night levels are their own scope (Q-136)
+#   - [[light]] list (lantern posts, string lights, wall lamps, board lamps — Q-118 answered,
+#     data shape Q-137)
+#   - hiding places, scenery, perch heights (Q-080 answered, Q-094)
+
+[level]
+id = "night_1"
+spec = "GAME-LEVEL-NIGHT-1"
+cell_size_m = 1.0
+bounds = [-72, 6, 48, 48]    # x -72..-25, z 6..53 — every border cell is solid except the [[entry]] cells
+ground_walkable = true       # decided Q-046
+ground_surface = "grass"
+missions = ["hedgehog", "bat", "owl"]   # GAME-NIGHT rule 6 (Q-076 answered)
+time = "night"               # proposal Q-133: reachable only while it is night (the moon door is its only entry)
+
+[spawn]
+cell = [-28, 29]             # entry path, 3 m inside the moon door (used when a save is restored here without a position)
+facing = "-x"                # looks west into the garden: plaza and food hut ahead, night house to the upper right
+camera_yaw = "-x"
+
+# Level entry (GAME-LAYOUT "Joining levels"): the cells edge-adjacent to the level-1 moon door.
+[[entry]]
+id = "entry_n1_moon"
+cells = [-25, 29, 1, 2]
+from_level = "level_1"
+barrier = "moon_door"
+
+# ---------------------------------------------------------------- outer limits: tall soft hedges all round (the moon door gap in the east)
+[[element]]
+id = "hedge_n1_west"
+type = "decoration"
+kind = "hedge"
+rect = [-72, 6, 2, 48]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent."
+
+[[element]]
+id = "hedge_n1_south"
+type = "decoration"
+kind = "hedge"
+rect = [-70, 6, 46, 2]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent."
+
+[[element]]
+id = "hedge_n1_north"
+type = "decoration"
+kind = "hedge"
+rect = [-70, 52, 46, 2]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent (level 3 lies east of its east end, beyond the zoo wall)."
+
+[[element]]
+id = "hedge_n1_east_s"
+type = "decoration"
+kind = "hedge"
+rect = [-26, 8, 2, 21]
+blocks_view = true
+height_m = 3.0
+notes = "East edge in front of the level-1 zoo wall (wall_west_s), south of the moon door."
+
+[[element]]
+id = "hedge_n1_east_n"
+type = "decoration"
+kind = "hedge"
+rect = [-26, 31, 2, 21]
+blocks_view = true
+height_m = 3.0
+notes = "East edge in front of the level-1 zoo wall (wall_west), north of the moon door."
+
+# ---------------------------------------------------------------- entry, plaza, night food storage
+[[element]]
+id = "path_n1_entry"
+type = "path"
+kind = "main"
+rect = [-30, 29, 6, 2]
+notes = "From the moon door (level 1) west to the plaza; cells (-25, 29..30) are the level entry."
+
+[[element]]
+id = "path_n1_plaza"
+type = "path"
+kind = "plaza"
+rect = [-39, 24, 9, 11]
+notes = "Night plaza under string lights; food boxes on its west edge, path to the night house north, s_link south."
+
+[[element]]
+id = "map_board_n1"
+type = "landmark"
+kind = "map_board"
+rect = [-30, 31, 1, 2]
+blocks_view = false
+notes = "Picture map of the night garden (silhouettes, no text), with a board lamp."
+
+[[element]]
+id = "bench_n1_plaza"
+type = "decoration"
+kind = "bench"
+rect = [-29, 25, 2, 1]
+
+[[element]]
+id = "food_storage_n1"
+type = "building"
+kind = "food_hut"
+rect = [-44, 26, 5, 6]
+door = [-40, 29]             # east facade, opens onto the plaza
+blocks_view = true
+height_m = 3.5
+notes = "Small wooden food hut with warmly lit windows (env_night_overview); the 4 night food boxes stand in front of its east facade (proposal Q-135)."
+
+# ---------------------------------------------------------------- night house (north-east): enterable hall + three indoor enclosures
+[[element]]
+id = "path_n1_house"
+type = "path"
+kind = "main"
+rect = [-38, 35, 3, 4]
+notes = "From the plaza north to the night-house door (-37, 39)."
+
+[[element]]
+id = "night_house"
+type = "building"
+kind = "night_house"
+rect = [-45, 39, 17, 5]
+interior = [-44, 40, 15, 4]  # visitor hall; its north row touches the glass fronts and gates of the three enclosures
+door = [-37, 39]             # south facade
+model_rect = [-45, 39, 17, 13]   # proposal Q-134: the house model covers the hall AND the enclosure wing (z 44-51); roof cut away while the player is on a hall or door cell
+blocks_view = true
+height_m = 4.5
+notes = "Rounded night house with a grass roof, painted moon, blue and warm red-orange porthole windows (env_night_house, Q-116). Inside: dim blue and red-orange light, three glass-fronted indoor enclosures along the north side, each with a small glass door (gate) and an enclosure sign above it."
+
+[[element]]
+id = "enc_n1_hedgehog"
+type = "enclosure"
+animal = "hedgehog"
+rect = [-45, 44, 6, 8]
+gate = [-43, 44, 2, 1]       # glass door on the south side, opens into the hall
+home_wander_on = ["grass"]
+indoor = true                # proposal Q-134: inside the night house, lit by its indoor light
+blocks_view = false
+notes = "Indoor enclosure, warm red-orange light: straw nest box, a hollow log tunnel, low ferns, earth floor. No twig heap, no mushrooms, no flower pots (riddle guards)."
+
+[[element]]
+id = "enc_n1_bat"
+type = "enclosure"
+animal = "bat"
+rect = [-39, 44, 5, 8]
+gate = [-38, 44, 2, 1]
+home_wander_on = ["grass"]
+indoor = true
+blocks_view = false
+notes = "Indoor enclosure, soft blue light: bare climbing branches and ropes under the ceiling to hang from, a fruit bowl on a shelf. No hollow tree, no windmill, no fireflies (riddle guards)."
+
+[[element]]
+id = "enc_n1_owl"
+type = "enclosure"
+animal = "owl"
+rect = [-34, 44, 6, 8]
+gate = [-32, 44, 2, 1]
+home_wander_on = ["grass"]
+indoor = true
+blocks_view = false
+notes = "Indoor enclosure, soft blue light: perch poles, a wooden owl box high on the wall, a painted moon on the back wall. No fir tree, no hill, no pond (riddle guards)."
+
+[[element]]
+id = "board_n1_hedgehog"
+type = "decoration"
+kind = "info_board"
+rect = [-42, 38, 1, 1]
+enclosure = "enc_n1_hedgehog"
+notes = "Outside the night house, south of the hall wall, below its enclosure; board lamp (proposal Q-134: boards outside, the hall has no room for solid boards)."
+
+[[element]]
+id = "board_n1_bat"
+type = "decoration"
+kind = "info_board"
+rect = [-39, 38, 1, 1]
+enclosure = "enc_n1_bat"
+notes = "Left of the door path; board lamp."
+
+[[element]]
+id = "board_n1_owl"
+type = "decoration"
+kind = "info_board"
+rect = [-33, 38, 1, 1]
+enclosure = "enc_n1_owl"
+notes = "Right of the door path, below the owl enclosure; board lamp."
+
+[[element]]
+id = "trees_n1_ne"
+type = "decoration"
+kind = "tree_grove"
+rect = [-28, 39, 2, 13]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Old round trees between the night house and the east hedge."
+
+[[element]]
+id = "telescope_n1"
+type = "decoration"
+kind = "telescope"
+rect = [-52, 38, 1, 1]
+blocks_view = false
+height_m = 1.4
+notes = "Toy star telescope on a wooden stand, pointing at the moon — a resting point halfway along the north ring (keeps the boards -> north-west walk <= 10 s per leg). Not a riddle detail; interactive use (look at the moon) is a proposal (Q-138)."
+
+# ---------------------------------------------------------------- the loop: ring north / west / south around the hidden middle
+[[element]]
+id = "path_n1_ring_n"
+type = "path"
+kind = "main"
+rect = [-64, 35, 26, 3]
+notes = "From the night-house path west to the west ring; passes the boards."
+
+[[element]]
+id = "path_n1_ring_w"
+type = "path"
+kind = "main"
+rect = [-64, 13, 3, 22]
+notes = "West side of the loop; the hedgehog places and the hill lie west of it."
+
+[[element]]
+id = "path_n1_ring_s"
+type = "path"
+kind = "main"
+rect = [-61, 13, 25, 3]
+notes = "South side of the loop; windmill, firefly meadow and pond lie south of it."
+
+[[element]]
+id = "path_n1_s_link"
+type = "path"
+kind = "main"
+rect = [-39, 16, 3, 8]
+notes = "From the south ring north to the plaza."
+
+[[element]]
+id = "path_n1_nw"
+type = "path"
+kind = "side"
+rect = [-60, 38, 2, 8]
+notes = "Short trail from the north ring up to the fir tree (ends just south of loc_fir); the hill lies to its west."
+
+[[element]]
+id = "path_n1_se"
+type = "path"
+kind = "side"
+rect = [-36, 13, 5, 3]
+notes = "Short path east from the south ring to the pond jetty."
+
+[[element]]
+id = "jetty_n1"
+type = "path"
+kind = "jetty"
+rect = [-33, 12, 2, 1]
+notes = "Small wooden jetty deck on the pond's north shore (look-out point over the mirrored moon). The owl of loc_moon_pond sits on a wooden post at the pond's west shore, (-35.6, 10.5)."
+
+[[element]]
+id = "grove_n1_center"
+type = "decoration"
+kind = "tree_grove"
+rect = [-59, 18, 13, 15]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "The hidden middle: old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "grove_n1_north"
+type = "decoration"
+kind = "tree_grove"
+rect = [-57, 41, 12, 11]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Old round trees north of the ring, between the fir and the night house (reaches the house wall, so no dead-end strip remains)."
+
+# ---------------------------------------------------------------- scenery elements of the hiding places (solid landmarks / decorations)
+[[element]]
+id = "windmill_n1"
+type = "landmark"
+kind = "windmill"
+rect = [-57, 8, 2, 2]
+blocks_view = true
+height_m = 4.0
+notes = "Little wooden garden windmill (4 m) with four slowly turning sails and a small balcony; soft whirring sound. The only windmill in the zoo (loc_windmill)."
+
+[[element]]
+id = "tree_crooked_n1"
+type = "decoration"
+kind = "tree_crooked"
+rect = [-52, 10, 1, 1]
+blocks_view = false
+height_m = 3.0
+notes = "Small crooked tree with a low horizontal branch in the firefly meadow (the bat hangs from the branch, loc_fireflies)."
+
+[[element]]
+id = "pond_n1"
+type = "landmark"
+kind = "pond"
+rect = [-35, 8, 6, 4]
+blocks_view = false
+notes = "Small round still pond; the moon and stars are mirrored in it (night water shader). Reeds at the rim. No lilies, no frogs, no ducks, no bridge (riddle guards vs. level-1 loc_pond / loc_river, Q-136)."
+
+[[element]]
+id = "tree_hollow_n1"
+type = "decoration"
+kind = "tree_hollow"
+rect = [-29, 19, 2, 2]
+blocks_view = true
+height_m = 6.0
+notes = "Very thick old tree with a big round knot hole at 2.5 m (env_night_overview). The only hollow tree in the zoo (loc_hollow_tree)."
+
+[[element]]
+id = "potting_bench_n1"
+type = "decoration"
+kind = "potting_bench"
+rect = [-70, 21, 1, 2]
+blocks_view = false
+height_m = 1.2
+notes = "Old wooden potting bench against the west hedge with stacked clay flower pots below and white night-scented flowers (evening primrose) in pots on top (loc_flowerpots)."
+
+[[element]]
+id = "tree_old_n1"
+type = "decoration"
+kind = "tree_old"
+rect = [-70, 32, 2, 2]
+blocks_view = true
+height_m = 6.0
+notes = "Big old mossy tree by the west hedge; a ring of mushrooms on the moss at its foot (loc_mushrooms)."
+
+[[element]]
+id = "hill_n1"
+type = "landmark"
+kind = "hill"
+rect = [-69, 42, 3, 3]
+blocks_view = false
+height_m = 2.0
+notes = "Small round grassy hill (2 m) with one big round stone on top, no trees — the brightest moonlit spot of the garden (loc_hilltop)."
+
+[[element]]
+id = "fir_n1"
+type = "decoration"
+kind = "fir_tree"
+rect = [-62, 48, 2, 2]
+blocks_view = true
+height_m = 9.0
+notes = "The one tall dark pointed fir tree in the north-west corner, with cones (loc_fir). The only fir in the zoo."
+
+# ---------------------------------------------------------------- night food boxes (GAME-FEED §7; proposal Q-135)
+# Props, not elements: in front of the east facade of food_storage_n1 (facade line x = -39.0),
+# on the west row of path_n1_plaza, labels facing east (towards the spawn camera). 2 m of
+# plaza stay free in front of them.
+[[food_box]]
+food = "beetles"
+pos = [-38.66, 27.3]
+facing = "+x"
+
+[[food_box]]
+food = "fruit"
+pos = [-38.66, 28.1]
+facing = "+x"
+
+[[food_box]]
+food = "worms"
+pos = [-38.66, 30.9]
+facing = "+x"
+
+[[food_box]]
+food = "nectar"
+pos = [-38.66, 31.7]
+facing = "+x"
+
+# ================================================================ hiding places (candidates)
+# Same fields as the day levels (Q-080). Every wander cell is >= 17 m from every standing point
+# at the animal's own board and gate (GAME-LAYOUT Q-110 rule, CAMV-008) — see the spec table.
+# perch_height_m (proposal Q-094): the bat hangs / the owl sits at that height beside the spot;
+# the ground wander area is the fallback.
+
+# ---- hedgehog (Igel) — food: beetles
+[[hiding_place]]
+id = "loc_brush_pile"
+animal = "hedgehog"
+rect = [-70, 8, 6, 5]
+animal_spot = [-68, 10]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["brush_pile", "twigs", "rustling", "hedge_corner"]
+scenery = ["brush_pile_n1", "hedge_n1_west", "hedge_n1_south"]
+pose = "idle"                # proposal: snuffling (Q-043)
+
+[[hiding_place]]
+id = "loc_flowerpots"
+animal = "hedgehog"
+rect = [-70, 18, 6, 6]
+animal_spot = [-68, 20]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["flower_pots", "potting_bench", "night_flowers", "sweet_smell"]
+scenery = ["potting_bench_n1"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_mushrooms"
+animal = "hedgehog"
+rect = [-70, 27, 6, 7]
+animal_spot = [-68, 30]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["mushrooms", "moss", "earthy_smell", "old_tree"]
+scenery = ["mushroom_ring_n1", "tree_old_n1"]
+pose = "eat"
+
+# ---- bat (Fledermaus) — food: fruit
+[[hiding_place]]
+id = "loc_windmill"
+animal = "bat"
+rect = [-59, 8, 6, 5]
+animal_spot = [-55, 9]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 2.5
+features = ["windmill", "turning_sails", "whirring"]
+scenery = ["windmill_n1"]
+pose = "hang"                # proposal Q-043: hanging upside down
+
+[[hiding_place]]
+id = "loc_fireflies"
+animal = "bat"
+rect = [-52, 8, 7, 5]
+animal_spot = [-51, 10]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 2.0
+features = ["fireflies", "little_lights", "crooked_tree", "low_grass"]
+scenery = ["firefly_meadow_n1", "tree_crooked_n1"]
+pose = "hang"
+
+[[hiding_place]]
+id = "loc_hollow_tree"
+animal = "bat"
+rect = [-33, 16, 7, 4]
+animal_spot = [-30, 19]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 2.5
+features = ["hollow_tree", "knot_hole", "thick_old_trunk"]
+scenery = ["tree_hollow_n1"]
+pose = "hang"
+
+# ---- owl (Eule) — food: beetles (Q-077)
+[[hiding_place]]
+id = "loc_moon_pond"
+animal = "owl"
+rect = [-40, 8, 5, 5]
+animal_spot = [-38, 10]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 1.5
+features = ["pond", "moon_reflection", "reeds", "wooden_post"]
+scenery = ["pond_n1", "jetty_n1"]
+pose = "idle"                # proposal: sitting on the mooring post (Q-043)
+
+[[hiding_place]]
+id = "loc_hilltop"
+animal = "owl"
+rect = [-70, 39, 7, 8]
+animal_spot = [-66, 43]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 2.4
+features = ["hill", "big_stone", "moonlight", "no_trees"]
+scenery = ["hill_n1"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_fir"
+animal = "owl"
+rect = [-63, 46, 6, 6]
+animal_spot = [-60, 48]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 6.0
+features = ["fir_tree", "pointed_top", "cones", "needles"]
+scenery = ["fir_n1"]
+pose = "idle"
+
+# ================================================================ scenery (non-solid)
+[[scenery]]
+id = "brush_pile_n1"
+kind = "brush_pile"
+rect = [-70, 8, 3, 2]
+hiding_place = "loc_brush_pile"
+props = ["brush_pile", "twigs"]
+notes = "Big heap of dry twigs and branches in the south-west hedge corner; it rustles when something moves. The only brush pile in the zoo (not a leaf pile: brown twigs, no red/yellow leaves, no rake — level-1 loc_leaves)."
+
+[[scenery]]
+id = "mushroom_ring_n1"
+kind = "mushroom_ring"
+rect = [-68, 31, 2, 2]
+hiding_place = "loc_mushrooms"
+props = ["mushroom", "moss_patch"]
+notes = "Ring of friendly round brown and cream mushrooms on a green moss patch at the foot of tree_old_n1 (never red with white dots — not poisonous-looking). The only mushrooms in the zoo."
+
+[[scenery]]
+id = "firefly_meadow_n1"
+kind = "firefly_meadow"
+rect = [-51, 8, 6, 5]
+hiding_place = "loc_fireflies"
+props = ["grass_tuft", "firefly"]
+notes = "Low meadow grass (not tall — level-1 loc_meadow) with many fireflies dancing over it (Q-115: the only riddle place with fireflies; fireflies nowhere else in night_1)."
+
+# ================================================================ lights (Q-118 answered; data shape proposal Q-137)
+# Night-only light props. kind: lantern_post (wooden post with a hanging lantern, collider
+# C(0, 0, 0.12) while visible), string_lights (bulbs on a line between two posts `pos` → `to`,
+# a post collider at each end), wall_lamp (on a building facade, `attach` = building),
+# board_lamp (on the info board / map board `attach`, 1.2 m light pool on the panel).
+# pos = level (x, z); facing = the direction the lamp head / lantern arm points (+x/-x/+z/-z).
+# Posts stand 0.25 m inside a path edge, so they never touch grass wander areas or riddle scenery.
+[[light]]
+id = "n1_lantern_entry"
+kind = "lantern_post"
+pos = [-28.5, 30.75]
+facing = "-z"
+
+[[light]]
+id = "n1_string_plaza_a"
+kind = "string_lights"
+pos = [-38.75, 34.75]
+to = [-30.25, 24.25]
+facing = "-z"
+
+[[light]]
+id = "n1_string_plaza_b"
+kind = "string_lights"
+pos = [-30.25, 34.75]
+to = [-38.75, 24.25]
+facing = "-z"
+
+[[light]]
+id = "n1_lantern_ring_n_e"
+kind = "lantern_post"
+pos = [-47.5, 37.75]
+facing = "-z"
+
+[[light]]
+id = "n1_lantern_ring_n_w"
+kind = "lantern_post"
+pos = [-56.5, 37.75]
+facing = "-z"
+
+[[light]]
+id = "n1_lantern_nw"
+kind = "lantern_post"
+pos = [-63.75, 37.75]
+facing = "+x"
+
+[[light]]
+id = "n1_lantern_nw_trail"
+kind = "lantern_post"
+pos = [-58.25, 42.0]
+facing = "-x"
+
+[[light]]
+id = "n1_lantern_ring_w_n"
+kind = "lantern_post"
+pos = [-61.25, 29.5]
+facing = "-x"
+
+[[light]]
+id = "n1_lantern_ring_w_s"
+kind = "lantern_post"
+pos = [-61.25, 20.5]
+facing = "-x"
+
+[[light]]
+id = "n1_lantern_sw"
+kind = "lantern_post"
+pos = [-63.75, 13.25]
+facing = "+x"
+
+[[light]]
+id = "n1_lantern_ring_s_w"
+kind = "lantern_post"
+pos = [-53.5, 13.25]
+facing = "+z"
+
+[[light]]
+id = "n1_lantern_ring_s_e"
+kind = "lantern_post"
+pos = [-44.5, 13.25]
+facing = "+z"
+
+[[light]]
+id = "n1_lantern_s_link"
+kind = "lantern_post"
+pos = [-36.25, 19.5]
+facing = "-x"
+
+[[light]]
+id = "n1_lantern_pond"
+kind = "lantern_post"
+pos = [-31.25, 15.75]
+facing = "-z"
+
+[[light]]
+id = "n1_wall_night_house"
+kind = "wall_lamp"
+pos = [-35.7, 38.95]
+facing = "-z"
+attach = "night_house"
+
+[[light]]
+id = "n1_wall_food_hut"
+kind = "wall_lamp"
+pos = [-38.95, 31.3]
+facing = "+x"
+attach = "food_storage_n1"
+
+[[light]]
+id = "n1_indoor_hall"
+kind = "indoor"
+pos = [-37.0, 41.5]
+facing = "+z"
+attach = "night_house"
+radius_m = 4.0
+color = "#5B7FE0"             # soft blue hall light (Q-116), dim but readable (NIGHT-005)
+
+[[light]]
+id = "n1_indoor_hedgehog"
+kind = "indoor"
+pos = [-42.0, 47.5]
+facing = "-z"
+attach = "enc_n1_hedgehog"
+radius_m = 3.5
+color = "#E8735A"             # warm red-orange (Q-116)
+
+[[light]]
+id = "n1_indoor_bat"
+kind = "indoor"
+pos = [-36.5, 47.5]
+facing = "-z"
+attach = "enc_n1_bat"
+radius_m = 3.5
+color = "#5B7FE0"
+
+[[light]]
+id = "n1_indoor_owl"
+kind = "indoor"
+pos = [-31.0, 47.5]
+facing = "-z"
+attach = "enc_n1_owl"
+radius_m = 3.5
+color = "#5B7FE0"
+
+[[light]]
+id = "n1_board_lamp_hedgehog"
+kind = "board_lamp"
+pos = [-41.5, 38.5]
+facing = "-z"
+attach = "board_n1_hedgehog"
+
+[[light]]
+id = "n1_board_lamp_bat"
+kind = "board_lamp"
+pos = [-38.5, 38.5]
+facing = "-z"
+attach = "board_n1_bat"
+
+[[light]]
+id = "n1_board_lamp_owl"
+kind = "board_lamp"
+pos = [-32.5, 38.5]
+facing = "-z"
+attach = "board_n1_owl"
+
+[[light]]
+id = "n1_board_lamp_map"
+kind = "board_lamp"
+pos = [-29.5, 32.0]
+facing = "+x"
+attach = "map_board_n1"
+
+# ================================================================ burglar event: none in night levels
+# GAME-EVENTS rule 4: burglars come only to unlocked DAY levels at night (see level-1/2/3
+# [[event_spot]]).

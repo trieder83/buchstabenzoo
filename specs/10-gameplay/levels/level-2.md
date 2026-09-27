@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L2
-updated: 2026-09-26
+updated: 2026-09-27
 ---
 
 # Level 2 — koala, elephant, giraffe, lion (behind the fallen tree)
@@ -378,6 +378,21 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
 12. `barrier_l2_construction` opens only under its unlock condition; `barrier_ne_tree` never
     closes again.
 
+## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118 answered, proposals Q-137, Q-139)
+
+`[[light]]` in `level-2.toml` (night-only): 10 lantern posts along the entry path and the ring
+(≈ 10 m, 0.25 m inside the path edge: (25.0, 28.25), (35.0, 30.75), (37.0, 24.25), (47.0, 24.25),
+(53.0, 24.25), (36.25, 33.0), (36.25, 38.0), (51.25, 28.0), (51.25, 38.0), (47.0, 39.25)), one
+beside every gate (koala (35.3, 35.65), elephant (54.7, 32.65), lion (45.65, 22.3), giraffe
+(44.65, 43.7)), a wall lamp at the `food_storage_2` door (38.95, 31.3) and board lamps on the four
+info boards and `map_board_l2`. No string lights (Q-118: only the level-1 entrance plaza). No post
+stands in a hiding-place rect or scenery.
+
+`[[event_spot]]`: burglars climb in over a ladder on the inside of `wall_l2_east` at (73.7, 39.5),
+take a food box in front of `food_storage_2` and hide on the grass strip between the elephant
+enclosure and the east wall (`l2_burglar_hideout` (71, 37, 3, 5)) — no hiding place, scenery or
+path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -406,9 +421,9 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
   core loop; the koala is **one** animal (`pair` off until `koala_female.glb` exists —
   GAME-FAMILY; FAM-001/002 and LAYOUT-L2-015 are unit-tested with the flag on). Koalas sit
   at their `perch_height_m` (Q-094) and climb down when shown eucalyptus.
-- **Barrier timing (temporary, Q-091):** `barrier_l2_construction` (and the level-1
-  `barrier_north_gate`, Q-090) open right after the celebration of the last level-2
-  mission; LAYOUT-L2-010 is tested with this rule until nightfall exists.
+- **Barrier timing (Q-091 answered, 2026-09-27):** `barrier_l2_construction` (and the level-1
+  `barrier_north_gate`, Q-090) open **the next morning** after the last level-2 mission
+  (GAME-NIGHT "Implementation", NIGHT-010); LAYOUT-L2-010 is tested with this rule.
 - Unit tests: LAYOUT-L2-001…011, 013, 014, 015 (FAM), 016 in
   `crates/zoo-core/tests/levels23.rs` / `zoo_game.rs`; the walking and sight tables are
   reproduced within 0.5 s / exactly. e2e: the giraffe mission (seed 4, `m5b.spec.ts`);
@@ -427,7 +442,10 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
 
 ## Open questions
 
-- Q-022 / Q-091 barrier unlock timing; Q-088 joining levels; Q-089 own food
+- Q-137 `[[light]]` data shape, Q-139 burglar event spots.
+
+- Q-022 barrier unlock timing (Q-091 answered: the next morning); Q-141 night level between
+  level 2 and level 3, and the bed after level 2; Q-088 joining levels; Q-089 own food
   storage per level; Q-094 koalas up in the tree; Q-095 the new hiding places and
   `kiga` words; Q-085 tree density and enclosure features; Q-080 hiding-place data;
   Q-082 picking rule; Q-043 poses (`climb` at perches, `sleep`, `drink`).

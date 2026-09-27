@@ -131,6 +131,8 @@ pub struct Element {
     pub enclosure: Option<String>,
     /// Barriers: level transition, e.g. `level_1->level_2`.
     pub transition: Option<String>,
+    /// Barriers: the level whose completion unlocks it (moon door: its nightfall, Q-133).
+    pub unlock_after: Option<String>,
     #[serde(default)]
     pub blocks_view: bool,
     pub height_m: Option<f32>,
@@ -149,6 +151,12 @@ pub struct Element {
     /// Enterable buildings (proposal Q-092): walkable interior cells (surface `path`); with
     /// the `door` cell they are the only walkable cells of the building rect.
     pub interior: Option<Rect>,
+    /// Enterable buildings: footprint of the whole model when it is larger than the walkable
+    /// building rect (the night house with its indoor enclosure wing, proposal Q-134).
+    pub model_rect: Option<Rect>,
+    /// Enclosures inside a building (the night house, proposal Q-134).
+    #[serde(default)]
+    pub indoor: bool,
     /// Enclosures: the species lives here as a pair (GAME-FAMILY; data flag, off until the
     /// female model exists).
     #[serde(default)]
@@ -235,6 +243,9 @@ pub struct LevelHeader {
     /// (Q-069: only in-scope missions are interactable).
     #[serde(default)]
     pub missions: Vec<String>,
+    /// `night` for a night level (GAME-NIGHT rule 4, proposal Q-133): reachable only at
+    /// night through the moon door.
+    pub time: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -272,6 +283,28 @@ impl ItemData {
     }
 }
 
+/// Furniture inside a building (`[[prop]]`, proposal Q-137): a model at a position; drawn as
+/// a placeholder until the model exists.
+#[derive(Debug, Clone, Deserialize)]
+pub struct PropData {
+    pub id: String,
+    pub model: String,
+    pub pos: [f32; 2],
+    #[serde(default = "default_south")]
+    pub facing: String,
+    /// Footprint (m): across and along `facing`.
+    pub size_m: Option<[f32; 2]>,
+    pub building: Option<String>,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+impl PropData {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::from(self.pos)
+    }
+}
+
 /// A place where the fish bowl is filled (`[[water_source]]`, proposal Q-093): `tap` = prop
 /// at `pos`; `bank` = every walkable cell edge-adjacent to the water element `water`.
 #[derive(Debug, Clone, Deserialize)]
@@ -285,6 +318,68 @@ pub struct WaterSourceData {
     pub part: usize,
 }
 
+/// A lamp of the night (`[[light]]`, GAME-NIGHT rule 1, Q-118): lantern posts along the
+/// paths, string lights over plazas, wall and board lamps. Night-only props (hidden by day).
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct LightData {
+    #[serde(default)]
+    pub id: String,
+    /// `lantern_post` (default), `string_lights`, `wall_lamp`, `board_lamp`, `ceiling`.
+    #[serde(default)]
+    pub kind: String,
+    /// Where it stands (level metres).
+    pub pos: Option<[f32; 2]>,
+    /// Alternative to `pos`: a cell (its centre).
+    pub cell: Option<[i32; 2]>,
+    /// Direction of the lamp arm / the lit side (`+z`, `-z`, `+x`, `-x`).
+    pub facing: Option<String>,
+    pub height_m: Option<f32>,
+    pub radius_m: Option<f32>,
+    /// String lights: the posts / anchor points the string hangs between.
+    #[serde(default)]
+    pub points: Vec<[f32; 2]>,
+    pub from: Option<[f32; 2]>,
+    pub to: Option<[f32; 2]>,
+    /// The element the lamp hangs on (a building for `wall_lamp`, a board for `board_lamp`).
+    pub attach: Option<String>,
+    /// Light colour `#RRGGBB` (indoor lights), default warm lamp light.
+    pub color: Option<String>,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+impl LightData {
+    pub fn pos(&self) -> Option<Vec2> {
+        self.pos
+            .map(Vec2::from)
+            .or_else(|| self.cell.map(|c| cell_center(IVec2::from(c))))
+            .or_else(|| self.points.first().map(|p| Vec2::from(*p)))
+            .or_else(|| self.from.map(Vec2::from))
+    }
+
+    /// String light anchor points.
+    pub fn points(&self) -> Vec<Vec2> {
+        if !self.points.is_empty() {
+            return self.points.iter().map(|p| Vec2::from(*p)).collect();
+        }
+        match (self.from.or(self.pos), self.to) {
+            (Some(a), Some(b)) => vec![Vec2::from(a), Vec2::from(b)],
+            _ => self.pos().into_iter().collect(),
+        }
+    }
+
+    /// `color` as sRGB floats.
+    pub fn color_rgb(&self) -> Option<[f32; 3]> {
+        let h = self.color.as_deref()?.trim_start_matches('#');
+        let v = u32::from_str_radix(h, 16).ok()?;
+        Some([
+            ((v >> 16) & 0xFF) as f32 / 255.0,
+            ((v >> 8) & 0xFF) as f32 / 255.0,
+            (v & 0xFF) as f32 / 255.0,
+        ])
+    }
+}
+
 /// One level file inside a (joined) [`LevelData`] (GAME-LAYOUT "Joining levels").
 #[derive(Debug, Clone)]
 pub struct LevelPart {
@@ -295,6 +390,8 @@ pub struct LevelPart {
     /// enclosure of the level (Q-069).
     pub missions: Vec<String>,
     pub entries: Vec<EntryData>,
+    /// A night level (`time = "night"`, or an id `night_*`; GAME-NIGHT).
+    pub night: bool,
 }
 
 impl Spawn {
@@ -457,6 +554,12 @@ pub struct LevelData {
     /// Water sources for the fish bowl (proposal Q-093).
     #[serde(default, rename = "water_source")]
     pub water_sources: Vec<WaterSourceData>,
+    /// Lamps of the night (GAME-NIGHT, Q-118).
+    #[serde(default, rename = "light")]
+    pub lights: Vec<LightData>,
+    /// Furniture (proposal Q-137).
+    #[serde(default, rename = "prop")]
+    pub props: Vec<PropData>,
     /// The level files joined into this data (one for a single level file).
     #[serde(skip)]
     pub parts: Vec<LevelPart>,
@@ -554,6 +657,8 @@ impl LevelData {
             spawn: data.spawn.clone(),
             missions,
             entries: data.entries.clone(),
+            night: data.level.time.as_deref() == Some("night")
+                || crate::daytime::is_night_level(&data.level.id),
         }];
         Ok(data)
     }
@@ -617,6 +722,14 @@ impl LevelData {
                     e.part = shift(e.part);
                     e
                 }));
+            out.props.extend(next.props.into_iter().map(|mut e| {
+                e.part = shift(e.part);
+                e
+            }));
+            out.lights.extend(next.lights.into_iter().map(|mut e| {
+                e.part = shift(e.part);
+                e
+            }));
             out.scenery.extend(next.scenery);
             out.enclosure_features.extend(next.enclosure_features);
             out.entries.extend(next.entries);
@@ -643,6 +756,11 @@ impl LevelData {
     /// Index of a level part by its id.
     pub fn part_index(&self, id: &str) -> Option<usize> {
         self.parts.iter().position(|p| p.id == id)
+    }
+
+    /// Whether level part `k` is a night level (GAME-NIGHT rule 4).
+    pub fn is_night_part(&self, k: usize) -> bool {
+        self.parts.get(k).is_some_and(|p| p.night)
     }
 
     /// Level part of the enclosure of an animal (by the enclosure's `animal`).
@@ -962,9 +1080,41 @@ impl Level {
         true
     }
 
+    /// Closes an opened barrier again (only the moon door closes by day, GAME-NIGHT). Returns
+    /// false if it was not open.
+    pub fn close_barrier(&mut self, id: &str) -> bool {
+        if !self.open_barriers.remove(id) {
+            return false;
+        }
+        self.rebuild_colliders();
+        self.grid = Grid::build(&self.data, &self.open_barriers);
+        self.grid.set_prop_blocked(&self.colliders);
+        true
+    }
+
     /// Barriers whose transition leaves this level (`<level_id>-><next>`), proposal Q-022.
     pub fn exit_barriers(&self) -> Vec<String> {
         self.exit_barriers_of(&self.data.parts[0].id.clone())
+    }
+
+    /// Barriers (not moon doors) that are unlocked by completing `level_id`: `unlock_after =
+    /// level_id` when that level is joined (e.g. `barrier_ne_tree` after `night_1`, Q-078,
+    /// Q-133), else the transition's source level (`<level_id>-><next>`).
+    pub fn barriers_unlocked_by(&self, level_id: &str) -> Vec<String> {
+        self.data
+            .elements_of(ElementType::Barrier)
+            .filter(|e| e.kind.as_deref() != Some("moon_door"))
+            .filter(|e| {
+                let from = e.transition.as_deref().and_then(|t| t.split("->").next());
+                let by = e
+                    .unlock_after
+                    .as_deref()
+                    .filter(|l| self.data.part_index(l).is_some())
+                    .or(from);
+                by == Some(level_id)
+            })
+            .map(|e| e.id.clone())
+            .collect()
     }
 
     /// Barriers whose transition leaves the level `level_id` (`<level_id>-><next>`).
@@ -972,6 +1122,8 @@ impl Level {
         let prefix = format!("{level_id}->");
         self.data
             .elements_of(ElementType::Barrier)
+            // a moon door is not an exit: it opens every night (GAME-NIGHT, Q-133)
+            .filter(|e| e.kind.as_deref() != Some("moon_door"))
             .filter(|e| {
                 e.transition
                     .as_deref()

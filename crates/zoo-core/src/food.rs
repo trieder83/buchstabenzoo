@@ -16,10 +16,36 @@ pub enum Food {
     Leaves,
     Meat,
     Berries,
+    /// Night zoo (GAME-NIGHT rule 6, Q-077: hedgehog and owl).
+    Beetles,
+    /// Night zoo (fruit bat).
+    Fruit,
+    /// Night zoo (later night levels: badger, kiwi — Q-135).
+    Worms,
+    /// Night zoo (later night levels: slow loris — Q-135).
+    Nectar,
 }
 
 impl Food {
-    pub const ALL: [Food; 10] = [
+    pub const ALL: [Food; 14] = [
+        Food::Grass,
+        Food::Melons,
+        Food::Bamboo,
+        Food::Eucalyptus,
+        Food::Hay,
+        Food::FishFood,
+        Food::Bananas,
+        Food::Leaves,
+        Food::Meat,
+        Food::Berries,
+        Food::Beetles,
+        Food::Fruit,
+        Food::Worms,
+        Food::Nectar,
+    ];
+
+    /// Foods of the day zoo (the day food storages, GAME-FEED).
+    pub const DAY: [Food; 10] = [
         Food::Grass,
         Food::Melons,
         Food::Bamboo,
@@ -44,8 +70,15 @@ impl Food {
             Food::Leaves => "leaves",
             Food::Meat => "meat",
             Food::Berries => "berries",
+            Food::Beetles => "beetles",
+            Food::Fruit => "fruit",
+            Food::Worms => "worms",
+            Food::Nectar => "nectar",
         }
     }
+
+    /// Foods of the night zoo (the night food storage, GAME-NIGHT rule 5).
+    pub const NIGHT: [Food; 4] = [Food::Beetles, Food::Fruit, Food::Worms, Food::Nectar];
 
     pub fn from_id(id: &str) -> Option<Food> {
         Food::ALL.into_iter().find(|f| f.id() == id)
@@ -81,7 +114,8 @@ impl FoodBox {
     }
 }
 
-/// The food storage: all 10 boxes (proposal Q-047).
+/// The food storage: a box of every food (proposal Q-047; the props in the level data decide
+/// which boxes stand in which storage, Q-089).
 #[derive(Debug, Clone)]
 pub struct FoodStorage {
     pub boxes: Vec<FoodBox>,

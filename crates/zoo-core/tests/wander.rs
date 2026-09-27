@@ -289,6 +289,8 @@ fn anim_010_home_animals_wander_inside_the_enclosure() {
     for a in ["zebra", "hippo", "panda"] {
         assert!(g.debug_send_home(a));
     }
+    // stay in daylight (at night the animals lie down, GAME-NIGHT rule 1)
+    g.daytime = Default::default();
     let mut moved = BTreeSet::new();
     let start: Vec<Vec2> = g.animals.iter().map(|a| a.pos).collect();
     for _ in 0..(120.0 / DT) as usize {

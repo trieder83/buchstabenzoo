@@ -420,12 +420,12 @@ facing = "-x"
 
 [[food_box]]
 food = "bamboo"
-pos = [38.66, 29.8]
+pos = [38.66, 26.6]         # moved from z 29.8 to the south end of the row: the door (z 30…31) stays free (Q-150, LAYOUT-032)
 facing = "-x"
 
 [[food_box]]
 food = "grass"
-pos = [38.66, 30.6]
+pos = [38.66, 35.4]          # moved from z 30.6 to the north end of the row (Q-150)
 facing = "-x"
 
 [[food_box]]
@@ -662,7 +662,7 @@ facing = "+z"
 [[light]]
 id = "l2_lantern_ring_s_m"
 kind = "lantern_post"
-pos = [47.0, 24.25]
+pos = [48.5, 24.25]           # 1.5 m east of the lion gate axis, off its leading lane (QA 2026-09-27)
 facing = "+z"
 
 [[light]]
@@ -680,7 +680,7 @@ facing = "+x"
 [[light]]
 id = "l2_lantern_ring_w_n"
 kind = "lantern_post"
-pos = [36.25, 38.0]
+pos = [36.25, 38.5]           # 1.5 m north of the koala gate axis, off its leading lane (QA 2026-09-27)
 facing = "+x"
 
 [[light]]

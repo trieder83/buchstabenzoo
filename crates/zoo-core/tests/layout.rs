@@ -578,7 +578,13 @@ fn layout_l1_013_food_boxes_in_front_of_storage_reachable() {
             "{}",
             b.food
         );
-        assert!(pos.x > storage.x as f32 && pos.x < (storage.x + storage.w) as f32);
+        // along the facade; since Q-150 (doors are never blocked) the two boxes moved out of
+        // the door gap stand at the row's ends, up to 1 m beyond the facade corners
+        assert!(
+            pos.x > storage.x as f32 - 1.0 && pos.x < (storage.x + storage.w) as f32 + 1.0,
+            "{}",
+            b.food
+        );
         let front = zoo_core::level::cell_of(pos + b.facing() * 1.1);
         assert!(
             grid.is_passable(front, false),

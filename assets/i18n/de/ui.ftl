@@ -33,4 +33,4 @@ ui-refuse = Hier wohne ich nicht!
 
 sign-food-storage = Futter
 # Name board of the entrance arch (proposal Q-148)
-sign-zoo-entrance = Buchstabenzoo
+sign-zoo-entrance = Buchstaben Zoo

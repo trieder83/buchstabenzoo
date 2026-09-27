@@ -408,9 +408,12 @@ rule and CAMV-008 are unchanged (tests green).
 **Doors are never blocked** (user request 2026-09-27): no prop, board, lamp or furniture
 stands in a door or gate opening or in the ≥ 1 m walkway in front of it (the player's body
 width); a sign that belongs to a door goes beside or above it (indoor enclosures of the
-night house: a silhouette board above the glass door, bottom 2.3 m). Known exception: the
-food-box row of level 1 (and the food storages of levels 2–3) stands in front of the
-closed, non-enterable storage door (Q-150).
+night house: a silhouette board above the glass door, bottom 2.3 m). This holds for
+non-enterable doors too: the food-box row in front of a food storage leaves a free gap
+≥ 1.2 m wide in front of the door, the whole door opening inside it (Q-150, user
+2026-09-27); the boxes that stood in front of the door moved to the ends of the row. Also
+nothing without a collider (lamp posts, taps, items) stands there, and no lamp post in the
+2.5 m leading lane straight in front of an opening.
 
 *Implementation (2026-09-27):* `zoo_core::scene::LevelScene::openings` lists every gate /
 door model with its opening and model widths; `Game::opening_open` decides: building doors
@@ -464,8 +467,10 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-029 | Given a building with indoor enclosures (`indoor = true`), then each indoor enclosure's gate is edge-adjacent to an `interior` cell of the building, the building's `model_rect` contains the building rect and the indoor enclosures, and none of the enclosure's boards lies inside the building rect (Q-134). | unit |
 | LAYOUT-030 | Given every day level's `[[event_spot]]` list, then it has one `burglar_entry`, one `burglar_target` naming an existing building and one `burglar_hideout` of walkable grass reachable from the target, overlapping no hiding-place rect, scenery, garden or path (Q-139). | unit |
 | LAYOUT-031 | Given every gate/door opening in the joined zoo (enclosure gates, garden gate, building doors, night-house doors, entrance, barrier gates, moon door), then a gate/door model is placed that exactly fills the opening (no gap > 5 cm, no overlap with posts), and it opens/closes per the rules. | unit |
-| LAYOUT-032 | Given every gate/door opening in the joined zoo (LAYOUT-031), then no prop, board, lamp, item or furniture footprint lies in the opening or in the ≥ 1 m walkway in front of it, and a sign that belongs to a door is beside it or above it (bottom above the opening height); the only allowed exception is the food-box row in front of the non-enterable food storage doors (Q-150). | unit |
+| LAYOUT-032 | Given every gate/door opening in the joined zoo (LAYOUT-031), then no prop, board, lamp, item or furniture footprint lies in the opening or in the ≥ 1 m walkway in front of it, and a sign that belongs to a door is beside it or above it (bottom above the opening height); also for the non-enterable food storage doors: the food-box row leaves a free gap ≥ 1.2 m wide around the door (Q-150 answered 2026-09-27). This also holds for things without a collider (food boxes, items, furniture props, water taps, night lamp posts and string-light posts), and no lamp post stands in the 2.5 m leading lane straight in front of an opening (QA 2026-09-27). | unit |
 | LAYOUT-033 | Given every outdoor enclosure gate of the joined zoo (levels 1–3, `night_1`), then its `enclosure_sign` stands beside the gate — ≥ 0.5 m from the gate post along the fence (centre ≥ 2.69 m from the gate centre), ≤ 5 m away — and the gate's 1 m walkway has no collider; the sign's footprint lies on walkable cells clear of the info board and the food boxes (user decision 2026-09-27, Q-086 (b)). | unit |
+| LAYOUT-034 | Given every opening the player may pass (doors of enterable buildings, the garden gate, enclosure gates and glass doors while leading), when she walks straight at it from 3 m in front, from 2.5 m out and 2.5 m aside, and from 1.5 m out and 3 m aside (both sides), then she reaches the opening without getting stuck (≥ 5 cm progress per second) — nothing beside an opening forms a pocket (QA 2026-09-27; known pockets pending Q-157 are listed in the test). | unit |
+| LAYOUT-035 | Given a lantern post of any level, then it has the collider C(0, 0, 0.12) while it is visible (at night) and none by day (the `[[light]]` placement rules, Q-118/Q-137). | unit |
 
 ## Open questions
 
@@ -478,4 +483,4 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 - Q-057 answered: 1 m segment variants and the fill rule. Q-059 band joins, Q-060 enclosure fence and band placement (proposals), Q-061 front direction of props (open).
 - Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 enclosure sign form (panel over the gate). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
 - Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-069 (answered) `[level] missions`. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).
-- Q-150 food boxes in front of the food storage doors (exception to "Doors are never blocked", LAYOUT-032). Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.
+- Q-150 answered 2026-09-27: the food-box rows leave a gap ≥ 1.2 m in front of the storage doors (no exception to LAYOUT-032 any more). Q-157 pockets beside doors (zebra board, level-3 tap, night-house boards; LAYOUT-034). Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.

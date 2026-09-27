@@ -136,4 +136,4 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 - Q-025 How food is carried, Q-042 `give` clip vs. food not consumed, Q-034 food portions vs. one food at a time.
 - Q-156 Bamboo forest: cut spots per forest, regrowth time, snapping with the hands (proposal).
 - Q-155 answered: animals keep following when their food is put down; at most 8 lying items; giving consumes.
-- Q-150 Food boxes standing in front of the (non-enterable) food storage door.
+- Q-150 answered 2026-09-27: the food-box rows leave a free gap ≥ 1.2 m in front of every food storage door (LAYOUT-032).

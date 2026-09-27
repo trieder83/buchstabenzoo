@@ -29,6 +29,15 @@ Automated coverage: `crates/zoo-core/tests/gameplay_qa.rs` (sweeps) and
 - [ ] Visual vs. collision: no invisible walls (gap between stop point and the visible
       surface ≤ player radius + 0.2 m), no walking into visible geometry
 - [ ] Following animals never inside solids *(auto: RESC-006)*; do they clip props/fences visually?
+- [ ] Doors and gates never blocked (user request 2026-09-27): walk through every enterable
+      door, the garden gate and the open moon door both ways (keyboard + one by touch)
+      *(auto: e2e `gameplay/doors.spec.ts`)*; nothing (collider or not: boxes, items, furniture,
+      taps, lamp posts) in an opening or its walkway *(auto: LAYOUT-032)*; approach every
+      opening straight and at ~45° and along the frontage without getting caught in a pocket
+      beside it *(auto: LAYOUT-034, known pockets Q-157)*; led animals enter every enclosure
+      gate *(auto: RESC tests, QA sim)*; inside buildings the bed / desk note / fish bowl are
+      reachable from the door
+- [ ] Night lamp posts are solid at night, walkable by day *(auto: LAYOUT-035, ignored until F4 fixed)*
 - [ ] Player vs. animals (Q-072)
 
 ## Interaction (GAME-PLAYER §4–5)

@@ -599,12 +599,12 @@ facing = "-z"
 
 [[food_box]]
 food = "meat"
-pos = [0.4, 10.66]
+pos = [-4.4, 10.66]          # moved from x 0.4 to the west end of the row: the door (x 0…1) stays free (Q-150, LAYOUT-032)
 facing = "-z"
 
 [[food_box]]
 food = "leaves"
-pos = [1.2, 10.66]
+pos = [4.4, 10.66]           # moved from x 1.2 to the east end of the row (Q-150)
 facing = "-z"
 
 [[food_box]]

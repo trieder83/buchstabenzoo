@@ -40,4 +40,4 @@ updated: 2026-09-27
 
 - Q-008 Voice audio per language. Q-038 Key naming vs. reading level variants.
 - Q-064 Enclosure sign texts (`sign-<animal>`).
-- Q-148 Entrance arch name board `sign-zoo-entrance` (de *Buchstabenzoo*, en *Letter Zoo* — proposal).
+- Q-148 answered: entrance arch name board `sign-zoo-entrance` = de *Buchstaben Zoo*, en *Letter Zoo* (user, 2026-09-27).

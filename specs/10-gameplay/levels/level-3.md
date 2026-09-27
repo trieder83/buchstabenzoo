@@ -176,7 +176,7 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `path_l3_mill` | path (side) | -19, 73, 5, 2 | Short path from the ring to the stream bank just north of the mill hut. |
 | `path_l3_ne` | path (side) | 10, 77, 10, 3 | Side path east from the ring towards the ice cream kiosk and the trampoline. |
 | `zookeeper_house_3` | building (zookeeper_house) | -11, 61, 7, 6 | door at cell (-8, 61); walkable interior (-10, 62, 5, 4). Enterable zookeeper house (roof cut-away inside, GAME-PLAYER §2): shelves, a table, a bed, and the big empty glass bowl (fish_bowl) on the table. Water tap on the outside wall next to the door. |
-| `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61). Third food storage (proposal Q-new): all 10 food boxes in a row in front of the south facade. |
+| `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61). Third food storage (proposal Q-new): all 10 food boxes in a row in front of the south facade (z 60.66, x −1.4 … 7.4 every 0.8 m) with a free gap in front of the door (box edges 2.91 … 4.69, Q-150). |
 | `trees_l3_center` | decoration (tree_grove) | -4, 61, 3, 16 | density `dense`.  |
 | `trees_l3_center_e` | decoration (tree_grove) | -1, 67, 8, 10 | density `dense`.  |
 | `enc_goldfish` | enclosure | 11, 63, 11, 10 | gate (11, 67, 1, 2). Goldfish pond enclosure: round pond with a low stone rim, water plants, a low wooden fence; the "gate" is a flat stone step where the bowl is put down to let the fish in (GAME-RESCUE goldfish bowl step 6). No waterfall, no wheel, no willow (riddle guards). |
@@ -272,7 +272,7 @@ south-west corner for the 22 m haze rule, FIX-056).
 | `loc_carousel` (monkey) | `carousel_sw`: small **carousel** with painted **wooden horses** under a striped round roof, slowly **turning**, music-box **music**. |
 | `loc_trampoline` (monkey) | `trampoline_w`: round **ground-level trampoline** (blue mat, red rim) flush with the lawn in the south-west corner between the stream, the weeping willow and the carousel (FIX-056); the monkey bounces and somersaults. |
 | `loc_waterfall` (goldfish) | `waterfall_rocks`: the stream **falls** 2.5 m from a rock ledge at the north wall, **white foam**, loud rushing sound; the fish swims in the foam pool below. Different from the level-1 river (only small rapids, bridge, ducks). |
-| `loc_water_wheel` (goldfish) | `mill_hut` + its big **wooden water wheel** turning in the stream (x −20, z 70–72), **clattering** sound, drops glittering. The only water wheel. |
+| `loc_water_wheel` (goldfish) | `mill_hut` + its big **wooden water wheel** turning in the stream (x −20, z 70–72), **clattering** sound, drops glittering. The only water wheel. **The wheel runs in the water** (user request 2026-09-27): its axle stands on the bank side, the lower paddles dip below the stream's water surface (≈ ⅓ of the radius under water), the wheel turns continuously in the flow direction (south, ≈ 1 turn per 6 s, day and night), and the water shows foam/splash where the paddles enter and leave it (TECH-WATER obstacle foam + drop particles). |
 | `loc_willow` (goldfish) | `tree_willow`: **weeping willow** whose long thin branches hang down like a green curtain **into the water**; shady and still underneath. The only willow. |
 | `loc_ice_cream_kiosk` (snow fox) | `ice_cream_kiosk`: striped awning, cone icon on the roof, a **freezer chest** with a glass lid and **cold mist**, a cone stand; the fox sits next to the chest. |
 | `loc_sprinkler` (snow fox) | `sprinkler_lawn`: a **garden sprinkler** turning in the middle of a lawn, arcs of **cold drops**, a small **rainbow**, glossy **wet grass**. Must not look like the level-2 fountain (no basin, no coins). |
@@ -387,6 +387,8 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 | LAYOUT-L3-014 | Given the goldfish mission in level 3 (seeded), when the player reads the board, takes the bowl, fills it at `tap_l3`, takes fish food, feeds the fish from the bank and puts the bowl on the goldfish gate step, then the mission completes (RESC-018…021 on this level). | e2e |
 | LAYOUT-L3-015 | Given `enc_goldfish`, then `goldfish_pond` lies fully inside it, is not adjacent to the gate cells and the goldfish's home wander area contains only pond cells. | unit |
 | LAYOUT-L3-016 | Given the approved mockups of the 9 level-3 places, then a reviewer can name the riddle details without text; the stream shows no bridge or ducks; the sprinkler does not look like a fountain; the pirate ship has no slide and no skull. | manual |
+| LAYOUT-L3-017 | Given the `mill_hut` water wheel, then its lowest paddles lie below the `stream_l3` water surface (≥ 0.25 × radius under water) and inside stream cells, the wheel angle advances continuously over time in the flow direction (≈ 60°/s) by day and night, the wheel is not solid for the player, and a foam obstacle lies where the paddles meet the water. | unit |
+| LAYOUT-L3-018 | Given the level-3 review screenshot of `loc_water_wheel`, then the wheel visibly dips into the stream and two frames 0.5 s apart show a different wheel angle. | e2e |
 
 ## Implementation status (M5b, 2026-09-26)
 
@@ -402,7 +404,7 @@ note texts `event-burglar-note-level_3-<reading_level>`.
   bed (boxes) inside.
 - Unit tests: LAYOUT-L3-001…013, 015 in `levels23.rs`; RESC-018…023 in `zoo_game.rs`.
 - **Placeholders:** `waterfall_rocks` (ledge, rocks = kit `rock`, falling water and foam),
-  `mill_hut` + water wheel (static, over the stream, not solid), `tree_willow` (trunk, crown,
+  `mill_hut` + water wheel (static, over the stream, not solid — to be replaced by a wheel turning in the water, LAYOUT-L3-017/018), `tree_willow` (trunk, crown,
   hanging branches), `pirate_ship` (hull, deck, mast, crow's nest at the perch point, sail,
   black flag with a white paw, treasure chest, rope ladder), `carousel_sw`,
   `ice_cream_kiosk` (small building, striped awning, cone icon, freezer with mist),
@@ -423,4 +425,4 @@ note texts `event-burglar-note-level_3-<reading_level>`.
   in a perch; Q-095 new hiding places; Q-017 pirate ship location (proposal here);
   Q-033 key on the pirate ship (not used); Q-080, Q-082, Q-043.
 - Q-096 (answered by Q-141) the bed after level 2 is `bed_l2` in level 2, not in `zookeeper_house_3`.
-- Q-150 food boxes in front of the food storage door of `food_storage_3`.
+- Q-150 answered: the food-box row of `food_storage_3` leaves a gap ≥ 1.2 m in front of the door (meat moved from x 3.4 to −1.4, leaves from 4.2 to 7.4). Q-157 pocket between the tap `tap_l3` and the zookeeper-house-3 facade.

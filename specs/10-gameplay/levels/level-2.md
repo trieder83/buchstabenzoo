@@ -342,8 +342,12 @@ elephant board stands south of its gate — FIX-056). Each hiding place is ≤ 1
 `food_storage_2` (39, 27, 6, 8) stands at the end of the entry path, door (39, 30) on the
 west facade. The 10 food boxes (`[[food_box]]`, same order as level 1: melons, hay,
 bananas, bamboo, grass, meat, leaves, fish food, berries, eucalyptus from south to north)
-stand in a row in front of the west facade (box centres x = 38.66, z = 27.4 … 34.6 every
-0.8 m, labels facing west) on the east row of `path_l2_ring_w`; 2 m of the ring stay free.
+stand in a row in front of the west facade (box centres x = 38.66, labels facing west) on
+the east row of `path_l2_ring_w`; 2 m of the ring stay free. The door (z 30…31) keeps a free
+gap (Q-150 answered 2026-09-27: doors are never blocked): bamboo z 26.6, melons 27.4, hay
+28.2, bananas 29.0, gap (box edges 29.31 … 31.09), meat 31.4, leaves 32.2, fish food 33.0,
+berries 33.8, eucalyptus 34.6, grass 35.4 (bamboo and grass moved from 29.8 / 30.6 to the
+row ends).
 A "Futter" sign board hangs above them (ART-ENVIRONMENT rule 7).
 
 ## Bed of level 2 (Q-141 answered, option b)
@@ -422,8 +426,8 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
 ## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118 answered, proposals Q-137, Q-139)
 
 `[[light]]` in `level-2.toml` (night-only): 10 lantern posts along the entry path and the ring
-(≈ 10 m, 0.25 m inside the path edge: (25.0, 28.25), (35.0, 30.75), (37.0, 24.25), (47.0, 24.25),
-(53.0, 24.25), (36.25, 33.0), (36.25, 38.0), (51.25, 28.0), (51.25, 38.0), (47.0, 39.25)), one
+(≈ 10 m, 0.25 m inside the path edge: (25.0, 28.25), (35.0, 30.75), (37.0, 24.25), (48.5, 24.25),
+(53.0, 24.25), (36.25, 33.0), (36.25, 38.5), (51.25, 28.0), (51.25, 38.0), (47.0, 39.25)), one
 beside every gate (koala (35.3, 35.65), elephant (54.7, 32.65), lion (45.65, 22.3), giraffe
 (44.65, 43.7)), a wall lamp at the `food_storage_2` door (38.95, 31.3) and board lamps on the four
 info boards and `map_board_l2`. No string lights (Q-118: only the level-1 entrance plaza). No post
@@ -494,4 +498,4 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
   Q-082 picking rule; Q-043 poses (`climb` at perches, `sleep`, `drink`).
 - Q-096 where the child sleeps after level 2 (zookeeper house of level 3 is still closed) —
   answered by Q-141 (b): `bed_l2` at the food storage; Q-152 shelter over `bed_l2`.
-- Q-150 food boxes in front of the food storage door of `food_storage_2`.
+- Q-150 answered: the food-box row of `food_storage_2` leaves a gap ≥ 1.2 m in front of the door.

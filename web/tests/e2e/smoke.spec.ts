@@ -18,6 +18,14 @@ async function waitFrames(page: Page, n: number) {
   expect(await page.evaluate(() => window.__zooError ?? null)).toBeNull();
 }
 
+/** Holds a key (real keyboard events) until `seconds` of game time have passed. */
+async function holdGameTime(page: Page, code: string, seconds: number): Promise<void> {
+  const t0 = await page.evaluate(() => window.__zoo!.app.time());
+  await page.keyboard.down(code);
+  await page.waitForFunction((t) => window.__zoo!.app.time() >= t, t0 + seconds, { timeout: 60_000 });
+  await page.keyboard.up(code);
+}
+
 test('POC-001 / ARCH-003: level 1 renders with WebGL2, player walks, no console errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('console', (m) => {
@@ -46,20 +54,19 @@ test('POC-001 / ARCH-003: level 1 renders with WebGL2, player walks, no console 
   expect(start.draws).toBeLessThan(60); // instanced batches, not one call per tile
   await page.screenshot({ path: path.join(shots, 'screenshot_poc_m3.png') });
 
-  // Hold W (north) — the player must move north.
+  // Hold W (north) — the player must move north. Held for 1.5 s of *game* time: headless
+  // Chromium advances the rAF clock 1/60 s per frame, and software WebGL at 1080×2340 draws
+  // only ≈ 11 fps, so 1.5 s of wall time is ≈ 0.3 s of game time (QA 2026-09-27: the walk
+  // itself is 1.93 m/s on the path, no movement regression).
   await page.locator('#game').focus();
-  await page.keyboard.down('KeyW');
-  await page.waitForTimeout(1500);
-  await page.keyboard.up('KeyW');
+  await holdGameTime(page, 'KeyW', 1.5);
   await waitFrames(page, 10);
   const moved = await page.evaluate(() => ({ x: window.__zoo!.app.player_x(), z: window.__zoo!.app.player_z() }));
   expect(moved.z - start.z).toBeGreaterThan(0.8);
   expect(Math.abs(moved.x - start.x)).toBeLessThan(0.1);
 
   // Hold D (east): the player moves east (not mirrored).
-  await page.keyboard.down('KeyD');
-  await page.waitForTimeout(1500);
-  await page.keyboard.up('KeyD');
+  await holdGameTime(page, 'KeyD', 1.5);
   await page.waitForTimeout(200);
   const east = await page.evaluate(() => window.__zoo!.app.player_x());
   expect(east - moved.x).toBeGreaterThan(0.4);

@@ -21,6 +21,12 @@ node about glTF +Y around its pivot (translation of the node = hinge axis foot):
 - door_wood    building door leaf 0.94 x 2.1 m; ROOT node = the leaf, origin = hinge axis foot
                (like gate_wood); the leaf runs along +X; open = rotate about +Y (+90 swings it
                to the back / inside). Small round window = `door_glow` slot.
+- gate_zoo     level gate (GAME-LAYOUT "Gates between the levels", LAYOUT-036): the
+               gate_zoo_closed look (kit_barriers) with separable leaves — two stone pillars
+               (root, centres x = +-1.25, 0.5 m wide, outer faces +-1.5 = the 3 m gap in the
+               hedge), plank leaves `leaf_l` (pivot x = -1.0) and `leaf_r` (pivot x = +1.0),
+               1.0 m each with an arched top; padlock on leaf_r. Open to the BACK (-Z) like
+               garden_gate: turn the gate so its back faces the new level.
 - turnstile    one 1.2 m lane unit: wooden pedestal at x = -0.45 (root) and the metal
                `arms` node (pivot = the hub, x = -0.33) blocking the lane to x = +0.52; three
                units side by side fill the 3.6 m arch opening with 8 cm gaps (no shared faces,
@@ -146,6 +152,49 @@ def door_wood():
     return A
 
 
+# --------------------------------------------------------------------------- level gate
+
+def gate_zoo():
+    A = nl.Asset("gate_zoo")
+    PW, PD, PH = 0.5, 0.6, 2.6
+    PX = 1.25
+    p = []
+    for s in (-1, 1):
+        n = 3
+        for k in range(n):
+            h = (PH - 0.25) / n
+            col = "wall_stone" if k % 2 == 0 else "wall_stone_dark"
+            p.append(zb.box((PW - 0.02 * (k % 2), PD - 0.02 * (k % 2), h - 0.03), (s * PX, 0, k * h + h / 2),
+                            color=col, bevel=0.04, bevel_edges="vertical"))
+        p.append(zb.box((PW + 0.12, PD + 0.12, 0.25), (s * PX, 0, PH - 0.125), color="wall_stone",
+                        bevel=0.04, bevel_edges="top+vertical"))
+    A.add(p)
+    x1 = PX - PW / 2  # inner pillar face (hinge line)
+    n = 4
+    pw = x1 / n
+    yf = FRONT * 0.065
+    for side, nm in ((-1, "leaf_l"), (1, "leaf_r")):
+        A.node(nm, pivot=Vector((side * x1, 0, 0)))
+        leaf = []
+        for i in range(n):
+            xc = side * (pw * (i + 0.5))
+            h = 2.0 + 0.35 * math.cos(math.pi / 2 * xc / x1)
+            leaf.append(zb.box((pw - 0.02, 0.1, h), (xc, 0, h / 2), color="wood_light" if i % 2 else "wood"))
+        # iron straps (hinge side) and a ring handle on the south face
+        for z in (0.5, 1.55):
+            leaf.append(zb.box((x1 - 0.12, 0.03, 0.1), (side * (x1 / 2 + 0.02), yf, z), color="iron"))
+        leaf.append(pp.cyl(0.07, 0.0, 0.03, sides=8, center=(0, 0), color="iron").rotate(-90 * FRONT, "X")
+                    .move(side * 0.13, yf, 1.12))
+        if side > 0:
+            # padlock hanging from the right ring (goes with the leaf when the gate opens)
+            leaf.append(zb.box((0.14, 0.07, 0.13), (0.13, FRONT * 0.11, 1.0), color="brass", bevel=0.02))
+            leaf.append(pp.beam((0.09, FRONT * 0.11, 1.07), (0.09, FRONT * 0.11, 1.16), 0.03, color="metal"))
+            leaf.append(pp.beam((0.17, FRONT * 0.11, 1.07), (0.17, FRONT * 0.11, 1.16), 0.03, color="metal"))
+            leaf.append(pp.beam((0.08, FRONT * 0.11, 1.16), (0.18, FRONT * 0.11, 1.16), 0.03, color="metal"))
+        A.add(leaf, node=nm)
+    return A
+
+
 # --------------------------------------------------------------------------- turnstile
 
 def turnstile():
@@ -209,6 +258,8 @@ def extra(roots):
                                 node_rot={"leaf_l": 50, "leaf_r": -70}))
     out.append(nl.instance_tree(roots["glass_door"], "s_gd", B + V((7.0, -3.5, 0)),
                                 node_rot={"leaf_l": 60, "leaf_r": -60}))
+    out.append(nl.instance_tree(roots["gate_zoo"], "s_gz", B + V((11.0, 0, 0)),
+                                node_rot={"leaf_l": 70, "leaf_r": -70}))
     for k in range(3):
         out.append(nl.instance_tree(roots["turnstile"], f"s_ts{k}", B + V((3.0 + 1.2 * (k - 1), 3.5, 0))))
     return out
@@ -220,6 +271,7 @@ def main():
         "glass_door": glass_door,
         "door_wood": door_wood,
         "turnstile": turnstile,
+        "gate_zoo": gate_zoo,
     }
     nl.run(KIT, builders, cols=4, spacing=(3.0, 3.0), extra=extra)
 

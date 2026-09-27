@@ -149,6 +149,9 @@ pub enum OpeningKind {
     GardenGate { garden: String },
     /// `moon_door`: open while its barrier is open (at night).
     MoonDoor { barrier: String },
+    /// `gate_zoo` between two levels (LAYOUT-036): closed and solid while its barrier
+    /// stands, open (and staying open) once the barrier is cleared.
+    LevelGate { barrier: String },
 }
 
 /// A gate or door model in an opening.
@@ -228,6 +231,55 @@ impl LevelScene {
     }
 }
 
+/// `gate_zoo` (kit_gates): pillar centres (±x), pillar half extents at the walking height
+/// (0.5 × 0.6 m) and the clear opening between the pillars (m).
+pub const GATE_ZOO_PILLAR_X: f32 = 1.25;
+pub const GATE_ZOO_PILLAR_HALF: Vec2 = Vec2::new(0.25, 0.30);
+pub const GATE_ZOO_OPENING_M: f32 = 2.0;
+/// Half depth of the closed `gate_zoo` leaves with straps, rings and padlock (glTF z).
+pub const GATE_ZOO_LEAF_HZ: f32 = 0.15;
+
+/// Whether a barrier is the barrier of a level entry (`[[entry]] barrier`).
+pub fn is_level_gate_barrier(data: &LevelData, id: &str) -> bool {
+    data.parts
+        .iter()
+        .any(|p| p.entries.iter().any(|en| en.barrier == id))
+        && data
+            .element(id)
+            .is_some_and(|b| b.kind.as_deref() != Some("moon_door"))
+}
+
+/// Pose of the level gate of an entry (LAYOUT-036): centre (level), yaw (front towards the
+/// old level, the leaves open to the back into the new level) and the direction from the
+/// gate towards the old level. A gate barrier (`closed_gate`) is replaced by the gate on the
+/// barrier's hedge line (its row next to the old level); any other story barrier stays in
+/// front and the gate stands on the new level's hedge line (the row of its 2 m border band
+/// away from the barrier). `None` if the barrier does not touch the entry cells.
+pub fn level_gate_pose(en: &crate::level::EntryData, data: &LevelData) -> Option<(Vec2, f32, Dir)> {
+    let b = data
+        .element(&en.barrier)
+        .filter(|b| b.kind.as_deref() != Some("moon_door"))?; // the moon door has its own model
+    let e = en.cells;
+    let dir = Dir::ALL.into_iter().find(|d| {
+        let o = d.offset();
+        e.cells().any(|c| b.rect.contains(c + o))
+    })?;
+    let to_old = dir.offset().as_vec2();
+    let ec = rect_center(e);
+    let bc = rect_center(b.rect);
+    let along = Vec2::new(to_old.y.abs(), to_old.x.abs());
+    let c = if b.kind.as_deref() == Some("closed_gate") {
+        // the barrier's row next to the old level, centred on the entry
+        let depth = (b.rect.w as f32 * to_old.x.abs()) + (b.rect.d as f32 * to_old.y.abs());
+        let row = bc + to_old * (depth / 2.0 - 0.5);
+        row * to_old.abs() + ec * along
+    } else {
+        // the new level's band row away from the barrier (entry cells + 1 m)
+        ec - to_old * 1.0
+    };
+    Some((c, facing_yaw(dir), dir))
+}
+
 /// Soil top of `garden_bed` (m): plants stand on it.
 pub const GARDEN_SOIL_M: f32 = 0.22;
 /// `door_wood` leaf width (m, x 0.01…0.95).
@@ -244,6 +296,9 @@ pub const TURNSTILE_Z: f32 = -0.7;
 /// Board-lamp socket in the board's model space (README_night "Board-lamp sockets").
 pub const BOARD_LAMP_INFO: Vec3 = Vec3::new(0.0, 1.405, -0.236);
 pub const BOARD_LAMP_MAP: Vec3 = Vec3::new(0.0, 1.93, -0.09);
+/// Board-lamp clip above a wall-mounted info board (`mount = "wall"`, Q-157): on the facade
+/// just above the panel (its shade hangs over the panel).
+pub const BOARD_LAMP_WALL: Vec3 = Vec3::new(0.0, 1.85, 0.02);
 /// `lantern_post` light empty (glTF).
 pub const LANTERN_LIGHT: Vec3 = Vec3::new(0.0, 1.74, 0.57);
 /// `wall_lamp` light empty and its mount height.
@@ -376,6 +431,67 @@ impl LevelScene {
             opening_m: 2.0,
             // leaves 0.96 m each from the hinges at ±0.96 (inner pillar faces ±1.0)
             model_m: 1.92,
+            swing: 0.0,
+        });
+    }
+
+    /// The `gate_zoo` of a level entry (GAME-LAYOUT "Gates between the levels", LAYOUT-036):
+    /// its pillars are always solid, its closed leaves only while the barrier stands.
+    pub(super) fn level_gate(
+        &mut self,
+        en: &crate::level::EntryData,
+        part: usize,
+        data: &LevelData,
+    ) {
+        let Some((c, yaw, _)) = level_gate_pose(en, data) else {
+            return;
+        };
+        let k = self.model_at_y("gate_zoo", c, 0.0, yaw);
+        // the gate replacing a gate barrier belongs to the old level (its hedge line)
+        let is_gate_barrier = data
+            .element(&en.barrier)
+            .is_some_and(|b| b.kind.as_deref() == Some("closed_gate"));
+        self.placements[k].part = if is_gate_barrier {
+            data.element(&en.barrier).map_or(part, |b| b.part) as u8
+        } else {
+            part as u8
+        };
+        let pos = self.placements[k].pos;
+        use crate::collision::{LocalShape, Shape};
+        let h = GATE_ZOO_PILLAR_HALF;
+        for sx in [-1.0, 1.0] {
+            self.box_colliders.push(Shape::place(
+                LocalShape::Box {
+                    x: sx * GATE_ZOO_PILLAR_X,
+                    z: 0.0,
+                    hx: h.x,
+                    hz: h.y,
+                },
+                pos,
+                yaw,
+            ));
+        }
+        self.barrier_colliders.push((
+            en.barrier.clone(),
+            Shape::place(
+                LocalShape::Box {
+                    x: 0.0,
+                    z: 0.0,
+                    hx: GATE_ZOO_OPENING_M / 2.0,
+                    hz: GATE_ZOO_LEAF_HZ,
+                },
+                pos,
+                yaw,
+            ),
+        ));
+        self.openings.push(Opening {
+            placement: k,
+            kind: OpeningKind::LevelGate {
+                barrier: en.barrier.clone(),
+            },
+            center: c,
+            opening_m: GATE_ZOO_OPENING_M,
+            model_m: GATE_ZOO_OPENING_M,
             swing: 0.0,
         });
     }

@@ -69,7 +69,12 @@ fn layout_031_every_opening_has_its_gate_or_door_model() {
         3,
         "three turnstile lanes under the entrance arch"
     );
-    assert!(s.placements.iter().any(|p| p.model == "gate_zoo_closed"));
+    // the barrier gate is a level gate now (LAYOUT-036): `gate_zoo` with leaves
+    assert!(!s.placements.iter().any(|p| p.model == "gate_zoo_closed"));
+    assert!(s.openings.iter().any(|o| matches!(
+        &o.kind,
+        OpeningKind::LevelGate { barrier } if barrier == "barrier_north_gate"
+    ) && model_of(o) == "gate_zoo"));
     // building models where the footprint fits (the rest stays procedural)
     for (id, model) in [
         ("zookeeper_house_1", "zookeeper_house"),
@@ -160,7 +165,7 @@ fn layout_032_doors_and_gates_keep_a_free_walkway() {
                 .iter()
                 .find(|g| &g.id == garden)
                 .map(|g| (g.rect, true)),
-            OpeningKind::MoonDoor { .. } => None,
+            OpeningKind::MoonDoor { .. } | OpeningKind::LevelGate { .. } => None,
         }
     };
     let mut bad = Vec::new();
@@ -203,10 +208,11 @@ fn layout_032_doors_and_gates_keep_a_free_walkway() {
     }
     // exception: the moon door's cells are a barrier by day (open at night: LAYOUT-028); the
     // food-box rows keep a gap in front of the storage doors since Q-150 was answered
-    // (user, 2026-09-27: doors are never blocked)
+    // (user, 2026-09-27: doors are never blocked); level gates are closed behind their
+    // barrier until the level unlocks (their open walkway: LAYOUT-036 in level_gates.rs)
     let bad: Vec<String> = bad
         .into_iter()
-        .filter(|b| !b.starts_with("MoonDoor"))
+        .filter(|b| !b.starts_with("MoonDoor") && !b.starts_with("LevelGate"))
         .collect();
     assert!(
         bad.is_empty(),
@@ -217,7 +223,7 @@ fn layout_032_doors_and_gates_keep_a_free_walkway() {
 }
 
 // LAYOUT-033 (user decision 2026-09-27): the enclosure sign stands BESIDE its gate, never in
-// front of it — outside the fence, ≥ 0.5 m from the gate post, its whole (solid) footprint on
+// front of it — outside the fence, ≥ 0.9 m from the gate post (Q-157, LAYOUT-038), its whole (solid) footprint on
 // walkable cells, clear of the gate opening and the 1 m walkway in front of it, of the info
 // board and the food boxes, with a walkable place in front to look at it.
 #[test]
@@ -247,7 +253,7 @@ fn layout_033_enclosure_signs_stand_beside_the_gate() {
             continue;
         };
         let side = (sign - gc).dot(along).abs();
-        if side < 1.0 + 0.5 + 1.19 - 0.01 {
+        if side < 1.0 + 0.9 + 1.19 - 0.01 {
             bad.push(format!(
                 "{}: sign {sign} not beside the gate ({side:.2} m along)",
                 e.id
@@ -287,7 +293,7 @@ fn opening_normal(o: &zoo_core::scene::Opening, data: &zoo_core::LevelData) -> O
             data.element(enclosure)?.rect
         }
         OpeningKind::GardenGate { garden } => data.gardens.iter().find(|g| &g.id == garden)?.rect,
-        OpeningKind::MoonDoor { .. } => return None,
+        OpeningKind::MoonDoor { .. } | OpeningKind::LevelGate { .. } => return None,
     };
     let cell = zoo_core::level::cell_of;
     [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y]
@@ -418,18 +424,11 @@ fn rot_level_neg_y(yaw: f32) -> Vec2 {
 // at it — from 3 m in front, from 2.5 m out and 2.5 m aside (≈ 45°) and from 1.5 m out and
 // 3 m aside (along the frontage), both sides — and reaches the opening without getting stuck
 // (< 5 cm progress in a second). Start
-// points on unwalkable cells or in colliders are skipped. Known pockets waiting for Q-157
-// are listed below and skipped (remove an entry when its spot is fixed).
+// points on unwalkable cells or in colliders are skipped. No exceptions (Q-157 answered
+// 2026-09-27: `board_zebra`, `tap_l3` and the night-house boards were moved, LAYOUT-038).
 #[test]
 fn layout_034_openings_reachable_from_the_front_and_at_an_angle() {
     use zoo_core::collision::PLAYER_RADIUS_M;
-    const KNOWN_POCKETS: [(&str, f32, f32); 4] = [
-        // (owner id, metres out, metres aside) — Q-157
-        ("enc_zebra", 1.5, 3.0), // board_zebra flush with the gate post
-        ("zookeeper_house_3", 2.5, 2.5), // tap_l3 0.35 m beside the door
-        ("zookeeper_house_3", 1.5, 3.0),
-        ("night_house", 1.5, -3.0), // board_n1_bat 0.12 m in front of the facade
-    ];
     let data = common::zoo_with_night();
     let s = LevelScene::build(&data);
     let mut bad = Vec::new();
@@ -455,12 +454,6 @@ fn layout_034_openings_reachable_from_the_front_and_at_an_angle() {
             (1.5, -3.0),
             (1.5, 3.0),
         ] {
-            if KNOWN_POCKETS
-                .iter()
-                .any(|&(id, d, t)| id == owner && d == out && t == aside)
-            {
-                continue;
-            }
             let mut g = common::night_game(1);
             let start = o.center + n * out + a * aside;
             if !g
@@ -516,12 +509,145 @@ fn layout_034_openings_reachable_from_the_front_and_at_an_angle() {
     assert!(bad.is_empty(), "{}", bad.join("\n"));
 }
 
-// LAYOUT-035 (GAME-LAYOUT "[[light]]" placement rules, Q-118/Q-137): lantern posts have the
-// collider C(0, 0, 0.12) while they are visible (at night) and none by day. QA 2026-09-27:
-// the posts have no collider at all — the player walks through them at night. Ignored until
-// the night colliders exist (finding F4 of qa/reports/2026-09-27-doors-blocked.md).
+// LAYOUT-038 (Q-157 answered 2026-09-27, "no pocket beside a door or gate"): nothing solid
+// stands within 0.9 m beside the posts of an opening the player passes (doors of enterable
+// buildings, enclosure gates and glass doors, the garden gate, the moon door) — neither a
+// prop collider nor a solid cell sticking out of the wall / fence / hedge line (an info
+// board cell, a tap, a sign) — so walking at the opening at 45° she never gets caught in the
+// corner between such a thing and the wall. The door line itself (facade, fence, hedge
+// cells) does not count. Non-enterable doors (food storages) are only walked up to; their
+// box rows are covered by LAYOUT-032. The level gates (GAME-LAYOUT "Gates between the
+// levels", LAYOUT-036) are openings too.
 #[test]
-#[ignore = "F4 2026-09-27: lantern posts have no night collider yet"]
+fn layout_038_no_pocket_beside_a_door_or_gate() {
+    use glam::IVec2;
+    use zoo_core::collision::Shape;
+    use zoo_core::level::cell_of;
+    let data = common::zoo_with_night();
+    let g = common::night_game(1);
+    let s = LevelScene::build(&data);
+    let grid = g.level.grid();
+    const BESIDE_M: f32 = 0.9;
+    // distance from a point to a collider shape (0 inside)
+    let shape_dist = |sh: &Shape, p: Vec2| -> f32 {
+        match *sh {
+            Shape::Circle { c, r } => (p.distance(c) - r).max(0.0),
+            Shape::Box { c, u, half } => {
+                let d = p - c;
+                let l = Vec2::new(d.dot(u), d.dot(u.perp()));
+                (l.abs() - half).max(Vec2::ZERO).length()
+            }
+        }
+    };
+    let cell_dist = |p: Vec2, c: IVec2| {
+        let min = c.as_vec2();
+        (p - p.clamp(min, min + Vec2::ONE)).length()
+    };
+    // hedge / zoo-wall bands (and the level boundary) continue the wall line, whatever their
+    // thickness
+    let band = |c: IVec2| {
+        data.elements.iter().any(|e| {
+            (e.ty == ElementType::Boundary
+                || matches!(e.kind.as_deref(), Some("hedge" | "zoo_wall")))
+                && e.rect.contains(c)
+        })
+    };
+    let mut bad = Vec::new();
+    let mut checked = 0;
+    for o in &s.openings {
+        let passable = match &o.kind {
+            OpeningKind::BuildingDoor { enterable, .. } => *enterable,
+            _ => true,
+        };
+        if !passable {
+            continue;
+        }
+        let gate_like = matches!(
+            o.kind,
+            OpeningKind::EnclosureGate { .. } | OpeningKind::GlassDoor { .. }
+        );
+        checked += 1;
+        // a level gate's own pillars stand on its barrier cells (LAYOUT-036)
+        let own = match &o.kind {
+            OpeningKind::LevelGate { barrier } => data.element(barrier).map(|e| e.rect),
+            _ => None,
+        };
+        let n = opening_normal(o, &data)
+            .unwrap_or_else(|| rot_level_neg_y(s.placements[o.placement].yaw));
+        let along = n.perp();
+        let posts = [
+            o.center + along * (o.opening_m / 2.0),
+            o.center - along * (o.opening_m / 2.0),
+        ];
+        // the line of the opening (facade / fence / hedge row) and the opening's own cells
+        // the row of the opening's own cells (gate / door cells): the fence / facade line
+        let line_cell = cell_of(o.center - n * 0.25);
+        let line_d = (line_cell.as_vec2() + Vec2::splat(0.5) - o.center).dot(n);
+        let on_line = |c: IVec2| {
+            let d = (c.as_vec2() + Vec2::splat(0.5) - o.center).dot(n);
+            (d - line_d).abs() <= 0.05
+        };
+        let in_opening = |p: Vec2| (p - o.center).dot(along).abs() < o.opening_m / 2.0 - 0.01;
+        for post in posts {
+            for sh in g.level.colliders().shapes() {
+                let d = shape_dist(sh, post);
+                // thin fence runs (garden fence, 0.12 m) are walls, not things standing
+                // beside the post
+                let thin = match *sh {
+                    Shape::Box { half, .. } => half.min_element() <= 0.07,
+                    Shape::Circle { .. } => false,
+                };
+                // (the gate / door model's own posts and hinges stand on the post)
+                if d < BESIDE_M && d > 0.02 && !thin {
+                    let (lo, hi) = sh.aabb();
+                    let c = (lo + hi) / 2.0;
+                    if !in_opening(c) {
+                        bad.push(format!(
+                            "{:?} at {}: collider {:?} {d:.2} m beside the post {post}",
+                            o.kind,
+                            o.center,
+                            sh.aabb()
+                        ));
+                    }
+                }
+            }
+            let pc = zoo_core::level::cell_of(post);
+            for z in pc.y - 2..=pc.y + 2 {
+                for x in pc.x - 2..=pc.x + 2 {
+                    let c = IVec2::new(x, z);
+                    // (the opening's own cells, e.g. the 2 m deep moon door, are not beside it)
+                    if grid.is_walkable(c, true)
+                        || on_line(c)
+                        || band(c)
+                        || own.is_some_and(|r| r.contains(c))
+                        || in_opening(c.as_vec2() + Vec2::splat(0.5))
+                    {
+                        continue;
+                    }
+                    let d = cell_dist(post, c);
+                    // enclosures are walked into only by led animals: only the outside counts
+                    let out = (c.as_vec2() + Vec2::splat(0.5) - o.center).dot(n);
+                    if gate_like && out < 0.0 {
+                        continue;
+                    }
+                    if d < BESIDE_M {
+                        bad.push(format!(
+                            "{:?} at {}: solid cell {c} {d:.2} m beside the post {post}",
+                            o.kind, o.center
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    assert!(checked > 15, "only {checked} openings checked");
+    assert!(bad.is_empty(), "{} pockets:\n{}", bad.len(), bad.join("\n"));
+}
+
+// LAYOUT-035 (GAME-LAYOUT "[[light]]" placement rules, Q-118/Q-137): lantern posts have the
+// collider C(0, 0, 0.12) while they are visible (at night) and none by day (QA 2026-09-27
+// finding F4 of qa/reports/2026-09-27-doors-blocked.md, fixed).
+#[test]
 fn layout_035_lantern_posts_are_solid_at_night_only() {
     let mut g = common::night_game(1);
     let post = g

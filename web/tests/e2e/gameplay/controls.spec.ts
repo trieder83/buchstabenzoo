@@ -48,7 +48,7 @@ for (const [name, vp] of [
     });
 
     test('PLAY-016/017: swipe rotates one step while the left thumb walks; interact button works meanwhile', async ({ page }) => {
-      await goto(page, -6.0, 14.5); // east of the zebra board, on the ring path
+      await goto(page, -6.0, 15.5); // east of the zebra board, on the ring path
       await turn(page, 'KeyA');
       const yaw0 = await app<number>(page, 'camera_target_yaw_deg');
       const s = { x: vp.width * 0.2, y: vp.height * 0.8, id: 3 };
@@ -67,7 +67,7 @@ for (const [name, vp] of [
       await touch(cdp, 'touchEnd', []);
       await page.evaluate(() => {
         window.__zoo!.app.rotate(-1);
-        window.__zoo!.app.debug_teleport(-6.0, 14.5); // the walk drifted while the camera turned
+        window.__zoo!.app.debug_teleport(-6.0, 15.5); // the walk drifted while the camera turned
         window.__zoo!.app.debug_step(0);
       });
       await touch(cdp, 'touchStart', [s]);

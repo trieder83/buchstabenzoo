@@ -137,7 +137,7 @@ fn camv_008_hiding_places_beyond_the_fog_from_their_board() {
 #[test]
 fn camv_006_first_person_interaction_by_view_direction() {
     let mut g = common::game(1);
-    let board = Vec2::new(-8.5, 14.5); // zebra board, readable side east
+    let board = Vec2::new(-8.5, 15.5); // zebra board, readable side east
     let zebra_board = Some(Target::InfoBoard { animal: "zebra" });
     g.player.pos = board + Vec2::new(1.6, -0.6);
     // view straight west (yaw 90°: counter-clockwise from north)

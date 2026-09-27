@@ -193,7 +193,7 @@ test('LAYOUT-L3-014 / RESC-018…021: goldfish with the bowl de klasse1 — will
   // (an empty bowl does not work — RESC-019 in zoo-core; at a bank the fill target comes
   // first, so the child fills the bowl there instead)
   // 4. fill it at the tap next to the house door
-  await standFacing(page, -6.5, 59.5, -6.5, 60.75);
+  await standFacing(page, -5.5, 59.5, -5.5, 60.9);
   expect(await app<string>(page, 'target_key')).toBe('water:tap_l3');
   await page.keyboard.press('KeyE');
   expect(await app<string>(page, 'carry_bowl')).toBe('water');

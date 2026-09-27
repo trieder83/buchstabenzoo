@@ -11,8 +11,8 @@ use crate::coords::level_to_world_at;
 use crate::level::{ElementType, LevelData, Rect};
 use crate::scene::{
     building_model, facing_yaw, info_board_pose, model_offset, moon_door_pose, BoxPlacement, Dir,
-    Placement, BOARD_LAMP_INFO, BOARD_LAMP_LIGHT, BOARD_LAMP_MAP, LANTERN_LIGHT, MOON_DOOR_LIGHTS,
-    STRING_SPAN_M, WALL_LAMP_LIGHT, WALL_LAMP_MOUNT_M,
+    Placement, BOARD_LAMP_LIGHT, BOARD_LAMP_MAP, LANTERN_LIGHT, MOON_DOOR_LIGHTS, STRING_SPAN_M,
+    WALL_LAMP_LIGHT, WALL_LAMP_MOUNT_M,
 };
 
 /// Glow and light colours (sRGB) of the art plan's night colour table.
@@ -107,7 +107,7 @@ impl NightScene {
                             &e.id,
                             pos,
                             facing_yaw(dir),
-                            BOARD_LAMP_INFO,
+                            crate::scene::info_board_lamp_socket(e),
                             default_radius("board_lamp"),
                             part,
                         );
@@ -277,7 +277,14 @@ impl NightScene {
                 match board {
                     Some(e) if e.kind.as_deref() == Some("info_board") => {
                         let (p, d) = info_board_pose(e, data);
-                        self.board_lamp(&l.id, p, facing_yaw(d), BOARD_LAMP_INFO, radius, part);
+                        self.board_lamp(
+                            &l.id,
+                            p,
+                            facing_yaw(d),
+                            crate::scene::info_board_lamp_socket(e),
+                            radius,
+                            part,
+                        );
                     }
                     Some(e) if e.kind.as_deref() == Some("map_board") => {
                         let spawn = data

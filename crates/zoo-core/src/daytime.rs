@@ -136,6 +136,13 @@ impl Daytime {
         self.phase == Phase::Night
     }
 
+    /// The night-only lamp props (lantern posts, string lights) are shown and their glow
+    /// slots lit (dusk on, GAME-NIGHT rule 1); lantern posts are solid while shown
+    /// (LAYOUT-035).
+    pub fn lamps_on(&self) -> bool {
+        self.light().night > 0.2
+    }
+
     /// Night light is on (dusk, night, sleeping, morning): lamps, lantern, eyes.
     pub fn is_dark(&self) -> bool {
         self.light().night > 0.3

@@ -129,9 +129,20 @@ pub enum GameEvent {
     ItemTaken {
         id: String,
     },
-    /// The player put a carried item down.
+    /// The player put a carried item down (`fish_bowl`, `food:<id>`; GAME-FEED §8).
     ItemPutDown {
         id: String,
+    },
+    /// A food went back into its box: dropped next to it, or the oldest lying food when a
+    /// 9th item is put down (GAME-FEED §10).
+    FoodPutBack {
+        food: Food,
+    },
+    /// Nothing was put down: no free spot (the put-down button shakes, GAME-FEED §9).
+    PutDownRefused,
+    /// A bamboo stalk was snapped off at a cut spot (GAME-FEED §14).
+    BambooCut {
+        spot: String,
     },
     /// The fish bowl was filled at a water source (RESC-019).
     ContainerFilled {
@@ -217,6 +228,15 @@ pub enum Target {
     Item {
         id: String,
     },
+    /// A food lying on the ground (GAME-FEED §11), by its lying id.
+    LyingFood {
+        uid: u32,
+        food: Food,
+    },
+    /// A full-grown stalk at a bamboo cut spot (GAME-FEED §14).
+    CutSpot {
+        spot: String,
+    },
     /// A water source (tap, bank) to fill the carried container.
     Water {
         source: String,
@@ -260,6 +280,8 @@ impl Target {
             Target::Animal { .. } => "animal",
             Target::Gate { .. } => "gate",
             Target::Item { .. } => "item",
+            Target::LyingFood { .. } => "lying_food",
+            Target::CutSpot { .. } => "bamboo",
             Target::Water { .. } => "water",
             Target::PutDown => "put_down",
             Target::Bed => "bed",
@@ -520,6 +542,10 @@ pub struct Game {
     pub garden: crate::garden::Garden,
     /// The treat offered at a fence (the child's choice; default: the first one in the basket).
     pub treat_choice: Option<crate::garden::Treat>,
+    /// Foods lying on the ground (GAME-FEED §10).
+    pub lying: crate::carrying::Lying,
+    /// Regrowth of the bamboo cut spots (GAME-FEED §15).
+    pub bamboo: crate::carrying::BambooForests,
 }
 
 /// A building door opens while the player is this close to the door cell (m).
@@ -551,6 +577,8 @@ pub struct Bowl {
     pub water: bool,
     /// The animal is inside (RESC-019…022).
     pub fish: bool,
+    /// Put down by the child (lies on the ground, counts as a lying item, GAME-FEED §10).
+    pub dropped: bool,
 }
 
 /// Seed of the discovery RNG of level part `k ≥ 1` (level 1 keeps the main RNG, so its picks
@@ -594,6 +622,8 @@ impl GameEvent {
                 | GameEvent::MoonDoor { .. }
                 | GameEvent::Harvested { .. }
                 | GameEvent::TreatEaten { .. }
+                | GameEvent::FoodPutBack { .. }
+                | GameEvent::BambooCut { .. }
         )
     }
 }
@@ -681,8 +711,10 @@ impl Game {
                 carried: false,
                 water: false,
                 fish: false,
+                dropped: false,
             });
         let garden = crate::garden::Garden::new(&data);
+        let bamboo = crate::carrying::BambooForests::new(data.cut_spots.len());
         let level = Level::new(data);
         player.y = level.ground_height(player.pos);
         for a in &mut animals {
@@ -734,6 +766,8 @@ impl Game {
             daytime: Daytime::default(),
             garden,
             treat_choice: None,
+            lying: crate::carrying::Lying::default(),
+            bamboo,
         })
     }
 
@@ -1038,24 +1072,25 @@ impl Game {
             return Err(InteractError::OutOfRange);
         }
         b.carried = true;
+        b.dropped = false;
         b.lift_m = 0.0;
         self.events.push(GameEvent::ItemTaken { id: id.to_owned() });
         Ok(())
     }
 
     /// Puts the carried bowl down in front of the player (GAME-RESCUE "goldfish bowl" 7: the
-    /// fish stays safe in it).
+    /// fish stays safe in it); the GAME-FEED §8–10 rules apply ([`Game::put_down`]).
     pub fn put_down_item(&mut self) -> bool {
-        let at = self.player.pos + self.player.facing * 0.5;
-        let Some(b) = self.bowl.as_mut().filter(|b| b.carried) else {
+        if !self.bowl.as_ref().is_some_and(|b| b.carried) {
             return false;
-        };
-        b.carried = false;
-        b.pos = at;
-        b.lift_m = self.level.ground_height(at); // on the surface (GAME-PLAYER 8)
-        let id = b.id.clone();
-        self.events.push(GameEvent::ItemPutDown { id });
-        true
+        }
+        match self.put_down() {
+            Ok(_) => true,
+            Err(_) => {
+                self.events.push(GameEvent::PutDownRefused);
+                false
+            }
+        }
     }
 
     /// Fills the carried bowl at a water source within range (RESC-019).
@@ -1184,6 +1219,29 @@ impl Game {
                 }
             }
         }
+        // lying foods (GAME-FEED §11) and full-grown bamboo stalks (§14)
+        for f in &self.lying.foods {
+            if self.part_unlocked(data.part_at(cell_of(f.pos)).unwrap_or(0)) {
+                out.push(Interactable {
+                    target: Target::LyingFood {
+                        uid: f.uid,
+                        food: f.food,
+                    },
+                    point: f.pos,
+                    readable: None,
+                });
+            }
+        }
+        for (i, c) in data.cut_spots.iter().enumerate() {
+            let full = self.bamboo.stage(i) == Some(crate::carrying::StalkStage::Full);
+            if full && self.part_unlocked(c.part) {
+                out.push(Interactable {
+                    target: Target::CutSpot { spot: c.id.clone() },
+                    point: c.pos(),
+                    readable: None,
+                });
+            }
+        }
         if self.bed_usable() {
             for point in self.beds() {
                 out.push(Interactable {
@@ -1286,6 +1344,10 @@ impl Game {
 
     /// [`Game::is_available`] with another range (panel hysteresis, GAME-PLAYER §4).
     pub fn is_available_within(&self, it: &Interactable, range: f32) -> bool {
+        let range = match it.target {
+            Target::CutSpot { .. } => range.min(crate::carrying::CUT_RANGE_M),
+            _ => range,
+        };
         let p = self.player.pos;
         let to_player = p - it.point;
         let dist = to_player.length();
@@ -1369,6 +1431,14 @@ impl Game {
                 self.take_item(&id).ok()?;
                 Some(Interaction::Item { id, action: "take" })
             }
+            Target::LyingFood { uid, food } => self.pick_up_food(uid).then(|| Interaction::Item {
+                id: format!("food:{}", food.id()),
+                action: "take",
+            }),
+            Target::CutSpot { spot } => self.cut_bamboo(&spot).then(|| Interaction::Item {
+                id: format!("cut_spot:{spot}"),
+                action: "cut",
+            }),
             Target::Water { .. } => {
                 self.fill_container().ok()?;
                 let id = self.bowl.as_ref()?.id.clone();
@@ -1486,7 +1556,9 @@ impl Game {
                 (self.is_leading() || self.carrying_animal()) && d <= GATE_OPEN_M
             }
             K::GardenGate { .. } => d <= GARDEN_GATE_OPEN_M,
-            K::MoonDoor { barrier } => self.level.is_barrier_open(barrier),
+            K::MoonDoor { barrier } | K::LevelGate { barrier } => {
+                self.level.is_barrier_open(barrier)
+            }
         }
     }
 
@@ -1510,6 +1582,7 @@ impl Game {
         let gate = self.level.data.elements[enc].gate;
         if let Some(b) = &mut self.bowl {
             b.carried = false;
+            b.dropped = false;
             b.fish = false;
             b.pos = gate.map_or(self.player.pos, |g| {
                 Vec2::new(g.x as f32 + g.w as f32 / 2.0, g.z as f32 + g.d as f32 / 2.0)
@@ -1557,6 +1630,8 @@ impl Game {
     /// Advances the simulation by `dt` seconds with the joystick `input` (level
     /// coordinates `(x, z)`).
     pub fn update(&mut self, dt: f32, input: Vec2) {
+        // lantern posts are solid while they are shown (LAYOUT-035)
+        self.level.set_night_solid(self.daytime.lamps_on());
         let leading = self.is_leading();
         let mut params = self.move_params;
         if self.carrying_animal() {
@@ -1582,6 +1657,7 @@ impl Game {
         }
         self.check_gate();
         self.garden.update(dt);
+        self.bamboo.update(dt);
         self.update_followers(dt);
         self.update_wander(dt);
         self.update_daytime(dt);

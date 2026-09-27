@@ -137,6 +137,45 @@
         font-size: 30px;
         font-weight: bold;
       }
+      /* Put-down button (GAME-FEED §8): below the carried-item HUD, ≥ 64 px, icon only. */
+      #drop-btn {
+        position: fixed;
+        left: calc(16px + env(safe-area-inset-left));
+        top: calc(100px + env(safe-area-inset-top));
+        width: 76px;
+        height: 76px;
+        font-size: 30px;
+        letter-spacing: -4px;
+      }
+      #drop-btn.shake {
+        animation: shake 0.4s;
+      }
+      @keyframes shake {
+        20%,
+        60% {
+          transform: translateX(-8px);
+        }
+        40%,
+        80% {
+          transform: translateX(8px);
+        }
+      }
+      /* Readable icons above lying foods (GAME-FEED §10). */
+      #lying-icons {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+      #lying-icons .lying-icon {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 30px;
+        padding: 2px 6px;
+        border-radius: 14px;
+        border: 3px solid #3b2314;
+        background: rgba(255, 243, 214, 0.9);
+      }
       #hud-carry .icon {
         font-size: 40px;
       }
@@ -517,6 +556,8 @@
     <canvas id="game" tabindex="0"></canvas>
     <div id="stick"><div id="knob"></div></div>
     <div id="hud-carry" hidden></div>
+    <button id="drop-btn" class="round" type="button" hidden>✋⬇</button>
+    <div id="lying-icons"></div>
     <button id="settings-btn" class="round" type="button">⚙️</button>
     <button id="view-btn" class="round" type="button" aria-pressed="false">👓</button>
     <button id="look-btn" class="round" type="button">👁️</button>

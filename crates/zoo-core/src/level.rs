@@ -133,6 +133,9 @@ pub struct Element {
     pub transition: Option<String>,
     /// Barriers: the level whose completion unlocks it (moon door: its nightfall, Q-133).
     pub unlock_after: Option<String>,
+    /// Bamboo forests: bamboo can be cut at its `[[cut_spot]]`s (GAME-FEED §14).
+    #[serde(default)]
+    pub harvestable: bool,
     #[serde(default)]
     pub blocks_view: bool,
     pub height_m: Option<f32>,
@@ -164,6 +167,11 @@ pub struct Element {
     /// Rivers and streams: flow direction `N` / `E` / `S` / `W` (level coordinates;
     /// GAME-LAYOUT "Water", Q-066). Required on every `river` / `stream` element.
     pub flow: Option<String>,
+    /// Info boards: `mount = "wall"` — a flat board on the building facade behind its cell
+    /// instead of a standing board: not solid, no footprint, so no pocket forms between the
+    /// board and the wall beside a door (Q-157, LAYOUT-038).
+    #[serde(default)]
+    pub mount: Option<String>,
     /// Index of the level part the element comes from ([`LevelData::parts`]).
     #[serde(skip)]
     pub part: usize,
@@ -187,7 +195,12 @@ impl Element {
     /// tree areas (only their trunks/bushes are solid, as prop colliders — GAME-LAYOUT
     /// "Forests").
     pub fn is_solid(&self) -> bool {
-        self.ty.is_solid() && !self.is_sparse()
+        self.ty.is_solid() && !self.is_sparse() && !self.is_wall_board()
+    }
+
+    /// An info board mounted flat on a facade (`mount = "wall"`, Q-157): not solid.
+    pub fn is_wall_board(&self) -> bool {
+        self.kind.as_deref() == Some("info_board") && self.mount.as_deref() == Some("wall")
     }
 
     /// A `sparse` tree area.
@@ -407,6 +420,31 @@ pub struct PlantSpotData {
 impl PlantSpotData {
     pub fn pos(&self) -> Vec2 {
         Vec2::from(self.pos)
+    }
+}
+
+/// A place at the edge of a harvestable bamboo forest where a stalk can be snapped off
+/// (`[[cut_spot]]`, GAME-FEED §14–15, Q-156).
+#[derive(Debug, Clone, Deserialize)]
+pub struct CutSpotData {
+    pub id: String,
+    /// The bamboo element (`harvestable = true`).
+    pub forest: String,
+    /// Foot of the cut stalk (level metres), at the forest edge.
+    pub pos: [f32; 2],
+    /// Where the child stands to cut it (walkable, within 1.5 m).
+    pub stand: [f32; 2],
+    #[serde(skip)]
+    pub part: usize,
+}
+
+impl CutSpotData {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::from(self.pos)
+    }
+
+    pub fn stand(&self) -> Vec2 {
+        Vec2::from(self.stand)
     }
 }
 
@@ -676,6 +714,9 @@ pub struct LevelData {
     pub garden_beds: Vec<GardenBedData>,
     #[serde(default, rename = "plant_spot")]
     pub plant_spots: Vec<PlantSpotData>,
+    /// Bamboo cut spots of harvestable bamboo forests (GAME-FEED §14).
+    #[serde(default, rename = "cut_spot")]
+    pub cut_spots: Vec<CutSpotData>,
     /// The level files joined into this data (one for a single level file).
     #[serde(skip)]
     pub parts: Vec<LevelPart>,
@@ -857,6 +898,11 @@ impl LevelData {
                 }));
             out.plant_spots
                 .extend(next.plant_spots.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
+            out.cut_spots
+                .extend(next.cut_spots.into_iter().map(|mut e| {
                     e.part = shift(e.part);
                     e
                 }));
@@ -1197,24 +1243,46 @@ pub struct Level {
     barrier_parts: Vec<(String, std::ops::Range<usize>)>,
     /// Solid placeholder boxes on walkable cells (GAME-PLAYER 9).
     box_colliders: Vec<crate::collision::Shape>,
+    /// Shapes solid only while their barrier is closed (level-gate leaves, LAYOUT-036).
+    barrier_colliders: Vec<(String, crate::collision::Shape)>,
     /// Ground heights (GAME-PLAYER 8).
     ground: crate::ground::GroundMap,
     /// Gate and door models in the openings (LAYOUT-031).
     openings: Vec<crate::scene::Opening>,
+    /// Lantern-post colliders C(0, 0, 0.12), solid only while the posts are visible (at
+    /// night, LAYOUT-035); they never change the grid (navigation stays the same by day and
+    /// night).
+    night_shapes: Vec<crate::collision::Shape>,
+    night_solid: bool,
 }
+
+/// Collider radius of a lantern post while it is visible (GAME-LAYOUT `[[light]]`, LAYOUT-035).
+pub const LANTERN_POST_RADIUS_M: f32 = 0.12;
 
 impl Level {
     pub fn new(data: LevelData) -> Self {
         let open_barriers = BTreeSet::new();
         let mut grid = Grid::build(&data, &open_barriers);
         let scene = crate::scene::LevelScene::build(&data);
+        let mut extra = scene.box_colliders.clone();
+        extra.extend(scene.barrier_colliders.iter().map(|(_, s)| *s));
         let colliders = crate::collision::Colliders::from_placements_and(
             &scene.placements,
-            &scene.box_colliders,
+            &extra,
             data.level.bounds,
         );
         grid.set_prop_blocked(&colliders);
         let ground = crate::ground::GroundMap::build(&scene, data.level.bounds);
+        let night_shapes = data
+            .lights
+            .iter()
+            .filter(|l| l.kind.is_empty() || l.kind == "lantern_post")
+            .filter_map(|l| l.pos())
+            .map(|c| crate::collision::Shape::Circle {
+                c,
+                r: LANTERN_POST_RADIUS_M,
+            })
+            .collect();
         Self {
             data,
             open_barriers,
@@ -1223,9 +1291,26 @@ impl Level {
             placements: scene.placements,
             barrier_parts: scene.barrier_parts,
             box_colliders: scene.box_colliders,
+            barrier_colliders: scene.barrier_colliders,
             ground,
             openings: scene.openings,
+            night_shapes,
+            night_solid: false,
         }
+    }
+
+    /// Makes the lantern posts solid (they are visible: dusk to morning) or not (by day),
+    /// LAYOUT-035. Only the player's colliders change, not the grid.
+    pub fn set_night_solid(&mut self, on: bool) {
+        if self.night_solid != on {
+            self.night_solid = on;
+            self.rebuild_colliders();
+        }
+    }
+
+    /// Whether the lantern posts are solid now.
+    pub fn night_solid(&self) -> bool {
+        self.night_solid
     }
 
     /// Gate and door models in the openings (LAYOUT-031); indices match
@@ -1259,11 +1344,32 @@ impl Level {
             .filter(|(i, _)| !removed.iter().any(|r| r.contains(i)))
             .map(|(_, p)| p.clone())
             .collect();
-        self.colliders = crate::collision::Colliders::from_placements_and(
-            &kept,
-            &self.box_colliders,
-            self.data.level.bounds,
+        let mut extra = self.box_colliders.clone();
+        extra.extend(
+            self.barrier_colliders
+                .iter()
+                .filter(|(id, _)| !self.open_barriers.contains(id))
+                .map(|(_, s)| *s),
         );
+        if self.night_solid {
+            extra.extend_from_slice(&self.night_shapes);
+        }
+        self.colliders =
+            crate::collision::Colliders::from_placements_and(&kept, &extra, self.data.level.bounds);
+    }
+
+    /// Grid cells blocked by props: from the colliders without the night-only posts.
+    fn refresh_prop_blocked(&mut self) {
+        let night = self.night_solid;
+        if night {
+            self.night_solid = false;
+            self.rebuild_colliders();
+        }
+        self.grid.set_prop_blocked(&self.colliders);
+        if night {
+            self.night_solid = true;
+            self.rebuild_colliders();
+        }
     }
 
     pub fn grid(&self) -> &Grid {
@@ -1296,7 +1402,7 @@ impl Level {
         }
         self.rebuild_colliders();
         self.grid = Grid::build(&self.data, &self.open_barriers);
-        self.grid.set_prop_blocked(&self.colliders);
+        self.refresh_prop_blocked();
         true
     }
 
@@ -1308,7 +1414,7 @@ impl Level {
         }
         self.rebuild_colliders();
         self.grid = Grid::build(&self.data, &self.open_barriers);
-        self.grid.set_prop_blocked(&self.colliders);
+        self.refresh_prop_blocked();
         true
     }
 

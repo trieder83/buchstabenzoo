@@ -276,6 +276,9 @@ pub struct LevelScene {
     /// Collision shapes of placeholder boxes standing on walkable cells (furniture, beds,
     /// leaf heaps, the sprinkler post): solid, never stood on (GAME-PLAYER 9, PLAY-035).
     pub box_colliders: Vec<crate::collision::Shape>,
+    /// Collision shapes that exist only while a barrier is closed (the closed leaves of a
+    /// level gate, LAYOUT-036); keyed by the barrier id.
+    pub barrier_colliders: Vec<(String, crate::collision::Shape)>,
     /// Gate and door models in the openings (LAYOUT-031).
     pub openings: Vec<Opening>,
     /// Buildings drawn by their model (roof hiding, PLAY-028 / CAMV-022).
@@ -287,6 +290,92 @@ pub struct LevelScene {
     /// Placements that never move, merged into one static mesh each by the renderer (a
     /// garden, a room's furniture; ARCH-008).
     pub bake_groups: Vec<BakeGroup>,
+    /// Turning water wheels in the water (`mill_hut`, LAYOUT-L3-017); drawn by the host with
+    /// a spinning `wheel` part (ARCH-007).
+    pub water_wheels: Vec<WaterWheel>,
+}
+
+/// Radius of the mill hut's water wheel to the paddle tips (m).
+pub const WATER_WHEEL_RADIUS_M: f32 = 1.2;
+/// Axle height above the water surface ([`crate::ground::WATER_TOP_M`]): a third of the
+/// radius dips below it (GAME-LEVEL-3 `loc_water_wheel`, LAYOUT-L3-017).
+pub const WATER_WHEEL_AXLE_Y: f32 = 0.8;
+/// Width of the wheel along its axle (level x) (m).
+pub const WATER_WHEEL_WIDTH_M: f32 = 0.5;
+/// Radial length of a paddle (m).
+pub const WATER_WHEEL_PADDLE_M: f32 = 0.38;
+/// Number of paddles.
+pub const WATER_WHEEL_PADDLES: u32 = 8;
+/// Turn per second about the model's +X axis (radians): ≈ 60°/s as specified — exactly 3
+/// turns per water loop ([`crate::water::WATER_LOOP_S`], 67.5°/s) because the renderer's
+/// clock wraps with the water loop, so the turn stays seamless. Negative: the lower paddles
+/// move towards glTF +Z = level south, with the stream's flow (`flow = "S"`).
+pub const WATER_WHEEL_SPIN: f32 = -3.0 * std::f32::consts::TAU / crate::water::WATER_LOOP_S as f32;
+/// Distance of the wheel centre from the mill hut's west wall (level x), inside the stream.
+pub const WATER_WHEEL_OFFSET_M: f32 = 2.0;
+
+/// A turning water wheel (level 3 `mill_hut`, the only one in the zoo): axle along level x,
+/// the wheel plane is level y–z. Model space = glTF (x right, y up, z = level south) with the
+/// origin on the water surface under the axle.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WaterWheel {
+    /// Level point under the axle, the wheel's centre plane.
+    pub center: Vec2,
+    pub axle_y: f32,
+    pub radius: f32,
+    pub width: f32,
+    /// Where the axle ends in the hut wall (level x, east of the wheel).
+    pub axle_end_x: f32,
+    /// Turn per second about model +X (see [`WATER_WHEEL_SPIN`]).
+    pub spin: f32,
+    /// Level part (render region).
+    pub part: usize,
+}
+
+impl WaterWheel {
+    /// The wheel of a `mill_hut` element: west of the hut, in the stream.
+    pub fn of_mill_hut(e: &Element) -> Self {
+        let r = e.rect;
+        Self {
+            center: Vec2::new(
+                r.x as f32 - WATER_WHEEL_OFFSET_M,
+                r.z as f32 + r.d as f32 / 2.0,
+            ),
+            axle_y: WATER_WHEEL_AXLE_Y,
+            radius: WATER_WHEEL_RADIUS_M,
+            width: WATER_WHEEL_WIDTH_M,
+            axle_end_x: r.x as f32 + 0.3,
+            spin: WATER_WHEEL_SPIN,
+            part: e.part,
+        }
+    }
+
+    /// Wheel angle at play time `t` (radians about model +X), continuous by day and night.
+    pub fn angle_at(&self, t: f64) -> f32 {
+        ((t * f64::from(self.spin)) % std::f64::consts::TAU) as f32
+    }
+
+    /// Paddle tip `k` at time `t`: level point and height (the shader's `turn` about +X:
+    /// y' = c y − s z, z' = s y + c z in glTF space, glTF z = −level z).
+    pub fn paddle_tip(&self, k: u32, t: f64) -> (Vec2, f32) {
+        let a0 = k as f32 * std::f32::consts::TAU / WATER_WHEEL_PADDLES as f32;
+        // rest pose: paddle k at (y, z) = R (cos a0, sin a0) about the axle
+        let (y, z) = (self.radius * a0.cos(), self.radius * a0.sin());
+        let (s, c) = self.angle_at(t).sin_cos();
+        let (y2, z2) = (c * y - s * z, s * y + c * z);
+        (self.center + Vec2::new(0.0, -z2), self.axle_y + y2)
+    }
+
+    /// Where the paddles enter and leave the water (level, on the surface).
+    pub fn water_points(&self) -> [Vec2; 2] {
+        let h = (self.radius * self.radius - self.axle_y * self.axle_y)
+            .max(0.0)
+            .sqrt();
+        [
+            self.center + Vec2::new(0.0, h),
+            self.center - Vec2::new(0.0, h),
+        ]
+    }
 }
 
 /// Bridge piles standing in the water (`kit_water.py` `bridge_wood`, Q-068): offsets from
@@ -619,7 +708,26 @@ pub fn info_board_pose(e: &Element, data: &LevelData) -> (Vec2, Dir) {
         .and_then(|id| data.element(id))
         .map(|enc| dir_away(enc.rect, rect_center(e.rect)))
         .unwrap_or(Dir::S);
-    (rect_center(e.rect), dir)
+    let c = rect_center(e.rect);
+    if e.is_wall_board() {
+        // on the facade behind the cell (the side away from the reader, Q-157)
+        return (c - dir.offset().as_vec2() * 0.5, dir);
+    }
+    (c, dir)
+}
+
+/// A wall-mounted info board (`mount = "wall"`, Q-157): panel size (w, h, depth) and the
+/// height of its bottom edge above the ground.
+pub const WALL_BOARD: Vec3 = Vec3::new(1.0, 0.75, 0.06);
+pub const WALL_BOARD_BOTTOM_M: f32 = 1.0;
+
+/// Board-lamp socket of an info board: on the standing board, or above a wall board.
+pub fn info_board_lamp_socket(e: &Element) -> Vec3 {
+    if e.is_wall_board() {
+        BOARD_LAMP_WALL
+    } else {
+        BOARD_LAMP_INFO
+    }
 }
 
 impl LevelScene {
@@ -724,6 +832,13 @@ impl LevelScene {
             if e.kind.as_deref() == Some("moon_door") {
                 // the model: frame and leaves (the leaves swing open, LAYOUT-028/031)
                 s.moon_door_model(e, data);
+            }
+        }
+        // level gates (GAME-LAYOUT "Gates between the levels", LAYOUT-036): a `gate_zoo` at
+        // every level entry, closed while its barrier stands
+        for (k, part) in data.parts.iter().enumerate() {
+            for en in &part.entries {
+                s.level_gate(en, k, data);
             }
         }
         // perches (proposal Q-094): a branch / platform under every perch point
@@ -945,9 +1060,11 @@ impl LevelScene {
                     }
                 }
                 (_, Some("mill_hut")) => {
-                    let p = Vec2::new(e.rect.x as f32 - 1.5, c.y);
-                    if self.water.is_water(p) {
-                        self.obstacle(p, 0.3);
+                    // foam where the paddles enter and leave the water (LAYOUT-L3-017)
+                    for p in WaterWheel::of_mill_hut(e).water_points() {
+                        if self.water.is_water(p) {
+                            self.obstacle(p, 0.3);
+                        }
                     }
                 }
                 (ElementType::Landmark, Some("fountain")) => self.obstacle(c, 0.13),
@@ -1865,6 +1982,20 @@ impl LevelScene {
             }
             (ElementType::Decoration, "bamboo") => self.bamboo_thicket(e, grid),
             (ElementType::Decoration, "bench") => self.rect_box(e, 0.0, 0.5, colors::WOOD),
+            (ElementType::Decoration, "info_board") if e.is_wall_board() => {
+                // flat board on the facade, not solid (Q-157, LAYOUT-038)
+                let (pos, dir) = info_board_pose(e, data);
+                let out = dir.offset().as_vec2();
+                self.boxes.push(BoxPlacement {
+                    pos: level_to_world_at(pos + out * (WALL_BOARD.z / 2.0), WALL_BOARD_BOTTOM_M),
+                    size: WALL_BOARD,
+                    yaw: facing_yaw(dir),
+                    color: colors::WOOD_LIGHT,
+                    fadeable: false,
+                    source: e.id.clone(),
+                    part: e.part as u8,
+                });
+            }
             (ElementType::Decoration, "info_board") => {
                 let (pos, dir) = info_board_pose(e, data);
                 self.model_at("info_board", pos, facing_yaw(dir));
@@ -1998,6 +2129,9 @@ impl LevelScene {
                 // column of path_ne (GAME-LEVEL-1 "Collision and billboards")
                 self.model_at("fallen_tree", rect_center(e.rect) + Vec2::X * 0.3, 0.0)
             }
+            (ElementType::Barrier, "closed_gate") if is_level_gate_barrier(data, &e.id) => {
+                // the level gate model stands here instead (LAYOUT-036, `level_gate`)
+            }
             (ElementType::Barrier, "closed_gate") => {
                 // on the walkable side of the band (Q-087): the gate leaf 0.25 m behind the
                 // edge (its pillars reach 0.11 m out, solid by the footprint; LAYOUT-019)
@@ -2122,43 +2256,9 @@ impl LevelScene {
             "mill_hut" => {
                 self.part_box(id, c, 0.0, Vec3::new(w - 0.6, 2.2, d - 0.6), colors::WOOD);
                 self.part_box(id, c, 2.2, Vec3::new(w - 0.2, 0.7, d - 0.2), colors::ROOF);
-                // water wheel over the stream west of the hut (not solid): hub, spokes, paddles
-                let wheel = Vec2::new(r.x as f32 - 1.5, c.y);
-                let axle = 1.3;
-                // hub thicker than the spokes, crossing spokes of different section, so no
-                // two faces share a plane (ARCH-005)
-                self.part_box(
-                    id,
-                    wheel,
-                    axle - 0.17,
-                    Vec3::new(1.8, 0.34, 0.34),
-                    colors::WOOD,
-                );
-                self.part_box(
-                    id,
-                    wheel,
-                    0.05,
-                    Vec3::new(0.25, 2.5, 0.3),
-                    colors::WOOD_LIGHT,
-                );
-                self.part_box(
-                    id,
-                    wheel,
-                    axle - 0.13,
-                    Vec3::new(0.21, 0.26, 2.5),
-                    colors::WOOD_LIGHT,
-                );
-                for k in 0..8 {
-                    let a = k as f32 * std::f32::consts::TAU / 8.0;
-                    let p = wheel + Vec2::new(0.0, a.cos() * 1.2);
-                    self.part_box(
-                        id,
-                        p,
-                        axle + a.sin() * 1.2 - 0.2,
-                        Vec3::new(0.5, 0.4, 0.2),
-                        colors::WOOD,
-                    );
-                }
+                // the water wheel turns in the stream west of the hut (not solid, drawn by the
+                // host with a spinning part, LAYOUT-L3-017)
+                self.water_wheels.push(WaterWheel::of_mill_hut(e));
             }
             "willow" => {
                 self.part_box(id, c, 0.0, Vec3::new(0.6, 3.0, 0.6), colors::TREE_TRUNK);
@@ -3272,7 +3372,7 @@ impl LevelScene {
 pub const ENCLOSURE_SIGN_HALF_W: f32 = 1.19;
 pub const ENCLOSURE_SIGN_Z: (f32, f32) = (0.10, 0.26);
 /// Gap between the sign and the gate post (m) and its distance out from the fence line.
-pub const ENCLOSURE_SIGN_GAP_M: f32 = 0.5;
+pub const ENCLOSURE_SIGN_GAP_M: f32 = 0.9;
 pub const ENCLOSURE_SIGN_OUT_M: f32 = 0.35;
 
 /// Where an enclosure's sign stands beside its gate (LAYOUT-033): outside the fence, along

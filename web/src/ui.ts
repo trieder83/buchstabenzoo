@@ -33,6 +33,11 @@ export interface UiApp {
   sleep_fade?(): number;
   /** GAME-GARDEN: the treat basket as JSON `{"carrot", "potato", "capacity", "offered"}`. */
   basket_json?(): string;
+  /** GAME-FEED §8: something droppable is in the hands; put it down (false: nothing dropped). */
+  can_put_down?(): boolean;
+  put_down?(): boolean;
+  /** GAME-FEED §10: lying foods near the player with their screen position (CSS px). */
+  lying_icons_json?(): string;
 }
 
 /** Treat basket contents (GAME-GARDEN §4). */
@@ -156,6 +161,9 @@ export const TARGET_ICONS: Record<string, string> = {
   item: '🫙',
   water: '💧',
   put_down: '⬇️',
+  // GAME-FEED §11/§14: pick up a lying food (its own icon, see targetIcon), cut bamboo
+  lying_food: '📦',
+  bamboo: '🎋',
   // GAME-NIGHT rule 3: the two night choices, no reading needed
   bed: '🛏️',
   moon_door: '🌙',
@@ -164,6 +172,43 @@ export const TARGET_ICONS: Record<string, string> = {
   garden_sign: '👀',
   treat: '🧺',
 };
+
+/**
+ * Icon of the interact button for a target: a lying food shows its food (key
+ * `lying_food:<food>:<uid>`), everything else the kind's icon.
+ */
+export function targetIcon(kind: string, key: string): string {
+  if (kind === 'lying_food') {
+    const food = key.split(':')[1] ?? '';
+    return FOOD_ICONS[food] ?? TARGET_ICONS.lying_food;
+  }
+  return TARGET_ICONS[kind] ?? '';
+}
+
+/** Lying-food icon positions (GAME-FEED §10) from the JSON of `lying_icons_json`. */
+export interface LyingIcon {
+  food: string;
+  x: number;
+  y: number;
+}
+
+export function parseLyingIcons(json: string | undefined): LyingIcon[] {
+  if (!json) return [];
+  try {
+    const v = JSON.parse(json) as unknown;
+    if (!Array.isArray(v)) return [];
+    return v.filter(
+      (i): i is LyingIcon =>
+        typeof i === 'object' &&
+        i !== null &&
+        typeof (i as LyingIcon).food === 'string' &&
+        typeof (i as LyingIcon).x === 'number' &&
+        typeof (i as LyingIcon).y === 'number',
+    );
+  } catch {
+    return [];
+  }
+}
 
 const LEVEL_ICONS: Record<string, string> = { kiga: '🧸', klasse1: '1', klasse2: '2', klasse3: '3' };
 const LANG_ICONS: Record<string, string> = { de: '🇩🇪', en: '🇬🇧' };
@@ -294,6 +339,11 @@ export class Ui {
   readonly hint = document.getElementById('hint') as HTMLButtonElement;
   readonly panel = document.getElementById('panel') as HTMLDivElement;
   readonly hud = document.getElementById('hud-carry') as HTMLDivElement;
+  /** GAME-FEED §8: the put-down button next to the carried item (✋⬇, no text). */
+  readonly dropBtn = document.getElementById('drop-btn') as HTMLButtonElement | null;
+  /** GAME-FEED §10: readable icons above lying foods near the player. */
+  readonly lyingIcons = document.getElementById('lying-icons') as HTMLDivElement | null;
+  private lastLying = '';
   readonly gear = document.getElementById('settings-btn') as HTMLButtonElement;
   readonly settings = document.getElementById('settings') as HTMLDivElement;
   readonly bubble = document.getElementById('bubble') as HTMLDivElement;
@@ -318,6 +368,11 @@ export class Ui {
         this.interact();
       });
     }
+    this.dropBtn?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.putDown();
+    });
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
     // (CAMV-019)
@@ -351,13 +406,44 @@ export class Ui {
     this.pollEvents();
   }
 
+  /** Put-down button (GAME-FEED §8): drop the item in the hands; a gentle shake if not. */
+  putDown(): void {
+    if (!this.app.put_down) return;
+    if (!this.app.put_down()) this.shakeDrop();
+    this.pollEvents();
+  }
+
+  private shakeDrop(): void {
+    if (!this.dropBtn) return;
+    this.dropBtn.classList.remove('shake');
+    void this.dropBtn.offsetWidth; // restart the animation
+    this.dropBtn.classList.add('shake');
+  }
+
+  /** Readable icons above the lying foods near the player (GAME-FEED §10). */
+  private updateLying(): void {
+    if (!this.lyingIcons || !this.app.lying_icons_json) return;
+    const json = this.app.lying_icons_json();
+    if (json === this.lastLying) return;
+    this.lastLying = json;
+    const icons = parseLyingIcons(json);
+    this.lyingIcons.replaceChildren(
+      ...icons.map((i) => {
+        const e = el('span', 'lying-icon', FOOD_ICONS[i.food] ?? '📦');
+        e.dataset.food = i.food;
+        e.style.transform = `translate(${i.x.toFixed(0)}px, ${i.y.toFixed(0)}px) translate(-50%, -100%)`;
+        return e;
+      }),
+    );
+  }
+
   /** Per-frame update: button visibility, HUD, events, auto-close. */
   update(): void {
     const key = this.app.target_key();
     if (key !== this.lastTarget) {
       this.lastTarget = key;
       const kind = this.app.target_kind();
-      const icon = TARGET_ICONS[kind] ?? '';
+      const icon = targetIcon(kind, key);
       this.act.textContent = icon;
       this.act.hidden = !(this.touch && kind);
       this.act.dataset.kind = kind;
@@ -368,6 +454,11 @@ export class Ui {
     }
     this.updateView();
     this.updateNight();
+    if (this.dropBtn) {
+      const can = this.app.can_put_down?.() ?? false;
+      if (this.dropBtn.hidden === can) this.dropBtn.hidden = !can;
+    }
+    this.updateLying();
     const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}|${this.app.basket_json?.() ?? ''}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
@@ -482,6 +573,7 @@ export class Ui {
       else if (['dusk', 'morning', 'moon_door', 'level_complete'].includes(e.type) && e.text)
         this.showBanner(e.text, e.key ?? '');
       else if (e.type === 'sleep') this.hidePanel();
+      else if (e.type === 'put_down_refused') this.shakeDrop();
     }
   }
 
@@ -712,6 +804,7 @@ export class Ui {
     this.lookBtn?.setAttribute('aria-label', this.app.t('ui-look-around'));
     this.act.setAttribute('aria-label', this.app.t('ui-interact'));
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
+    this.dropBtn?.setAttribute('aria-label', this.app.t('ui-put-down'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
     this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));

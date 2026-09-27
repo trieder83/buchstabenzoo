@@ -13,7 +13,7 @@ test.describe.configure({ timeout: 180_000 });
 const PHONE = { deviceScaleFactor: 2.625, hasTouch: true, isMobile: true };
 
 async function openZebraBoard(page: Page) {
-  await goto(page, -7.5, 14.5);
+  await goto(page, -7.5, 15.5);
   await turn(page, 'KeyA');
   await ensurePanel(page, async () => {
     await page.locator('#act').dispatchEvent('pointerdown');
@@ -114,7 +114,7 @@ for (const [name, vp] of [
 test.describe('hippo and panda boards (in scope since M5a, Q-069)', () => {
   test.use({ viewport: { width: 1280, height: 720 } });
   for (const [animal, stand, key] of [
-    ['hippo', [7.0, 17.5], 'KeyD'],
+    ['hippo', [7.0, 21.5], 'KeyD'],
     ['panda', [-3.5, 28.8], 'KeyW'],
   ] as const) {
     test(`RESC-017: the ${animal} info board shows its riddle, food word and facts — no raw text key`, async ({ page }) => {

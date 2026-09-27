@@ -161,9 +161,9 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `enc_n1_hedgehog` | enclosure | -45, 44, 6, 8 | gate (-43, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, warm red-orange light: straw nest box, a hollow log tunnel, low ferns, earth floor. No twig heap, no mushrooms, no flower pots (riddle guards). |
 | `enc_n1_bat` | enclosure | -39, 44, 5, 8 | gate (-38, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, soft blue light: bare climbing branches and ropes under the ceiling to hang from, a fruit bowl on a shelf. No hollow tree, no windmill, no fireflies (riddle guards). |
 | `enc_n1_owl` | enclosure | -34, 44, 6, 8 | gate (-32, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, soft blue light: perch poles, a wooden owl box high on the wall, a painted moon on the back wall. No fir tree, no hill, no pond (riddle guards). |
-| `board_n1_hedgehog` | decoration (info_board) | -42, 38, 1, 1 | board of `enc_n1_hedgehog`. Outside the night house, south of the hall wall, below its enclosure; board lamp (proposal Q-134: boards outside, the hall has no room for solid boards). |
-| `board_n1_bat` | decoration (info_board) | -39, 38, 1, 1 | board of `enc_n1_bat`. Left of the door path; board lamp. |
-| `board_n1_owl` | decoration (info_board) | -33, 38, 1, 1 | board of `enc_n1_owl`. Right of the door path, below the owl enclosure; board lamp. |
+| `board_n1_hedgehog` | decoration (info_board) | -42, 38, 1, 1 | board of `enc_n1_hedgehog`, `mount = "wall"` (Q-157). Outside the night house, south of the hall wall, below its enclosure; board lamp (proposal Q-134: boards outside, the hall has no room for solid boards). |
+| `board_n1_bat` | decoration (info_board) | -39, 38, 1, 1 | board of `enc_n1_bat`, `mount = "wall"` (Q-157). Left of the door path, flat on the facade; board lamp. |
+| `board_n1_owl` | decoration (info_board) | -33, 38, 1, 1 | board of `enc_n1_owl`, `mount = "wall"` (Q-157). Right of the door path, below the owl enclosure; board lamp. |
 | `trees_n1_ne` | decoration (tree_grove) | -28, 39, 2, 13 | `density = "dense"`, bush border. Old round trees between the night house and the east hedge. |
 | `telescope_n1` | decoration (telescope) | -52, 38, 1, 1 | Toy star telescope on a wooden stand, pointing at the moon — a resting point halfway along the north ring (keeps the boards -> north-west walk <= 10 s per leg). Not a riddle detail; interactive use (look at the moon) is a proposal (Q-138). |
 | `path_n1_ring_n` | path (main) | -64, 35, 26, 3 | From the night-house path west to the west ring; passes the boards. |
@@ -201,8 +201,9 @@ gate, 2 m) and an enclosure sign above it. The roof and the walls above 1 m of t
 | `enc_n1_owl` | (−34, 44, 6, 8) | (−32, 44, 2, 1) | soft blue `#5B7FE0` | perch poles, an owl box high on the wall, a painted moon — no fir, hill or pond |
 
 - **Info boards outside** (proposal Q-134): `board_n1_hedgehog` (−42, 38), `board_n1_bat`
-  (−39, 38), `board_n1_owl` (−33, 38) stand in a row in front of the south wall, each below its
-  enclosure, facing south onto `path_n1_ring_n` / `path_n1_house`, each with a `board_lamp`. The
+  (−39, 38), `board_n1_owl` (−33, 38) hang in a row on the south wall (`mount = "wall"`: a flat
+  panel on the facade behind their cell, not solid — no pocket beside the door, Q-157,
+  LAYOUT-038), each below its enclosure, facing south onto `path_n1_ring_n` / `path_n1_house`, each with a `board_lamp`. The
   hall has no room for solid board cells (a board inside the building rect would overlap the
   building, LAYOUT-003). The child reads the riddle outside and leads the animal in through the
   door to its glass gate.

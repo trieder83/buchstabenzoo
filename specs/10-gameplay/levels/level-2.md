@@ -426,7 +426,7 @@ facing the gate, 39 % of the enclosure cells; the elephant wanders in and out of
 ## Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118 answered, proposals Q-137, Q-139)
 
 `[[light]]` in `level-2.toml` (night-only): 10 lantern posts along the entry path and the ring
-(≈ 10 m, 0.25 m inside the path edge: (25.0, 28.25), (35.0, 30.75), (37.0, 24.25), (48.5, 24.25),
+(≈ 10 m, 0.25 m inside the path edge: (28.5, 28.25) (moved out of the level gate lane, LAYOUT-036), (35.0, 30.75), (37.0, 24.25), (48.5, 24.25),
 (53.0, 24.25), (36.25, 33.0), (36.25, 38.5), (51.25, 28.0), (51.25, 38.0), (47.0, 39.25)), one
 beside every gate (koala (35.3, 35.65), elephant (54.7, 32.65), lion (45.65, 22.3), giraffe
 (44.65, 43.7)), a wall lamp at the `food_storage_2` door (38.95, 31.3) and board lamps on the four

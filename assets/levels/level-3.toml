@@ -125,7 +125,7 @@ kind = "mill_hut"
 rect = [-18, 70, 3, 3]
 blocks_view = true
 height_m = 3.5
-notes = "Tiny wooden mill hut; its big wooden water wheel turns in the stream at x -20, z 70-72 (model overhangs the water cells, axle at 2.5 m over the bank - not solid). The only water wheel in the zoo (loc_water_wheel)."
+notes = "Tiny wooden mill hut; its big wooden water wheel (r 1.2 m) turns in the stream centred at (-20, 71.5): axle from the hut wall 0.8 m above the water, lower paddles 0.4 m under water, turning with the flow (LAYOUT-L3-017) - not solid. The only water wheel in the zoo (loc_water_wheel)."
 
 [[element]]
 id = "tree_willow"
@@ -429,7 +429,7 @@ notes = "Big empty glass bowl on the table in the zookeeper house (GAME-RESCUE g
 [[water_source]]
 id = "tap_l3"
 kind = "tap"
-pos = [-6.5, 60.75]
+pos = [-5.5, 60.9]    # Q-157: flush on the facade, ≥ 1 m from the door (no pocket)
 facing = "-z"
 notes = "Water tap with a small basin on the south facade of zookeeper_house_3, right of the door."
 

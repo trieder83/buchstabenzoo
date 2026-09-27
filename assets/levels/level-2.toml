@@ -644,7 +644,7 @@ notes = "Big flat, light-grey rock slabs lying flush in the grass (walkable, 0.2
 [[light]]
 id = "l2_lantern_entry_w"
 kind = "lantern_post"
-pos = [25.0, 28.25]
+pos = [28.5, 28.25]   # 3 m inside the level gate (outside its 2.5 m lane, LAYOUT-032/036)
 facing = "+z"
 
 [[light]]

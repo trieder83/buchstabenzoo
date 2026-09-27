@@ -92,7 +92,7 @@ fn play_031_no_jitter_against_obstacles() {
     let params = MoveParams::default();
     // (start, direction): zebra board, food box row, bench, bridge rail, jetty end, fence corner
     let cases = [
-        (Vec2::new(-6.5, 14.5), Vec2::new(-1.0, 0.3)),
+        (Vec2::new(-6.5, 15.5), Vec2::new(-1.0, 0.3)),
         (Vec2::new(-0.4, 9.2), Vec2::new(0.4, 1.0)),
         (Vec2::new(7.0, 2.5), Vec2::new(-0.3, 1.0)),
         (Vec2::new(11.5, 29.5), Vec2::new(0.5, 1.0)),

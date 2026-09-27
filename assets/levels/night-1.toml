@@ -186,6 +186,7 @@ type = "decoration"
 kind = "info_board"
 rect = [-42, 38, 1, 1]
 enclosure = "enc_n1_hedgehog"
+mount = "wall"             # Q-157: flat on the night-house facade (no pocket beside the door)
 notes = "Outside the night house, south of the hall wall, below its enclosure; board lamp (proposal Q-134: boards outside, the hall has no room for solid boards)."
 
 [[element]]
@@ -194,6 +195,7 @@ type = "decoration"
 kind = "info_board"
 rect = [-39, 38, 1, 1]
 enclosure = "enc_n1_bat"
+mount = "wall"             # Q-157: flat on the night-house facade (no pocket beside the door)
 notes = "Left of the door path; board lamp."
 
 [[element]]
@@ -202,6 +204,7 @@ type = "decoration"
 kind = "info_board"
 rect = [-33, 38, 1, 1]
 enclosure = "enc_n1_owl"
+mount = "wall"             # Q-157: flat on the night-house facade (no pocket beside the door)
 notes = "Right of the door path, below the owl enclosure; board lamp."
 
 [[element]]

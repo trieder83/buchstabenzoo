@@ -26,7 +26,8 @@ progress **and** the last positions of the player and the animals (user decision
 | Camera | yaw step, zoom distance |
 | Animals | per animal: state (`escaped` / `following` / `in_enclosure`), chosen hiding place, position, facing, waiting flag, wandering (pause left, route) |
 | Missions | per mission: started, info board read, completed; celebration already shown |
-| World | opened barriers (= unlocked levels), gates, the fish bowl (position, carried, water, fish), explored map cells (GAME-MAP), panels manually closed (not needed — transient) |
+| World | opened barriers (= unlocked levels), gates, the fish bowl (position, carried, water, fish, put down by the child), explored map cells (GAME-MAP), panels manually closed (not needed — transient) |
+| Lying items and bamboo | foods lying on the ground (`lying`: food, position, surface height; oldest first — GAME-FEED §10, FEED-015) and the regrowth time left per bamboo cut spot (`bamboo`: spot id, seconds; missing = full grown — GAME-FEED §15, FEED-021); optional fields, no version change |
 | Time of day | `daytime` (GAME-NIGHT §8, NIGHT-008): phase (`day` / `dusk` / `night` / `sleeping` / `morning`), time in the phase, pending dusk, levels whose nightfall happened, levels whose barriers open the next morning, nights; a save made while sleeping restores as the finished morning; saves without it are day (no version change — the field is optional) |
 | Settings | language, reading level (already stored, CONT-L10N §6), camera view `zoo` / `first_person` (`zoo.view`, GAME-CAMERA-VIEWS 9; look-around is never stored) |
 | Last picks | hiding place per animal of the last new game (`zoo.picks`, M5b; formerly `zoo.picks.level-1`; kept when the save is deleted, so the next new game avoids them — Q-082) |

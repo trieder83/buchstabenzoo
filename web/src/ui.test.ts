@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { FOOD_ICONS, TARGET_ICONS, loadSettings, parseBasket, saveSettings, type KeyValue } from './ui';
+import {
+  FOOD_ICONS,
+  TARGET_ICONS,
+  loadSettings,
+  parseBasket,
+  parseLyingIcons,
+  saveSettings,
+  targetIcon,
+  type KeyValue,
+} from './ui';
 
 class MapStore implements KeyValue {
   m = new Map<string, string>();
@@ -107,5 +116,21 @@ describe('garden basket HUD (GAME-GARDEN §4)', () => {
     expect(FOOD_ICONS.carrot).toBeTruthy();
     expect(FOOD_ICONS.potato).toBeTruthy();
     for (const k of ['plant', 'garden_sign', 'treat']) expect(TARGET_ICONS[k]).toBeTruthy();
+  });
+});
+
+describe('put down and lying items (GAME-FEED §8–11)', () => {
+  it('a lying food shows its own icon on the interact button, bamboo spots the bamboo', () => {
+    expect(targetIcon('lying_food', 'lying_food:hay:3')).toBe(FOOD_ICONS.hay);
+    expect(targetIcon('lying_food', 'lying_food:unknown:3')).toBe(TARGET_ICONS.lying_food);
+    expect(targetIcon('bamboo', 'bamboo:cut_bamboo_n1')).toBe('🎋');
+    expect(targetIcon('food_box', 'food_box:hay')).toBe(TARGET_ICONS.food_box);
+    expect(targetIcon('', '')).toBe('');
+  });
+  it('parses lying-food icon positions and ignores broken data', () => {
+    expect(parseLyingIcons('[{"food":"hay","x":10.5,"y":20}]')).toEqual([{ food: 'hay', x: 10.5, y: 20 }]);
+    expect(parseLyingIcons('[{"food":"hay"}, 3, null]')).toEqual([]);
+    expect(parseLyingIcons('nope')).toEqual([]);
+    expect(parseLyingIcons(undefined)).toEqual([]);
   });
 });

@@ -112,7 +112,7 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   // level with the board (it is 90° to the left): not available while looking north
   await page.evaluate(() => {
     const a = window.__zoo!.app;
-    a.debug_teleport(-6.9, 14.5);
+    a.debug_teleport(-6.9, 15.5);
   });
   await page.waitForFunction(() => document.getElementById('panel')!.hidden, null, { polling: 'raf', timeout: 10_000 });
   expect(await page.evaluate(() => window.__zoo!.app.target_key())).toBe('');

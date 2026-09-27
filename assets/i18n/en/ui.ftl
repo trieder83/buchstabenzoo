@@ -7,6 +7,7 @@ ui-close = Close
 ui-take = Take
 ui-interact = Look
 ui-carrying = You carry:
+ui-put-down = Put down
 ui-lang-de = Deutsch
 ui-lang-en = English
 ui-level-kiga = Kindergarten

@@ -48,7 +48,7 @@ interface Mission {
   gate: [number, number, string];
 }
 
-const HIPPO: Mission = { animal: 'hippo', food: 'melons', boxX: -3.6, board: [7.0, 20.5, 'KeyD'], gate: [8.4, 16.0, 'KeyD'] };
+const HIPPO: Mission = { animal: 'hippo', food: 'melons', boxX: -3.6, board: [7.0, 21.5, 'KeyD'], gate: [8.4, 16.0, 'KeyD'] };
 const PANDA: Mission = { animal: 'panda', food: 'bamboo', boxX: -1.2, board: [-3.5, 28.8, 'KeyW'], gate: [0.0, 31.3, 'KeyW'] };
 
 /** Plays one mission end to end like a child (board → box → animal → gate). */
@@ -147,7 +147,7 @@ test('RESC-014 / RESC-015: two seeds put the animals at different places; the bo
     const p = JSON.parse(await app<string>(page, 'picks_json')) as Record<string, string>;
     picks.push(p);
     // the zebra board shows the riddle of the zebra's place
-    await goto(page, -7.5, 14.5);
+    await goto(page, -7.5, 15.5);
     await face(page, 'KeyA');
     await settle(page);
     await expect(page.locator('#panel-text')).toHaveText(t[`mission-zebra-riddle-${p.zebra}-klasse1`]);

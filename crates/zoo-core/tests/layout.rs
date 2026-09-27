@@ -334,8 +334,8 @@ fn layout_l1_005_walking_times_between_neighbours() {
             "food storage -> zebra info board",
             door.clone(),
             board("board_zebra"),
-            10.2,
-            5.6,
+            11.2,
+            6.1,
         ),
         // FIX-056: loc_pond moved to the north shore (22 m haze rule), so the zebra board's
         // next neighbour is the panda board; the pond is reached from the panda board.
@@ -343,8 +343,8 @@ fn layout_l1_005_walking_times_between_neighbours() {
             "zebra info board -> panda info board",
             board("board_zebra"),
             board("board_panda"),
-            16.1,
-            8.6,
+            15.1,
+            8.1,
         ),
         (
             "pond -> panda info board",
@@ -364,15 +364,15 @@ fn layout_l1_005_walking_times_between_neighbours() {
             "river -> hippo info board",
             river.clone(),
             board("board_hippo"),
-            11.4,
-            6.2,
+            10.4,
+            5.6,
         ),
         (
             "hippo info board -> cave",
             board("board_hippo"),
             cave.clone(),
-            14.2,
-            7.7,
+            15.2,
+            8.2,
         ),
         (
             "cave -> food storage door",
@@ -385,8 +385,8 @@ fn layout_l1_005_walking_times_between_neighbours() {
             "hippo info board -> food storage door",
             board("board_hippo"),
             door.clone(),
-            15.2,
-            8.2,
+            16.2,
+            8.7,
         ),
         (
             "spawn -> map board",

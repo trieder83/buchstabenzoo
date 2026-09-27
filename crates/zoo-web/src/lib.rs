@@ -47,6 +47,10 @@ const BOWL: &str = "__bowl_glass";
 const BOWL_WATER: &str = "__bowl_water";
 /// Bowl size (m): radius and height of the glass.
 const BOWL_RADIUS_M: f32 = 0.3;
+/// The procedural water-wheel model (LAYOUT-L3-017).
+const WATER_WHEEL: &str = "__water_wheel";
+/// Lying foods show their icon above them within this distance of the player (GAME-FEED §10).
+const LYING_ICON_M: f32 = 5.0;
 const BOWL_HEIGHT_M: f32 = 0.36;
 /// Glass colour; alpha 0.5 = screen-door transparency in the cel shader.
 const GLASS: [f32; 4] = [0.78, 0.92, 0.98, 0.5];
@@ -283,7 +287,8 @@ pub struct App {
     dynamic: [Instance; 1],
     marker: [Instance; 1],
     dyn_boxes: Vec<Instance>,
-    carry_box: [Instance; 1],
+    /// The carried food box (first) and the lying foods on the ground (GAME-FEED §10).
+    carry_box: Vec<Instance>,
     has_carry_model: bool,
     animals: Vec<AnimalView>,
     /// Animal clip data (authored walk speeds).
@@ -323,6 +328,8 @@ pub struct App {
     /// Night (GAME-NIGHT §10): night-only render regions (lamp props, glowing windows) per
     /// level part, every lamp's light, per-frame light scratch, emissive dynamic boxes.
     night_regions: Vec<u16>,
+    /// Turning water wheels (LAYOUT-L3-017), for the debug getter.
+    water_wheels: Vec<zoo_core::scene::WaterWheel>,
     lamps: Vec<PointLight>,
     lamp_order: Vec<(f32, usize)>,
     frame_lights: Vec<PointLight>,
@@ -716,6 +723,19 @@ impl App {
             renderer.add_decal_in(&texture, d.corners(), d.normal(), region);
         }
 
+        // Water wheels turning in the water (LAYOUT-L3-017): a procedural placeholder model
+        // with a spinning `wheel` part until `mill_hut_wheel` has an approved concept.
+        for w in &scene.water_wheels {
+            if !renderer.has_model(WATER_WHEEL) {
+                renderer
+                    .add_model(WATER_WHEEL, &water_wheel_model(w), 1.0)
+                    .map_err(|e| JsError::new(&format!("{e:?}")))?;
+            }
+            let region = part_regions[w.part.min(part_regions.len() - 1)];
+            let pos = level_to_world(w.center) + Vec3::Y * zoo_core::ground::WATER_TOP_M;
+            renderer.add_instance_handle(WATER_WHEEL, region, pos, 0.0, 1.0);
+        }
+
         // Night-only parts (GAME-NIGHT §10): lamp props (placeholders until `kit_night`),
         // glowing windows, board lamps, the moon sign — hidden by day.
         let night = NightScene::build(&game.level.data);
@@ -842,7 +862,7 @@ impl App {
             dynamic: [Instance::model(Vec3::ZERO, 0.0, false)],
             marker: [Instance::model(Vec3::ZERO, 0.0, false)],
             dyn_boxes: Vec::with_capacity(16),
-            carry_box: [Instance::model(Vec3::ZERO, 0.0, false)],
+            carry_box: Vec::with_capacity(1 + zoo_core::carrying::MAX_LYING),
             has_carry_model,
             animals,
             anims,
@@ -868,6 +888,7 @@ impl App {
             look_at: None,
             ambient_on: true,
             night_regions,
+            water_wheels: scene.water_wheels.clone(),
             lamps,
             lamp_order: Vec::with_capacity(128),
             frame_lights: Vec::with_capacity(nightfx::MAX_POINT_LIGHTS),
@@ -948,6 +969,11 @@ impl App {
                 self.toggle_first_person();
             }
             "KeyV" => {}
+            // GAME-FEED §8: G puts the item in the hands down (nothing happens with empty hands)
+            "KeyG" if down => {
+                self.put_down();
+            }
+            "KeyG" => {}
             // FIX-024: E interacts, so rotation is Q (left) / R (right).
             "KeyQ" if down => self.camera.rotate_steps(-1),
             "KeyR" if down => self.camera.rotate_steps(1),
@@ -1315,6 +1341,7 @@ impl App {
                         OpeningKind::GlassDoor { .. } => "glass_door",
                         OpeningKind::GardenGate { .. } => "garden_gate",
                         OpeningKind::MoonDoor { .. } => "moon_door",
+                        OpeningKind::LevelGate { .. } => "level_gate",
                     }),
                     o.center.x,
                     o.center.y,
@@ -1333,6 +1360,128 @@ impl App {
             .plant(spot)
             .map(|p| p.stage().id().to_owned())
             .unwrap_or_default()
+    }
+
+    /// Whether something droppable is in the hands: the put-down button is shown (GAME-FEED
+    /// §8, FEED-016).
+    pub fn can_put_down(&self) -> bool {
+        self.game.can_put_down()
+    }
+
+    /// Puts the item in the hands down (put-down button / `G`, GAME-FEED §8–10). False when
+    /// nothing was put down (empty hands, or no free spot: the host shakes the button).
+    pub fn put_down(&mut self) -> bool {
+        if !self.game.can_put_down() {
+            return false;
+        }
+        let ok = match self.game.put_down() {
+            Ok(_) => true,
+            Err(_) => {
+                self.outbox
+                    .push("{\"type\":\"put_down_refused\"}".to_owned());
+                false
+            }
+        };
+        self.handle_events();
+        ok
+    }
+
+    /// Debug/e2e: the foods lying on the ground as JSON `[{"uid", "food", "x", "z", "y"}]`
+    /// (oldest first) and whether the bowl lies somewhere (GAME-FEED §10).
+    pub fn lying_json(&self) -> String {
+        let foods: Vec<String> = self
+            .game
+            .lying
+            .foods
+            .iter()
+            .map(|f| {
+                format!(
+                    "{{\"uid\":{},\"food\":{},\"x\":{:.3},\"z\":{:.3},\"y\":{:.3}}}",
+                    f.uid,
+                    js(f.food.id()),
+                    f.pos.x,
+                    f.pos.y,
+                    f.y
+                )
+            })
+            .collect();
+        format!(
+            "{{\"foods\":[{}],\"bowl\":{}}}",
+            foods.join(","),
+            self.game.bowl_lying()
+        )
+    }
+
+    /// Lying foods near the player (≤ 5 m) with their screen position (CSS px) for the
+    /// readable icon above them (GAME-FEED §10): `[{"food", "x", "y"}]`.
+    pub fn lying_icons_json(&self) -> String {
+        let p = self.game.player.pos;
+        let items: Vec<String> = self
+            .game
+            .lying
+            .foods
+            .iter()
+            .filter(|f| f.pos.distance(p) <= LYING_ICON_M)
+            .filter_map(|f| {
+                let s = self.screen_point(f.pos.x, f.pos.y, f.y + 0.75);
+                (s.len() == 2).then(|| {
+                    format!(
+                        "{{\"food\":{},\"x\":{:.1},\"y\":{:.1}}}",
+                        js(f.food.id()),
+                        s[0],
+                        s[1]
+                    )
+                })
+            })
+            .collect();
+        format!("[{}]", items.join(","))
+    }
+
+    /// Debug/e2e: the bamboo cut spots as JSON `[{"id", "x", "z", "stage", "regrow_s"}]`
+    /// (GAME-FEED §14–15).
+    pub fn cut_spots_json(&self) -> String {
+        let spots: Vec<String> = self
+            .game
+            .level
+            .data
+            .cut_spots
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                format!(
+                    "{{\"id\":{},\"x\":{:.2},\"z\":{:.2},\"sx\":{:.2},\"sz\":{:.2},\"stage\":{},\"regrow_s\":{:.2}}}",
+                    js(&c.id),
+                    c.pos[0],
+                    c.pos[1],
+                    c.stand[0],
+                    c.stand[1],
+                    js(self.game.bamboo.stage(i).map_or("", |s| s.id())),
+                    self.game.bamboo.regrow_s.get(i).copied().unwrap_or(0.0)
+                )
+            })
+            .collect();
+        format!("[{}]", spots.join(","))
+    }
+
+    /// Debug/e2e: the water wheels as JSON `[{"x", "z", "axle_y", "radius", "angle_deg"}]`
+    /// with the angle drawn now (the renderer turns the `wheel` part with the same clock,
+    /// LAYOUT-L3-017/018).
+    pub fn water_wheels_json(&self) -> String {
+        let items: Vec<String> = self
+            .water_wheels
+            .iter()
+            .map(|w| {
+                format!(
+                    "{{\"x\":{:.2},\"z\":{:.2},\"axle_y\":{:.2},\"radius\":{:.2},\"angle_deg\":{:.3}}}",
+                    w.center.x,
+                    w.center.y,
+                    w.axle_y,
+                    w.radius,
+                    w.angle_at(self.time).to_degrees()
+                )
+            })
+            .collect();
+        format!("[{}]", items.join(","))
     }
 
     /// Id of the carried food or empty.
@@ -1395,16 +1544,30 @@ impl App {
         if self.has_carry_model {
             // with the bowl in both hands the food is in the pocket (Q-084): not drawn
             let bowl_carried = self.game.bowl.as_ref().is_some_and(|b| b.carried);
-            let n = usize::from(self.game.carry.food().is_some() && !bowl_carried);
-            let p = player + fwd * 0.32 + Vec3::Y * 0.45;
-            self.carry_box[0] = Instance {
-                pos_yaw: [p.x, p.y, p.z, yaw],
-                scale_fade: [0.55, 0.55, 0.55, 0.0],
-                color: [1.0, 1.0, 1.0, 0.0],
-                node: [0.0; 4],
-            };
+            self.carry_box.clear();
+            if self.game.carry.food().is_some() && !bowl_carried {
+                let p = player + fwd * 0.32 + Vec3::Y * 0.45;
+                self.carry_box.push(Instance {
+                    pos_yaw: [p.x, p.y, p.z, yaw],
+                    scale_fade: [0.55, 0.55, 0.55, 0.0],
+                    color: [1.0, 1.0, 1.0, 0.0],
+                    node: [0.0; 4],
+                });
+            }
+            // lying foods: the same small closed box standing on the surface (GAME-FEED §10;
+            // per-food models are missing art)
+            for f in &self.game.lying.foods {
+                let p = level_to_world(f.pos) + Vec3::Y * f.y;
+                let yaw = (f.uid as f32 * 2.399).rem_euclid(std::f32::consts::TAU);
+                self.carry_box.push(Instance {
+                    pos_yaw: [p.x, p.y, p.z, yaw],
+                    scale_fade: [0.55, 0.55, 0.55, 0.0],
+                    color: [1.0, 1.0, 1.0, 0.0],
+                    node: [0.0; 4],
+                });
+            }
             self.renderer
-                .set_dynamic_instances(CARRY_BOX, &self.carry_box[..n]);
+                .set_dynamic_instances(CARRY_BOX, &self.carry_box);
         }
 
         // Barriers that opened disappear; the roof of the building the player is in is hidden
@@ -1467,6 +1630,7 @@ impl App {
 
         // Animals: skinned models, else placeholder boxes in the dynamic box batch.
         self.dyn_boxes.clear();
+        bamboo_stalks(&mut self.dyn_boxes, &self.game);
         self.draws.clear();
         self.glows.clear();
         for (i, a) in self.animals.iter().enumerate() {
@@ -2338,7 +2502,7 @@ impl App {
             warm: l.warm,
         });
         // lamps switch on during dusk (rule 1); their glow slots with them
-        let lamps_on = l.night > 0.2;
+        let lamps_on = self.game.daytime.lamps_on();
         self.renderer.set_glow(lamps_on);
         for r in &self.night_regions {
             if self.renderer.region_hidden(*r) == lamps_on {
@@ -2738,6 +2902,17 @@ impl App {
                     ));
                 }
                 GameEvent::NightFell => self.outbox.push("{\"type\":\"night\"}".to_owned()),
+                GameEvent::PutDownRefused => self
+                    .outbox
+                    .push("{\"type\":\"put_down_refused\"}".to_owned()),
+                GameEvent::FoodPutBack { food } => self.outbox.push(format!(
+                    "{{\"type\":\"food_put_back\",\"food\":{}}}",
+                    js(food.id())
+                )),
+                GameEvent::BambooCut { spot } => self.outbox.push(format!(
+                    "{{\"type\":\"bamboo_cut\",\"spot\":{}}}",
+                    js(&spot)
+                )),
                 GameEvent::SleepStarted => self.outbox.push("{\"type\":\"sleep\"}".to_owned()),
                 GameEvent::Morning => {
                     self.camera.snap(player_feet(&self.game));
@@ -3033,6 +3208,174 @@ fn player_feet(game: &Game) -> Vec3 {
 
 /// Placeholder animal (~1.3 m long) from flat boxes in the animal's colours; `happy` hops,
 /// `refuse` shakes, `eat`/`drink` lower the head (PROD-POC "Placeholders").
+/// Procedural water wheel (placeholder for `mill_hut_wheel`, LAYOUT-L3-017): root = the
+/// axle into the hut wall; child part `wheel` (pivot on the axle) = hub, two rims, spokes and
+/// the paddles, turned by the renderer with the clock (`NodeBehaviour` "wheel"). Model space:
+/// glTF (x along the axle = level x, y up, z = level south), origin on the water surface under
+/// the wheel centre. Paddle `k` rests at the angle `k · 45°` like
+/// [`zoo_core::scene::WaterWheel::paddle_tip`].
+fn water_wheel_model(w: &zoo_core::scene::WaterWheel) -> Model {
+    use zoo_assets::NodePart;
+    // palette cells (tools/blender/palette.toml, 16 × 16 cells): wood_dark 18, wood_light 17
+    const UV: [[f32; 2]; 2] = [[2.5 / 16.0, 1.5 / 16.0], [1.5 / 16.0, 1.5 / 16.0]];
+    let mut mesh = zoo_assets::MeshData::default();
+    let pivot = Vec3::new(0.0, w.axle_y, 0.0);
+    // oriented box: centre, unit axes, half extents, part, material
+    let mut cube = |c: Vec3, ax: [Vec3; 3], h: Vec3, part: u8, mat: usize| {
+        let he = [ax[0] * h.x, ax[1] * h.y, ax[2] * h.z];
+        for (i, s) in [
+            (0usize, 1.0f32),
+            (0, -1.0),
+            (1, 1.0),
+            (1, -1.0),
+            (2, 1.0),
+            (2, -1.0),
+        ] {
+            let n = ax[i] * s;
+            let (j, k) = ((i + 1) % 3, (i + 2) % 3);
+            let base = mesh.positions.len() as u32;
+            for (a, b) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
+                let p = c + he[i] * s + he[j] * a + he[k] * b;
+                mesh.positions.push(p.to_array());
+                mesh.normals.push(n.to_array());
+                mesh.uvs.push(UV[mat]);
+                mesh.node.push(part);
+            }
+            let quad = if s > 0.0 {
+                [0, 1, 2, 0, 2, 3]
+            } else {
+                [0, 2, 1, 0, 3, 2]
+            };
+            mesh.indices.extend(quad.iter().map(|q| base + q));
+        }
+    };
+    let radial = |a: f32| Vec3::new(0.0, a.cos(), a.sin());
+    let tangent = |a: f32| Vec3::new(0.0, -a.sin(), a.cos());
+    // root: the axle from the wheel into the hut wall
+    let east = w.axle_end_x - w.center.x;
+    cube(
+        Vec3::new((east - 0.4) / 2.0, w.axle_y, 0.0),
+        [Vec3::X, Vec3::Y, Vec3::Z],
+        Vec3::new((east + 0.4) / 2.0, 0.07, 0.07),
+        0,
+        0,
+    );
+    // wheel: hub, rims, spokes (two sides of different section: no coplanar faces), paddles
+    cube(
+        pivot,
+        [Vec3::X, Vec3::Y, Vec3::Z],
+        Vec3::new(w.width / 2.0 + 0.08, 0.17, 0.17),
+        1,
+        0,
+    );
+    let rim = w.radius - WATER_WHEEL_PADDLE_IN;
+    let n = zoo_core::scene::WATER_WHEEL_PADDLES;
+    for (side, t) in [(-1.0f32, 0.035f32), (1.0, 0.04)] {
+        let x = side * (w.width / 2.0 - 0.05);
+        for k in 0..16 {
+            let a = (k as f32 + 0.5) * std::f32::consts::TAU / 16.0;
+            let seg = rim * (std::f32::consts::PI / 16.0).sin() + 0.03;
+            cube(
+                pivot + Vec3::X * x + radial(a) * rim,
+                [Vec3::X, radial(a), tangent(a)],
+                Vec3::new(t, 0.05, seg),
+                1,
+                1,
+            );
+        }
+        for k in 0..n / 2 {
+            let a = (k as f32 + 0.5) * std::f32::consts::TAU / n as f32;
+            cube(
+                pivot + Vec3::X * x,
+                [Vec3::X, radial(a), tangent(a)],
+                Vec3::new(t + 0.005, rim, 0.04),
+                1,
+                1,
+            );
+        }
+    }
+    for k in 0..n {
+        let a = k as f32 * std::f32::consts::TAU / n as f32;
+        let r = w.radius - zoo_core::scene::WATER_WHEEL_PADDLE_M / 2.0;
+        cube(
+            pivot + radial(a) * r,
+            [Vec3::X, radial(a), tangent(a)],
+            Vec3::new(
+                w.width / 2.0,
+                zoo_core::scene::WATER_WHEEL_PADDLE_M / 2.0,
+                0.03,
+            ),
+            1,
+            0,
+        );
+    }
+    Model {
+        mesh,
+        base_color: [1.0; 4],
+        image: None,
+        materials: Vec::new(),
+        skeleton: None,
+        clips: Vec::new(),
+        nodes: vec![
+            NodePart {
+                name: WATER_WHEEL.to_owned(),
+                pivot: Vec3::ZERO,
+            },
+            NodePart {
+                name: "wheel".to_owned(),
+                pivot,
+            },
+        ],
+        empties: Vec::new(),
+        faces: Vec::new(),
+    }
+}
+
+/// Paddles start this far inside the tip radius: the rims run along their inner edge.
+const WATER_WHEEL_PADDLE_IN: f32 = 0.3;
+
+/// Bamboo cut spots (GAME-FEED §15): full stalk, young shoot or stump as placeholder boxes
+/// until the bamboo model has `stalk_full` / `stalk_young` / `stump` nodes (§17, missing art).
+fn bamboo_stalks(out: &mut Vec<Instance>, game: &Game) {
+    use zoo_core::carrying::StalkStage;
+    // fresh yellow-green stalks stand out against the darker thicket
+    const STALK: [f32; 3] = [0.66, 0.82, 0.30];
+    const LEAF: [f32; 3] = [0.48, 0.72, 0.24];
+    const CUT: [f32; 3] = [0.95, 0.90, 0.66];
+    for (i, c) in game.level.data.cut_spots.iter().enumerate() {
+        if !game.part_unlocked(c.part) {
+            continue;
+        }
+        let Some(stage) = game.bamboo.stage(i) else {
+            continue;
+        };
+        let base = level_to_world(c.pos()) + Vec3::Y * game.level.ground_height(c.pos());
+        let yaw = i as f32 * 1.3;
+        let mut push = |y: f32, size: Vec3, color: [f32; 3]| {
+            out.push(Instance::flat(base + Vec3::Y * y, yaw, size, color, false));
+        };
+        match stage {
+            StalkStage::Full => {
+                // two tall stalks with nodes and a leaf tuft
+                push(0.0, Vec3::new(0.12, 2.9, 0.12), STALK);
+                for y in [0.7, 1.4, 2.1] {
+                    push(y, Vec3::new(0.12, 0.05, 0.12), LEAF);
+                }
+                push(2.5, Vec3::new(0.55, 0.35, 0.25), LEAF);
+            }
+            StalkStage::Young => {
+                push(0.0, Vec3::new(0.1, 1.2, 0.1), STALK);
+                push(0.55, Vec3::new(0.11, 0.05, 0.11), LEAF);
+                push(1.0, Vec3::new(0.3, 0.22, 0.16), LEAF);
+            }
+            StalkStage::Stump => {
+                push(0.0, Vec3::new(0.13, 0.3, 0.13), STALK);
+                push(0.3, Vec3::new(0.11, 0.03, 0.11), CUT);
+            }
+        }
+    }
+}
+
 fn animal_placeholder(
     out: &mut Vec<Instance>,
     pos: Vec3,
@@ -3229,6 +3572,8 @@ fn target_key(t: &Target) -> String {
         Target::Animal { animal } => format!("animal:{animal}"),
         Target::Gate { enclosure } => format!("gate:{enclosure}"),
         Target::Item { id } => format!("item:{id}"),
+        Target::LyingFood { uid, food } => format!("lying_food:{}:{uid}", food.id()),
+        Target::CutSpot { spot } => format!("bamboo:{spot}"),
         Target::Water { source } => format!("water:{source}"),
         Target::PutDown => "put_down".to_owned(),
         Target::Bed => "bed".to_owned(),

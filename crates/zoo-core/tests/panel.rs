@@ -32,7 +32,7 @@ fn food_box(g: &Game, food: Food) -> Vec2 {
     g.food_boxes.iter().find(|b| b.0 == food).unwrap().1
 }
 
-const ZEBRA_BOARD: Vec2 = Vec2::new(-8.5, 14.5); // readable side faces east
+const ZEBRA_BOARD: Vec2 = Vec2::new(-8.5, 15.5); // readable side faces east
 
 // PLAY-023 (unit level; the e2e test runs in the browser)
 #[test]

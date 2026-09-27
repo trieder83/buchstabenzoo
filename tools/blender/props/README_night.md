@@ -102,6 +102,7 @@ over the panel; `map_board` (0, 1.93, −0.09) — under the little roof.
 | `garden_gate` | 492 | 2.24 · 1.12 · 0.14 | root = two ball-topped posts (centres x ±1.05); **`leaf_l`** pivot (−0.99, 0, 0), **`leaf_r`** pivot (0.99, 0, 0), 0.98 m picket leaves; open to the back: `leaf_l` +90°, `leaf_r` −90° about +Y (turn the gate so its back faces into the garden) |
 | `glass_door` | 284 | 1.95 · 2.20 · 0.14 | **`leaf_l`** pivot (−0.975, 0, −0.03), **`leaf_r`** pivot (0.975, 0, −0.03); frames `palette`, panes **`glass`**; open to the back like the garden gate. Place at the centre of an indoor-enclosure gate rect (2 m), yaw 0 (front = hall) |
 | `door_wood` | 312 | 0.94 · 2.10 · 0.20 | ROOT = the leaf, origin = hinge axis foot, leaf along +X (x 0.01…0.95); round window `door_glow`; open = rotate the root about +Y (+90° swings it to the back / inside) |
+| `gate_zoo` | 408 | 3.12 · 2.60 · 0.72 | level gate (GAME-LAYOUT "Gates between the levels"): the `gate_zoo_closed` look — root = two stone pillars (centres x ±1.25, outer faces ±1.5 = the 3 m hedge gap), **`leaf_l`** pivot (−1.0, 0, 0), **`leaf_r`** pivot (1.0, 0, 0), 1.0 m arched plank leaves, padlock on `leaf_r`; open to the back like the garden gate (back = the new level) |
 | `turnstile` | 160 | 1.15 · 1.01 · 0.58 | one 1.2 m lane: pedestal at x −0.45 (root), **`arms`** node pivot (−0.33, 0, 0) (swing about +Y) |
 
 **Door placements** (door_wood hinge in the building's model space, glTF, and level coords):

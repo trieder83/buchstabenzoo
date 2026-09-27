@@ -144,7 +144,7 @@ x −9…−7, z 46–47), level 2 east of x 23 (its `barrier_l2_construction` a
 | `1` `2` `3` | animal spot monkey: `loc_pirate_ship`, `loc_carousel`, `loc_trampoline` | `4` `5` `6` | animal spot goldfish (in the stream): `loc_waterfall`, `loc_water_wheel`, `loc_willow` |
 | `7` `8` `9` | animal spot snow fox: `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry` | `.` | grass (walkable) |
 
-The water tap `tap_l3` is a prop at (−6.5, 60.75) on the south facade, right of the house door.
+The water tap `tap_l3` is a prop at (−5.5, 60.9) flush on the south facade, 1.5 m right of the house door (moved 2026-09-27: no pocket beside the door, Q-157, LAYOUT-038).
 
 ## Elements
 
@@ -163,7 +163,7 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `hedge_l3_east_b` | decoration (hedge) | 22, 55, 2, 37 | Level edge towards level 2 (behind it: level-2 hedge_l2_w_c and outside area). |
 | `waterfall_rocks` | landmark (waterfall) | -22, 88, 5, 4 | Rock ledge at the north wall; the stream springs from it and falls 2.5 m in a white foaming waterfall into the stream below (loc_waterfall). The only waterfall in the zoo. |
 | `stream_l3` | landmark (stream) | -22, 52, 3, 36 | Narrow clear stream, flowing south from the waterfall; leaves west through a grate under wall_l3_west at z 52-54. Pebbles on the bottom, small reeds. No bridge, no ducks, no lilies (riddle guards). |
-| `mill_hut` | decoration (mill_hut) | -18, 70, 3, 3 | Tiny wooden mill hut; its big wooden water wheel turns in the stream at x -20, z 70-72 (model overhangs the water cells, axle at 2.5 m over the bank - not solid). The only water wheel in the zoo (loc_water_wheel). |
+| `mill_hut` | decoration (mill_hut) | -18, 70, 3, 3 | Tiny wooden mill hut; its big wooden water wheel (radius 1.2 m, 0.5 m wide, 8 paddles) turns in the stream centred at (−20, 71.5): the axle runs from the hut wall 0.8 m above the water surface, the lower paddles dip 0.4 m (⅓ of the radius) under water, 67.5°/s (3 turns per 16 s water loop, ≈ 60°/s) towards the flow, foam where the paddles enter and leave the water — not solid. The only water wheel in the zoo (loc_water_wheel). |
 | `tree_willow` | decoration (willow) | -18, 56, 3, 3 | Weeping willow on the east bank; its long hanging branches reach over the bank and dip into the water (canopy not solid, occluder fade). The only willow in the zoo (loc_willow). |
 | `path_l3_entry` | path (main) | 7, 52, 17, 3 | From the opened construction fence (level 2) west to the ring; first cells = level entry. |
 | `path_l3_link` | path (main) | 7, 55, 3, 3 |  |
@@ -293,7 +293,7 @@ Riddle guards (zoo-wide, Q-083):
 | Id | Kind | Where | Notes |
 |---|---|---|---|
 | `fish_bowl` (`[[item]]`) | carryable item | (−8.5, 64.5), table inside `zookeeper_house_3` | Big empty glass bowl; interact → carried with both hands (`socket_carry`, GAME-RESCUE). 2.1 s from the house door. |
-| `tap_l3` (`[[water_source]]`) | tap | (−6.5, 60.75), south facade next to the door | Interact while carrying the empty bowl → filled. |
+| `tap_l3` (`[[water_source]]`) | tap | (−5.5, 60.9), flush on the south facade right of the door (Q-157) | Interact while carrying the empty bowl → filled. |
 | `bank_stream_l3` (`[[water_source]]`) | bank | every walkable cell edge-adjacent to `stream_l3` | Interact at the bank → filled. |
 
 Water sources of the other unlocked levels (level-1 `river_*` and `pond_water` banks,
@@ -404,7 +404,7 @@ note texts `event-burglar-note-level_3-<reading_level>`.
   bed (boxes) inside.
 - Unit tests: LAYOUT-L3-001…013, 015 in `levels23.rs`; RESC-018…023 in `zoo_game.rs`.
 - **Placeholders:** `waterfall_rocks` (ledge, rocks = kit `rock`, falling water and foam),
-  `mill_hut` + water wheel (static, over the stream, not solid — to be replaced by a wheel turning in the water, LAYOUT-L3-017/018), `tree_willow` (trunk, crown,
+  `mill_hut` + water wheel (turning in the water, not solid, LAYOUT-L3-017/018: a procedural placeholder wheel with a spinning `wheel` part until `mill_hut_wheel` has an approved concept — `loc_water_wheel` `concept_approved = false`), `tree_willow` (trunk, crown,
   hanging branches), `pirate_ship` (hull, deck, mast, crow's nest at the perch point, sail,
   black flag with a white paw, treasure chest, rope ladder), `carousel_sw`,
   `ice_cream_kiosk` (small building, striped awning, cone icon, freezer with mist),
@@ -425,4 +425,4 @@ note texts `event-burglar-note-level_3-<reading_level>`.
   in a perch; Q-095 new hiding places; Q-017 pirate ship location (proposal here);
   Q-033 key on the pirate ship (not used); Q-080, Q-082, Q-043.
 - Q-096 (answered by Q-141) the bed after level 2 is `bed_l2` in level 2, not in `zookeeper_house_3`.
-- Q-150 answered: the food-box row of `food_storage_3` leaves a gap ≥ 1.2 m in front of the door (meat moved from x 3.4 to −1.4, leaves from 4.2 to 7.4). Q-157 pocket between the tap `tap_l3` and the zookeeper-house-3 facade.
+- Q-150 answered: the food-box row of `food_storage_3` leaves a gap ≥ 1.2 m in front of the door (meat moved from x 3.4 to −1.4, leaves from 4.2 to 7.4). Q-157 answered (no pocket beside a door: `tap_l3` moved flush on the facade to (−5.5, 60.9), LAYOUT-038).

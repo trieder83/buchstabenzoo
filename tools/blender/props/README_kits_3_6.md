@@ -126,7 +126,7 @@ Rect centre in level coordinates = (x + w/2, z + d/2) (cell i spans [i, i+1]); c
 | `grove_center` (tree_grove) | `tree_grove` every ~2.5 m + `bush` border | random |
 | `trees_nw`, `trees_ne` (trees) | `tree_round` every ~3 m | random |
 | `barrier_ne_tree` (fallen_tree) | `fallen_tree` at the rect centre | 0 |
-| `barrier_north_gate` (closed_gate) | `gate_zoo_closed` at the rect centre | 0 |
+| `barrier_north_gate` (closed_gate) | since LAYOUT-036 the level gate `gate_zoo` (kit_gates) on the band row next to `path_north`; `gate_zoo_closed` only where a closed gate is no level entry | 0 |
 | `barrier_east_repair` (road_block) | `road_block` at the rect centre, `repair_sign` in front (≈ yaw −35), `zookeeper_cart`, 2–3 `traffic_cone` (see the preview group) | road block −90 (faces west, across the path) |
 | panda enclosure | `bamboo` clumps | random |
 | zebra enclosure, lawns | `bush`, `grass_tuft`, `rock`, `flower_bed` | random |

@@ -3,6 +3,7 @@
 
 pub mod ambient;
 pub mod animals;
+pub mod carrying;
 pub mod collision;
 pub mod content;
 pub mod coords;

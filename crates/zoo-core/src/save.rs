@@ -51,6 +51,27 @@ pub struct SaveState {
     /// Garden plant states and the treat basket (GARD-008). Missing = a fresh garden.
     #[serde(default)]
     pub garden: Option<crate::garden::Garden>,
+    /// Foods lying on the ground, oldest first (GAME-FEED §10, FEED-015).
+    #[serde(default)]
+    pub lying: Vec<LyingSave>,
+    /// Regrowth of the bamboo cut spots by spot id (FEED-021). Missing = all full grown.
+    #[serde(default)]
+    pub bamboo: Vec<CutSpotSave>,
+}
+
+/// A food lying on the ground (GAME-FEED §10).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LyingSave {
+    pub food: String,
+    pub pos: [f32; 2],
+    pub y: f32,
+}
+
+/// A bamboo cut spot's regrowth time left (GAME-FEED §15).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CutSpotSave {
+    pub id: String,
+    pub regrow_s: f32,
 }
 
 /// The fish bowl (GAME-RESCUE "goldfish bowl" 7, RESC-022).
@@ -62,6 +83,9 @@ pub struct BowlSave {
     pub carried: bool,
     pub water: bool,
     pub fish: bool,
+    /// Put down by the child (a lying item, GAME-FEED §10).
+    #[serde(default)]
+    pub dropped: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -249,9 +273,31 @@ impl Game {
                 carried: b.carried,
                 water: b.water,
                 fish: b.fish,
+                dropped: b.dropped,
             }),
             daytime: Some(self.daytime.clone()),
             garden: Some(self.garden.clone()),
+            lying: self
+                .lying
+                .foods
+                .iter()
+                .map(|f| LyingSave {
+                    food: f.food.id().to_owned(),
+                    pos: f.pos.to_array(),
+                    y: f.y,
+                })
+                .collect(),
+            bamboo: self
+                .level
+                .data
+                .cut_spots
+                .iter()
+                .zip(&self.bamboo.regrow_s)
+                .map(|(c, &t)| CutSpotSave {
+                    id: c.id.clone(),
+                    regrow_s: t,
+                })
+                .collect(),
         }
     }
 
@@ -328,6 +374,26 @@ impl Game {
                 b.carried = bs.carried;
                 b.water = bs.water;
                 b.fish = bs.fish;
+                b.dropped = bs.dropped && !bs.carried;
+            }
+        }
+        // lying foods (FEED-015) and bamboo regrowth (FEED-021)
+        for l in &s.lying {
+            if let Some(food) = Food::from_id(&l.food) {
+                let pos = v2(l.pos)?;
+                let y = if l.y.is_finite() {
+                    l.y
+                } else {
+                    g.level.ground_height(pos)
+                };
+                g.lying.push(food, pos, y);
+            }
+        }
+        for c in &s.bamboo {
+            if let Some(i) = g.level.data.cut_spots.iter().position(|d| d.id == c.id) {
+                if c.regrow_s.is_finite() {
+                    g.bamboo.regrow_s[i] = c.regrow_s.clamp(0.0, crate::carrying::REGROW_S);
+                }
             }
         }
         // animals (by id and pair member)

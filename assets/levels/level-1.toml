@@ -197,6 +197,34 @@ rect = [-22, 0, 4, 3]
 blocks_view = true
 height_m = 3.0
 notes = "Dense bamboo thicket in the south-west corner, taller than the zoo wall (loc_bamboo). The only growing bamboo outside the panda enclosure."
+harvestable = true
+
+# Bamboo cut spots (GAME-FEED §14-15, Q-156 answered 2026-09-27: 4 spots, 3 min regrowth,
+# snapped off with the hands): the stalk foot at the thicket edge and the walkable stand point
+# in front of it (<= 1.5 m). The thicket stays solid; uncut clumps keep its look (loc_bamboo).
+[[cut_spot]]
+id = "cut_bamboo_n1"
+forest = "bamboo_sw"
+pos = [-21.0, 2.95]
+stand = [-21.0, 3.8]
+
+[[cut_spot]]
+id = "cut_bamboo_n2"
+forest = "bamboo_sw"
+pos = [-19.6, 2.95]
+stand = [-19.6, 3.8]
+
+[[cut_spot]]
+id = "cut_bamboo_e1"
+forest = "bamboo_sw"
+pos = [-18.05, 0.8]
+stand = [-17.2, 0.8]
+
+[[cut_spot]]
+id = "cut_bamboo_e2"
+forest = "bamboo_sw"
+pos = [-18.05, 2.0]
+stand = [-17.2, 2.0]
 
 [[element]]
 id = "map_board"
@@ -314,7 +342,7 @@ notes = "Grass, bushes, stone-arch shelter in the north-west corner. Enclosure s
 id = "board_zebra"
 type = "decoration"
 kind = "info_board"
-rect = [-9, 14, 1, 1]
+rect = [-9, 15, 1, 1]      # Q-157: ≥ 0.9 m beside the gate post (no pocket)
 enclosure = "enc_zebra"
 
 # ---------------------------------------------------------------- pond (hippo hiding place)
@@ -498,7 +526,7 @@ notes = "Tiled pool hippo_pool (see [[enclosure_feature]]; square, tiled rim —
 id = "hedge_hippo_nw"
 type = "decoration"
 kind = "hedge"
-rect = [8, 21, 1, 2]           # 2026-09-27: 2 cells shorter, the enclosure sign stands beside the gate (LAYOUT-033)
+rect = [8, 22, 1, 2]           # 2026-09-27: 1 m north, the enclosure sign stands ≥ 0.9 m beside the gate (LAYOUT-033, LAYOUT-038)
 blocks_view = true
 height_m = 3.0
 notes = "Tall hedge between path_ring_e and the hippo fence; hides the cave mouth from the east side of the panda enclosure."
@@ -516,7 +544,7 @@ notes = "Tall hedge south of the hippo gate; with hedge_hippo_nw it frames the g
 id = "board_hippo"
 type = "decoration"
 kind = "info_board"
-rect = [8, 20, 1, 1]           # 2026-09-27: 3 m north, the enclosure sign stands between it and the gate (LAYOUT-033)
+rect = [8, 21, 1, 1]           # 2026-09-27: 4 m north, the enclosure sign stands between it and the gate (LAYOUT-033, ≥ 0.9 m from the post LAYOUT-038)
 enclosure = "enc_hippo"
 
 # ---------------------------------------------------------------- cave (panda hiding place)
@@ -1188,14 +1216,14 @@ color = "#FFC46E"
 [[light]]
 id = "l1_board_lamp_zebra"
 kind = "board_lamp"
-pos = [-8.5, 14.5]
+pos = [-8.5, 15.5]
 facing = "+x"
 attach = "board_zebra"
 
 [[light]]
 id = "l1_board_lamp_hippo"
 kind = "board_lamp"
-pos = [8.5, 20.5]
+pos = [8.5, 21.5]
 facing = "-x"
 attach = "board_hippo"
 

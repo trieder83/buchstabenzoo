@@ -116,6 +116,14 @@ impl NodeBehaviour {
                 mode: 1.0,
                 ..Self::STATIC
             },
+            // water wheel: turns with the clock about +X (LAYOUT-L3-017), lower paddles with
+            // the stream's flow
+            "wheel" => Self {
+                axis: 1.0,
+                angle: zoo_core::scene::WATER_WHEEL_SPIN,
+                mode: 1.0,
+                ..Self::STATIC
+            },
             "roof" => Self {
                 hide_bit: HIDE_ROOF as f32,
                 ..Self::STATIC

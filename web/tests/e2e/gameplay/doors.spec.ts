@@ -109,14 +109,14 @@ test.describe('review shots 1280×720', () => {
       await nextFrames(page, 4);
       await page.screenshot({ path: path.join(img, `2026-09-27-doors-${name}.jpg`), type: 'jpeg', quality: 50, scale: 'css' });
     };
-    // zebra: info board flush with the gate post; walking south-west from the path north of it
-    // (towards the gate) she sticks between board and fence (Q-157)
-    await teleport(page, -7.5, 16.0);
+    // zebra: the info board stands 1 m north of the gate post (Q-157 answered); walking
+    // south-west from the path north of it (towards the gate)
+    await teleport(page, -7.5, 17.0);
     await hold(page, [await keyFor(page, 0, -1), await keyFor(page, -1, 0)], 3.0);
     await shot('zebra-board', await page.evaluate(() => window.__zoo!.app.player_x()), await page.evaluate(() => window.__zoo!.app.player_z()));
-    // zookeeper house 3: the tap 0.35 m beside the door leaves a 0.1 m pocket at the facade
-    await shot('zh3-tap', -6.05, 60.69);
-    // night house: bat board 0.12 m in front of the facade, 1 m west of the door
+    // zookeeper house 3: the tap flush on the facade, 1.5 m beside the door (Q-157)
+    await shot('zh3-tap', -5.5, 60.0);
+    // night house: the boards hang flat on the facade (Q-157, `mount = "wall"`)
     await shot('nighthouse-board', -39.3, 38.4);
     // food storage (Q-150 answered): the box row leaves a gap in front of the door
     await shot('storage-gap', 0.5, 10.6);

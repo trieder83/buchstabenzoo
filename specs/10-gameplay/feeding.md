@@ -81,17 +81,17 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 ## Bamboo from the bamboo forest (user request 2026-09-27)
 
 14. **Second source for bamboo:** besides the bamboo food box, the child can **cut bamboo**
-    in a **bamboo forest** (every `[[scenery]]` of kind `bamboo` with `harvestable = true`;
+    in a **bamboo forest** (every `decoration` element of kind `bamboo` with `harvestable = true`;
     level 1: `bamboo_sw` at `loc_bamboo`). Each forest has **cut spots** along its edge that
-    are reachable from walkable ground (level 1: 4 spots, proposal). Standing at a spot
+    are reachable from walkable ground (level 1: 4 spots, Q-156 answered; only `bamboo_sw` for now). Standing at a spot
     (within 1.5 m, facing it), the interact action (`E`/Space/Enter, touch action button with
     a bamboo icon) snaps off a stalk with the hands (short `pick_up` clip, leaves rustle — no
-    knife or tool shown, child-safe; proposal Q-156) → the player carries the food `bamboo`,
+    knife or tool shown, child-safe; Q-156 answered) → the player carries the food `bamboo`,
     exactly like bamboo from the box (it works for the panda mission and is eaten at home).
     Food already in the hands is put down at the player's feet (§8–10 rules).
 15. **Regrowing:** a cut spot shows a short stump and regrows in stages (stump → young shoot
-    → full stalk) and can be cut again when full grown: **3 minutes of play time** (proposal
-    Q-156; paused time does not count). Regrowth is saved (GAME-SAVE) and seeded-free
+    → full stalk) and can be cut again when full grown: **3 minutes of play time** (Q-156
+    answered; paused time does not count). Regrowth is saved (GAME-SAVE) and seeded-free
     (deterministic). A forest never disappears; uncut stalks stay dense so the thicket keeps
     its look, collider and its role as a hiding place (`loc_bamboo`).
 16. **Reading still matters:** cutting bamboo does not replace the riddle — the child must
@@ -100,6 +100,32 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
     only when the panda board was read.
 17. **Art:** the bamboo forest model gets separate cut-spot stalk nodes with the stages
     `stalk_full`, `stalk_young`, `stump` (ART-ENVIRONMENT; the game swaps them by state).
+
+## Implementation (2026-09-27)
+
+- **Data:** a bamboo forest is a `decoration` element of kind `bamboo` with
+  `harvestable = true`; its cut spots are `[[cut_spot]]` entries (`id`, `forest`, `pos` = foot
+  of the stalk inside the forest rect at its edge, `stand` = walkable point ≤ 1.5 m in front).
+  Level 1: `cut_bamboo_n1`, `cut_bamboo_n2` (north edge), `cut_bamboo_e1`, `cut_bamboo_e2`
+  (east edge) of `bamboo_sw`. The forest cells stay solid; the stalks of the cut spots are not.
+- **Logic** (`zoo_core::carrying`): "hands" = the fish bowl if carried, else the food; the one
+  food slot is the pocket while the bowl is carried. A drop spot is free when its cell is
+  walkable (no water, fence, wall, gate, enclosure), no prop collider is within 0.25 m, it is
+  more than the opening's half width + 1 m from every door/gate centre, ≥ 0.5 m from other
+  lying items and ≥ 0.7 m from food boxes; else the nearest free point within 1.5 m (rings of
+  0.1 m, 32 directions). "Within 1.5 m of its own box" is measured from the drop spot. Picking
+  up a food with the bowl in the hands puts it into the pocket (a pocket food swaps with it).
+  Cutting bamboo with a food in the hands (or pocket) puts that food down at her feet.
+  Regrowth: stump for the first 90 s, young shoot for the next 90 s, then full. The
+  interpretations are listed in Q-158.
+- **Presentation:** the put-down button `#drop-btn` (✋⬇, 76 px, below the carried-item HUD,
+  shakes when nothing can be put down), key `G`; lying foods are drawn as the small closed
+  food box on the surface with the food icon above them within 5 m; cut-spot stalks are
+  placeholder boxes (full stalk 2.9 m, young shoot 1.2 m, stump 0.3 m) until the bamboo model
+  has the §17 nodes.
+- **Not yet:** the basket (GAME-GARDEN keeps treats without the hands) and the honey pot
+  (GAME-EVENTS) are not hand items yet, golf carts (GAME-CART) do not exist yet, the hint
+  targets of §13/§16 wait for GAME-HINT, the `pick_up` clip and the rustle sound of §14.
 
 ## Test cases
 
@@ -134,6 +160,7 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 - Q-032 Distractor design per reading level, Q-033 storage locked by `quest_key`?
 - Q-065 Food storage interior (PoC: boxes outside along the facade).
 - Q-025 How food is carried, Q-042 `give` clip vs. food not consumed, Q-034 food portions vs. one food at a time.
-- Q-156 Bamboo forest: cut spots per forest, regrowth time, snapping with the hands (proposal).
+- Q-156 answered 2026-09-27: 4 cut spots on `bamboo_sw`, 3 min regrowth, hands only, only `bamboo_sw` for now.
+- Q-158 Put-down interpretations (9th item = the bowl, pocket swap, back-into-box distance, `E` still puts the bowl down).
 - Q-155 answered: animals keep following when their food is put down; at most 8 lying items; giving consumes.
 - Q-150 answered 2026-09-27: the food-box rows leave a free gap ≥ 1.2 m in front of every food storage door (LAYOUT-032).

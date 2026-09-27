@@ -307,7 +307,7 @@ fn resc_007_wrong_enclosure_refuse() {
 fn resc_008_zebra_mission_end_to_end() {
     let mut g = common::game(3);
     g.settings.reading_level = ReadingLevel::Klasse1;
-    walk_to(&mut g, IVec2::new(-8, 14), 60.0); // next to board_zebra
+    walk_to(&mut g, IVec2::new(-8, 15), 60.0); // next to board_zebra
     let board = g.read_info_board("zebra").unwrap();
     let place = g.animal("zebra").unwrap().hiding_place.clone();
     assert_eq!(
@@ -661,7 +661,7 @@ fn feed_008_one_box_per_food_next_to_storage() {
 fn autopilot_reaches_targets_with_collision() {
     let mut g = common::game(1);
     for target in [
-        Vec2::new(-7.5, 14.5),
+        Vec2::new(-7.5, 15.5),
         Vec2::new(-0.4, 9.5),
         Vec2::new(8.0, 30.0),
     ] {

@@ -105,7 +105,9 @@ grass, sand, mud, tree shade, leaf pile) is listed in a level's `[[scenery]]` li
 `kind`, `rect`, `hiding_place`, `props`. Like food boxes it is not an element: its cells stay
 walkable with surface `grass`, it never overlaps a solid element or a path, and each kind a
 riddle relies on exists only once per level. Solid dressing (e.g. a bamboo thicket) is a
-normal `decoration` element.
+normal `decoration` element. A **bamboo forest** is such a `decoration` of kind `bamboo`; with
+`harvestable = true` bamboo is cut at its `[[cut_spot]]` entries (`id`, `forest`, `pos` = foot
+of the stalk at the forest edge, `stand` = walkable point ≤ 1.5 m in front; GAME-FEED §14).
 
 **Gardens** *(proposal, level design — Q-102; first used by `garden_veg`, GAME-LEVEL-1,
 GAME-GARDEN)*: a fenced vegetable garden is listed in `[[garden]]` (`id`, `rect`, `gate`,
@@ -252,6 +254,10 @@ open for confirmation):**
 - `[[item]]` (interactables the game logic uses; already used for the fish bowl, Q-093):
   `kind = "bed"` (sleep, NIGHT-003), `note_math_fighter` (GAME-CART 13), `key_box` (GAME-CART
   12, 14); fields `pos`, `building`, `facing`, `stand` (walkable cell the child uses it from).
+- Info board elements may set `mount = "wall"` (Q-157, LAYOUT-038): a flat board on the building
+  facade behind the board cell instead of a standing board — the cell stays walkable, no
+  footprint, the board lamp clips above the panel. Used where a standing board would form a
+  pocket beside a door (the three `night_1` boards on the night-house facade).
 - `[[prop]]` (furniture inside buildings, not grid elements): `id`, `model`, `pos`, `facing`,
   `size_m` [w, d] (collider box until the model exists; [0, 0] = no collider), `building`.
 - `[[event_spot]]` (GAME-EVENTS burglar event, proposal Q-139): `burglar_entry` (ladder on the
@@ -394,9 +400,22 @@ close behind them), the garden gate opens when the player is within 2 m, buildin
 while the player passes, the moon door opens at nightfall. Closed gates are solid; open gates
 are walkable only as the rules allow (enclosure gates only while leading animals — GAME-RESCUE).
 
+**Gates between the levels** (user request 2026-09-27): every level transition — each
+`[[entry]]` of a level and the barrier it names (`barrier_ne_tree` level 1 → 2,
+`barrier_l2_construction` level 2 → 3, `barrier_north_gate` level 1 → 3, and every later
+entry) — has a **real zoo gate** (`gate_zoo`, big double gate with two leaves, the
+`gate_zoo_closed` look when shut) set into the level's boundary hedge/wall line across the
+entry path, never just a gap. While the next level is locked the gate is **closed and
+solid** and the story barrier (fallen tree, construction fence, road block) stands in front
+of it on the old level's side; when the level unlocks (next morning, GAME-NIGHT) the barrier
+is cleared and the gate **swings open visibly** and stays open (walkable, both directions).
+`barrier_north_gate` *is* such a gate (no extra barrier). `barrier_east_repair` (road block
+to a later level) gets its gate too once that level exists. The gate's leaves open outwards
+into the new level and its posts join the hedge/wall on both sides without a gap.
+
 **Enclosure signs stand beside the gate** (user decision 2026-09-27, Q-086 (b)): the
 `enclosure_sign` never stands in front of or over a gate. It stands outside the fence along
-it, on the path side, with ≥ 0.5 m between the sign and the gate post; its whole footprint
+it, on the path side, with ≥ 0.9 m between the sign and the gate post (nothing solid within 0.9 m beside a post, Q-157, LAYOUT-038); its whole footprint
 (B(0, 0.10, 1.19, 0.26), solid) lies on walkable cells outside the gate opening and the
 ≥ 1 m walkway in front of it (LAYOUT-032), clear of the info board and the food boxes, with
 a free place ≥ 1 m in front of it to look at it. The engine tries the side away from the
@@ -468,9 +487,12 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-030 | Given every day level's `[[event_spot]]` list, then it has one `burglar_entry`, one `burglar_target` naming an existing building and one `burglar_hideout` of walkable grass reachable from the target, overlapping no hiding-place rect, scenery, garden or path (Q-139). | unit |
 | LAYOUT-031 | Given every gate/door opening in the joined zoo (enclosure gates, garden gate, building doors, night-house doors, entrance, barrier gates, moon door), then a gate/door model is placed that exactly fills the opening (no gap > 5 cm, no overlap with posts), and it opens/closes per the rules. | unit |
 | LAYOUT-032 | Given every gate/door opening in the joined zoo (LAYOUT-031), then no prop, board, lamp, item or furniture footprint lies in the opening or in the ≥ 1 m walkway in front of it, and a sign that belongs to a door is beside it or above it (bottom above the opening height); also for the non-enterable food storage doors: the food-box row leaves a free gap ≥ 1.2 m wide around the door (Q-150 answered 2026-09-27). This also holds for things without a collider (food boxes, items, furniture props, water taps, night lamp posts and string-light posts), and no lamp post stands in the 2.5 m leading lane straight in front of an opening (QA 2026-09-27). | unit |
-| LAYOUT-033 | Given every outdoor enclosure gate of the joined zoo (levels 1–3, `night_1`), then its `enclosure_sign` stands beside the gate — ≥ 0.5 m from the gate post along the fence (centre ≥ 2.69 m from the gate centre), ≤ 5 m away — and the gate's 1 m walkway has no collider; the sign's footprint lies on walkable cells clear of the info board and the food boxes (user decision 2026-09-27, Q-086 (b)). | unit |
-| LAYOUT-034 | Given every opening the player may pass (doors of enterable buildings, the garden gate, enclosure gates and glass doors while leading), when she walks straight at it from 3 m in front, from 2.5 m out and 2.5 m aside, and from 1.5 m out and 3 m aside (both sides), then she reaches the opening without getting stuck (≥ 5 cm progress per second) — nothing beside an opening forms a pocket (QA 2026-09-27; known pockets pending Q-157 are listed in the test). | unit |
+| LAYOUT-033 | Given every outdoor enclosure gate of the joined zoo (levels 1–3, `night_1`), then its `enclosure_sign` stands beside the gate — ≥ 0.9 m from the gate post along the fence (centre ≥ 3.09 m from the gate centre; Q-157, LAYOUT-038), ≤ 5 m away — and the gate's 1 m walkway has no collider; the sign's footprint lies on walkable cells clear of the info board and the food boxes (user decision 2026-09-27, Q-086 (b)). | unit |
+| LAYOUT-034 | Given every opening the player may pass (doors of enterable buildings, the garden gate, enclosure gates and glass doors while leading), when she walks straight at it from 3 m in front, from 2.5 m out and 2.5 m aside, and from 1.5 m out and 3 m aside (both sides), then she reaches the opening without getting stuck (≥ 5 cm progress per second) — nothing beside an opening forms a pocket (QA 2026-09-27; no exceptions since Q-157 was answered). | unit |
 | LAYOUT-035 | Given a lantern post of any level, then it has the collider C(0, 0, 0.12) while it is visible (at night) and none by day (the `[[light]]` placement rules, Q-118/Q-137). | unit |
+| LAYOUT-036 | Given every `[[entry]]` in the joined zoo, then a `gate_zoo` model stands across its entry path in the boundary line with its posts touching the hedge/wall on both sides (no gap); while the level is locked the gate is closed and solid, after unlocking it is open, walkable both ways and drawn open; the story barrier is gone. | unit |
+| LAYOUT-037 | Given the review screenshots of each level transition before and after unlocking, then a closed gate (behind its barrier) and later an open gate are visible. | e2e |
+| LAYOUT-038 | Given every door, gate and level gate, then no solid item stands within 0.9 m beside its posts so that a player walking at the opening at 45° can get caught in a corner (no pockets, Q-157). | unit |
 
 ## Open questions
 

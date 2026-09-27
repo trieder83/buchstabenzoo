@@ -34,7 +34,7 @@ one looks like. Skeleton, clips, sockets, expressions and export rules are in AR
    big expressive hand-drawn eyes, flat colours with one hard shadow tone (cel shading),
    bold dark-brown outlines drawn by the renderer (ART-RIG §3.5). Height 1.20 m to the top
    of the skull. The girl's design (hair, clothes, colours) is taken from
-   `art/reference/ref-player-style.jpg`, translated from blocky to comic.
+   the approved turnaround `art/characters/player_girl/front.png` (and views).
 3. `player_girl` and `player_boy` are clearly distinguishable **at a glance and from
    behind** (hair length and outfit colour), because the child chooses by tapping a
    preview without reading (GAME-PLAYER §1).
@@ -60,7 +60,7 @@ one looks like. Skeleton, clips, sockets, expressions and export rules are in AR
 
 ### `player_girl`
 
-Kept close to the girl in `art/reference/ref-player-style.jpg`.
+As in the approved turnaround `art/characters/player_girl/front.png` and its views.
 
 | Part | Design |
 |---|---|

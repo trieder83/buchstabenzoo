@@ -2,7 +2,7 @@
 
 Spec: ART-ENVIRONMENT (unique models: `stone_arch_shelter`, `hut_wood`, `pool_tiled`,
 `panda_shelter`, `panda_platform`), GAME-LEVEL-1, GAME-PLAYER §2. Style: `art/style/style.md`
-(comic). Reference for the buildings: `art/reference/ref-enclosure-buildings.jpg`. Status:
+(comic). Reference for the buildings: the chosen sheets in this folder (the old voxel reference was removed as outdated, 2026-09-27). Status:
 **in-review**.
 
 ## Purpose

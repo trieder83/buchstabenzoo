@@ -27,7 +27,7 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 |---|---|---|
 | `env_entrance` | Zoo entrance / start | gate, map board, first visitors |
 | `env_enclosure_row` | Enclosure paths | paths, fences, enclosure signs, benches |
-| `env_hippo` | Hippo enclosure | square tiled pool (no lilies/frogs — must not look like `loc_pond`), stones, wooden hut (cf. `art/reference/ref-enclosure-buildings.jpg`) |
+| `env_hippo` | Hippo enclosure | square tiled pool (no lilies/frogs — must not look like `loc_pond`), stones, wooden hut (cf. `art/props/kit_enclosure_buildings/sheet_zebra_hippo_v3.jpg`) |
 | `env_panda` | Panda enclosure | cut bamboo on a feeding rack (no growing bamboo clumps — proposal Q-081, must not look like `loc_bamboo`), wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
 | `env_zebra` | Zebra enclosure | bushes, grass, leaves, stone-arch shelter — no water (riddle points to the river) |
 | `env_koala` | Koala enclosure, level 2 (GAME-LEVEL-2, west) | eucalyptus trees of normal height, climbing trunk, small wooden shelter, feeding trough; the koala pair — **no** tree taller than the others, no blossoms, no tree house (riddle guards) |

@@ -8,32 +8,8 @@ window.ART_CATALOG = {
     {
       id: "reference",
       title: "Reference",
-      intro: "External reference images for content and layout ideas (enclosures, signs, zoo layout). Not our own assets. The art style is NOT taken from these — it is comic, see art/style/style.md.",
+      intro: "External reference image for the zoo-park camera and layout. Not our own asset. The art style is comic (art/style/style.md); the older voxel references were removed as outdated (2026-09-27).",
       items: [
-        {
-          id: "ref_player_farm",
-          title: "Player character style",
-          status: "reference",
-          description: "Girl in a striped shirt walking with a bear, sheep and chick. Reference for the player character's outfit and proportions only — not the voxel style.",
-          spec: "ART-DIRECTION",
-          images: [{ file: "reference/ref-player-style.jpg", label: "reference" }],
-        },
-        {
-          id: "ref_enclosure_row",
-          title: "Enclosure row with signs",
-          status: "reference",
-          description: "Row of enclosures with signs showing the animal name and a silhouette, wooden fences, open grass field with hippos, zebras and a snow fox.",
-          spec: "ART-DIRECTION",
-          images: [{ file: "reference/ref-enclosure-row.jpg", label: "reference" }],
-        },
-        {
-          id: "ref_enclosure_buildings",
-          title: "Distinct enclosure buildings",
-          status: "reference",
-          description: "Each animal has a recognisable building: wooden hut (hippo), stone arch (zebra), glass house (snow fox). Large readable wooden signs.",
-          spec: "ART-DIRECTION",
-          images: [{ file: "reference/ref-enclosure-buildings.jpg", label: "reference" }],
-        },
         {
           id: "ref_zoo_layout",
           title: "Zoo layout and camera",

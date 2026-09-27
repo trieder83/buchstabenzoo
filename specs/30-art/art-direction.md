@@ -19,13 +19,13 @@ on phones, seen from a high-angle zoo-park camera (GAME-PLAYER).
 ## References
 
 The **style** is defined only in `art/style/style.md` (comic, decided 2026-09-26, Q-010).
-The reference images below are for content and layout ideas, not for the style.
+The reference images below are for content and layout ideas, not for the style. (The first three external voxel references were removed as outdated on 2026-09-27; our own approved art replaces them.)
 
 | Image | What we take from it |
 |---|---|
-| `art/reference/ref-player-style.jpg` | Player character outfit and proportions (girl in striped shirt), warm daylight. Not the voxel style. |
-| `art/reference/ref-enclosure-row.jpg` | Enclosure row with **signs showing name + silhouette**, wooden fences, grass field. |
-| `art/reference/ref-enclosure-buildings.jpg` | Distinct enclosure buildings per animal (wooden hut, stone arch, glass house), large readable signs. |
+| `art/characters/player_girl/front.png` | Player character look (approved turnaround). |
+| `art/environment/style_frame/style_frame.png` | The approved style frame: comic look, enclosure sign with silhouette, fences, grass, camera. |
+| `art/props/kit_enclosure_buildings/sheet_zebra_hippo_v3.jpg` | Distinct enclosure buildings per animal (approved concept). |
 | `art/reference/ref-zoo-layout.webp` | High-angle zoo-park camera, zoo layout with paths, kiosks and props. |
 
 ## Behaviour

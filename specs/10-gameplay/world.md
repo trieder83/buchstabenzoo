@@ -17,7 +17,7 @@ updated: 2026-09-26
    storage, pirate ship) and the hiding places of the rescue missions (`loc_*`,
    CONT-MISSIONS).
 2. Every enclosure has an `enclosure_sign` with the animal name; on `kiga` the sign also
-   shows the animal silhouette (cf. `art/reference/ref-enclosure-row.jpg`).
+   shows the animal silhouette (cf. `art/environment/style_frame/style_frame.png`).
 3. Whether the food storage is locked until the player finds the `key` on the
    `pirate_ship` (`quest_key`) is open (Q-033, GAME-FEED §5). WORLD-002/003 apply only if
    Q-033 keeps the lock.

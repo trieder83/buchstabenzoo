@@ -12,7 +12,7 @@ Start of the zebra mission: the child reads the enclosure sign and the info boar
 - Wooden post-and-rail fence, 11 × 12 m, gate on the east side facing the ring path.
 - Enclosure sign on two posts above the gate — **blank except for a black zebra silhouette**.
 - Info board on one post beside the gate — tilted back towards the camera, **blank**.
-- Inside: short grass, several round bushes, fallen leaves, a grey **stone arch shelter** in the north-west corner (cf. `art/reference/ref-enclosure-buildings.jpg`).
+- Inside: short grass, several round bushes, fallen leaves, a grey **stone arch shelter** in the north-west corner (cf. `art/props/kit_enclosure_buildings/sheet_zebra_hippo_v3.jpg`).
 - Across the path: tall hedge and the dense tree grove (the river is hidden behind it).
 
 ## Must not appear

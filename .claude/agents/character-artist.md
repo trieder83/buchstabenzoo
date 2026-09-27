@@ -12,7 +12,7 @@ zoo reading game for children aged 4–9, rendered with raw WebGL2 from Rust/WAS
 Read first: `CLAUDE.md`, `specs/README.md`, `specs/glossary.md`, `specs/30-art/asset-pipeline.md`
 (ART-PIPELINE), `specs/30-art/art-direction.md`, `specs/30-art/characters.md` (ART-CHARACTERS),
 `specs/10-gameplay/player.md`, `specs/open-questions.md`, and the reference images in `art/reference/`
-(especially `art/reference/ref-player-style.jpg` for the player character style).
+(especially the approved turnarounds in `art/characters/<id>/` — `art/characters/player_girl/front.png` for the player).
 
 ## You own
 

@@ -3,7 +3,7 @@
 Spec: ART-CHARACTERS (look), ART-RIG (skeleton, rest pose, expressions), ART-PIPELINE §3
 (turnaround files). Status: **concept — not approved** (`assets/manifest.toml`).
 Style: **comic** — `art/style/style.md` (Q-010 answered). Design reference (hair, clothes,
-colours): the girl in `art/reference/ref-player-style.jpg`, translated from blocky to comic.
+colours): the approved turnaround (`front.png`, `side.png`, `back.png`, `three_quarter.png` in this folder); the original voxel reference was removed as outdated (2026-09-27).
 
 ## Character
 
@@ -123,7 +123,7 @@ Turnaround with four views side by side in one row, same scale and same baseline
 
 ## Review checklist (before `concept_approved = true` — user decides)
 
-- [ ] Recognisably the girl from `art/reference/ref-player-style.jpg`, now in comic style.
+- [ ] Recognisably the girl from the approved turnaround in this folder.
 - [ ] Every prompt contains the CHARACTER SHEET STYLE block and the NEGATIVE suffix
       verbatim (APIPE-010, ACHAR-008).
 - [ ] Same scale, baseline and A-pose in all four views; plain background.

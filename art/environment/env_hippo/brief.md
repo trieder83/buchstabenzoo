@@ -11,7 +11,7 @@ Start of the hippo mission: sign + info board (riddle → still pond with lilies
 
 - Wooden fence, 11 × 12 m, gate on the west side facing the ring path, framed left and right by tall hedges.
 - Enclosure sign above the gate — **blank except for a black hippo silhouette**; info board beside the gate, **blank**.
-- Inside: a **square pool with a tiled light-stone edge** (clearly man-made), big grey stones, a wooden hut with a pitched roof (cf. `ref-enclosure-buildings.jpg`), grass and mud patches.
+- Inside: a **square pool with a tiled light-stone edge** (clearly man-made), big grey stones, a wooden hut with a pitched roof (cf. `art/props/kit_enclosure_buildings/sheet_zebra_hippo_v3.jpg`), grass and mud patches.
 - Behind the enclosure (north): the river bend flowing east (visible current) — a deliberate contrast to the still pond the riddle describes.
 
 ## Must not appear

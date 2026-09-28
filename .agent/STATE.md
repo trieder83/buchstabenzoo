@@ -26,6 +26,7 @@ Work queue: `.agent/TODO.md`.
   your own port for previews and stop them. Keep ≥ 10 GB disk free; delete your build copies.
 - New open questions only in the Q range assigned above; next free number is in
   `DECISIONS.md`. After editing `specs/open-questions.md` run `python3 tools/agent_state.py`.
+- **Find code:** `.agent/CODEMAP.md` (generated) — grep it for a file/function/test ID, then Read with offset/limit. Don't list or read whole directories/crates.
 - **Save tokens:** don't read big specs whole (`open-questions.md` 120 KB, `levels/level-1.md`
   90 KB, `layout.md` 60 KB, `levels/level-2/3.md`, `night-1.md` 40 KB): `grep -n` for the ID /
   section, then read only those lines. Read `DECISIONS.md` instead of `open-questions.md`

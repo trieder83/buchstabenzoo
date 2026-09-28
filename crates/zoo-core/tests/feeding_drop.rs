@@ -289,7 +289,7 @@ fn feed_013_animals_keep_following() {
 }
 
 // FEED-014: next to its own box → back into the box; the 9th item returns the oldest food,
-// never the bowl.
+// never the bowl; the basket (and the honey pot) are never put down (Q-172).
 #[test]
 fn feed_014_back_into_box_and_limit() {
     let mut g = plaza_game();
@@ -348,6 +348,26 @@ fn feed_014_back_into_box_and_limit() {
     assert!(g
         .drain_events()
         .contains(&GameEvent::FoodPutBack { food: Food::Grass }));
+
+    // the basket is its own slot and is never put down (Q-172 answered 2026-09-28): with
+    // only treats in the basket nothing can be put down; with a food in the hands only the
+    // food goes, the treats stay in the basket
+    let mut g = plaza_game();
+    g.garden.basket.carrots = 1;
+    g.garden.basket.potatoes = 2;
+    stand(&mut g, PLAZA, Vec2::Y);
+    assert!(!g.can_put_down(), "the basket is no hand item");
+    assert_eq!(g.put_down(), Err(DropError::NothingHeld));
+    carry(&mut g, Food::Hay);
+    assert!(matches!(
+        g.put_down(),
+        Ok(Dropped::Food {
+            food: Food::Hay,
+            ..
+        })
+    ));
+    assert_eq!(g.garden.basket.total(), 3, "the treats stay in the basket");
+    assert!(!g.can_put_down());
 }
 
 // FEED-015: saved and restored with the same place and content.

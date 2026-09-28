@@ -71,7 +71,9 @@ impl Lying {
     }
 }
 
-/// What fills the hands (GAME-FEED §8): the bowl (both hands) or a food.
+/// What fills the hands (GAME-FEED §8): the bowl (both hands) or a food. The basket (and
+/// the honey pot of the bee event) is a slot of its own and never a hand item, so it is
+/// never put down (Q-172 answered 2026-09-28, FEED-014).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Held {
     Bowl,

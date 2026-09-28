@@ -46,28 +46,38 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 
 ## Putting an item down (user request 2026-09-27)
 
-8. **Drop:** the child can put down the item in the hands — a food, the fish bowl (with water
-   and fish if filled), the basket (with its treats) or the honey pot (GAME-EVENTS). Controls:
+8. **Drop:** the child can put down the item in the hands — a food or the fish bowl (with
+   water and fish if filled). The basket (with its treats, GAME-GARDEN §4) and the honey pot
+   (GAME-EVENTS) are **not** hand items: they sit in their own slot on the arm/back and are
+   **never put down** (user decision 2026-09-28, Q-172). Controls:
    a big **put-down button** (✋⬇ icon, no text) next to the carried-item icon in the HUD,
    shown only while something is carried; desktop key `G` (GAME-PLAYER §3 key table). The
    cart key (🔑) and the pocket are never dropped (nothing important can get lost).
    With the fish bowl in the hands and a food in the pocket, the bowl is put down and the
-   pocket food moves to the hands.
+   pocket food moves to the hands. With the bowl in the hands and nothing else to interact
+   with, the interact action (`E` / the action button) also puts the bowl down (same rules
+   as `G`; Q-158 (d)).
 9. **Where:** on the ground about 0.8 m in front of the player, standing on the visible
    surface (ground height, PLAY-035). If that spot is not free walkable ground — water,
    fence, wall, gate opening or its walkway (LAYOUT-032), enclosure inside, another item,
    food box — the nearest free walkable spot within 1.5 m is used; if there is none, nothing
    is dropped (gentle shake of the button). Not while sitting in a golf cart (GAME-CART).
+   A gate or door walkway is a circle of the opening's half width + 1 m around the opening
+   centre (Q-158 (e)).
 10. **Lying items:** a dropped item stays where it was put (its model on the ground, readable
     icon above it when near), is saved and restored (GAME-SAVE), and is never taken by
     animals — animals do not eat dropped food. Dropping a food within 1.5 m of its own food
-    box puts it back into the box instead (it disappears). At most **8** items lie in the
-    zoo (user decision 2026-09-27); dropping a 9th food returns the oldest lying food to its box (never the bowl, basket
-    or honey pot).
+    box puts it back into the box instead (it disappears); the 1.5 m are measured from the
+    drop spot (0.8 m in front of her), not from her feet (Q-158 (b)). At most **8** items
+    lie in the zoo (user decision 2026-09-27); putting down a 9th item — a food or the bowl
+    (Q-158 (a)) — returns the oldest lying **food** to its box (never the bowl; the basket and
+    the honey pot never lie on the ground, §8).
 11. **Pick up again:** standing within 2 m of a lying item, the interact action (`E`/Space/
     Enter, touch action button with the item's icon) picks it up. If the hands are already
     full, the two items swap (the held one is put down on the same spot); the food + bowl
-    pocket rule (GAME-RESCUE, Q-084) still applies.
+    pocket rule (GAME-RESCUE, Q-084) still applies: picking up a lying food while the bowl is
+    in the hands puts the food into the pocket, and a food already in the pocket swaps with it
+    (it lies on the same spot; Q-158 (c)).
 12. **Following animals keep following** when their food is put down (they follow the child
     once they were shown the right food, GAME-RESCUE §5–6) — user decision 2026-09-27
     (Q-155). Showing food needs it in the hands.
@@ -88,7 +98,9 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
     a bamboo icon) snaps off a stalk with the hands (short `pick_up` clip, leaves rustle — no
     knife or tool shown, child-safe; Q-156 answered) → the player carries the food `bamboo`,
     exactly like bamboo from the box (it works for the panda mission and is eaten at home).
-    Food already in the hands is put down at the player's feet (§8–10 rules).
+    Food already in the hands is put down at the player's feet (§8–10 rules). With the bowl
+    in the hands the bamboo goes into the pocket, and a food already in the pocket is put
+    down at her feet (Q-158 (f)).
 15. **Regrowing:** a cut spot shows a short stump and regrows in stages (stump → young shoot
     → full stalk) and can be cut again when full grown: **3 minutes of play time** (Q-156
     answered; paused time does not count). Regrowth is saved (GAME-SAVE) and seeded-free
@@ -116,15 +128,17 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
   0.1 m, 32 directions). "Within 1.5 m of its own box" is measured from the drop spot. Picking
   up a food with the bowl in the hands puts it into the pocket (a pocket food swaps with it).
   Cutting bamboo with a food in the hands (or pocket) puts that food down at her feet.
-  Regrowth: stump for the first 90 s, young shoot for the next 90 s, then full. The
-  interpretations are listed in Q-158.
+  Regrowth: stump for the first 90 s, young shoot for the next 90 s, then full. These are
+  the rules of §8–11 and §14 (Q-158 answered 2026-09-28: accepted as implemented).
 - **Presentation:** the put-down button `#drop-btn` (✋⬇, 76 px, below the carried-item HUD,
   shakes when nothing can be put down), key `G`; lying foods are drawn as the small closed
   food box on the surface with the food icon above them within 5 m; cut-spot stalks are
   placeholder boxes (full stalk 2.9 m, young shoot 1.2 m, stump 0.3 m) until the bamboo model
   has the §17 nodes.
-- **Not yet:** the basket (GAME-GARDEN keeps treats without the hands) and the honey pot
-  (GAME-EVENTS) are not hand items yet, golf carts (GAME-CART) do not exist yet, the hint
+- The basket (GAME-GARDEN keeps treats without the hands) and the honey pot (GAME-EVENTS)
+  are no hand items and have no drop path in `carrying` (Q-172); the drop only ever takes
+  the food or the bowl.
+- **Not yet:** golf carts (GAME-CART) do not exist yet, the hint
   targets of §13/§16 wait for GAME-HINT, the `pick_up` clip and the rustle sound of §14.
 
 ## Test cases
@@ -144,7 +158,7 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 | FEED-011 | Given hay lying on the ground, when the player within 2 m interacts, then she carries hay; given she carries bamboo, then bamboo lies on that spot and she carries hay (swap). | unit |
 | FEED-012 | Given the filled fish bowl with the goldfish and a food in the pocket, when dropped, then the bowl with water and fish lies on the ground, the food moves to the hands, and picking the bowl up again restores bowl + fish (food to the pocket). | unit |
 | FEED-013 | Given zebras following and the player drops the grass, then the zebras keep following; animals never eat or take lying food. | unit |
-| FEED-014 | Given a food dropped within 1.5 m of its own food box, then it goes back into the box; given 8 lying items, dropping another food returns the oldest lying food to its box and never removes the bowl, basket or honey pot. | unit |
+| FEED-014 | Given a food dropped within 1.5 m of its own food box (measured from the drop spot), then it goes back into the box; given 8 lying items, putting down another food or the bowl returns the oldest lying food to its box and never removes the bowl; the basket and the honey pot are never put down and never lie on the ground (Q-172). | unit |
 | FEED-015 | Given items lying in the zoo, when saved and restored, then every item lies at the same place with the same content. | unit |
 | FEED-016 | Given nothing carried or only the cart key, then no put-down button is shown and `G` does nothing. | e2e |
 | FEED-017 | Given a full-grown cut spot of a harvestable bamboo forest and the player standing at it, when she interacts (desktop `E` or the touch action button), then she carries `bamboo` and the spot becomes a stump. | unit + e2e |
@@ -164,8 +178,8 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 - Q-065 Food storage interior (PoC: boxes outside along the facade).
 - Q-025 How food is carried, Q-042 `give` clip vs. food not consumed, Q-034 food portions vs. one food at a time.
 - Q-156 answered 2026-09-27: 4 cut spots on `bamboo_sw`, 3 min regrowth, hands only, only `bamboo_sw` for now.
-- Q-158 Put-down interpretations (9th item = the bowl, pocket swap, back-into-box distance, `E` still puts the bowl down).
+- Q-158 answered 2026-09-28: the put-down details (a)–(f) are rules now (§8–11, §14).
 - Q-155 answered: animals keep following when their food is put down; at most 8 lying items; giving consumes.
 - Q-150 answered 2026-09-27: the food-box rows leave a free gap ≥ 1.2 m in front of every food storage door (LAYOUT-032).
-- Q-172 basket and honey pot: hand items that can be put down (§8, FEED-014) or a separate slot (GAME-GARDEN §4, GARD-007)?
+- Q-172 answered 2026-09-28: basket and honey pot are a separate slot and are never put down (§8, FEED-014; GAME-GARDEN §4, GARD-007 unchanged).
 - Q-154 the bamboo forest model with cut-spot stage nodes (§17) is not yet listed in ART-ENVIRONMENT.

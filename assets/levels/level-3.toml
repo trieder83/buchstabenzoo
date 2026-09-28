@@ -634,19 +634,19 @@ facing = "-z"
 [[light]]
 id = "l3_lantern_gate_goldfish"
 kind = "lantern_post"
-pos = [10.7, 66.65]
+pos = [10.25, 65.8]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "+x"
 
 [[light]]
 id = "l3_lantern_gate_monkey"
 kind = "lantern_post"
-pos = [0.65, 81.7]
+pos = [4.2, 81.25]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "+z"
 
 [[light]]
 id = "l3_lantern_gate_snow_fox"
 kind = "lantern_post"
-pos = [-1.35, 57.3]
+pos = [2.2, 57.75]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "-z"
 
 [[light]]

@@ -67,8 +67,16 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 13. **Honey for the bears:** honey is a treat (GAME-GARDEN basket) that **bears** love.
     Feeding the bear pair honey counts as care feeding (GAME-FAMILY) → the bears may get a
     baby. **Bears are a new species** (not in the current animal list) — they need a
-    concept, a mission and an enclosure (Q-131 answered: yes, as a new animal pair; level and
-    species spec: Q-174).
+    concept, a mission and an enclosure (Q-131 answered: yes, as a new animal pair). **Bears
+    go into a new level 4** (Q-174 answered 2026-09-28; GAME-LAYOUT "Levels": `level_4`
+    planned, contents Q-175).
+    **Deferred until level 4 exists (Q-174):** the **honey part** of this event — the honey
+    pot, collecting honey under the hive (rule 12) and feeding it to the bears (rule 13,
+    EVT-007, EVT-008) — stays **off**; no honey is offered and no honey pot is handed out
+    before the bear enclosure exists. The honey pot, once used, is a slot of its own like the
+    basket and is never put down (Q-172, GAME-FEED §8). *Implementation (2026-09-28):* no
+    event code exists yet (GAME-EVENTS is not implemented), so nothing has to be switched
+    off; the event code must keep the honey part disabled until `level_4` is in the data.
 
 ## Test cases
 
@@ -80,8 +88,8 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 | EVT-004 | Given the time window passes, then the police catch them anyway, the item is back at the entrance and nothing is lost. | unit |
 | EVT-005 | Given the storm event, then exactly 4 fence segments of completed enclosures break, their animals go to new hiding places and the riddles update. | unit |
 | EVT-006 | Given the storm's animals are back, then their fences are repaired. | unit |
-| EVT-007 | Given the bee event, when the hive is finished and the honey pot is put under it, then honey is added to the basket; bees never hurt the player. | unit |
-| EVT-008 | Given honey fed to the bear pair, then it counts as a care feeding (FAM-003). | unit |
+| EVT-007 | *Deferred until level 4 exists (Q-174).* Given the bee event, when the hive is finished and the honey pot is put under it, then honey is added to the basket; bees never hurt the player. Until then: given no `level_4` in the data, then the bee event offers no honey and hands out no honey pot. | unit |
+| EVT-008 | *Deferred until level 4 exists (Q-174).* Given honey fed to the bear pair, then it counts as a care feeding (FAM-003). | unit |
 | EVT-009 | Given any event, then all its texts exist per reading level and language, and reviewers confirm nothing is scary (manual). | unit + manual |
 | EVT-010 | Given a save during an event, when restored, then the event continues in the same state. | unit |
 
@@ -89,5 +97,5 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 
 - Q-129 answered 2026-09-27: event timing (gap 10 min, not in the first session, burglar window 3 min).
 - Q-130 answered 2026-09-27: the zookeeper repairs the fences automatically (rule 10).
-- Q-131 answered 2026-09-27: bears are added as a new animal pair; Q-174 which level, and the species is not yet in GAME-ANIMALS / ART-ANIMALS / CONT-MISSIONS.
-- Q-172 honey pot / basket as hand items that can be put down (GAME-FEED §8)?
+- Q-131 answered 2026-09-27: bears are added as a new animal pair. Q-174 answered 2026-09-28: bears go into a new level 4; the honey part (EVT-007, EVT-008) is deferred until it exists; the species is not yet in GAME-ANIMALS / ART-ANIMALS / CONT-MISSIONS. Q-175 what else level 4 contains.
+- Q-172 answered 2026-09-28: the basket and the honey pot are a separate slot and are never put down (GAME-FEED §8).

@@ -76,6 +76,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Night lights | `[[light]]` list: lantern posts along the ring (~10 m) and beside every gate, string lights over the entrance plaza, wall lamps, board lamps, the bedside lamp (see "Night lights"). | Q-118 (answered), Q-137 |
 | Burglar event | `[[event_spot]]`: ladder at the west wall, target = food storage, hideout between the west wall and the pond (see "Burglar event"). | Q-139 |
 | 22 m haze rule (FIX-056) | `loc_river` clipped to z 33–35 (spot (8, 33)); `loc_pond` clipped to the west half of the pond, hippo spot on the north shore (−16, 26); `loc_leaves` moved into the north-east corner (spot (21, 45)) with the one-seat bench `bench_leaves` and the stepping-stone trail `path_leaves_trail`; the pond is now the panda board's walking neighbour instead of the zebra board's (see "Hiding places", "Walking distances"). | Q-145 |
+| Zebra board and wall gaps (2026-09-28) | `board_zebra` south of the zebra gate at (−9, 10) (22 m haze margin, Q-171); the gate lanterns stand in front of the sign's inner end, the enclosure signs flush in front of the fence and the garden signs ≥ 0.6 m off the fences (no slot 0.1–0.6 m in front of a wall within 3 m of a door or gate, LAYOUT-039, Q-173); the zebra gate is the ring stop between storage and panda board (proposal Q-176). | Q-171, Q-173, Q-176 |
 | Vegetable garden | `garden_veg` (GAME-GARDEN) in the back strip x 6–9, z 36–45 between panda enclosure and river: data lists `[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]` (not elements; fence, beds, signs and tools are prop colliders), a 2 m gate that swings open by itself, animals never enter the garden (see "Vegetable garden"). | Q-102 |
 
 ## Spawn and camera
@@ -126,11 +127,11 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
   17 ##..zzzzzzzzzzz.===TTTTTTTTTT===ihhruuuuuuuh..%%
   16 ##..zzzzzzzzzzz.===%FFFFFFFF%===.ghruuuuuuuh..%%
   15 ##..zzzzzzzzzzz.===%FFFFFFFF%===.ghuuuuuuuuh..%%
-  14 ##..zzzzzzzzzzzi===%FFFFFFFF%===%hhhhhhhhhhh..%%
+  14 ##..zzzzzzzzzzz.===%FFFFFFFF%===%hhhhhhhhhhh..%%
   13 ##..zzzzzzzzzzg.===%FFFFFFFF%===%hhhhhhhhhhh..%%
   12 ##..zzzzzzzzzzg.===%FFFFFFFF%===%hhhhhhhhhhh..%%
   11 ##..zzzzzzzzzzz.===%FFFFDFFF%===%hhhhhhhhhhh..%%
-  10 ##..zzzzzzzzzzz.==============================XX
+  10 ##..zzzzzzzzzzzi==============================XX
    9 ##..zzzzzzzzzzz.==============================XX
    8 ##..zzzzzzzzzzz.==============================XX
    7 ##..zzzzzzzzzzz....==========....^ccc^^^^^^^^^%%
@@ -221,7 +222,7 @@ Solid = every type except `path` and `hiding_place`.
 | `hedge_center_e` | decoration (hedge) | 4, 11, 1, 6 | Tall hedge beside the food storage (sight blocker). |
 | `grove_center` | decoration (tree_grove) | -5, 17, 10, 10 | Dense grove of tall trees inside the ring (main sight blocker). `density = "dense"`: solid, never entered (LAYOUT-016); bush border on all four walkable sides (`edge = "bushes"`, proposal Q-085); no canopy within 1.5 m of the north edge so it does not hide the player at `board_panda` (QA F11). |
 | `enc_zebra` | enclosure | -20, 7, 11, 12 | Zebra enclosure; gate (-10, 12, 1, 2) on the east fence; stone-arch shelter, bushes, grass, **no water**. |
-| `board_zebra` | decoration (info_board) | -9, 15, 1, 1 | Info board of `enc_zebra`, north of the gate, 1 m beside the gate post (moved 1 m north 2026-09-27: no pocket beside the gate, Q-157, LAYOUT-038). |
+| `board_zebra` | decoration (info_board) | -9, 10, 1, 1 | Info board of `enc_zebra`, **south** of the gate, flush with the fence and 1 m beside the south gate post (Q-157 no pocket, LAYOUT-038). Moved 2026-09-28 from (−9, 15) north of the gate (Q-171): there `loc_river` was only 21.26 m from a zebra standing point; now every zebra place is ≥ 24.2 m away (22 m rule, CAMV-008). The enclosure sign stands north of the gate (the side away from the board). |
 | `pond_water` | landmark (pond) | -19, 20, 8, 8 | Still pond: water lilies, frogs, reeds. Six `lily_pad` groups; the two frogs (animated ambient animals, GAME-AMBIENT) start on the pads at (−12.2, 21.5) — within 2 m of the jetty end — and (−16.0, 21.0) near the south bank. |
 | `jetty_pond` | path (jetty) | -11, 22, 3, 2 | Wooden jetty from the ring path to the pond edge. |
 | `bench_pond` | decoration (bench) | -11, 26, 2, 1 | Bench on the pond shore. |
@@ -260,9 +261,9 @@ The `kiga` board shows the picture of the chosen place (`loc_*` picture id).
 
 | Id | Animal | Area rect (x, z, w, d) | Animal spot | Wander on | Wander cells | Features (riddle details) | Scenery | Spot → own info board | Own board → spot (fastest walk) |
 |---|---|---|---|---|---|---|---|---|---|
-| `loc_river` | zebra | 6, 33, 4, 3 | (8, 33) | grass | 12 | flowing_water, bridge, ducks | `river_n`, `bridge_river` | 25.5 m | 15.8 s |
-| `loc_meadow` | zebra | 15, 31, 7, 3 | (17, 32) | grass | 16 | tall_grass, wildflowers, butterflies, big_trees_behind | `tall_grass_ne`, `trees_ne` | 31.6 m | 19.5 s |
-| `loc_sand` | zebra | -1, 42, 7, 4 | (2, 44) | grass | 22 | sand, dry, yellow_ground, no_grass | `sand_n` | 32.0 m | 22.4 s |
+| `loc_river` | zebra | 6, 33, 4, 3 | (8, 33) | grass | 12 | flowing_water, bridge, ducks | `river_n`, `bridge_river` | 28.6 m | 17.9 s |
+| `loc_meadow` | zebra | 15, 31, 7, 3 | (17, 32) | grass | 16 | tall_grass, wildflowers, butterflies, big_trees_behind | `tall_grass_ne`, `trees_ne` | 34.1 m | 21.5 s |
+| `loc_sand` | zebra | -1, 42, 7, 4 | (2, 44) | grass | 22 | sand, dry, yellow_ground, no_grass | `sand_n` | 35.7 m | 24.4 s |
 | `loc_pond` | hippo | -19, 19, 4, 10 | (-16, 26) | water | 14 | still_water, water_lilies, frogs | `pond_water`, `jetty_pond` | 25.6 m | 17.9 s |
 | `loc_mud` | hippo | -20, 42, 7, 4 | (-17, 44) | grass | 22 | mud, brown_ground, wet, splashing | `mud_nw` | 36.8 m | 25.3 s |
 | `loc_shade` | hippo | -22, 33, 2, 7 | (-22, 36) | grass | 12 | shade, big_trees, zoo_wall, dry_grass | `shade_w`, `trees_nw`, `wall_west` | 35.5 m | 23.6 s |
@@ -284,8 +285,10 @@ from the jetty (−13, 22) to the north shore (−16, 26), 2 m from `path_moon` 
 `loc_leaves` moved into the north-east corner (rect was 14, 43, 7, 3, spot (17, 44); 17 → 9
 cells — the 9 cells ≥ 22 m from the panda gate's corner cell (1, 31)), with `bench_leaves` on
 the one remaining cell that is too close and `path_leaves_trail` for the walk to the meadow.
-Smallest distances now: `loc_river` 22.0 m, `loc_leaves` 22.0 m, `loc_pond` 22.6 m (the other
-six ≥ 24.7 m); the level minimum is 22.0 m.
+Smallest distances now (2026-09-28, after the Q-171 move of `board_zebra` south of the
+gate): panda places 22.02 m, hippo places 22.02 m, zebra places 24.21 m; the level minimum is
+22.0 m. The CAMV-008 margin test (`camv_008_level_data_keeps_the_22_m_margin`) checks the
+22 m for levels 1–3.
 
 **Wander area** (GAME-ANIMALS "Animal states"; *proposal, level design*): the cells whose
 centre is within `wander_radius_m` (3 m) of the spot centre, whose surface matches
@@ -391,8 +394,8 @@ animal spot. Shortest distance (any surface) given for reference.
 | From → to (neighbours along the ring) | Shortest distance | Fastest time |
 |---|---|---|
 | spawn → food storage door | 8.0 m | 4.1 s |
-| food storage → zebra info board | 11.2 m | 6.1 s |
-| zebra info board → panda info board | 15.1 m | 8.1 s |
+| food storage → zebra info board | 8.0 m | 4.1 s |
+| zebra gate (cells (−9, 12…13)) → panda info board | 18.1 m | 9.7 s |
 | pond (hippo, north shore) → panda info board | 11.8 m | 7.2 s |
 | panda info board → river (zebra) | 10.8 m | 7.2 s |
 | river → hippo info board | 10.4 m | 5.6 s |
@@ -407,16 +410,19 @@ animal spot. Shortest distance (any surface) given for reference.
 | panda info board → moon door (cells (-22, 29..30)) | 18 m | ≈ 9.0 s |
 | `loc_shade` → moon door | 5 m | ≈ 3.8 s |
 
-All neighbour pairs are ≤ 10 s (longest listed neighbour pair: zebra info board → panda info
-board 8.1 s (Q-157 moves of 2026-09-27: zebra and hippo boards 1 m north). FIX-056: the pond's hippo spot moved to the north shore, so the pond is now the
-neighbour of the panda board, not of the zebra board (zebra board → pond 12.6 s, not a
+All neighbour pairs are ≤ 10 s (longest listed neighbour pair: zebra gate → panda info
+board 9.7 s). Q-171 (2026-09-28): `board_zebra` moved south of the gate, so the zebra board
+is now 4.1 s from the storage door and 10.7 s from the panda board — *proposal Q-176:* the
+ring stop between them is the zebra **gate** (1.0 s from the board; the child leads the
+zebras through it), zebra gate → panda board 9.7 s. FIX-056: the pond's hippo spot moved to the north shore, so the pond is now the
+neighbour of the panda board, not of the zebra board (zebra board → pond 14.7 s, not a
 neighbour pair); river → hippo info board 5.6 s;
 the four new rows are scratch estimates of 2026-09-27 — the LAYOUT-L1-005 test prints the exact
 values; panda board → moon door is the tightest). The moon door is ≈ 24 s from the bed on
 purpose: the two night choices are separate places (the HUD shows both icons, GAME-NIGHT rule 3).
 Not neighbours (for information): panda info board → food storage 13.4 s (14.8 s at
-1.75 m/s); zebra board → pond 12.6 s; hippo board → zebra board 12.3 s
-(13.5 s). The
+1.75 m/s); zebra board → panda board 10.7 s; zebra board → pond 14.7 s; hippo board →
+zebra board 12.9 s. The
 panda mission is therefore the longest round trip — intentionally the third mission a child
 will usually do.
 
@@ -427,7 +433,7 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 
 1. **Hiding places vs. own enclosure.** From above, the central grove and the hedges no
    longer block the view the way they do at eye level. The design works through
-   **distance**: info board → own hiding place is 25.5 m (zebra → river), 25.6 m
+   **distance**: info board → own hiding place is 28.6 m (zebra → river), 25.6 m
    (hippo → pond), 28.7 m (panda → cave), and 29–37 m for the six further candidates
    ("Hiding places"). Rule 7 / LAYOUT-L1-006 is therefore a screen test, applied to every
    candidate and its whole wander area. Whether it holds depends on the FOV axis (Q-052).
@@ -673,7 +679,7 @@ west of x 6: enc_panda (z ≤ 41) and sand_n (z 42–45); east of x 9: river_n
 | Garden path | element `path_garden` (7, 36, 2, 9) | Standard path tiles; the child stands here to harvest (surface `path`, full speed). |
 | Beds | `[[garden_bed]]` `bed_carrot_w` (6, 38, 1, 3), `bed_carrot_e` (9, 38, 1, 3), `bed_potato_w` (6, 42, 1, 3), `bed_potato_e` (9, 42, 1, 3) | `garden_bed` raised frame 0.8 × 2.9 m, 0.25 m high, solid (the child does not trample the plants). Carrots nearest the gate. |
 | Plant spots | `[[plant_spot]]` — 6 carrots `carrot_w1…3`, `carrot_e1…3` (1 m apart), 4 potatoes `potato_w1/2`, `potato_e1/2` (1.5 m apart) | Fields below. Plants are not solid (inside the bed collider). |
-| Garden signs | one per bed (`sign_pos`, `sign_facing` towards the path, `sign_key`) at (6.5, 37.45), (9.5, 37.45), (6.5, 41.45), (9.5, 41.45) | `garden_sign`: small stake sign with a **picture** of the vegetable and its word (`garden-carrot` / `garden-potato`, GARD-009); interactable like an info board (GAME-PLAYER §5) — recognisable without reading (`kiga`) by the picture. |
+| Garden signs | one per bed (`sign_pos`, `sign_facing` towards the path, `sign_key`) at (6.7, 37.45), (9.2, 37.45), (6.7, 41.45), (9.2, 41.45) — ≥ 0.6 m off the panda fence / garden fence, no slot a child can get stuck in (LAYOUT-039, Q-173) | `garden_sign`: small stake sign with a **picture** of the vegetable and its word (`garden-carrot` / `garden-potato`, GARD-009); interactable like an info board (GAME-PLAYER §5) — recognisable without reading (`kiga`) by the picture. |
 | Tools | `props`: `wheelbarrow` at (7.2, 45.45) facing +x, `watering_can` at (9.45, 45.4) | Decoration with colliders (proposed footprints: wheelbarrow B(0, 0, 0.72, 0.36) along its facing, watering can C(0, 0, 0.22), garden sign B(0, 0, 0.28, 0.10) across its panel, bed B(0, 0, 0.40, 1.45)); the wheelbarrow is empty (no vegetables — it must not look harvestable). |
 
 **Plant spot data (for the implementer).** Each `[[plant_spot]]` has:
@@ -789,7 +795,7 @@ are edge-adjacent to the door's cells (LAYOUT-021).
 |---|---|---|
 | `string_lights` | an X over the entrance plaza between its corner posts (−4.75, 7.75) → (4.75, 0.25) and (4.75, 7.75) → (−4.75, 0.25) | 2 |
 | `lantern_post` along the ring (~10 m) | (−7.75, 8.25), (7.75, 11.5), (−7.75, 18.5), (−7.75, 27.25), (7.75, 26.75) | 5 |
-| `lantern_post` beside every gate (lights gate + sign) | zebra (−8.6, 11.6), hippo (8.5, 18.5), panda (1.4, 31.6) | 3 |
+| `lantern_post` beside every gate (lights gate + sign) | zebra (−8.25, 15.2), hippo (8.25, 18.2), panda (2.2, 31.25) — in front of the sign's inner end, ≥ 0.6 m off the fence (LAYOUT-039, Q-173) | 3 |
 | `lantern_post` on `path_moon` and `path_north` | (−11.5, 30.75), (−19.5, 30.75), (−6.25, 38.0) | 3 |
 | `wall_lamp` | zookeeper house (−7.95, 3.4), food storage (1.3, 10.95) | 2 |
 | `board_lamp` | `board_zebra`, `board_hippo`, `board_panda`, `map_board` | 4 |
@@ -854,7 +860,7 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 
 ## Open questions
 
-- Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours). Q-171: after the Q-157 `board_zebra` move `loc_river` is 21.26 m from a zebra standing point (< 22 m).
+- Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours). Q-171 answered 2026-09-28: `board_zebra` moved south of the gate (−9, 10); the 22 m margin holds again and is tested for levels 1–3. Q-176: the zebra gate as the ring stop between the storage and the panda board (walking-time rule).
 - Q-022 barrier unlock conditions, Q-023 number of levels and their areas.
 - Q-096 answered (bed in a level-1 zookeeper house). Answered 2026-09-27: Q-133 moon door data and opening rule (`opens_at`, `unlock_after`; open every night, also after the night zoo is done), Q-137 `[[item]]` / `[[prop]]` / `[[light]]` data shape, Q-139 burglar event spots.
 - Q-102 vegetable garden data shape (`[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]`, fence as prop colliders + blocked cell edges, self-opening gate, animals never enter). Q-103 garden sign texts per reading level. Q-100, Q-101 treats (GAME-GARDEN).
@@ -867,5 +873,5 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 - Q-047 which food boxes stand in the storage in level 1.
 - Q-024 walking speed (answered by GAME-PLAYER §6: 1.93 m/s path, 0.98 m/s grass).
 - Q-056 answered (axes: level x east / z north, world = (x, 0, −z)). Q-057 answered (fences, hedges, walls: 2 m + 1 m segments, bands as one row on the centre line — GAME-LAYOUT "Modular edges", LAYOUT-013). Q-059 band joins, Q-060 fence/band placement (proposals).
-- Q-147 string-light spans (≤ 6 m, stretched model); Q-148 answered (`sign-zoo-entrance` = de *Buchstaben Zoo*, en *Letter Zoo*); Q-150 answered (the food-box row leaves a gap ≥ 1.2 m in front of the storage door); Q-157 answered (no pocket beside a gate: `board_zebra` → (−9, 15), the enclosure signs ≥ 0.9 m from the gate posts, `board_hippo` → (8, 21), LAYOUT-038).
+- Q-147 string-light spans (≤ 6 m, stretched model); Q-148 answered (`sign-zoo-entrance` = de *Buchstaben Zoo*, en *Letter Zoo*); Q-150 answered (the food-box row leaves a gap ≥ 1.2 m in front of the storage door); Q-157 answered (no pocket beside a gate: `board_zebra` → (−9, 15), since Q-171 (−9, 10); the enclosure signs ≥ 0.9 m from the gate posts, `board_hippo` → (8, 21), LAYOUT-038).
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).

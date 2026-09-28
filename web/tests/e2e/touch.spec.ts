@@ -36,7 +36,7 @@ test.describe('no touch device', () => {
     await page.mouse.down();
     await page.mouse.move(420, 300);
     await page.mouse.up();
-    await goto(page, -7.5, 15.5);
+    await goto(page, -7.5, 10.5);
     await face(page, 'KeyA');
     expect((await state(page)).target).toBe('info_board:zebra');
     await expect(page.locator('#stick')).toBeHidden();
@@ -49,7 +49,7 @@ test.describe('no touch device', () => {
   test('PLAY-019/020 in the browser: the zebra board blocks, hint only in front of it', async ({ page }) => {
     await open(page);
     // In front (east) of the board facing west: hint shown.
-    await goto(page, -7.0, 15.5);
+    await goto(page, -7.0, 10.5);
     await page.keyboard.down('KeyA'); // walk straight into the board for 2 s
     await page.waitForTimeout(2000);
     await page.keyboard.up('KeyA');
@@ -59,12 +59,12 @@ test.describe('no touch device', () => {
     expect(s.target).toBe('info_board:zebra');
     await expect(page.locator('#hint')).toBeVisible();
     // Beside the board (north of it, looking south at it): no hint.
-    await page.evaluate(() => window.__zoo!.app.debug_teleport(-8.5, 17.2));
+    await page.evaluate(() => window.__zoo!.app.debug_teleport(-8.5, 12.2));
     await face(page, 'KeyS');
     expect((await state(page)).target).toBe('');
     await expect(page.locator('#hint')).toBeHidden();
     // In front but facing away: no hint.
-    await page.evaluate(() => window.__zoo!.app.debug_teleport(-7.3, 15.5));
+    await page.evaluate(() => window.__zoo!.app.debug_teleport(-7.3, 10.5));
     await face(page, 'KeyD');
     expect((await state(page)).target).toBe('');
     await expect(page.locator('#hint')).toBeHidden();
@@ -116,7 +116,7 @@ test.describe('touch device', () => {
     expect(env.viewport).toContain('user-scalable=no');
     await expect(page.locator('#stick')).toBeVisible(); // stays visible (PLAY-014)
     // interact button: ≥ 64 px, bottom-right inside the viewport
-    await goto(page, -7.5, 15.5);
+    await goto(page, -7.5, 10.5);
     await face(page, 'KeyA');
     const box = await page.locator('#act').boundingBox();
     expect(box).not.toBeNull();

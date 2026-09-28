@@ -37,7 +37,7 @@ for (const lang of LANGS) {
       await expect.poll(() => bubble(page)).toBe(norm(t['ui-no-food']));
 
       // Info board: riddle for this level, the food word, no raw keys.
-      await goto(page, -7.5, 15.5);
+      await goto(page, -7.5, 10.5);
       await turn(page, 'KeyA');
       expect((await state(page)).target).toBe('info_board:zebra');
       await ensurePanel(page, () => pressE(page));

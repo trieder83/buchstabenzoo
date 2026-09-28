@@ -131,13 +131,78 @@ fn camv_008_hiding_places_beyond_the_fog_from_their_board() {
     );
 }
 
+// CAMV-008 (layout margin, GAME-LAYOUT "Sight"; Q-171 answered 2026-09-28): the level data
+// keeps every wander cell and animal spot of every candidate ≥ 22 m (planar, cell centres —
+// fog end 20.8 m + 1.2 m margin) from the own standing points (walkable cell centres ≤ 2.5 m
+// from the own info board, walkable cells around the own gate incl. its diagonal corners),
+// levels 1, 2 and 3 (`night_1`: LAYOUT-N1-006).
+#[test]
+fn camv_008_level_data_keeps_the_22_m_margin() {
+    const MARGIN_M: f32 = 22.0;
+    let level = open_zoo();
+    let data = &level.data;
+    let grid = level.grid();
+    let mut close = Vec::new();
+    let mut nearest = (f32::MAX, String::new());
+    let mut places = 0;
+    for enc in data
+        .elements
+        .iter()
+        .filter(|e| e.ty == ElementType::Enclosure && e.animal.is_some())
+    {
+        let animal = enc.animal.as_deref().unwrap();
+        let board = data
+            .elements
+            .iter()
+            .find(|e| {
+                e.kind.as_deref() == Some("info_board") && e.enclosure.as_deref() == Some(&enc.id)
+            })
+            .unwrap_or_else(|| panic!("{animal}: no info board"));
+        let board_point = cell_center(IVec2::new(board.rect.x, board.rect.z));
+        let mut stands = walkable_within(grid, board_point, INTERACTION_RANGE_M + 0.5);
+        if let Some(gate) = enc.gate {
+            stands.extend(walkable_adjacent(grid, gate).into_iter().map(cell_center));
+        }
+        assert!(!stands.is_empty(), "{animal}: nowhere to stand");
+        let mut own = f32::MAX;
+        for h in data.hiding_places_of(animal) {
+            places += 1;
+            let mut cells = vec![h.spot_cell()];
+            cells.extend(hiding_area(&level, h).cells().map(|(c, _)| c));
+            for c in cells {
+                let p = cell_center(c);
+                for s in &stands {
+                    let d = p.distance(*s);
+                    own = own.min(d);
+                    if d < nearest.0 {
+                        nearest = (d, format!("{} ({animal}) {c} from {s}", h.id));
+                    }
+                    if d < MARGIN_M {
+                        close.push(format!("{} ({animal}): {c} is {d:.2} m from {s}", h.id));
+                    }
+                }
+            }
+        }
+        eprintln!("CAMV-008 (22 m layout margin): {animal} nearest {own:.2} m");
+    }
+    assert_eq!(places, 30, "10 animals × 3 candidates");
+    eprintln!(
+        "CAMV-008 (22 m layout margin): nearest wander cell {:.2} m — {}",
+        nearest.0, nearest.1
+    );
+    assert!(
+        close.is_empty(),
+        "wander cells < {MARGIN_M} m (planar) from a standing point: {close:#?}"
+    );
+}
+
 // CAMV-006: in first person the facing is the view direction — walking sideways past an
 // info board keeps looking at it (available), turning the view away makes it unavailable,
 // and interaction works with the same GAME-PLAYER §5 rules.
 #[test]
 fn camv_006_first_person_interaction_by_view_direction() {
     let mut g = common::game(1);
-    let board = Vec2::new(-8.5, 15.5); // zebra board, readable side east
+    let board = Vec2::new(-8.5, 10.5); // zebra board, readable side east
     let zebra_board = Some(Target::InfoBoard { animal: "zebra" });
     g.player.pos = board + Vec2::new(1.6, -0.6);
     // view straight west (yaw 90°: counter-clockwise from north)

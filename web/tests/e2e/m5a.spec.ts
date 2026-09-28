@@ -147,7 +147,7 @@ test('RESC-014 / RESC-015: two seeds put the animals at different places; the bo
     const p = JSON.parse(await app<string>(page, 'picks_json')) as Record<string, string>;
     picks.push(p);
     // the zebra board shows the riddle of the zebra's place
-    await goto(page, -7.5, 15.5);
+    await goto(page, -7.5, 10.5);
     await face(page, 'KeyA');
     await settle(page);
     await expect(page.locator('#panel-text')).toHaveText(t[`mission-zebra-riddle-${p.zebra}-klasse1`]);

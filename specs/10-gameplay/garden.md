@@ -107,4 +107,4 @@ between missions.
 - Q-100 Which animals like which treat (and should koala/panda/snow fox get their own treats)?
 - Q-101 Must at least one of the 3 care feedings be a garden treat?
 - Q-102 garden in level 1 (gate opens within 2 m — proposal). Q-154 `basket`, `carrot`, `potato` models not yet listed in ART-ENVIRONMENT.
-- Q-172 basket: separate slot (§4, GARD-007) or a hand item that can be put down (GAME-FEED §8)?
+- Q-172 answered 2026-09-28: the basket is a separate slot (§4, GARD-007) and is never put down (GAME-FEED §8).

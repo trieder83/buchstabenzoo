@@ -151,8 +151,10 @@ interactable. Without the field every enclosure's animal is in scope.
   CAMV-008; Q-110 answered 2026-09-27). Distances are planar, between cell centres; the
   standing points are the walkable cells ≤ 2.5 m from the own board and the walkable cells
   around the own gate (incl. its diagonal corners). All four level files keep it since
-  FIX-056 (level minima: `level_1` 22.0 m, `level_2` 22.0 m, `level_3` 22.2 m, `night_1`
-  22.1 m); tools, in this order: clip the wander area (rect or a smaller `wander_radius_m`)
+  FIX-056 and again since Q-171 (`board_zebra` south of its gate, 2026-09-28; level minima:
+  `level_1` 22.0 m, `level_2` 22.0 m, `level_3` 22.2 m, `night_1` 22.1 m) — tested for
+  levels 1–3 by CAMV-008 (`camv_008_level_data_keeps_the_22_m_margin`) and for `night_1` by
+  LAYOUT-N1-006; tools, in this order: clip the wander area (rect or a smaller `wander_radius_m`)
   on the side facing the board, move the spot inside its place, move the board along its
   enclosure, move the whole place (FIX-056 moves accepted, Q-145 answered).
 
@@ -249,7 +251,9 @@ open for confirmation):**
   entrance plaza** of a level (level 1; in a night level its entry plaza); a `wall_lamp` at
   every building door; a `board_lamp` on every info board and map board. Posts stand **0.25 m
   inside a path edge** (or on grass beside a gate), never inside a hiding-place `rect`, scenery,
-  a garden or on a gate's leading cells; collider C(0, 0, 0.12) only while visible. Budget:
+  a garden or on a gate's leading cells; the gate lantern stands in front of the inner end of
+  the enclosure sign (0.3 m past the sign's end nearest the gate, touching its front, ≥ 0.6 m
+  off the fence — no slot, LAYOUT-039, Q-173); collider C(0, 0, 0.12) only while visible. Budget:
   point lights for the player lantern and the nearest ≤ 8 lamps, decals for the rest (Q-114).
 - `[[item]]` (interactables the game logic uses; already used for the fish bowl, Q-093):
   `kind = "bed"` (sleep, NIGHT-003), `note_math_fighter` (GAME-CART 13), `key_box` (GAME-CART
@@ -278,6 +282,7 @@ condition, spawn point, and a top-down ASCII or SVG map.
 | `level_2` | [levels/level-2.md](levels/level-2.md) (GAME-LEVEL-2): behind `barrier_ne_tree` (east); food storage 2, koala (pair), elephant, giraffe and lion enclosures, elephant pool, and their 12 candidate hiding places (`loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree`; `loc_fountain`, `loc_log_pile`, `loc_big_ball`; `loc_lookout_tower`, `loc_train`, `loc_playground`; `loc_sun_rocks`, `loc_stage`, `loc_deckchairs`); exit `barrier_l2_construction` | draft — proposal (Q-088, Q-089, Q-091, Q-094, Q-095) |
 | `level_3` | [levels/level-3.md](levels/level-3.md) (GAME-LEVEL-3): behind `barrier_l2_construction` (north of level 1, second entry through `barrier_north_gate`, Q-090); zookeeper house with the fish bowl and a tap, food storage 3, stream with waterfall, monkey, goldfish (pond) and snow fox enclosures, adventure playground with the pirate ship, and their 9 candidate hiding places (`loc_pirate_ship`, `loc_carousel`, `loc_trampoline`; `loc_waterfall`, `loc_water_wheel`, `loc_willow`; `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`) | draft — proposal (Q-017, Q-088…Q-095) |
 | `night_1` | [levels/night-1.md](levels/night-1.md) (GAME-LEVEL-NIGHT-1): the night zoo west of level 1 behind the level-1 `moon_door` (open at night); plaza with string lights, night food hut, night house with the indoor enclosures of hedgehog, bat and owl, loop path around dense old-tree groves, and 9 candidate hiding places (`loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms`; `loc_windmill`, `loc_fireflies`, `loc_hollow_tree`; `loc_moon_pond`, `loc_hilltop`, `loc_fir`) | draft (Q-133…Q-138 answered) |
+| `level_4` | *planned (Q-174 answered 2026-09-28), not specified yet:* the only known content is the **bear enclosure** (bear pair, needed for the honey part of the bee event, GAME-EVENTS); its place in the map, entry, other enclosures and hiding places are open (Q-175) | planned |
 | later levels | further night levels (`night_2`…) and day areas after Q-023 | — |
 
 ## Behaviour
@@ -415,7 +420,7 @@ into the new level and its posts join the hedge/wall on both sides without a gap
 
 **Enclosure signs stand beside the gate** (user decision 2026-09-27, Q-086 (b)): the
 `enclosure_sign` never stands in front of or over a gate. It stands outside the fence along
-it, on the path side, with ≥ 0.9 m between the sign and the gate post (nothing solid within 0.9 m beside a post, Q-157, LAYOUT-038); its whole footprint
+it, on the path side, with ≥ 0.9 m between the sign and the gate post (nothing solid within 0.9 m beside a post, Q-157, LAYOUT-038), flush in front of the fence (back of its footprint 0.09 m off the fence line — no slot behind it, LAYOUT-039); its whole footprint
 (B(0, 0.10, 1.19, 0.26), solid) lies on walkable cells outside the gate opening and the
 ≥ 1 m walkway in front of it (LAYOUT-032), clear of the info board and the food boxes, with
 a free place ≥ 1 m in front of it to look at it. The engine tries the side away from the
@@ -433,6 +438,20 @@ non-enterable doors too: the food-box row in front of a food storage leaves a fr
 2026-09-27); the boxes that stood in front of the door moved to the ends of the row. Also
 nothing without a collider (lamp posts, taps, items) stands there, and no lamp post in the
 2.5 m leading lane straight in front of an opening.
+
+**No wall gaps near a door or gate** (user decision 2026-09-28, Q-173): within **3 m** of
+every door and gate opening (enclosure gates, glass doors, building doors, the garden gate,
+level gates, the moon door) nothing solid stands **0.1–0.6 m** in front of a wall, fence,
+hedge or facade — a solid thing there is either **flush** (gap < 0.1 m) or leaves **≥ 0.6 m**
+(the player's body fits through). A gap in between is a slot a child walking along the wall
+towards the opening can get wedged in. "Solid" = every prop collider (signs, taps, garden
+signs, furniture, …) and the lantern posts at night (LAYOUT-035); "wall" = every cell that is
+not walkable (gate cells count as open) and the thin garden-fence runs; the opening's own
+gate/door parts do not count. Fixes of 2026-09-28: enclosure signs flush on the fence (0.19 m
+slot before), the gate lanterns in front of the sign's inner end (they stood 0.2–0.4 m in
+front of the fence between gate post and sign), `l2_lantern_ring_w_n` 0.45 m farther east
+(0.44 m from the corner of `board_koala`), the level-1 garden signs ≥ 0.6 m off the panda
+fence and the garden fence (LAYOUT-039).
 
 *Implementation (2026-09-27):* `zoo_core::scene::LevelScene::openings` lists every gate /
 door model with its opening and model widths; `Game::opening_open` decides: building doors
@@ -493,6 +512,7 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-036 | Given every `[[entry]]` in the joined zoo, then a `gate_zoo` model stands across its entry path in the boundary line with its posts touching the hedge/wall on both sides (no gap); while the level is locked the gate is closed and solid, after unlocking it is open, walkable both ways and drawn open; the story barrier is gone. | unit |
 | LAYOUT-037 | Given the review screenshots of each level transition before and after unlocking, then a closed gate (behind its barrier) and later an open gate are visible. | e2e |
 | LAYOUT-038 | Given every door, gate and level gate, then no solid item stands within 0.9 m beside its posts so that a player walking at the opening at 45° can get caught in a corner (no pockets, Q-157). | unit |
+| LAYOUT-039 | Given every door and gate opening of the joined zoo with `night_1` (level gates and the moon door included) and the lantern posts solid (night), then no prop collider or lantern post within 3 m of the opening stands 0.1–0.6 m in front of a wall, fence, hedge or facade (non-walkable cell or thin garden fence) — it is flush (< 0.1 m) or ≥ 0.6 m away (Q-173). | unit |
 
 ## Open questions
 
@@ -505,4 +525,4 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 - Q-057 answered: 1 m segment variants and the fill rule. Q-059 band joins, Q-060 enclosure fence and band placement (proposals), Q-061 front direction of props (open).
 - Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 answered 2026-09-27: (b) enclosure sign beside the gate (LAYOUT-033; distance ≥ 0.9 m since Q-157). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
 - Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-069 (answered) `[level] missions`. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).
-- Q-150 answered 2026-09-27: the food-box rows leave a gap ≥ 1.2 m in front of the storage doors (no exception to LAYOUT-032 any more). Q-157 answered 2026-09-27: no pocket beside a door or gate (zebra board, level-3 tap and night-house boards moved; LAYOUT-034, LAYOUT-038); wall-gap part: Q-173. Q-171 `loc_river` below the 22 m margin after the `board_zebra` move. Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.
+- Q-150 answered 2026-09-27: the food-box rows leave a gap ≥ 1.2 m in front of the storage doors (no exception to LAYOUT-032 any more). Q-157 answered 2026-09-27: no pocket beside a door or gate (zebra board, level-3 tap and night-house boards moved; LAYOUT-034, LAYOUT-038); wall-gap part: Q-173 answered 2026-09-28 (LAYOUT-039, "No wall gaps near a door or gate"). Q-171 answered 2026-09-28: `board_zebra` south of its gate, 22 m margin tested for levels 1–3 (CAMV-008). Q-174 answered: bears in a new level 4; Q-175 what else level 4 contains. Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.

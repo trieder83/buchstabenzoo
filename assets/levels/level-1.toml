@@ -336,13 +336,13 @@ rect = [-20, 7, 11, 12]
 gate = [-10, 12, 1, 2]       # on the east fence, faces path_ring_w
 home_wander_on = ["grass"]   # proposal Q-085: surfaces the animal wanders on when home (GAME-ANIMALS in_enclosure)
 blocks_view = false          # wooden fence, see-through
-notes = "Grass, bushes, stone-arch shelter in the north-west corner. Enclosure sign above the gate."
+notes = "Grass, bushes, stone-arch shelter in the north-west corner. Enclosure sign beside the gate (north), info board south of it (Q-171)."
 
 [[element]]
 id = "board_zebra"
 type = "decoration"
 kind = "info_board"
-rect = [-9, 15, 1, 1]      # Q-157: ≥ 0.9 m beside the gate post (no pocket)
+rect = [-9, 10, 1, 1]      # Q-171: south of the gate, 1 m beside the south post (Q-157 no pocket; 22 m haze margin)
 enclosure = "enc_zebra"
 
 # ---------------------------------------------------------------- pond (hippo hiding place)
@@ -906,7 +906,7 @@ id = "bed_carrot_w"
 garden = "garden_veg"
 rect = [6, 38, 1, 3]
 plant = "carrot"
-sign_pos = [6.5, 37.45]
+sign_pos = [6.7, 37.45]      # ≥ 0.6 m off the panda fence (LAYOUT-039, Q-173)
 sign_facing = "+x"
 sign_key = "garden-carrot"
 
@@ -915,7 +915,7 @@ id = "bed_carrot_e"
 garden = "garden_veg"
 rect = [9, 38, 1, 3]
 plant = "carrot"
-sign_pos = [9.5, 37.45]
+sign_pos = [9.2, 37.45]      # ≥ 0.6 m off the garden fence (LAYOUT-039, Q-173)
 sign_facing = "-x"
 sign_key = "garden-carrot"
 
@@ -924,7 +924,7 @@ id = "bed_potato_w"
 garden = "garden_veg"
 rect = [6, 42, 1, 3]
 plant = "potato"
-sign_pos = [6.5, 41.45]
+sign_pos = [6.7, 41.45]
 sign_facing = "+x"
 sign_key = "garden-potato"
 
@@ -933,7 +933,7 @@ id = "bed_potato_e"
 garden = "garden_veg"
 rect = [9, 42, 1, 3]
 plant = "potato"
-sign_pos = [9.5, 41.45]
+sign_pos = [9.2, 41.45]
 sign_facing = "-x"
 sign_key = "garden-potato"
 
@@ -1157,20 +1157,20 @@ facing = "-x"
 [[light]]
 id = "l1_lantern_gate_zebra"
 kind = "lantern_post"
-pos = [-8.6, 11.6]
+pos = [-8.25, 15.2]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "-x"
 
 [[light]]
 id = "l1_lantern_gate_hippo"
 kind = "lantern_post"
-pos = [8.5, 18.5]
+pos = [8.25, 18.2]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "+x"
 
 [[light]]
 id = "l1_lantern_gate_panda"
 kind = "lantern_post"
-pos = [1.4, 31.6]
-facing = "-x"
+pos = [2.2, 31.25]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
+facing = "+z"
 
 [[light]]
 id = "l1_lantern_moon_path_e"
@@ -1216,7 +1216,7 @@ color = "#FFC46E"
 [[light]]
 id = "l1_board_lamp_zebra"
 kind = "board_lamp"
-pos = [-8.5, 15.5]
+pos = [-8.5, 10.5]
 facing = "+x"
 attach = "board_zebra"
 

@@ -222,8 +222,8 @@ fn player_at(pos: Vec2) -> Player {
 fn play_019_props_are_solid_and_player_slides() {
     let level = Level::new(common::level1());
     let col = level.colliders();
-    // Info board of the zebra enclosure (cell (-9, 15), readable side east): walk west into it.
-    let mut p = player_at(Vec2::new(-6.5, 15.5));
+    // Info board of the zebra enclosure (cell (-9, 10), readable side east): walk west into it.
+    let mut p = player_at(Vec2::new(-6.5, 10.5));
     let end = walk_checked(&level, col, &mut p, Vec2::NEG_X, 3.0);
     assert!(end.x > -8.0 + PLAYER_RADIUS_M - 0.01, "{end}");
     // Slide along the board and fence north-west: keeps moving north.
@@ -280,7 +280,7 @@ fn play_019_props_are_solid_and_player_slides() {
 #[test]
 fn play_020_board_available_only_in_front_and_facing() {
     let mut g = common::game(1);
-    let board = Vec2::new(-8.5, 15.5); // readable side faces east (away from enc_zebra)
+    let board = Vec2::new(-8.5, 10.5); // readable side faces east (away from enc_zebra)
     let at = |g: &mut zoo_core::Game, pos: Vec2, facing: Vec2| {
         g.player.pos = pos;
         g.player.facing = facing.normalize();

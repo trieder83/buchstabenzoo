@@ -81,9 +81,10 @@ async function skyFraction(page: Page, rows = 0.12): Promise<number> {
 
 test('CAMV-012: first person — toggle, walk, turn and read the zebra board', async ({ page }) => {
   const errors = await start(page);
-  // on the path south-east of the zebra board (out of its range), facing north
-  await goto(page, -6.9, 9.0);
-  await goto(page, -6.9, 10.5);
+  // on the ring path north-east of the zebra board (out of its range; the board stands south
+  // of the zebra gate since Q-171), facing north
+  await goto(page, -6.9, 14.0);
+  await goto(page, -6.9, 15.5);
   const zoo = await cam(page);
   expect(zoo.mode).toBe('zoo');
   expect(zoo.drawn).toBe(true);
@@ -112,7 +113,7 @@ test('CAMV-012: first person — toggle, walk, turn and read the zebra board', a
   // level with the board (it is 90° to the left): not available while looking north
   await page.evaluate(() => {
     const a = window.__zoo!.app;
-    a.debug_teleport(-6.9, 15.5);
+    a.debug_teleport(-6.9, 10.5);
   });
   await page.waitForFunction(() => document.getElementById('panel')!.hidden, null, { polling: 'raf', timeout: 10_000 });
   expect(await page.evaluate(() => window.__zoo!.app.target_key())).toBe('');

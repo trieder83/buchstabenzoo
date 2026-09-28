@@ -82,8 +82,11 @@ a hiding place is never visible from its own info board), stay comfortable for c
    monkey board) — Q-110 added the layout margin (GAME-LAYOUT "Sight": ≥ 22 m planar since
    the fog end grew to 20.8 m). *Measured 2026-09-27 after FIX-056:* nearest wander cell
    22.01 m from the close-view eye (`loc_big_ball` from the elephant gate's corner cell); every
-   level (1–3 and `night_1`) kept ≥ 22.0 m planar (LAYOUT-N1-006 checks `night_1`) until the
-   Q-157 move of `board_zebra`: `loc_river` is now 21.26 m from a zebra standing point (Q-171).
+   level (1–3 and `night_1`) kept ≥ 22.0 m planar (LAYOUT-N1-006 checks `night_1`). The
+   Q-157 move of `board_zebra` broke it (`loc_river` 21.26 m); Q-171 answered 2026-09-28:
+   `board_zebra` moved south of the gate (zebra places ≥ 24.2 m), and the 22 m planar margin
+   is now tested for levels 1–3 too (CAMV-008, `camv_008_level_data_keeps_the_22_m_margin`;
+   nearest 22.00 m, `loc_big_ball` from the elephant gate's corner cell).
 6. **Draw distance = fog end.** In the close views the far plane is the fog end + 2 m
    (22.8 m = fog end + 2 m; the zoo view has no fog and a 120 m far plane), and static batches whose bounds lie beyond it (or outside the view) are culled —
    so the close views cost fewer draw calls than the zoo view at maximum zoom-out (20 m).
@@ -155,7 +158,7 @@ render region, a building's name board with its roof.
 | CAMV-005 | Given a close view, then fog starts at 11.7 m and is 1.0 from 20.8 m on, and the far plane is 22.8 m; given the zoo view, then there is no fog and the far plane is 120 m; during a transition fog and far plane change monotonically. | unit |
 | CAMV-006 | Given first person looking at an info board from its readable side within 2 m, then it is available; when the player walks sideways (stick right) her facing stays the view direction and the board stays available; turning the view away makes it unavailable; interact opens the riddle. Leaving first person, the facing follows the walk direction again. | unit |
 | CAMV-007 | Given first person looking in direction D, then stick up walks along D and stick right walks 90° clockwise of D (seen from above), and the player's yaw does not change while walking. | unit |
-| CAMV-008 | Given the joined levels 1–3 and every mission's candidates, the player on every walkable cell centre ≤ 2.5 m from the own info board or next to the own gate, then every animal spot and wander cell centre (0.5 m, animal height, perch + 1 m) is ≥ 20.8 m (fog end, `FOG_END_M`) from the close-view eye; the level data keeps ≥ 22 m planar (GAME-LAYOUT "Sight"); `night_1` is covered by LAYOUT-N1-006 (22 m). | unit |
+| CAMV-008 | Given the joined levels 1–3 and every mission's candidates, the player on every walkable cell centre ≤ 2.5 m from the own info board or next to the own gate, then every animal spot and wander cell centre (0.5 m, animal height, perch + 1 m) is ≥ 20.8 m (fog end, `FOG_END_M`) from the close-view eye; the level data keeps every wander cell and spot ≥ 22 m planar (cell centres) from the same standing points (GAME-LAYOUT "Sight"; tested for levels 1–3 since Q-171); `night_1` is covered by LAYOUT-N1-006 (22 m). | unit |
 | CAMV-009 | Given the look-around camera at any yaw, portrait or landscape, then every world point inside its view frustum and ≥ 3 m from the eye is at least as far from the eye as from the player's feet (horizontally), so CAMV-008's player-position bound holds. | unit |
 | CAMV-010 | Given the host input: holding `F` or the right mouse button sends look-hold on/off; `V` toggles first person; in a close view a mouse drag or a right-half touch drag sends continuous look drags (no 45° swipe steps), the left half still drives the joystick; the eye button sends look-hold while pressed. | unit (Vitest) |
 | CAMV-011 | Given the view setting `first_person` is stored, when the game restarts, then it starts in first person; `look_around` is never stored; invalid stored values fall back to `zoo`. | unit (Vitest) |
@@ -188,7 +191,7 @@ render region, a building's name board with its roof.
 - Q-124 answered 2026-09-27: `V` while look-around is held switches to first person (rule 2, CAMV-023).
 - Q-125 answered 2026-09-27: only the zoo view while driving a golf cart (rule 11, CAMV-024).
 - Q-126 (answered 2026-09-27, as recommended) Night colours of the comic sky and haze (GAME-NIGHT).
-- Q-171 CAMV-008 checks only the 20.8 m fog end; the ≥ 22 m planar margin of the level data is untested for levels 1–3 and `loc_river` is now 21.26 m from a zebra standing point.
+- Q-171 answered 2026-09-28: `board_zebra` moved south of the zebra gate; CAMV-008 now also checks the ≥ 22 m planar margin of the level data for levels 1–3.
 
 ## Implementation (2026-09-26)
 

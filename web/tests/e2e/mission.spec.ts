@@ -61,7 +61,7 @@ async function playZebra(page: Page, lang: string, level: string, shot?: string)
   }));
 
   // 1. Info board of enc_zebra (cell -9,14, readable side east): stand in front, face west.
-  await goto(page, -7.5, 15.5);
+  await goto(page, -7.5, 10.5);
   await face(page, 'KeyA');
   expect((await state(page)).target).toBe('info_board:zebra');
   await expect(page.locator(shot?.includes('touch') ? '#act' : '#hint')).toBeVisible();

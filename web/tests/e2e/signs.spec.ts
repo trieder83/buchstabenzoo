@@ -177,7 +177,7 @@ test('screenshots PoC M4b: zebra sign + Futter sign; info board panel with facts
   await page.screenshot({ path: path.join(shots, 'screenshot_poc_m4b_signs.png') });
   // info board with facts (klasse2 shows several sentences)
   await page.evaluate(() => window.__zoo!.app.set_reading_level('klasse2'));
-  await goto(page, -7.5, 15.5);
+  await goto(page, -7.5, 10.5);
   await page.keyboard.down('KeyA');
   await page.waitForTimeout(80);
   await page.keyboard.up('KeyA');

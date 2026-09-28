@@ -5,7 +5,7 @@ the entrance gate, +X east, +Z north; rects are `x, z, w, d`.
 
 ## Area
 
-`enc_zebra` (-20, 7, 11, 12) with gate (-10, 12, 1, 2) on the east fence, `board_zebra` (-9, 14, 1, 1), `path_ring_w` (-8, 11, 3, 16) in front, `hedge_center_w` / `grove_center` across the path
+`enc_zebra` (-20, 7, 11, 12) with gate (-10, 12, 1, 2) on the east fence, `board_zebra` (-9, 10, 1, 1) south of the gate (moved 2026-09-28, Q-171; was (-9, 14)), `path_ring_w` (-8, 11, 3, 16) in front, `hedge_center_w` / `grove_center` across the path
 
 ## Cameras
 

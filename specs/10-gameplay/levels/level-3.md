@@ -357,8 +357,9 @@ storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes abou
 `[[light]]` in `level-3.toml` (night-only): 9 lantern posts along the entry path and the ring
 ((18.0, 52.25), (8.0, 52.25), (−13.0, 58.25), (−13.75, 72.0), (7.25, 62.0), (7.25, 72.0),
 (−10.5, 77.25), (−3.0, 77.25), (7.0, 79.75); 0.25 m inside the path edge — the north-west post
-was moved east so it stays outside `loc_laundry`), one beside every gate (goldfish (10.7, 66.65),
-monkey (0.65, 81.7), snow fox (−1.35, 57.3)), wall lamps at the doors of `zookeeper_house_3`
+was moved east so it stays outside `loc_laundry`), one beside every gate (goldfish (10.25, 65.8),
+monkey (4.2, 81.25), snow fox (2.2, 57.75) — in front of the enclosure sign's inner end, ≥ 0.6 m
+off the fence, moved 2026-09-28 for LAYOUT-039 / Q-173), wall lamps at the doors of `zookeeper_house_3`
 (−8.3, 60.95, left of the door — the tap is on the right) and `food_storage_3` (4.3, 60.95), and
 board lamps on the three info boards and `map_board_l3`. No string lights (Q-118).
 

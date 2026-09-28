@@ -675,3 +675,130 @@ fn layout_035_lantern_posts_are_solid_at_night_only() {
         "at night the post stops the player"
     );
 }
+
+// LAYOUT-039 (Q-173 answered 2026-09-28, GAME-LAYOUT "Doors are never blocked"): within 3 m
+// of every door and gate (level gates and the moon door included) nothing solid stands
+// 0.1–0.6 m in front of a wall, fence, hedge or facade — a thing there is either flush
+// (gap < 0.1 m) or leaves a gap ≥ 0.6 m, so a child walking along the wall towards the
+// opening never gets wedged into a slot behind it. Solid things: every prop collider (signs,
+// taps, furniture, …) and, at night, the lantern posts; walls: every cell that is not
+// walkable (gate cells count as open) and the thin garden-fence runs.
+#[test]
+fn layout_039_no_wall_gap_near_a_door_or_gate() {
+    use glam::IVec2;
+    use zoo_core::collision::Shape;
+    const NEAR_M: f32 = 3.0;
+    const GAP_M: (f32, f32) = (0.1, 0.6);
+    let data = common::zoo_with_night();
+    let s = LevelScene::build(&data);
+    let mut g = common::night_game(1);
+    g.level.set_night_solid(true); // lantern posts are solid at night (LAYOUT-035)
+    let grid = g.level.grid();
+    let thin = |sh: &Shape| match *sh {
+        Shape::Box { half, .. } => half.min_element() <= 0.07,
+        Shape::Circle { .. } => false,
+    };
+    // points on a shape's outline (≈ 5 cm apart)
+    let outline = |sh: &Shape| -> Vec<Vec2> {
+        match *sh {
+            Shape::Circle { c, r } => (0..64)
+                .map(|i| {
+                    let a = i as f32 / 64.0 * std::f32::consts::TAU;
+                    c + Vec2::new(a.cos(), a.sin()) * r
+                })
+                .collect(),
+            Shape::Box { c, u, half } => {
+                let v = u.perp();
+                let mut pts = Vec::new();
+                for (a, b, h) in [(u, v, half), (v, u, Vec2::new(half.y, half.x))] {
+                    let n = ((h.x * 2.0) / 0.05).ceil().max(1.0) as i32;
+                    for i in 0..=n {
+                        let t = -h.x + 2.0 * h.x * i as f32 / n as f32;
+                        pts.push(c + a * t + b * h.y);
+                        pts.push(c + a * t - b * h.y);
+                    }
+                }
+                pts
+            }
+        }
+    };
+    let shape_dist = |sh: &Shape, p: Vec2| -> f32 {
+        match *sh {
+            Shape::Circle { c, r } => (p.distance(c) - r).max(0.0),
+            Shape::Box { c, u, half } => {
+                let d = p - c;
+                let l = Vec2::new(d.dot(u), d.dot(u.perp()));
+                (l.abs() - half).max(Vec2::ZERO).length()
+            }
+        }
+    };
+    let cell_dist = |p: Vec2, c: IVec2| {
+        let min = c.as_vec2();
+        (p - p.clamp(min, min + Vec2::ONE)).length()
+    };
+    let shapes = g.level.colliders().shapes().to_vec();
+    let mut bad = Vec::new();
+    let mut checked = 0;
+    for o in &s.openings {
+        let n = opening_normal(o, &data)
+            .unwrap_or_else(|| rot_level_neg_y(s.placements[o.placement].yaw));
+        let along = n.perp();
+        let seg: Vec<Vec2> = (-10..=10)
+            .map(|i| o.center + along * (o.opening_m / 2.0) * (i as f32 / 10.0))
+            .collect();
+        for sh in shapes.iter().filter(|sh| !thin(sh)) {
+            // the opening's own gate / door parts (a closed level gate) stand in its line
+            let (lo, hi) = sh.aabb();
+            let mid = (lo + hi) / 2.0 - o.center;
+            if mid.dot(along).abs() < o.opening_m / 2.0 && mid.dot(n).abs() < 0.5 {
+                continue;
+            }
+            let near = seg
+                .iter()
+                .map(|&p| shape_dist(sh, p))
+                .fold(f32::MAX, f32::min);
+            if near > NEAR_M {
+                continue;
+            }
+            checked += 1;
+            let pts = outline(sh);
+            let (lo, hi) = sh.aabb();
+            let (clo, chi) = (
+                zoo_core::level::cell_of(lo - Vec2::ONE),
+                zoo_core::level::cell_of(hi + Vec2::ONE),
+            );
+            let mut gap = f32::MAX;
+            for z in clo.y..=chi.y {
+                for x in clo.x..=chi.x {
+                    let c = IVec2::new(x, z);
+                    if grid.is_walkable(c, true) {
+                        continue;
+                    }
+                    for &p in &pts {
+                        gap = gap.min(cell_dist(p, c));
+                    }
+                }
+            }
+            for w in shapes.iter().filter(|w| thin(w)) {
+                for &p in &pts {
+                    gap = gap.min(shape_dist(w, p));
+                }
+            }
+            if gap > GAP_M.0 && gap < GAP_M.1 {
+                bad.push(format!(
+                    "{:?} at {}: collider {:?} {gap:.2} m in front of a wall ({near:.2} m from the opening)",
+                    o.kind,
+                    o.center,
+                    sh.aabb()
+                ));
+            }
+        }
+    }
+    assert!(checked > 10, "only {checked} things near openings checked");
+    assert!(
+        bad.is_empty(),
+        "{} wall gaps:\n{}",
+        bad.len(),
+        bad.join("\n")
+    );
+}

@@ -334,17 +334,19 @@ fn layout_l1_005_walking_times_between_neighbours() {
             "food storage -> zebra info board",
             door.clone(),
             board("board_zebra"),
-            11.2,
-            6.1,
+            8.0,
+            4.1,
         ),
         // FIX-056: loc_pond moved to the north shore (22 m haze rule), so the zebra board's
         // next neighbour is the panda board; the pond is reached from the panda board.
+        // Q-171 (2026-09-28): `board_zebra` moved south of the gate — the ring stop between
+        // the storage and the panda board is the zebra enclosure's gate (proposal Q-176).
         (
-            "zebra info board -> panda info board",
-            board("board_zebra"),
+            "zebra gate -> panda info board",
+            walkable_adjacent(grid, data.element("enc_zebra").unwrap().gate.unwrap()),
             board("board_panda"),
-            15.1,
-            8.1,
+            18.1,
+            9.7,
         ),
         (
             "pond -> panda info board",
@@ -437,6 +439,12 @@ fn layout_l1_005_walking_times_between_neighbours() {
             "hippo board -> zebra board",
             board("board_hippo"),
             board("board_zebra"),
+        ),
+        ("zebra board -> pond", board("board_zebra"), pond.clone()),
+        (
+            "zebra board -> zebra gate",
+            board("board_zebra"),
+            walkable_adjacent(grid, data.element("enc_zebra").unwrap().gate.unwrap()),
         ),
     ] {
         println!("{name}: {:.1} s", min_cost(grid, &from, &to, time));

@@ -3371,12 +3371,14 @@ impl LevelScene {
 /// half depth; Q-086 (b): the whole sign is solid).
 pub const ENCLOSURE_SIGN_HALF_W: f32 = 1.19;
 pub const ENCLOSURE_SIGN_Z: (f32, f32) = (0.10, 0.26);
-/// Gap between the sign and the gate post (m) and its distance out from the fence line.
+/// Gap between the sign and the gate post (m) and its distance out from the fence line:
+/// the solid footprint's back stays 0.09 m in front of the fence — flush, no slot behind the
+/// sign (LAYOUT-039, Q-173; 0.35 m left a 0.19 m slot).
 pub const ENCLOSURE_SIGN_GAP_M: f32 = 0.9;
-pub const ENCLOSURE_SIGN_OUT_M: f32 = 0.35;
+pub const ENCLOSURE_SIGN_OUT_M: f32 = 0.25;
 
-/// Where an enclosure's sign stands beside its gate (LAYOUT-033): outside the fence, along
-/// it, ≥ 0.5 m from the gate post, its whole footprint on walkable cells and clear of the
+/// Where an enclosure's sign stands beside its gate (LAYOUT-033): outside the fence, flush
+/// in front of it (LAYOUT-039), ≥ 0.9 m from the gate post (LAYOUT-038), its whole footprint on walkable cells and clear of the
 /// gate opening and the 1 m walkway in front of it, of the info boards and the food boxes,
 /// and with a walkable place in front to look at it. The side away from the enclosure's
 /// info board is tried first; `None` when neither side has room.
@@ -3426,11 +3428,12 @@ pub fn enclosure_sign_fits(
 ) -> bool {
     let (zc, hz) = ENCLOSURE_SIGN_Z;
     let center = c + o * zc;
-    // footprint samples (with 0.1 m margin) and a 1 m reading place in front
+    // footprint samples (with 0.1 m margin; 0.05 m at the back, which stands flush in front
+    // of the fence, LAYOUT-039) and a 1 m reading place in front
     let mut pts = Vec::new();
     for i in -4..=4 {
         let a = i as f32 / 4.0 * (ENCLOSURE_SIGN_HALF_W + 0.1);
-        for b in [-(hz + 0.1), 0.0, hz + 0.1] {
+        for b in [-(hz + 0.05), 0.0, hz + 0.1] {
             pts.push(center + dir * a + o * b);
         }
     }

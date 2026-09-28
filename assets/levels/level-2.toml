@@ -680,7 +680,7 @@ facing = "+x"
 [[light]]
 id = "l2_lantern_ring_w_n"
 kind = "lantern_post"
-pos = [36.25, 38.5]           # 1.5 m north of the koala gate axis, off its leading lane (QA 2026-09-27)
+pos = [36.7, 38.5]            # 1.5 m north of the koala gate axis, off its leading lane (QA 2026-09-27); ≥ 0.6 m from board_koala (LAYOUT-039)
 facing = "+x"
 
 [[light]]
@@ -704,25 +704,25 @@ facing = "+z"
 [[light]]
 id = "l2_lantern_gate_koala"
 kind = "lantern_post"
-pos = [35.3, 35.65]
+pos = [35.75, 34.8]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "-x"
 
 [[light]]
 id = "l2_lantern_gate_elephant"
 kind = "lantern_post"
-pos = [54.7, 32.65]
+pos = [54.25, 36.2]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "+x"
 
 [[light]]
 id = "l2_lantern_gate_lion"
 kind = "lantern_post"
-pos = [45.65, 22.3]
+pos = [49.2, 22.75]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "-z"
 
 [[light]]
 id = "l2_lantern_gate_giraffe"
 kind = "lantern_post"
-pos = [44.65, 43.7]
+pos = [48.2, 43.25]  # LAYOUT-039 (Q-173): in front of the sign's inner end, ≥ 0.6 m off the fence, off the leading lane
 facing = "+z"
 
 [[light]]

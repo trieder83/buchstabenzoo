@@ -23,7 +23,7 @@ async function start(page: Page, level = 'klasse1') {
   return errors;
 }
 
-const BOARD = { x: -8.5, z: 15.5 }; // zebra info board, readable side east
+const BOARD = { x: -8.5, z: 10.5 }; // zebra info board, readable side east
 
 const panelVisible = (page: Page) => page.evaluate(() => !document.getElementById('panel')!.hidden);
 
@@ -34,13 +34,13 @@ test.describe('landscape', () => {
     const errors = await start(page);
     // 1.6 m east of the board, facing north (board to the side: not available)
     await goto(page, -6.9, 11.0);
-    await goto(page, -6.9, 15.5);
+    await goto(page, -6.9, 10.5);
     await page.evaluate(() => {
       const a = window.__zoo!.app;
       a.key('KeyW', true); // face north (one step), board to the side
       a.debug_step(1 / 60);
       a.key('KeyW', false);
-      a.debug_teleport(-6.9, 15.5);
+      a.debug_teleport(-6.9, 10.5);
       a.debug_step(0.6); // an open panel closes (turned away)
     });
     await nextFrames(page, 2);
@@ -70,7 +70,7 @@ test.describe('landscape', () => {
     await expect(page.locator('#panel')).toBeHidden();
 
     // turning away closes it as well
-    await goto(page, -7.0, 15.5);
+    await goto(page, -7.0, 10.5);
     await face(page, 'KeyA');
     await expect(page.locator('#panel')).toBeVisible();
     await face(page, 'KeyD');
@@ -102,7 +102,7 @@ for (const [name, viewport] of [
           window.__zoo!.app.zoom(z);
           window.__zoo!.app.debug_step(0.02);
         }, zoom);
-        await goto(page, -7.0, 15.5);
+        await goto(page, -7.0, 10.5);
         await face(page, 'KeyA');
         await expect(page.locator('#panel-facts')).toBeVisible();
         await checkNotCovered(page);
@@ -142,9 +142,9 @@ for (const [name, viewport] of [
             },
             [lang, level],
           );
-          await goto(page, -6.0, 15.5); // away from the board: panel closes
+          await goto(page, -6.0, 10.5); // away from the board: panel closes
           await expect(page.locator('#panel')).toBeHidden();
-          await goto(page, -7.0, 15.5);
+          await goto(page, -7.0, 10.5);
           await face(page, 'KeyA');
           await expect(page.locator('#panel-facts')).toBeAttached();
           const m = await page.evaluate(() => {

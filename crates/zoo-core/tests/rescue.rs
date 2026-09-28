@@ -307,7 +307,7 @@ fn resc_007_wrong_enclosure_refuse() {
 fn resc_008_zebra_mission_end_to_end() {
     let mut g = common::game(3);
     g.settings.reading_level = ReadingLevel::Klasse1;
-    walk_to(&mut g, IVec2::new(-8, 15), 60.0); // next to board_zebra
+    walk_to(&mut g, IVec2::new(-8, 10), 60.0); // next to board_zebra (Q-171: south of the gate)
     let board = g.read_info_board("zebra").unwrap();
     let place = g.animal("zebra").unwrap().hiding_place.clone();
     assert_eq!(
@@ -387,7 +387,7 @@ fn resc_012_reading_board_starts_mission() {
     let mut g = common::game(1);
     assert!(!g.mission("zebra").unwrap().started);
     assert_eq!(g.read_info_board("zebra"), Err(InteractError::OutOfRange));
-    g.player.pos = cell_center(IVec2::new(-8, 14));
+    g.player.pos = cell_center(IVec2::new(-8, 11)); // between board_zebra and the gate
     g.read_info_board("zebra").unwrap();
     assert!(g.mission("zebra").unwrap().started);
     assert!(has(
@@ -447,7 +447,7 @@ fn anim_002_in_enclosure_is_final() {
         g.show_food("zebra").unwrap();
         assert_eq!(g.animal("zebra").unwrap().state, AnimalState::InEnclosure);
     }
-    g.player.pos = cell_center(IVec2::new(-8, 14));
+    g.player.pos = cell_center(IVec2::new(-8, 11)); // between board_zebra and the gate
     idle(&mut g, 20.0);
     let z = g.animal("zebra").unwrap();
     assert_eq!(z.state, AnimalState::InEnclosure);
@@ -661,7 +661,7 @@ fn feed_008_one_box_per_food_next_to_storage() {
 fn autopilot_reaches_targets_with_collision() {
     let mut g = common::game(1);
     for target in [
-        Vec2::new(-7.5, 15.5),
+        Vec2::new(-7.5, 10.5),
         Vec2::new(-0.4, 9.5),
         Vec2::new(8.0, 30.0),
     ] {

@@ -109,10 +109,10 @@ test.describe('review shots 1280×720', () => {
       await nextFrames(page, 4);
       await page.screenshot({ path: path.join(img, `2026-09-27-doors-${name}.jpg`), type: 'jpeg', quality: 50, scale: 'css' });
     };
-    // zebra: the info board stands 1 m north of the gate post (Q-157 answered); walking
-    // south-west from the path north of it (towards the gate)
-    await teleport(page, -7.5, 17.0);
-    await hold(page, [await keyFor(page, 0, -1), await keyFor(page, -1, 0)], 3.0);
+    // zebra: the info board stands 1 m south of the gate post (Q-157, Q-171 answered); walking
+    // north-west from the path south of it (towards the gate)
+    await teleport(page, -7.5, 9.0);
+    await hold(page, [await keyFor(page, 0, 1), await keyFor(page, -1, 0)], 3.0);
     await shot('zebra-board', await page.evaluate(() => window.__zoo!.app.player_x()), await page.evaluate(() => window.__zoo!.app.player_z()));
     // zookeeper house 3: the tap flush on the facade, 1.5 m beside the door (Q-157)
     await shot('zh3-tap', -5.5, 60.0);

@@ -13,7 +13,7 @@ test.describe.configure({ timeout: 180_000 });
 const PHONE = { deviceScaleFactor: 2.625, hasTouch: true, isMobile: true };
 
 async function openZebraBoard(page: Page) {
-  await goto(page, -7.5, 15.5);
+  await goto(page, -7.5, 10.5);
   await turn(page, 'KeyA');
   await ensurePanel(page, async () => {
     await page.locator('#act').dispatchEvent('pointerdown');

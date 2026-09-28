@@ -52,3 +52,8 @@ web/playwright-report/
 # dev server pid/log (scripts/start.sh)
 .run/
 .claude/worktrees/
+
+# Firebase Hosting (docs/deploy-preview.md): local cache + personal project id
+.firebase/
+.firebaserc
+firebase-debug.log

@@ -83,6 +83,8 @@ Conventions (structure, frontmatter, test IDs) are in `specs/README.md`;
 | `gameplay-qa` | Plays the game automatically (desktop + touch) and verifies gameplay quality: movement, collision, interaction prompts, camera, touch controls, mission flow. Reports findings in `qa/reports/`, adds regression tests. Run after gameplay/renderer changes and before a milestone is done. |
 | `performance` | Measures frame time, draw calls, triangles, allocations, WASM/download size and load time in fixed scenarios; finds bottlenecks and recommends optimisations. Owns `specs/50-performance/` (budgets `PERF-*`, append-only `measurements.md`, tracked `recommendations.md` `PERF-R-*`). **Run after big changes** (new models, renderer/scene work, new levels) and before a milestone is done. |
 
+**Shared agent state (`.agent/`):** `STATE.md` (current snapshot: HEAD, live version, running agents + file ownership, Q-number ranges, conventions, handoffs), `TODO.md` (work queue), `DECISIONS.md` (generated from `specs/open-questions.md` by `python3 tools/agent_state.py` — never edit by hand). Every agent reads these first and reads big specs only section-wise (grep, then the lines needed) to save tokens. The main session updates STATE/TODO after each commit; long-running agents are restarted with a handoff when their context grows large.
+
 Agents never decide game design silently — they add open questions and report them.
 
 ## Testing

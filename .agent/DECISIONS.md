@@ -1,0 +1,194 @@
+# Decisions digest (generated — do not edit)
+
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-195** (parallel agents: use the range assigned in `.agent/STATE.md`).
+
+87 answered · 83 open · 10 other (partly answered / proposed / superseded).
+
+## Open
+
+- Q-004 — "3x hippo pool + stone": are there 3 hippos, or 3 items (pool, stone, …) the hippo enclosure needs? (GAME-ANIMALS)
+- Q-005 — "Elefanten – bücke": is this *Brücke* (bridge) or something else? (GAME-ANIMALS)
+- Q-006 — Is the whole zoo one open world, or separate levels/areas unlocked one after another? (GAME-WORLD)
+- Q-007 — How are riddles answered by children who cannot yet read well (kiga)? (GAME-QUESTS, CONT-READING)
+- Q-008 — Is there voice audio (read-aloud) per language, and who records it (TTS vs. (CONT-L10N)
+- Q-009 — Who creates turnaround sheets and mockups — AI image generation, an illustrator, or both? (ART-PIPELINE)
+- Q-012 — Must the game work fully offline (as in ref-zoo-layout.webp "Play without internet")? (TECH-PLATFORMS)
+- Q-013 — Minimum target devices (oldest Android/iOS version, RAM)? (TECH-PLATFORMS)
+- Q-014 — Is there any failure state or penalty (wrong food, wrong enclosure), or only gentle retry? (GAME-FEED, GAME-ANIMALS)
+- Q-015 — Is there a pirate NPC on the pirate ship, or is the ship empty? (ART-CHARACTERS, GAME-QUESTS)
+- Q-016 — How many different visitor types are needed for hints? (ART-CHARACTERS, GAME-QUESTS)
+- Q-017 — *Update 2026-09-26: GAME-LEVEL-3 proposes the pirate ship as a climbing frame on an adventure playground inside the zoo (south-east corner … (GAME-WORLD, GAME-LAYOUT, ART-ENVIRONMENT)
+- Q-020 — Can several quests be active at the same time? (GAME-QUESTS, GAME-RESCUE)
+- Q-021 — Which school font (with licence) is used for readable text? (CONT-READING)
+- Q-022 — *Update 2026-09-26: GAME-LEVEL-1 proposes: barrier_ne_tree (fallen tree) opens level 2 when all three level-1 animals are home, a zookeeper … (GAME-LAYOUT)
+- Q-023 — *Update 2026-09-26: GAME-LEVEL-1 proposes level 1 = entrance, food storage, zebra, hippo, panda (+ river, pond, cave).* How many levels are … (GAME-LAYOUT, GAME-WORLD)
+- Q-025 — *Update 2026-09-26: per the Q-003 answer animals follow and are not carried; only food, the key (Q-033), the monkey baby (Q-040) and … (ART-RIG, GAME-FEED, GAME-ANIMALS, GAME-PLAYER)
+- Q-026 — Texture approach for human characters in the comic style (Q-010 answered: comic): (a) small flat-colour body atlas + hand-drawn face decal … (ART-RIG, ART-CHARACTERS, ART-PIPELINE, TECH-ARCH)
+- Q-027 — Visitors: child proportions (same rest pose as the player) or adult proportions (taller, same bone names but own rest pose → rotation-only … (ART-RIG, ART-CHARACTERS, GAME-QUESTS)
+- Q-028 — Beyond girl/boy, can the child choose skin tone or hair colour for the player character? (ART-CHARACTERS, GAME-PLAYER)
+- Q-029 — Is the player clip set complete (idle, walk, run, pick_up, give, talk, cheer, wave, carry)? (ART-RIG, ART-CHARACTERS, GAME-QUESTS, GAME-FEED)
+- Q-032 — How are food box distractors designed per reading level (similar-looking words on klasse2+)? (GAME-FEED)
+- Q-033 — *Update 2026-09-26: GAME-LEVEL-1 assumes the recommendation (unlocked in level 1).* Is the food storage locked at the start (quest_key on … (GAME-FEED, GAME-QUESTS, GAME-WORLD …)
+- Q-034 — Math: separate math_level per profile (independent of reading_level)? (CONT-MATH, GAME-RESCUE)
+- Q-035 — Do reading levels also extend to grades 4–5 (math goes to grade 5)? (CONT-READING, PROD-VISION)
+- Q-037 — Who reviews riddle texts for age-appropriate wording (e.g. (CONT-MISSIONS, CONT-READING)
+- Q-038 — Fluent key naming: CONT-L10N §3 demands <area>-<item>-<reading_level>, but its own example sign-zebra, CONT-MISSIONS (food-<food_id> … (CONT-L10N, CONT-READING, CONT-MISSIONS)
+- Q-039 — Some location riddles contain their kiga place word, which RESC-011/MISS-003 forbid: koala (Baum/tree in klasse1–klasse3), giraffe … (CONT-MISSIONS, GAME-RESCUE)
+- Q-040 — quest_monkey_baby (GAME-QUESTS) starts with a sad monkey mother, but at game start every enclosure is empty (GAME-RESCUE §1) and the monkey … (GAME-QUESTS, GAME-RESCUE, ART-ANIMALS)
+- Q-041 — While one group of animals follows the player, what happens when the player shows a correct food to a second group (GAME-RESCUE §5)? (GAME-RESCUE)
+- Q-042 — ART-RIG give clip "holds the carried item forward to an animal and lets go", but GAME-FEED §4 / FEED-004 say showing food does not consume … (ART-RIG, GAME-FEED, GAME-RESCUE)
+- Q-043 — *Update 2026-09-26 (discovery): the new level-1 hiding places suggest poses eat (zebra meadow, panda bamboo), roll or lying (zebra sand … (ART-ANIMALS, GAME-ANIMALS, GAME-RESCUE)
+- Q-044 — *Update 2026-09-26 (discovery): level 1 now has 3 candidate hiding places per animal; they are listed in a separate [[hiding_place]] list … (GAME-LAYOUT, CONT-MISSIONS, ART-ENVIRONMENT)
+- Q-045 — German terms: the glossary uses *Aufgabe* for quest, which clashes with *Matheaufgabe* (math_task); German names for rescue mission, hiding … (PROD-GLOSSARY)
+- Q-047 — Which food boxes stand in the food storage in level 1 — all 10 (the natural distractors of CONT-MISSIONS) or only the foods of the level-1 … (GAME-FEED, GAME-LEVEL-1, CONT-MISSIONS)
+- Q-048 — Screen orientation on phones: portrait, landscape or both? (GAME-PLAYER, ART-DIRECTION, ART-ENVIRONMENT …)
+- Q-050 — Character outline technique in the renderer: inverted hull (second draw of the skinned mesh with front-face culling, vertices extruded … (ART-RIG, TECH-ARCH, ART-DIRECTION)
+- Q-051 — With the high game camera (Q-049) faces are only a few pixels large. (GAME-PLAYER, GAME-QUESTS, ART-RIG)
+- Q-053 — Map reveal radius: a fixed radius around the player (e.g. (GAME-MAP)
+- Q-054 — After an animal is found, may the map show a "found here" marker at its hiding place? (GAME-MAP)
+- Q-055 — Does the map board at the entrance reveal the layout of the current level at once? (GAME-MAP, GAME-LEVEL-1)
+- Q-058 — Walking-time model used by LAYOUT-L1-005 (8-neighbour, no corner cutting, half cost per cell at each cell's speed, "next to" = … (GAME-LEVEL-1, GAME-RESCUE, GAME-FEED)
+- Q-059 — Joins of hedge/wall bands: bands are one row on their centre line (GAME-LAYOUT "Modular edges"), so where two bands meet end to end or at a … (GAME-LAYOUT, ART-ENVIRONMENT, GAME-LEVEL-1)
+- Q-060 — Confirm the two level-design proposals in GAME-LAYOUT "Modular edges" (tested by LAYOUT-013): (a) enclosure fences run along the cell-edge … (GAME-LAYOUT, GAME-LEVEL-1, ART-ENVIRONMENT)
+- Q-061 — Front direction of props: ART-RIG fixes the character front as glTF +Z (level south at yaw 0), but no spec says which way the … (GAME-LAYOUT, ART-ENVIRONMENT, ART-PIPELINE)
+- Q-062 — player_girl hair length: ART-CHARACTERS said "ends above the shoulder blades", but the approved turnaround (sheet_v1) shows hair to the … (ART-CHARACTERS)
+- Q-063 — Walk cadence vs. speed: walk is 24 frames (0.8 s cycle, 2.5 steps/s) at 1.4 m/s (Q-024), i.e. (ART-RIG, GAME-PLAYER)
+- Q-070 — Reading panel on portrait phones: with cap height ≥ 3 % of the viewport height (ADIR-003) the klasse3 riddle needs 2× the panel height on a … (GAME-PLAYER §4, ART-DIRECTION (ADIR-003) …)
+- Q-071 — Touch pinch that starts with one finger on each side of the screen centre: today the left finger becomes the joystick (the child walks) and … (GAME-PLAYER §3)
+- Q-072 — Are animals solid for the player? (GAME-PLAYER §7, GAME-RESCUE §6)
+- Q-073 — Pairs: zebras and koalas come as male + female (user, 2026-09-26). (GAME-FAMILY, ART-ANIMALS)
+- Q-074 — How do male and female look different for children? (GAME-FAMILY, ART-ANIMALS)
+- Q-075 — What triggers a baby? Recommendation: 3 care feedings (correct food into the trough) on 3 different play sessions; one baby per pair; later … (GAME-FAMILY)
+- Q-084 — Goldfish bowl details: may the player carry bowl + one food at the same time (food in the pocket)? (GAME-RESCUE, GAME-FEED, GAME-PLAYER)
+- Q-085 — Level data for the user decisions of 2026-09-26 (dense/sparse woods, hippo pool): (a) tree areas get density = "dense" \ ("sparse"; sparse areas are not solid and list …)
+- Q-087 — Collision footprints and invisible walls (QA F7, F8, F13): accept the footprint values measured from the .glb meshes (GAME-LAYOUT … (GAME-LAYOUT, GAME-LEVEL-1, GAME-PLAYER §7 …)
+- Q-088 — Joining levels (GAME-LAYOUT "Joining levels", GAME-LEVEL-2/3): is the zoo one continuous map — every level file uses the same level … (GAME-LAYOUT, GAME-LEVEL-2, GAME-LEVEL-3 …)
+- Q-089 — Food storage per level: levels 2 and 3 are far from the level-1 food storage (≈ 30–60 s round trips per animal). (GAME-FEED, GAME-LEVEL-2, GAME-LEVEL-3, Q-047)
+- Q-090 — Second entry to level 3: open the level-1 barrier_north_gate together with level 3 (its cells lead to path_l3_gate), giving a shortcut from … (GAME-LEVEL-1, GAME-LEVEL-3, GAME-LAYOUT)
+- Q-092 — Enterable buildings in the layout data (GAME-PLAYER §2 "roofs disappear inside buildings", Q-065): a building element may have an interior … (GAME-LAYOUT, GAME-LEVEL-3, GAME-PLAYER, Q-065)
+- Q-093 — Fish bowl data (GAME-RESCUE goldfish bowl, Q-084): [[item]] (fish_bowl, position on the table in zookeeper_house_3) and [[water_source]] … (GAME-RESCUE, GAME-LEVEL-3, GAME-LAYOUT, Q-084)
+- Q-094 — Animals up in a tree or on the ship: the koala riddles say the pair sits in the tree house, at the top of the tallest tree or in the … (GAME-ANIMALS, GAME-LEVEL-2, GAME-LEVEL-3 …)
+- Q-095 — New hiding places for the seven animals of levels 2–3 (CONT-MISSIONS §4–§10, 3 per animal): koala loc_treehouse / loc_tallest_tree / … (CONT-MISSIONS, GAME-ANIMALS, GAME-LEVEL-2 …)
+- Q-097 — An escaped animal can wander to spots the child cannot reach within the 2 m interaction range (the hippo at loc_pond: most of its 22 pond … (GAME-ANIMALS, GAME-RESCUE, GAME-PLAYER §5)
+- Q-098 — The hut area of the hippo enclosure (x 15–18, z 11–14) was only in notes; home wandering needs it as data. (GAME-LAYOUT, GAME-LEVEL-1, ART-ENVIRONMENT)
+- Q-099 — Two invisible walls remain after the Q-087 fixes (mesh test LAYOUT-019): the back of map_board (its 0.36 m deep board cannot fill both … (GAME-LAYOUT, GAME-LEVEL-1, ART-ENVIRONMENT)
+- Q-100 — Garden treats: which animals like carrots / potatoes? (GAME-GARDEN, GAME-FAMILY)
+- Q-101 — Baby challenge: must at least one of the 3 care feedings be a garden treat (so the garden matters)? (GAME-GARDEN, GAME-FAMILY)
+- Q-102 — Vegetable garden in level 1 (GAME-LEVEL-1 "Vegetable garden", GAME-GARDEN): (a) place — the free strip x 6–9, z 36–45 between the panda … (GAME-LEVEL-1, GAME-LAYOUT, GAME-GARDEN …)
+- Q-103 — Garden sign texts: the sign shows a picture and one word (garden-carrot *Karotten*, garden-potato *Kartoffeln*); should the text panel also … (GAME-GARDEN, CONT-READING, GAME-LEVEL-1)
+- Q-104 — Draw-call budget for the joined zoo (M5b, QA F12): GAME-LAYOUT and PROD-POC only record measurements (level-1 spawn 58, level border ≈ 91 … (TECH-PLATFORMS, GAME-LAYOUT, PROD-POC …)
+- Q-105 — Zoo-wide riddle uniqueness (LAYOUT-024, Q-083 c): the test row says every riddle scenery kind occurs at only one hiding place, but the M5b … (GAME-LAYOUT, CONT-MISSIONS, GAME-LEVEL-2 …)
+- Q-106 — Koala pair texts vs. one koala: the koala riddles say "Die Koalas …" / "Unsere zwei Koalas …" (and the zebra riddles "Die Zebras …"), but … (GAME-FAMILY, GAME-LEVEL-1, GAME-LEVEL-2 …)
+- Q-107 — Butterflies "by the flower beds at the map board" (GAME-AMBIENT rule 8): level 1 has no flower beds at the map board, and its data says the … (GAME-AMBIENT, GAME-LEVEL-1, CONT-MISSIONS)
+- Q-108 — Readability of the small ambient animals from the default camera (20 m): the modelled sizes are real-world-ish (duck 0.45 m, duckling 0.2 … (GAME-AMBIENT, ART-ANIMALS)
+- Q-147 — String lights over the plazas: the level lines run 9–13 m, the string_lights model spans 6 m from its post to the hook point. (GAME-NIGHT, GAME-LEVEL-1, GAME-LEVEL-NIGHT-1 …)
+- Q-149 — Perch heights vs. the landmark models of night_1: loc_hilltop has perch_height_m = 2.4 but the rock_hill model is 1.95 m high (its … (GAME-LEVEL-NIGHT-1, ART-ENVIRONMENT, Q-094)
+- Q-151 — "Futter" board of the night food hut (food_hut, door and serving hatch on the east facade): the board now hangs with its bottom at 2.3 m … (ART-ENVIRONMENT, GAME-LEVEL-NIGHT-1)
+- Q-152 — Shelter over the level-2 bed bed_l2 (Q-141 b): the bed stands outdoors against the windowless south wall of food_storage_2 (centre (42.0 … (GAME-LEVEL-2, ART-ENVIRONMENT, GAME-NIGHT, Q-141)
+- Q-153 — Manifest granularity and the new kind buildings (ART-PIPELINE): APIPE-001 requires a manifest entry with the same id and kind for every … (ART-PIPELINE, ART-ENVIRONMENT, GAME-NIGHT …)
+- Q-154 — Models used by the engine but not listed in any ART-* spec and without their own manifest entry / concept gate: door_wood, glass_door … (ART-ENVIRONMENT, ART-PIPELINE, GAME-NIGHT …)
+- Q-188 — Night progress 🌙 (GAME-NIGHT rule 11, user request 2026-09-28): the request names the day level's animals. (GAME-NIGHT, GAME-HINT)
+- Q-194 — Inside boxes of the food storages (Q-181 answered: "keep the food boxes outside, some additional boxes can go inside"): what are the boxes … (GAME-FEED, GAME-LAYOUT, GAME-LEVEL-1 …)
+
+## Partly answered / other
+
+- Q-001 [partly answered] — What is the player's role in the story (child visiting, junior zookeeper, …)? → Goal (user, 2026-09-26): the animals have escaped, enclosures are empty; bring every animal back. Reading education game — the child reads and understands …
+- Q-002 [proposed] — Which animals are in the first release? → 10 animals proposed in CONT-MISSIONS: zebra, hippo, panda, koala, elephant, goldfish, monkey, giraffe, lion, snow fox — please confirm.
+- Q-011 [partly answered] — Progress saving: local only (offline) or account/cloud sync? → User, 2026-09-26: on reload, progress and the last positions of animals and characters must be restored → local save on the device (GAME-SAVE). Still open …
+- Q-019 [proposed] — What is the correct food for hippo and monkey? → Hippo: Melonen, monkey: Bananen (CONT-MISSIONS) — please confirm.
+- Q-024 [partly answered] — What are the player's walking and running speeds, and how is running triggered (joystick … → User, 2026-09-26: walk speed 1.75 m/s on paths, 0.98 m/s on grass (GAME-PLAYER §6); the walk clip stays authored for 1.4 m/s and plays at speed ÷ 1.4. Running …
+- Q-030 [partly answered] — How many animals per species (e.g. → User, 2026-09-26: zebras and koalas come as a pair (male + female), the pair follows as one group (GAME-FAMILY). Other species: Q-073.
+- Q-031 [partly answered] — What happens when all animals are home — end celebration, free play, next zoo/chapter? → User, 2026-09-26: when all animals are home, night falls; the child can sleep in a bed (→ next morning) or open a door to a new area with nocturnal animals …
+- Q-064 [partly answered] — Enclosure signs: what does the sign at each enclosure gate show — the animal name (sign-<animal> … → User, 2026-09-26: signs show the animal's silhouette, visible from outside (ART-ENVIRONMENT §6). Still open: whether a name is added and whether signs become …
+- Q-065 [partly answered] — Food storage interior: the level data has no walkable interior (the building is one solid block … → User, 2026-09-26: buildings get walkable interiors and the roof disappears when the player is inside (GAME-PLAYER §2, PLAY-028/029). Still open: whether the …
+- Q-066 ["s"\] — Water field bake (TECH-WATER §5) needs the river's flow direction and centreline order, but level … → "W" key in the level data (TECH-WATER; to be added to GAME-LAYOUT and level-1.toml when water is implemented).
+
+## Answered (newest first)
+
+- Q-193 — Haze culling in the close views (PERF-R-018; found while checking … → 2026-09-28: yes — switch on haze culling in the close views (fixes CAMV-014).
+- Q-192 — Lighter path tiles (PERF-R-002 b): a trial re-export of kit_ground … → 2026-09-28: yes — keep the current path tiles (no lighter tiles).
+- Q-191 — Smooth turning — outline anti-aliasing (user report 2026-09-28 … → 2026-09-28: yes — anti-aliased outlines to remove the turning flicker.
+- Q-189 — Hint priorities (GAME-HINT rule 3): rule 3 lists the bed / moon door … → 2026-09-28: yes — as implemented (bed / moon door before optional garden targets at night).
+- Q-187 — Food hint (GAME-HINT rule 3.2): while the right food is missing the … → 2026-09-28: yes — as recommended (food hint points at the storage, never the right box).
+- Q-186 — Hint search timer (GAME-HINT rule 4): the 60 s after reading a board … → 2026-09-28: yes — as recommended (hint timer not saved).
+- Q-182 — Street under the moon door (GAME-LAYOUT "Gates between the levels" … → 2026-09-28: yes — the street also runs under the moon door (make HINT-012 timing-independent). Implemented 2026-09-28: path_moon …
+- Q-181 — Food boxes inside the food storages (user request 2026-09-28: every … → 2026-09-28: (b) with an addition — keep the current food boxes OUTSIDE in the row in front of the storage (door gap stays free) …
+- Q-180 — Night light edges (PERF-R-014, found while implementing PERF-R-001) … → 2026-09-28: yes — move the edge anti-aliasing out of the light loop (removes the rim specks; PERF-R-014).
+- Q-176 — Walking chain after the Q-171 move of board_zebra to (−9, 10), south … → 2026-09-28: yes — as recommended.
+- Q-175 — Level 4 (Q-174 answered 2026-09-28: the bears go into a new level 4) … → 2026-09-28: yes — as recommended.
+- Q-174 — Bears (Q-131 answered "yes — as a level-2 or level-4 animal pair") … → 2026-09-28: yes — bears go into a new level 4; the honey part of the bee event stays off until then.
+- Q-173 — Q-157 option (a) also named a wall-gap rule: "nothing solid 0.1–0.6 m … → 2026-09-28: yes — (a) the wall-gap rule applies within 3 m of every door and gate (LAYOUT-039).
+- Q-172 — Basket and honey pot as hand items: GAME-FEED §8 lets the child put … → 2026-09-28: yes — (a) basket and honey pot are a separate slot and are never put down.
+- Q-171 — 22 m haze margin broken by the Q-157 move of board_zebra (−9, 14 → … → 2026-09-28: yes — (a) move board_zebra to the south side of the gate, plus a 22 m test for levels 1–3.
+- Q-170 — Quality tiers for weak phones (PERF-BUDGETS rule 4): the fragment … → 2026-09-28: yes — as recommended.
+- Q-169 — Scope of the "no per-frame allocation" rule (CLAUDE.md "Performance" … → 2026-09-28: yes — as recommended.
+- Q-168 — Memory budget (PERF-BUDGETS budget 18): measured WASM heap ≈ 17 MB … → 2026-09-28: yes — as recommended.
+- Q-167 — WASM size and first-load budgets (PERF-BUDGETS budget 17): measured … → 2026-09-28: yes — as recommended.
+- Q-166 — Frame-time budgets that can be measured (PERF-BUDGETS budgets 16 and … → 2026-09-28: yes — as recommended.
+- Q-158 — Putting items down — interpretations taken in the implementation … → 2026-09-28: yes — accept (a)–(f) as implemented.
+- Q-157 — Pockets beside doors and gates (QA 2026-09-27 … → 2026-09-27: yes — as recommended (general rule: no pocket beside a door or gate; move the three items).
+- Q-156 — Bamboo forest (GAME-FEED §14–17, user request 2026-09-27): how many … → 2026-09-27: yes — as recommended (4 cut spots, 3 min regrowth, hands only, only bamboo_sw for now).
+- Q-155 — Putting items down (GAME-FEED §8–13, user request 2026-09-27): when … → 2026-09-27: (a) yes — they keep following; at most 8 lying items (not 12); an item given to an animal is consumed anyway.
+- Q-150 — Food boxes in front of the food storage doors: level 1's ten food … → 2026-09-27: move the food box that stands directly in front of the door — doors are never blocked (gap in the box row in front of …
+- Q-148 — Entrance arch name board (entrance_arch sign_face): which text? → 2026-09-27: de *Buchstaben Zoo* (two words); en stays *Letter Zoo*.
+- Q-146 — Sleeping animals and eyeshine: animal models have no eyelids (no … → 2026-09-27: yes — renderer skips eye_glow while sleep plays; no eyelids for v1.
+- Q-145 — 22 m haze rule after the +30 % close-view fog (FIX-056): clipping … → 2026-09-27: yes — all adjustments accepted (a–h); the approved loc_pond mockups are kept.
+- Q-144 — Bat wingspan in fly: the bat model v1 unfolds its cloak-like folded … → 2026-09-27: yes — keep 1.1 m for v1.
+- Q-143 — Night animals and night clips in ART-ANIMALS: hedgehog, bat, owl are … → 2026-09-27: yes — add the night animals to ART-ANIMALS with the comic game sizes of their approved briefs (hedgehog 0.6 m, bat …
+- Q-142 — Lantern radius: night-animal eyes shine within 2.5 m (horizontal) of … → 2026-09-27: yes — keep 2.5 m eyeshine and enlarge the visible lantern ground pool to ≈ 2.5 m (within the night style frame look).
+- Q-141 — Night after level 2 (Q-078 "day and night levels alternate"): level … → 2026-09-27: yes — (a) until night_2 exists, level 3 opens the morning after level 2's night; (b) add a bed in level 2 (near its …
+- Q-140 — Sleeping by day: level 2 opens only the morning after night_1 is … → 2026-09-27: yes — as recommended in the question.
+- Q-139 — Burglar event places (GAME-EVENTS rules 4–7): per day level an … → 2026-09-27: yes — as recommended in the question.
+- Q-138 — telescope_n1: a toy star telescope halfway along the night_1 north … → 2026-09-27: yes — as recommended in the question.
+- Q-137 — Data shape for night props in the level files: [[light]] (kind = … → 2026-09-27: yes — as recommended in the question.
+- Q-136 — Riddle uniqueness for night levels (LAYOUT-024, MISS-011): day and … → 2026-09-27: yes — as recommended in the question.
+- Q-135 — Night food storage: a food hut in night_1 with 4 boxes — *Käfer* / … → 2026-09-27: yes — as recommended in the question.
+- Q-134 — Night house structure (GAME-LEVEL-NIGHT-1 "Night house"): an … → 2026-09-27: yes — as recommended in the question.
+- Q-133 — Night level data and the moon door (GAME-LEVEL-1 "Moon door" … → 2026-09-27: yes — as recommended in the question.
+- Q-132 — Golf-cart key box: how many digits (proposal 3), and how is a small … → 2026-09-27: yes — as recommended in the question.
+- Q-131 — Bears for the honey event: add bears as a new species (pair … → 2026-09-27: yes — as recommended in the question.
+- Q-130 — Storm: fences repaired automatically by the zookeeper once the … → 2026-09-27: yes — as recommended in the question.
+- Q-129 — Event timing: minimum 10 min play time between events, no events in … → 2026-09-27: yes — as recommended in the question.
+- Q-128 — Ad billboards in a game for 4–9 year olds: needs a legal/child-safety … → 2026-09-27: yes — keep ad boards passive (no links, no tracking, no network), start with own cross-promotion (e.g. "Math …
+- Q-127 — Next-target hint: idle nudge (🧭 pulses after 90 s without useful … → 2026-09-27: yes — as recommended in the question.
+- Q-126 — Night look of the close views (GAME-CAMERA-VIEWS 7, GAME-NIGHT) … → 2026-09-27: yes — as recommended in the question.
+- Q-125 — Camera views while driving a golf cart (GAME-CART rule 3 zooms the … → 2026-09-27: yes — as recommended in the question.
+- Q-124 — V while look-around is held (GAME-CAMERA-VIEWS 2/3): the … → 2026-09-27: yes — as recommended in the question.
+- Q-123 — Camera controls in the close views (GAME-CAMERA-VIEWS): what do Q/R … → 2026-09-27: yes — as recommended in the question.
+- Q-122 — Ambient animal models in the pipeline: duck, duckling, frog … → 2026-09-27: yes — as recommended in the question.
+- Q-121 — GAME-AMBIENT rules vs. the M6 implementation: (a) rule 2 says "per … → 2026-09-27: yes — as recommended in the question.
+- Q-120 — Golf cart speeds: paths 4.5 m/s, grass 2.0 m/s — and may carts drive … → 2026-09-27: yes — as recommended in the question.
+- Q-119 — Golf carts: where do the 3 carts park, and does a cart return to its … → 2026-09-27: yes — as recommended in the question.
+- Q-118 — Lantern posts — how many and where: along all paths (≈ every 8 m, ≈ … → 2026-09-27: yes — as recommended in the question.
+- Q-117 — The player's hand lantern: look (proposal: round, toy-like … → 2026-09-27: yes — as recommended in the question.
+- Q-116 — Night house light colours: GAME-NIGHT rule 4 says "red/blue light … → 2026-09-27: yes — as recommended in the question.
+- Q-115 — Fireflies at night: yes/no, and where — over meadows, hedges and the … → 2026-09-27: yes — as recommended in the question.
+- Q-114 — Lantern light pools on weak phones: the night look needs many small … → 2026-09-27: yes — as recommended in the question.
+- Q-113 — Night prompts and the STYLE block: the verbatim STYLE block of … → 2026-09-27: yes — as recommended in the question.
+- Q-112 — Hands in first person: the carried food box / fish bowl stays drawn … → 2026-09-27: yes — as recommended in the question.
+- Q-111 — Look-around camera collision: the eye 3.5 m behind the player can end … → 2026-09-27: yes — as recommended in the question.
+- Q-110 — Fog margin as a layout rule: with the 16 m fog end the nearest wander … → 2026-09-27: yes — as recommended in the question.
+- Q-109 — Camera views (GAME-CAMERA-VIEWS): accept the proposal values — … → 2026-09-27: yes — as recommended in the question.
+- Q-096 — Where does the child sleep at nightfall (GAME-NIGHT "bed in the … → 2026-09-27: yes — a zookeeper house with a bed in level 1 (zookeeper_house_1, GAME-LEVEL-1).
+- Q-091 — When exactly does a level barrier open? → As recommended (user, 2026-09-27): barriers open the next morning after sleeping; implemented 2026-09-27 (GAME-NIGHT …
+- Q-086 — Enclosure signs vs. the billboard rule (GAME-LAYOUT "Forests" … → 2026-09-27: (b) — the sign stands beside the gate (never in front of it), whole sign solid, ≥ 0.5 m from the gate post, outside …
+- Q-083 — Place words of the new hiding places: (a) the English kiga labels … → 2026-09-26: yes — two-part kiga words are allowed ("Bambuswald", "Laubhaufen"); place words and details must be unique across the …
+- Q-082 — Picking the hiding place per playthrough (GAME-RESCUE §1, RESC-014) … → 2026-09-26: yes — pick one candidate per animal with the seeded RNG, redraw the whole set until all chosen spots are ≥ 12 m apart …
+- Q-081 — The panda enclosure had living bamboo clumps; with the new hiding … → 2026-09-26: yes — the panda enclosure shows only cut bamboo on a feeding rack (no growing bamboo), so the bamboo riddle never …
+- Q-080 — Hiding places in the level data (discovery, user decision … → 2026-09-26: yes — [[hiding_place]] + [[scenery]] lists in the level data; legacy mirror elements are deleted when zoo-core …
+- Q-079 — Must the night animals be rescued before sleeping, or can the child … → 2026-09-26: yes — the child can sleep any time; the night zoo stays reachable every night until complete (no pressure).
+- Q-078 — What comes after the night zoo is complete — a new day zoo area, more … → 2026-09-26: yes — after the night zoo: morning → next day-zoo level (level 2 behind the fallen tree); day and night levels …
+- Q-077 — Owl food: realistic "Mäuse" (mice) — fine for 4–6 year olds, or a … → 2026-09-26: yes — owl food is "Käfer"/beetles; no prey animals in food boxes.
+- Q-076 — Night zoo animals: which of the proposed 10 (hedgehog, bat, owl … → 2026-09-26: yes — night level 1 with hedgehog, bat and owl; the other seven night animals in later night levels.
+- Q-069 — PoC: the hippo and panda are scenery only (PROD-POC "Out of scope") … → 2026-09-26 (M5a): all three level-1 missions (zebra, hippo, panda) are in scope; only missions in scope are interactable. Data …
+- Q-068 — Obstacle foam in the river (TECH-WATER behaviour 6): which objects … → (via the M6 task), 2026-09-26: foam at the bridge posts, stones in the water, the water wheel and the jetty posts. Implemented …
+- Q-067 — Remove the baked streak and foam polygons from the river tiles of … → 2026-09-26: yes — remove the baked streak/foam geometry from the river tiles; the water shader draws flow and foam (TECH-WATER).
+- Q-057 — Modular segment lengths vs. → 2026-09-26: yes — 1 m variants fence_wood_1m, hedge_1m, zoo_wall_1m added to kit_fences; fill rule: 2 m segments from the run …
+- Q-056 — Axis handedness: glTF is right-handed (+X east, +Z north means east … → 2026-09-26: yes — zoo-core keeps level coordinates (x east, z north); the single conversion is world = (x, 0, −z) (level north = …
+- Q-052 — Camera field of view axis: GAME-PLAYER §2 says "narrow FOV ≈ 30–35°" … → 2026-09-26: 35° vertical FOV in every orientation (GAME-PLAYER §2); level 1 starts at maximum zoom-out (20 m) so the food storage …
+- Q-049 — Game camera: switch GAME-PLAYER from a low third-person follow camera … → 2026-09-26: yes, high-angle (≈ 55°) follow camera like zoo-park sims. → GAME-PLAYER §2 (default ≈ 14 m, zoom 10–20 m, rotation in …
+- Q-046 — Can the player walk on grass (every cell not covered by a solid … → 2026-09-26: the player can walk on grass, but slower than on paths ("streets"). Grass = every cell not covered by a solid …
+- Q-036 — Goldfish cannot follow over land — does the player carry it in a … → 2026-09-26: the player finds a big glass bowl, fills it with water, the goldfish (found in a river) jumps into the bowl after …
+- Q-018 — Touch movement: virtual joystick, tap-to-walk, or both? → 2026-09-26: two-thumb touch controls — left thumb floating joystick, right thumb camera swipe/pinch + interact button; only shown …
+- Q-010 — Art style: fully voxel (images 1–3) or smooth stylised low-poly … → 2026-09-26: neither — comic style (cel-shaded, bold outlines, flat colours, one hard shadow tone, rounded chunky shapes). Single …
+- Q-003 — "Collect animals": where are escaped/lost animals found, and how does … → 2026-09-26: animals are found at places described by a riddle (e.g. zebras drinking at the river); the player shows the right …

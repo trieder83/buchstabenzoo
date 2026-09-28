@@ -11,6 +11,8 @@ camera, target **60 fps on mid-range phones**, minimum 30 fps). Your job: know a
 how fast the game is, where the time goes, and what to do about it — with numbers, not
 guesses.
 
+**Start here (saves tokens):** read `.agent/STATE.md` (current state, who owns which files, your Q-number range, conventions), `.agent/TODO.md` (work queue) and `.agent/DECISIONS.md` (generated digest of all answered/open questions) before anything else. Do not read big specs whole — `grep -n` for the ID/section and read only those lines; open `specs/open-questions.md` only for a question's full text. When you finish or stop, append a short handoff to `.agent/STATE.md` (done / in progress / next / questions).
+
 Read first: `CLAUDE.md`, `specs/50-performance/` (your folder — budgets, the measurement
 log, the recommendation list), `specs/40-tech/architecture.md`,
 `specs/40-tech/platforms-and-testing.md`, `specs/40-tech/water-rendering.md`,

@@ -124,18 +124,21 @@ fn glsl3(v: Vec3) -> String {
     format!("vec3({:.4}, {:.4}, {:.4})", v.x, v.y, v.z)
 }
 
-/// GLSL (fragment) with the night uniforms and `vec3 shade(vec3 albedo, float lit, vec3 n,
-/// vec3 world)`: day cel shading, dusk and night grading, point lights and light pools.
-/// Needs `u_shadow_tint`.
+/// GLSL (fragment) with the per-draw light mask and `vec3 shade(vec3 albedo, float lit,
+/// vec3 n, vec3 world)`: day cel shading, dusk and night grading, point lights and light
+/// pools. Needs the shared frame block (`u_shadow_tint`, `u_night`, `u_lights`,
+/// `u_light_colors`, `u_pools`; `shaders::frame_block`).
+///
+/// PERF-R-001: a draw gets only the lights that can reach it (`u_light_mask`, bit `i` = light
+/// `i`, [`light_mask`]; the mask loop is uniform control flow), and a fragment outside a
+/// light's hard edge skips the band and the colour work. The edge width is still
+/// `fwidth(distance)` taken per light before the skip, exactly as before, so the picture is
+/// pixel-identical (moving the derivatives out of the loop changes rim pixels: PERF-R-014,
+/// Q-180).
 pub fn night_glsl() -> String {
     format!(
         r#"
-uniform vec4 u_night;               // x night 0..1, y warm 0..1
-uniform vec4 u_lights[{np}];        // world xyz, radius
-uniform vec4 u_light_colors[{np}];  // rgb, strength
-uniform int u_light_count;
-uniform vec4 u_pools[{npool}];      // world x, z, radius, strength
-uniform int u_pool_count;
+uniform highp uvec2 u_light_mask;   // per draw: x bit i = point light i, y bit i = light pool i
 const vec3 NIGHT_FLOOR = {floor};
 const vec3 NIGHT_DEEP = {deep};
 const vec3 NIGHT_PALE = {pale};
@@ -149,8 +152,9 @@ vec3 night_color(vec3 albedo, float lit) {{
     c *= {shadow:.3} + (1.0 - {shadow:.3}) * lit;
     return max(c, NIGHT_FLOOR);
 }}
-float light_band(float d, float r) {{
-    float aa = max(fwidth(d), 0.02);
+// hard cartoon edge at r, anti-aliased over fw = fwidth(d) (at least 2 cm)
+float light_band(float d, float fw, float r) {{
+    float aa = max(fw, 0.02);
     return 1.0 - smoothstep(r - aa, r, d);
 }}
 vec3 shade(vec3 albedo, float lit, vec3 n, vec3 world) {{
@@ -163,19 +167,29 @@ vec3 shade(vec3 albedo, float lit, vec3 n, vec3 world) {{
     bool tinted = false;
     vec3 tint = vec3(0.0);
     for (int i = 0; i < {np}; i++) {{
-        if (i >= u_light_count) break;
+        uint bits = u_light_mask.x >> uint(i);
+        if (bits == 0u) break;
+        if ((bits & 1u) == 0u) continue;
         vec4 L = u_lights[i];
         vec3 to = L.xyz - world;
+        float d = length(to);
+        float fw = fwidth(d);   // before the skip: every quad lane computes it
+        if (d >= L.w) continue;   // outside the hard edge: no light (band 0)
         float a = u_light_colors[i].a;   // strength, + 2 for a tinted (coloured) light
-        float b = light_band(length(to), L.w) * (a > 1.5 ? a - 2.0 : a);
+        float b = light_band(d, fw, L.w) * (a > 1.5 ? a - 2.0 : a);
         if (b > k) {{ k = b; tint = u_light_colors[i].rgb; tinted = a > 1.5; }}
     }}
     // light-pool decals: flat pools on the ground under the other lamps
     if (n.y > 0.6 && world.y < 0.5) {{
         for (int i = 0; i < {npool}; i++) {{
-            if (i >= u_pool_count) break;
+            uint bits = u_light_mask.y >> uint(i);
+            if (bits == 0u) break;
+            if ((bits & 1u) == 0u) continue;
             vec4 P = u_pools[i];
-            float b = light_band(length(world.xz - P.xy), P.z) * P.w;
+            float d = length(world.xz - P.xy);
+            float fw = fwidth(d);
+            if (d >= P.z) continue;
+            float b = light_band(d, fw, P.z) * P.w;
             if (b > k) {{ k = b; tint = LAMP_LIGHT; tinted = false; }}
         }}
     }}
@@ -243,6 +257,51 @@ pub fn pick_lamps(
             break;
         }
     }
+}
+
+/// Height (m) below which a ground fragment can be lit by a light pool (`shade()` GLSL).
+pub const POOL_MAX_Y: f32 = 0.5;
+
+/// Which lights of a frame can reach a draw (PERF-R-001): bit `i` of `.0` is set when point
+/// light `i` (`lights`: world x, y, z, radius) has its sphere intersect the box
+/// `min`..`max`; bit `i` of `.1` when light pool `i` (`pools`: world x, z, radius, strength)
+/// has its disc intersect the box's ground footprint and the box reaches below
+/// [`POOL_MAX_Y`]. A light without its bit lights no fragment inside the box (the band is 0
+/// at and beyond the radius), so the masked shading equals shading with every light.
+pub fn light_mask(lights: &[[f32; 4]], pools: &[[f32; 4]], min: Vec3, max: Vec3) -> (u32, u32) {
+    const EPS: f32 = 1e-3;
+    let mut m = (0u32, 0u32);
+    for (i, l) in lights.iter().take(32).enumerate() {
+        let c = Vec3::new(l[0], l[1], l[2]);
+        let r = l[3] + EPS;
+        if c.clamp(min, max).distance_squared(c) < r * r {
+            m.0 |= 1 << i;
+        }
+    }
+    if min.y < POOL_MAX_Y + EPS {
+        let (lo, hi) = (glam::Vec2::new(min.x, min.z), glam::Vec2::new(max.x, max.z));
+        for (i, p) in pools.iter().take(32).enumerate() {
+            let c = glam::Vec2::new(p[0], p[1]);
+            let r = p[2] + EPS;
+            if c.clamp(lo, hi).distance_squared(c) < r * r {
+                m.1 |= 1 << i;
+            }
+        }
+    }
+    m
+}
+
+/// Mask with the first `n_lights` point lights and `n_pools` light pools (draws without
+/// bounds: dynamic batches).
+pub fn full_light_mask(n_lights: usize, n_pools: usize) -> (u32, u32) {
+    let bits = |n: usize| {
+        if n >= 32 {
+            u32::MAX
+        } else {
+            (1u32 << n) - 1
+        }
+    };
+    (bits(n_lights), bits(n_pools))
 }
 
 #[cfg(test)]
@@ -370,10 +429,107 @@ mod tests {
             "u_lights",
             "u_light_colors",
             "u_pools",
+            "u_light_mask",
             "vec3 shade(",
         ] {
             assert!(s.contains(u), "{u}");
         }
+    }
+
+    // PERF-017 (PERF-R-001): the light loops walk the per-draw mask (uniform control flow)
+    // and skip a light outside its radius before the band; the edge width is fwidth(d) taken
+    // before the skip (the unchanged anti-aliasing of the old shader).
+    #[test]
+    fn perf_017_light_loops_skip_far_lights_after_the_derivative() {
+        let s = night_glsl();
+        let body = &s[s.find("vec3 shade(").unwrap()..];
+        let loops = &body[body.find("for (int i").unwrap()..];
+        assert_eq!(loops.matches("if (bits == 0u) break;").count(), 2);
+        for skip in ["if (d >= L.w) continue;", "if (d >= P.z) continue;"] {
+            let at = loops.find(skip).unwrap_or_else(|| panic!("{skip}"));
+            let before = &loops[..at];
+            let fw = before.rfind("fwidth(d)").expect("fwidth before the skip");
+            assert!(!before[fw..].contains("light_band("), "{skip}");
+        }
+        assert!(!loops.contains("u_light_count") && !loops.contains("u_pool_count"));
+    }
+
+    fn lamp_floats(ls: &[(Vec3, f32)]) -> Vec<[f32; 4]> {
+        ls.iter().map(|(p, r)| [p.x, p.y, p.z, *r]).collect()
+    }
+
+    /// Light pools as uniform floats: `(x, z, _)` and radius → x, z, radius, strength 1.
+    fn pool_floats(ps: &[(Vec3, f32)]) -> Vec<[f32; 4]> {
+        ps.iter().map(|(p, r)| [p.x, p.y, *r, 1.0]).collect()
+    }
+
+    // PERF-017 (PERF-R-001): a light whose bit is not set lights no point of the box: for
+    // many boxes and lights, every sampled point with a non-zero band has its light's bit.
+    #[test]
+    fn perf_017_light_mask_is_conservative() {
+        let mut seed = 17u32;
+        let mut rnd = move || {
+            seed ^= seed << 13;
+            seed ^= seed >> 17;
+            seed ^= seed << 5;
+            (seed % 10_000) as f32 / 10_000.0
+        };
+        let mut set_bits = 0;
+        for _ in 0..300 {
+            let min = Vec3::new(rnd() * 40.0 - 20.0, rnd() * 2.0 - 1.0, rnd() * 40.0 - 20.0);
+            let max = min + Vec3::new(rnd() * 8.0, rnd() * 5.0, rnd() * 8.0);
+            let lights: Vec<(Vec3, f32)> = (0..MAX_POINT_LIGHTS)
+                .map(|_| {
+                    let p = Vec3::new(rnd() * 50.0 - 25.0, rnd() * 4.0, rnd() * 50.0 - 25.0);
+                    (p, 1.0 + rnd() * 5.0)
+                })
+                .collect();
+            let pools: Vec<(Vec3, f32)> = (0..MAX_LIGHT_POOLS)
+                .map(|_| {
+                    let p = Vec3::new(rnd() * 50.0 - 25.0, rnd() * 50.0 - 25.0, 0.0);
+                    (p, 1.0 + rnd() * 4.0)
+                })
+                .collect();
+            let (lm, pm) = light_mask(&lamp_floats(&lights), &pool_floats(&pools), min, max);
+            set_bits += lm.count_ones() + pm.count_ones();
+            for _ in 0..200 {
+                let q = min + (max - min) * Vec3::new(rnd(), rnd(), rnd());
+                for (i, (c, r)) in lights.iter().enumerate() {
+                    if light_band(q.distance(*c), *r, 0.02) > 0.0 {
+                        assert!(lm & (1 << i) != 0, "light {i} reaches {q} in {min}..{max}");
+                    }
+                }
+                if q.y < POOL_MAX_Y {
+                    for (i, (c, r)) in pools.iter().enumerate() {
+                        let d = glam::Vec2::new(q.x, q.z).distance(c.truncate());
+                        if light_band(d, *r, 0.02) > 0.0 {
+                            assert!(pm & (1 << i) != 0, "pool {i} reaches {q}");
+                        }
+                    }
+                }
+            }
+        }
+        assert!(set_bits > 100, "the test boxes are lit at all");
+    }
+
+    // PERF-017: far lights are masked out; a box above the pool height gets no pools.
+    #[test]
+    fn perf_017_light_mask_drops_far_lights() {
+        let lights = lamp_floats(&[
+            (Vec3::new(0.0, 1.0, 0.0), 3.0),
+            (Vec3::new(10.0, 1.0, 0.0), 3.0),
+            (Vec3::new(3.5, 1.0, 0.0), 3.0),
+        ]);
+        let pools = pool_floats(&[
+            (Vec3::new(2.5, 0.0, 0.0), 2.0),
+            (Vec3::new(20.0, 0.0, 0.0), 2.0),
+        ]);
+        let (min, max) = (Vec3::new(-1.0, 0.0, -1.0), Vec3::new(1.0, 2.0, 1.0));
+        assert_eq!(light_mask(&lights, &pools, min, max), (0b101, 0b1));
+        let up = Vec3::Y * 1.0;
+        assert_eq!(light_mask(&lights, &pools, min + up, max + up), (0b101, 0));
+        assert_eq!(full_light_mask(3, 24), (0b111, 0xFF_FFFF));
+        assert_eq!(full_light_mask(0, 0), (0, 0));
     }
 
     #[test]

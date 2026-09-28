@@ -6,7 +6,7 @@ module: budgets
 status: draft
 depends_on: [TECH-PLATFORMS, TECH-ARCH, PROD-POC, GAME-CAMERA-VIEWS, GAME-NIGHT, GAME-AMBIENT, TECH-WATER, ART-PIPELINE, ART-RIG, ART-ANIMALS]
 test_prefix: PERF
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Performance budgets
@@ -41,12 +41,14 @@ Numbers in **bold** are the budget; "source" is the spec that owns it.
 | 11 | Textures per model | flat-colour atlases **≤ 512 × 512**; characters body **≤ 256²** + face atlas **≤ 256 × 128**; animals **≤ 256²** | ART-PIPELINE rule 10, ART-RIG §5, AANI-004 | decided |
 | 12 | `.glb` file size | characters and animals **≤ 400 KB** including textures | ART-RIG §5, ART-ANIMALS rule 7 | decided |
 | 13 | Skeleton | **20 joints** per character (target ≤ 24, hard max 32); the renderer accepts ≤ 128 | ART-RIG §2 "Joint budget" | decided |
-| 14 | Heap allocations per frame | **0** in the steady state of the render loop (`Renderer::render`, the zoo-web frame) — "avoid per-frame allocations in the render loop" | CLAUDE.md "Performance"; exact scope Q-169 | proposed |
+| 14 | Heap allocations per frame | **0** per steady-state frame in zoo-core `Game::update`, zoo-render `Renderer::render` and the zoo-web frame (game events and UI changes excepted); checked by a counting-allocator unit test for zoo-core, the native probe and review for the rest | CLAUDE.md "Performance"; Q-169 (answered 2026-09-28) | decided |
 | 15 | Static meshes are batched | every group of never-moving static placements is merged (one draw call per group and region); static batches are culled per 8 m chunk | TECH-ARCH "Static batching" / ARCH-008, GAME-CAMERA-VIEWS 6 | decided |
-| 16 | Frame time per scenario on a desktop / CI reference, per-pass GPU time (scene pass, full-screen outline + fog + sky pass) | **undecided** | Q-166 | open |
-| 17 | WASM size (release, compressed) and first-load time to the first frame | **undecided** | Q-167 | open |
-| 18 | Memory: GPU (G-buffer, textures, vertex buffers) and WASM heap | **undecided** | Q-168 | open |
-| 19 | Triangles on screen per view | **undecided** (measured and reported only) | Q-166 | open |
+| 16 | Frame time per pass on the reference phone | per frame **≤ 4 ms CPU** (simulation + GL submission), **scene pass ≤ 8 ms**, **full-screen outline + fog + sky pass ≤ 3 ms** at the capped 720 × 1560 buffer, **night ≤ 1.3 × day** at the same spot; in CI (SwiftShader) only the regression rule 3 applies (no scenario > 10 % worse than the previous run, counts exact). The numbers are confirmed by one measurement on the real phone before they are enforced | Q-166 (answered 2026-09-28); reference phone Q-013 | decided (phone run pending) |
+| 17 | WASM size and first load | release WASM **≤ 2.0 MB raw / ≤ 600 KB brotli**; first frame **≤ 5 s** on the reference phone over Wi-Fi from a server that sends brotli / gzip, **≤ 3 s** from the Capacitor app package; revisit when level 4+ and audio arrive | Q-167 (answered 2026-09-28); hosting Q-012 | decided |
+| 18 | Memory on the reference phone | **WASM heap ≤ 64 MB, JS heap ≤ 32 MB, GPU ≤ 96 MB** (G-buffer, textures, vertex / instance buffers) — a guard for older 3 GB phones | Q-168 (answered 2026-09-28) | decided |
+| 19 | Triangles and instances on screen | **≤ 300 k triangles and ≤ 10 000 instances** submitted per frame in every fixed scenario (`RenderStats`) | Q-166 (answered 2026-09-28) | decided |
+| 20 | Shared per-frame uniforms | the values every scene program shares (view, view-projection, sun, shadow tint, fade, dither, night / warm, water clock, glow, point lights, light pools) are uploaded **once per frame** as one uniform block (one `bufferSubData`), never per program; uniform locations are looked up only when a program is linked; a per-draw uniform is sent only when its value changed. *Reason:* ≈ 60 % of the WebGL calls per frame were `uniform*` calls re-sending the same values up to 7 × per frame (run 2026-09-27, PERF-R-003); each call is a WASM → JS → GPU-process round trip. | CLAUDE.md "Performance"; PERF-R-003 (accepted by the user 2026-09-28) | decided |
+| 21 | Night lights per draw | each draw (static batch, character, crowd) gets only the point lights and light pools whose hard-edged sphere / disc can reach its bounds (`u_light_mask`), and a fragment skips a light outside its radius before any other work; the picture is **identical** to shading every fragment with every light (budget 6 unchanged). *Reason:* the per-fragment light loop doubled the night scene pass (run 2026-09-27, PERF-R-001). | GAME-NIGHT "Renderer", budget 6; PERF-R-001 (accepted by the user 2026-09-28) | decided |
 
 Rules:
 
@@ -59,7 +61,12 @@ Rules:
 3. A value more than 10 % worse than the previous run is a **regression** and is flagged in
    the log; a budget that is exceeded gets a `PERF-R-NNN` recommendation.
 4. Budgets never change the look or gameplay silently: trading style or content for speed
-   needs a `Q-###` answered by the user (quality tiers: Q-170).
+   needs a `Q-###` answered by the user.
+5. **Automatic quality tier** (Q-170, answered 2026-09-28): when the p95 frame time stays
+   above 33 ms for 3 s, the game switches itself to a "low" tier — first the pixel ratio
+   1.5 (lines stay 2 px); only if still too slow, the lantern + 4 lamps as point lights (the
+   rest light pools) and no clouds in the close-view sky. Never a menu the child must read.
+   Implementation: PERF-R-005 (accepted, not implemented yet).
 
 ## Acceptance criteria
 
@@ -85,14 +92,19 @@ Rules:
 | PERF-012 | Given every skinned `.glb`, then it has ≤ 32 joints (characters: 20 ± 4) (budget 13). | asset |
 | PERF-013 | Given the game running a steady scenario (S01), when a frame is rendered, then `Renderer::render` and the zoo-web frame make no heap allocation; `zoo_core::game::Game::update` makes none outside events (budget 14, Q-169; native probe for zoo-core, allocation counter in the WASM build once it exists). | unit |
 | PERF-014 | Given the level scene, then every bake group of never-moving placements is drawn as one merged mesh per region (budget 15 = ARCH-008) and the draw list of S01 (`debug_draw_list`) contains no single-instance batch of a bakeable model. | unit / e2e |
+| PERF-018 | Given the reference phone (Q-013) and the release build, when the fixed scenarios S01–S11 run, then per frame CPU ≤ 4 ms, scene pass ≤ 8 ms, full-screen pass ≤ 3 ms, and S10 / S11 ≤ 1.3 × the day scenario at the same spot (budget 16; `PERF_ANGLE=gl tools/perf/run.sh` against the phone, GPU timer queries PERF-R-013). | manual |
+| PERF-019 | Given `tools/perf/run.sh`, then the release WASM is ≤ 2.0 MB raw and ≤ 600 KB brotli (budget 17, `sizes.json`); on the reference phone the first frame comes ≤ 5 s after navigation over Wi-Fi with compression and ≤ 3 s from the app package. | e2e / manual |
+| PERF-020 | Given the reference phone after loading and after S01–S11, then the WASM heap ≤ 64 MB, the JS heap ≤ 32 MB and the GPU memory estimate (G-buffer + textures + buffers) ≤ 96 MB (budget 18; `run.sh` reports the heaps, GPU memory estimated by the renderer once a counter exists). | manual |
+| PERF-021 | Given every fixed scenario and viewport of `run.sh`, then triangles ≤ 300 k and instances ≤ 10 000 (budget 19, `RenderStats`). | e2e |
+| PERF-022 | Given a p95 frame time above 33 ms for 3 s, then the game switches itself to the low tier (pixel ratio 1.5 first; then fewer point lights and no clouds), without any menu; given fast frames, it stays in the normal tier (rule 5, Q-170; PERF-R-005). | unit / e2e |
+| PERF-016 | Given any frame (S01 by day, S10 at night), then the frame block is uploaded with exactly one `bufferSubData` to the uniform buffer, no `uniform*` call sets a member of the frame block, `getUniformLocation` is not called, and the std140 layout of `FrameBlock` matches the GLSL block and the driver (budget 20; unit: `perf_016_*` in zoo-render, the driver offsets are checked when a program links; e2e: `perf_rules.spec.ts` GL census). | unit / e2e |
+| PERF-017 | Given night at the level-1 spawn and in the night zoo, when the same frame is drawn with per-draw light masks and with every light for every draw (`debug_full_light_masks`), then both pictures are pixel-identical; the light mask of a box never misses a light that reaches a point of the box; a light outside its radius is skipped before the band, with the edge width `fwidth(distance)` taken before the skip (budget 21; unit: `perf_017_*` in zoo-render; e2e: `perf_rules.spec.ts`; before/after: `tools/perf/look.mjs`). | unit / e2e |
 | PERF-015 | Given `tools/perf/run.sh`, then it reports for every fixed scenario and viewport the frame CPU and interval p50/p95, draw calls, instances, triangles, GL calls, program switches, texture binds, uniform calls, uploads, scene / full-screen pass split, simulation step, the WASM and download sizes and the load time, and flags values > 10 % worse than the previous run (rules 1–3). | manual |
 
 ## Open questions
 
 - Q-013 reference device (budget 1), Q-104 draw-call budget of the joined zoo (budget 3),
   Q-153 triangle budget for `buildings` (budget 10).
-- Q-166 frame-time / per-pass budgets on a measurable reference and triangles on screen.
-- Q-167 WASM size and first-load time budgets.
-- Q-168 memory budget (GPU and WASM heap).
-- Q-169 scope of the "no per-frame allocation" rule.
-- Q-170 quality tiers for weak phones.
+- Answered 2026-09-28 (user, "yes, as recommended"): Q-166 (budgets 16, 19), Q-167
+  (budget 17), Q-168 (budget 18), Q-169 (budget 14), Q-170 (rule 5, PERF-R-005).
+- Q-180 night light edges: derivatives out of the light loops (PERF-R-014).

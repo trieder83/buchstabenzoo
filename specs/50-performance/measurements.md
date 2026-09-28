@@ -23,7 +23,16 @@ tools/perf/run.sh --skip-build          # re-run probe + browser on the last sna
 tools/perf/run.sh --only-sizes          # sizes only (after the builds)
 PERF_ANGLE=gl tools/perf/run.sh         # real GPU instead of SwiftShader (if the machine has one)
 PERF_VIEWPORTS=phone PERF_SCENARIOS=S01,S10 tools/perf/run.sh --skip-build   # a subset
+node tools/perf/look.mjs capture <web/dist> <out>   # look scenarios L01–L14 (deterministic)
+node tools/perf/look.mjs compare <out A> <out B> 0   # pixel diff ("no visible change")
+LOOK_ANGLE=gl node tools/perf/look.mjs ab <dist A> <dist B>   # interleaved frame-time A/B
 ```
+
+- **"No visible change" optimisations** are checked with `tools/perf/look.mjs`: capture the
+  look scenarios of the build before and after and `compare` them (0 differing pixels
+  expected); time them with `ab`, which alternates fenced frames of both builds in one
+  browser (robust against load drift; on the real GPU compare the phone viewport or both
+  page orders — the desktop viewport has a page-order bias there).
 
 - `tools/perf/run.sh` copies the working tree (committed **and** uncommitted) to
   `$PERF_WORK/tree` (default `~/.cache/buchstabenzoo-perf`), builds `wasm-pack --dev` and
@@ -217,6 +226,133 @@ PERF_VIEWPORTS=phone PERF_SCENARIOS=S01,S10 tools/perf/run.sh --skip-build   # a
 
 Regressions: none (first run). Top recommendations: PERF-R-001 (night lights), PERF-R-002
 (ground tiles), PERF-R-003 (uniform traffic) — see `recommendations.md`.
+
+## Run 2026-09-28 — PERF-R-001 + PERF-R-003 (before / after)
+
+- **What changed since the last run:** PERF-R-003 — the values every scene program shares
+  (view, view-projection, sun, shadow tint, fade, dither, night / warm, water clock, glow,
+  point lights, light pools) are one std140 uniform block uploaded once per frame; uniform
+  locations are an array per program looked up at link time; per-draw uniforms are sent
+  only when their value changed; constant uniforms (samplers, outline colour, crowd model
+  matrix) are set once; the redundant first `set_common(static)` is gone. PERF-R-001 — each
+  draw gets a light mask (`u_light_mask`: the lights whose sphere / pool disc can reach its
+  chunk bounds); the light loops walk the mask and skip a light outside its radius right
+  after its `fwidth` (pixel-identical; the derivative-free variant is Q-180 / PERF-R-014).
+- **Before:** commit `d0134d2`, clean tree (`tools/perf/run.sh`, 06:50). **After:** the same
+  snapshot tree with only `crates/zoo-render/src/{night,renderer,shaders}.rs` and
+  `crates/zoo-web/src/lib.rs` replaced by the working copy (08:09; the other agent's level /
+  zoo-core changes of that time were kept out, so the A/B isolates the renderer change;
+  `run.sh --skip-build` after a manual rebuild of the snapshot). Raw data:
+  `tools/perf/baselines/2026-09-28-before.json`, `tools/perf/baselines/2026-09-28.json`.
+- **Machine:** as 2026-09-27 (Ryzen 5 5500U, Linux 6.8, rustc 1.98.1, wasm-pack 0.15.0,
+  Chrome headless shell 153). Load average 9–25 during the sequential SwiftShader runs
+  (other agents' tests): **their frame times are not comparable between the two runs**; the
+  timing verdict comes from the interleaved A/B below. Counts are exact.
+- **New tool:** `tools/perf/look.mjs` — `capture` renders 14 fixed look scenarios (L01–L14:
+  day, dusk, night, pond, house, close views; 960 × 540, seed 17, fake clock and manual
+  `requestAnimationFrame`, so deterministic) and `compare` diffs two captures pixel by pixel;
+  `ab` opens both builds side by side and alternates fenced frames A, B, B, A, … (load drift
+  hits both; `LOOK_ANGLE=gl` uses the real GPU; `AB_INIT_B` patches the B pages, e.g. a GLSL
+  variant via `shaderSource`).
+
+### Look (identical?)
+
+- Baseline captured twice: 0 differing pixels in all 14 scenarios (deterministic).
+- **Baseline vs. after: 0 differing pixels in all 14 scenarios** (L01–L07 day / dusk,
+  L08–L14 night: spawn at 14 m and 20 m, night zoo, night pond, first person, look-around,
+  house) — lights, pools, eye glow, fog, sky and outlines unchanged.
+- e2e PERF-017: the night frame with per-draw masks equals the frame with every light for
+  every draw (spawn, night zoo; `perf_rules.spec.ts`).
+- A first attempt (derivatives once before the loops, variant "B") changed 14–699 rim pixels
+  per night scenario (up to 120 / 255): it removes dark specks that the old per-light
+  `fwidth` in non-uniform control flow leaves on the pool rims. Kept out: Q-180 / PERF-R-014.
+
+### GL traffic per frame (census, exact; before → after)
+
+| desktop | GL calls | `uniform*` | `useProgram` | `bufferSubData` | CPU `frame()` p50 ms | scene / full-screen ms (SwiftShader, sequential) |
+|---|---|---|---|---|---|---|
+| S01 | 358 → 153 | 220 → 14 | 9 → 8 | 7 → 8 | 1.1 → 0.7 | 700 / 180 → 964 / 272 |
+| S02 | 384 → 169 | 232 → 16 | 9 → 8 | 7 → 8 | 0.9 → 0.5 | 1665 / 476 → 658 / 161 |
+| S03 | 342 → 146 | 211 → 14 | 9 → 8 | 7 → 8 | 0.9 → 0.6 | 762 / 216 → 590 / 159 |
+| S04 | 379 → 169 | 227 → 16 | 9 → 8 | 7 → 8 | 0.7 → 0.6 | 924 / 215 → 890 / 195 |
+| S05 | 367 → 168 | 218 → 18 | 9 → 8 | 9 → 10 | 0.6 → 0.6 | 658 / 204 → 670 / 192 |
+| S06 | 344 → 145 | 213 → 13 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 701 / 214 → 590 / 223 |
+| S07 | 370 → 168 | 222 → 19 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 463 / 175 → 451 / 160 |
+| S08 | 320 → 143 | 191 → 13 | 8 → 7 | 7 → 8 | 0.8 → 0.6 | 626 / 217 → 818 / 276 |
+| S09 | 342 → 154 | 205 → 16 | 8 → 7 | 7 → 8 | 0.7 → 0.6 | 829 / 223 → 533 / 154 |
+| S10 | 378 → 192 | 230 → 43 | 9 → 8 | 7 → 8 | 0.6 → 0.6 | 1600 / 189 → 1238 / 142 |
+| S11 | 335 → 163 | 208 → 35 | 9 → 8 | 7 → 8 | 0.9 → 0.5 | 2291 / 240 → 1165 / 141 |
+
+| phone | GL calls | `uniform*` | `useProgram` | `bufferSubData` | CPU `frame()` p50 ms | scene / full-screen ms (SwiftShader, sequential) |
+|---|---|---|---|---|---|---|
+| S01 | 294 → 118 | 187 → 10 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 405 / 122 → 270 / 76 |
+| S02 | 306 → 124 | 193 → 10 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 325 / 92 → 277 / 77 |
+| S03 | 294 → 121 | 187 → 11 | 9 → 8 | 7 → 8 | 0.6 → 0.5 | 280 / 83 → 262 / 84 |
+| S04 | 273 → 111 | 172 → 9 | 8 → 7 | 7 → 8 | 0.6 → 0.4 | 415 / 133 → 302 / 86 |
+| S05 | 253 → 104 | 159 → 9 | 8 → 7 | 9 → 10 | 0.7 → 0.4 | 311 / 123 → 215 / 78 |
+| S06 | 315 → 130 | 198 → 12 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 396 / 108 → 269 / 74 |
+| S07 | 332 → 147 | 204 → 18 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 269 / 109 → 182 / 84 |
+| S08 | 276 → 119 | 169 → 11 | 8 → 7 | 7 → 8 | 0.9 → 0.5 | 301 / 98 → 230 / 61 |
+| S09 | 291 → 123 | 180 → 11 | 8 → 7 | 7 → 8 | 0.6 → 0.4 | 277 / 86 → 264 / 78 |
+| S10 | 302 → 135 | 191 → 23 | 9 → 8 | 7 → 8 | 0.7 → 0.5 | 821 / 110 → 625 / 71 |
+| S11 | 283 → 124 | 182 → 22 | 9 → 8 | 7 → 8 | 0.8 → 0.5 | 968 / 107 → 533 / 76 |
+
+- **PERF-R-003:** GL calls −53…−60 % (desktop S01 358 → 153, phone S01 294 → 118);
+  `uniform*` calls −80…−95 % (day 187–232 → 9–19; night 191–230 → 22–43, incl. the per-draw
+  light masks); `useProgram` −1; `bufferSubData` +1 (the 880-byte frame block; uploads
+  +0.8 KB). CPU `frame()` p50 (JS time incl. GL submission; SwiftShader, busy machine)
+  0.6–1.1 → 0.4–0.7 ms.
+- Draw calls, instances and triangles are unchanged in every scenario. The scene /
+  full-screen ms column is load-dominated (sequential runs) — see the A/B.
+
+### Frame time — interleaved A/B (fenced frames, medians; after / before < 1 = faster)
+
+Real GPU (**AMD Renoir iGPU, ANGLE → OpenGL 4.6**, `LOOK_ANGLE=gl`, 20 rounds × 10 frames;
+noise check baseline vs. baseline at phone size: 0.99–1.01):
+
+| phone 720 × 1560 | frame ms before → after | scene pass ms before → after | full-screen pass ms |
+|---|---|---|---|
+| L01 day spawn | 2.9 → 2.9 (1.00) | 1.9 → 1.9 | 1.0 → 1.0 |
+| L02 day 20 m | 2.9 → 3.0 (1.03) | 1.9 → 1.9 | 1.0 → 1.0 |
+| L04 day first person | 4.1 → 4.0 (0.98) | 1.9 → 1.9 | 2.1 → 2.2 |
+| L06 day pond | 3.1 → 3.0 (0.97) | 2.1 → 2.0 | 1.0 → 1.0 |
+| L08 night spawn | 8.6 → 6.8 (**0.79**) | 7.1 → 5.4 (**−24 %**) | 1.5 → 1.4 |
+| L09 night 20 m | 8.1 → 6.3 (**0.78**) | 6.7 → 4.9 (**−27 %**) | 1.4 → 1.4 |
+| L10 night zoo | 11.5 → 6.8 (**0.59**) | 9.9 → 5.3 (**−46 %**) | 1.5 → 1.4 |
+| L12 night first person | 8.0 → 7.2 (**0.90**) | 5.4 → 4.8 (**−11 %**) | 2.5 → 2.4 |
+
+- Desktop 1920 × 1080 on the real GPU has a page-order bias (the second page's full-screen
+  pass is 2× slower even for identical builds); both orders averaged (geometric mean): scene
+  pass day −6…−10 % (L01, L04), night spawn −25 %, night zoo −40 %, night first person −13 %.
+- Night vs. day at the same spot (real GPU, phone): before 2.9–4.0 ×, after 2.3–2.5 ×.
+- Attribution (real GPU, phone): the old loop with the new per-draw masks (patched GLSL via
+  `AB_INIT_B`) is 15–28 % slower in the night scene pass than the shipped loop, so most of
+  the gain is the per-fragment skip, the rest the masks; variant B (Q-180) adds only 2–4 %.
+
+SwiftShader (software, `look.mjs ab`, relative only): night zoo −17 % (desktop) / −33 %
+(phone), night spawn −1…−8 %, but **day +6…+12 % and night first person +11…+14 %** (in both
+page orders; the unchanged full-screen pass also +5…12 %). Diagnostics ruled out the vertex
+shader's block reads (D1: plain uniforms), the loop shape (D2: old loop) and the fragment
+shader's block reads (D3: plain uniforms). SwiftShader predicates branches (a per-fragment
+`continue` saves nothing), so it cannot show the skip's gain; the real GPU shows no day
+slowdown. Logged as a SwiftShader-only effect, to watch in the next runs (the CI regression
+rule uses SwiftShader).
+
+### Findings vs. budgets (budgets of Q-166…Q-170, answered 2026-09-28)
+
+| Budget (PERF-BUDGETS) | Measured | Verdict |
+|---|---|---|
+| 16 — night ≤ 1.3 × day (reference phone) | real iGPU at phone size: night 2.3–2.5 × day (was 2.9–4.0 ×) | ❌ still above: next PERF-R-014 (small), PERF-R-005 low tier, PERF-R-002 |
+| 16 — per-pass ms on the reference phone | not measurable here (iGPU ≠ phone; Q-013) | open |
+| 17 — release WASM ≤ 2.0 MB / ≤ 600 KB brotli | 1 698 KB / 490 KB (+3 KB raw) | ✅ |
+| 18 — memory | WASM heap 17.2 MB, JS heap 10.1 MB | ✅ (GPU not measured) |
+| 19 — ≤ 300 k triangles, ≤ 10 k instances | desktop S09 **454 k** triangles (phone S09 304 k), 7 460 instances | ❌ triangles in S09 (PERF-R-002) |
+| 20 — shared uniforms once per frame | 1 frame-block upload, 0 location lookups, 0 redundant scalar uniform calls (e2e PERF-016) | ✅ |
+| 21 — night lights per draw, identical picture | 0 differing pixels (look L08–L14, e2e PERF-017) | ✅ |
+
+Regressions (> 10 % worse than the previous run): none in counts; the sequential SwiftShader
+times are load-dominated; the interleaved SwiftShader day +6…12 % is explained above (not
+seen on the real GPU).
 
 ## Test cases
 

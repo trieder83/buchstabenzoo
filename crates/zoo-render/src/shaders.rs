@@ -4,12 +4,9 @@
 /// Shared fragment code: hard 2-tone cel shading, MRT output, occluder cut-out.
 const CEL_FRAGMENT: &str = r#"
 precision highp float;
+// @frame (shared per-frame uniform block, PERF-R-003)
 uniform sampler2D u_palette;
-uniform vec3 u_sun_dir;       // towards the sun, world space, normalised
-uniform vec3 u_shadow_tint;   // multiplier of the shadow tone
 uniform float u_edge_mask;    // 1 = normal edges allowed (props), 0 = ground tiles
-uniform vec4 u_fade;          // xy = player on screen (px), z = radius (px), w = player view depth
-uniform float u_dither;       // screen-door cell size in px (half the outline sample offset)
 uniform vec4 u_tint;          // rgb + amount: water tint of under-water characters
 in vec3 v_normal;
 in vec2 v_uv;
@@ -72,7 +69,6 @@ void main() {
 /// tilt rad, drift radius m, 0)`, phase from an integer hash of the instance origin (the same
 /// as `zoo_core::water::bob_hash`, so CPU-placed frogs move exactly with their pad).
 const BOB_GLSL: &str = r#"
-uniform float u_time;   // water clock, elapsed mod 16 s
 uniform vec4 u_bob;
 const float TAU = 6.2831853;
 float bob_hash(vec3 o) {
@@ -93,7 +89,6 @@ layout(location = 6) in vec4 a_glow;        // slot: sRGB emission / colour + mo
 layout(location = 7) in vec4 a_node;        // part pivot (model space) + part code (0 = root)
 layout(location = 8) in vec4 a_inst_node;   // instance: open 0..1, hide mask
 uniform vec4 u_nodes[8];    // per part: axis (1 X, 2 Y, 3 Z), angle at open 1, hide bit, mode
-uniform float u_glow_on;    // night: glow slots emissive, night-only parts shown
 vec3 turn(vec3 v, int axis, float a) {
     float c = cos(a), s = sin(a);
     if (axis == 1) return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
@@ -140,8 +135,7 @@ layout(location = 2) in vec2 a_uv;
 layout(location = 3) in vec4 a_pos_yaw;     // instance: origin (world) + yaw
 layout(location = 4) in vec4 a_scale_fade;  // instance: scale xyz + fadeable flag
 layout(location = 5) in vec4 a_color;       // instance: flat colour (a = 1) or palette (a = 0)
-uniform mat4 u_view;
-uniform mat4 u_view_proj;
+{frame}
 {BOB_GLSL}
 out vec3 v_normal;
 out vec2 v_uv;
@@ -178,7 +172,8 @@ void main() {{
     v_world = w;
     gl_Position = u_view_proj * vec4(w, 1.0);
 }}
-"#
+"#,
+        frame = frame_block()
     )
 }
 
@@ -197,9 +192,46 @@ pub fn water_vs() -> String {
 }
 
 pub fn static_fs() -> String {
-    format!("#version 300 es\n{CEL_FRAGMENT}").replace(
+    with_frame(&format!("#version 300 es\n{CEL_FRAGMENT}")).replace(
         "// @night (GAME-NIGHT §10; night.rs)\n",
         &crate::night::night_glsl(),
+    )
+}
+
+/// Marker of the shared per-frame uniform block in the shader sources.
+const FRAME_MARKER: &str = "// @frame (shared per-frame uniform block, PERF-R-003)\n";
+
+fn with_frame(src: &str) -> String {
+    src.replace(FRAME_MARKER, &frame_block())
+}
+
+/// Name of the shared per-frame uniform block (PERF-R-003) and its binding point.
+pub const FRAME_BLOCK_NAME: &str = "Frame";
+pub const FRAME_BLOCK_BINDING: u32 = 0;
+
+/// The shared per-frame values of every scene program (PERF-R-003, PERF-016): one std140
+/// uniform block, uploaded once per frame (`bufferSubData`) instead of ≈ 17 uniform calls per
+/// program. Declared identically (explicit `highp`) in the vertex and fragment stages; the
+/// CPU mirror is `renderer::FrameBlock` (offsets unit-tested).
+pub fn frame_block() -> String {
+    format!(
+        r#"layout(std140) uniform {FRAME_BLOCK_NAME} {{
+    highp mat4 u_view;
+    highp mat4 u_view_proj;
+    highp vec3 u_sun_dir;        // towards the sun, world space, normalised
+    highp float u_dither;        // screen-door cell size in px (half the outline sample offset)
+    highp vec3 u_shadow_tint;    // multiplier of the shadow tone
+    highp float u_glow_on;       // night: glow slots emissive, night-only parts shown
+    highp vec4 u_fade;           // occluder fade: xy player on screen (px), z radius (px), w player view depth
+    highp vec4 u_night;          // x night 0..1, y warm 0..1 (night.rs)
+    highp float u_time;          // water clock, elapsed mod 16 s
+    highp vec4 u_lights[{np}];        // point lights: world xyz, radius
+    highp vec4 u_light_colors[{np}];  // rgb, strength (+ 2: a tinted light)
+    highp vec4 u_pools[{npool}];      // light pools: world x, z, radius, strength
+}};
+"#,
+        np = crate::night::MAX_POINT_LIGHTS,
+        npool = crate::night::MAX_LIGHT_POOLS,
     )
 }
 
@@ -210,8 +242,7 @@ layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec2 a_uv;
 layout(location = 3) in vec4 a_joints;
 layout(location = 4) in vec4 a_weights;
-uniform mat4 u_view;
-uniform mat4 u_view_proj;
+// @frame (shared per-frame uniform block, PERF-R-003)
 uniform mat4 u_model;
 uniform highp sampler2D u_joint_tex;   // 4 RGBA32F texels (matrix columns) per joint
 uniform vec4 u_color;
@@ -252,7 +283,7 @@ void main() {
     gl_Position = p;
 }
 "#
-    .to_owned()
+    .replace(FRAME_MARKER, &frame_block())
 }
 
 /// Decals (sign silhouettes, sign texts, ART-ENVIRONMENT 6/7): textured quads in world space,
@@ -263,24 +294,22 @@ pub fn decal_vs() -> String {
     r#"#version 300 es
 layout(location = 0) in vec3 a_pos;
 layout(location = 1) in vec2 a_uv;
-uniform mat4 u_view_proj;
+// @frame (shared per-frame uniform block, PERF-R-003)
 out vec2 v_uv;
 void main() {
     v_uv = a_uv;
     gl_Position = u_view_proj * vec4(a_pos, 1.0);
 }
 "#
-    .to_owned()
+    .replace(FRAME_MARKER, &frame_block())
 }
 
 pub fn decal_fs() -> String {
     r#"#version 300 es
 precision highp float;
+// @frame (shared per-frame uniform block, PERF-R-003)
 uniform sampler2D u_tex;
 uniform vec3 u_normal;
-uniform vec3 u_sun_dir;
-uniform vec3 u_shadow_tint;
-uniform vec4 u_night;   // x night, y warm (night.rs)
 in vec2 v_uv;
 layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_normal;
@@ -296,7 +325,7 @@ void main() {
     o_normal = vec4(u_normal * 0.5 + 0.5, t.a);
 }
 "#
-    .to_owned()
+    .replace(FRAME_MARKER, &frame_block())
 }
 
 pub fn post_vs() -> String {
@@ -377,11 +406,9 @@ void main() {
 pub fn water_fs() -> String {
     r#"#version 300 es
 precision highp float;
+// @frame (shared per-frame uniform block, PERF-R-003)
 uniform sampler2D u_palette;
-uniform vec3 u_sun_dir;
-uniform vec3 u_shadow_tint;
 uniform float u_edge_mask;
-uniform float u_time;
 uniform highp sampler2D u_field;   // RGBA16F: s, c, shore, flow
 uniform vec4 u_field_xf;           // xy = world XZ of the field corner, zw = 1 / size (m)
 uniform vec4 u_obstacles[4];       // world x, z, radius (0 = unused), s
@@ -585,6 +612,7 @@ void main() {
     o_normal = vec4(0.5, 1.0, 0.5, u_edge_mask);
 }
 "#
+    .replace(FRAME_MARKER, &frame_block())
     .replace(
         "// @night (GAME-NIGHT §10; night.rs)\n",
         &crate::night::night_glsl(),
@@ -600,4 +628,56 @@ pub fn crowd_vs() -> String {
         .replace("ivec2(x + 1, 0)", "ivec2(x + 1, gl_InstanceID)")
         .replace("ivec2(x + 2, 0)", "ivec2(x + 2, gl_InstanceID)")
         .replace("ivec2(x + 3, 0)", "ivec2(x + 3, gl_InstanceID)")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scene_shaders() -> Vec<(&'static str, String)> {
+        vec![
+            ("static_vs", static_vs()),
+            ("rich_vs", rich_vs()),
+            ("water_vs", water_vs()),
+            ("static_fs", static_fs()),
+            ("water_fs", water_fs()),
+            ("skinned_vs", skinned_vs()),
+            ("crowd_vs", crowd_vs()),
+            ("decal_vs", decal_vs()),
+            ("decal_fs", decal_fs()),
+        ]
+    }
+
+    // PERF-016 (PERF-R-003): every scene shader declares the one shared frame block
+    // (identical text in both stages, as GLSL ES requires) and none of its members as a
+    // plain uniform.
+    #[test]
+    fn perf_016_scene_shaders_share_the_frame_block() {
+        let block = frame_block();
+        for (name, src) in scene_shaders() {
+            assert_eq!(src.matches(block.as_str()).count(), 1, "{name}");
+            assert!(!src.contains("// @frame"), "{name}: marker left");
+            for member in [
+                "u_view;",
+                "u_view_proj;",
+                "u_sun_dir;",
+                "u_shadow_tint;",
+                "u_fade;",
+                "u_dither;",
+                "u_night;",
+                "u_time;",
+                "u_glow_on;",
+                "u_lights[",
+                "u_pools[",
+            ] {
+                let plain = src
+                    .lines()
+                    .filter(|l| l.trim_start().starts_with("uniform "))
+                    .any(|l| l.contains(&format!(" {member}")));
+                assert!(!plain, "{name}: plain uniform {member}");
+            }
+        }
+        // the outline pass has its own uniforms only
+        assert!(!post_fs().contains(FRAME_BLOCK_NAME));
+    }
 }

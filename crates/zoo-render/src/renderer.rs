@@ -5,6 +5,7 @@
 //! Frame: G-buffer pass (colour, normal + edge mask, depth) → outline pass to the canvas.
 //! Draw calls ≈ one per distinct model + placeholder boxes + characters + 1 post pass.
 
+use std::cell::Cell;
 use std::collections::HashMap;
 
 use bytemuck::{Pod, Zeroable};
@@ -329,13 +330,132 @@ impl Instance {
     }
 }
 
+/// Uniforms set per draw or per pass. The values shared by every scene program are in the
+/// frame block ([`FrameBlock`], PERF-R-003); these locations are looked up once when a
+/// program is linked (an array index per call, no name hashing).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum U {
+    Palette,
+    EdgeMask,
+    Tint,
+    LightMask,
+    Bob,
+    Nodes,
+    Field,
+    FieldXf,
+    Obstacles,
+    ObstaclesB,
+    Ripples,
+    RipplesB,
+    RippleCount,
+    Model,
+    JointTex,
+    Color,
+    Eye,
+    DepthBias,
+    Emit,
+    Tex,
+    Normal,
+    Depth,
+    Texel,
+    Px,
+    NearFar,
+    LineColor,
+    InvViewProj,
+    Fog,
+    SkyTop,
+    SkyHorizon,
+    SkyNight,
+}
+
+impl U {
+    const ALL: [U; 31] = [
+        U::Palette,
+        U::EdgeMask,
+        U::Tint,
+        U::LightMask,
+        U::Bob,
+        U::Nodes,
+        U::Field,
+        U::FieldXf,
+        U::Obstacles,
+        U::ObstaclesB,
+        U::Ripples,
+        U::RipplesB,
+        U::RippleCount,
+        U::Model,
+        U::JointTex,
+        U::Color,
+        U::Eye,
+        U::DepthBias,
+        U::Emit,
+        U::Tex,
+        U::Normal,
+        U::Depth,
+        U::Texel,
+        U::Px,
+        U::NearFar,
+        U::LineColor,
+        U::InvViewProj,
+        U::Fog,
+        U::SkyTop,
+        U::SkyHorizon,
+        U::SkyNight,
+    ];
+
+    fn name(self) -> &'static str {
+        match self {
+            U::Palette => "u_palette",
+            U::EdgeMask => "u_edge_mask",
+            U::Tint => "u_tint",
+            U::LightMask => "u_light_mask",
+            U::Bob => "u_bob",
+            U::Nodes => "u_nodes",
+            U::Field => "u_field",
+            U::FieldXf => "u_field_xf",
+            U::Obstacles => "u_obstacles",
+            U::ObstaclesB => "u_obstacles_b",
+            U::Ripples => "u_ripples",
+            U::RipplesB => "u_ripples_b",
+            U::RippleCount => "u_ripple_count",
+            U::Model => "u_model",
+            U::JointTex => "u_joint_tex",
+            U::Color => "u_color",
+            U::Eye => "u_eye",
+            U::DepthBias => "u_depth_bias",
+            U::Emit => "u_emit",
+            U::Tex => "u_tex",
+            U::Normal => "u_normal",
+            U::Depth => "u_depth",
+            U::Texel => "u_texel",
+            U::Px => "u_px",
+            U::NearFar => "u_near_far",
+            U::LineColor => "u_line_color",
+            U::InvViewProj => "u_inv_view_proj",
+            U::Fog => "u_fog",
+            U::SkyTop => "u_sky_top",
+            U::SkyHorizon => "u_sky_horizon",
+            U::SkyNight => "u_sky_night",
+        }
+    }
+}
+
+/// "Not set yet" in the uniform value cache (no real value has these bits in all lanes).
+const UNSET: [u32; 4] = [u32::MAX; 4];
+
 struct Program {
     program: WebGlProgram,
-    uniforms: HashMap<&'static str, WebGlUniformLocation>,
+    /// Driver size of the frame block (bytes; 0 = the program does not use it).
+    frame_size: usize,
+    /// Location per [`U`] (`None`: not used by this program).
+    loc: [Option<WebGlUniformLocation>; U::ALL.len()],
+    /// Last value set per [`U`] (bit patterns): uniform values live in the program object,
+    /// so a call is skipped when the value is unchanged (PERF-R-003).
+    last: [Cell<[u32; 4]>; U::ALL.len()],
 }
 
 impl Program {
-    fn new(gl: &Gl, vs: &str, fs: &str, names: &[&'static str]) -> Result<Self, String> {
+    fn new(gl: &Gl, vs: &str, fs: &str) -> Result<Self, String> {
         let v = compile(gl, Gl::VERTEX_SHADER, vs)?;
         let f = compile(gl, Gl::FRAGMENT_SHADER, fs)?;
         let program = gl.create_program().ok_or("create_program")?;
@@ -349,16 +469,153 @@ impl Program {
         {
             return Err(gl.get_program_info_log(&program).unwrap_or_default());
         }
-        let uniforms = names
-            .iter()
-            .filter_map(|n| gl.get_uniform_location(&program, n).map(|l| (*n, l)))
-            .collect();
-        Ok(Self { program, uniforms })
+        let loc = U::ALL.map(|u| gl.get_uniform_location(&program, u.name()));
+        // the shared frame block (PERF-R-003): binding point and std140 layout check
+        let block = gl.get_uniform_block_index(&program, shaders::FRAME_BLOCK_NAME);
+        let mut frame_size = 0;
+        if block != Gl::INVALID_INDEX {
+            gl.uniform_block_binding(&program, block, shaders::FRAME_BLOCK_BINDING);
+            frame_size = check_frame_block(gl, &program, block)?;
+        }
+        Ok(Self {
+            program,
+            frame_size,
+            loc,
+            last: std::array::from_fn(|_| Cell::new(UNSET)),
+        })
     }
 
-    fn u(&self, name: &str) -> Option<&WebGlUniformLocation> {
-        self.uniforms.get(name)
+    fn u(&self, u: U) -> Option<&WebGlUniformLocation> {
+        self.loc[u as usize].as_ref()
     }
+
+    /// Whether `u` exists and `bits` differ from its last value (then records them).
+    fn changed(&self, u: U, bits: [u32; 4]) -> bool {
+        if self.loc[u as usize].is_none() {
+            return false;
+        }
+        let c = &self.last[u as usize];
+        if c.get() == bits {
+            return false;
+        }
+        c.set(bits);
+        true
+    }
+
+    fn set1f(&self, gl: &Gl, u: U, v: f32) {
+        if self.changed(u, [v.to_bits(), 0, 0, 0]) {
+            gl.uniform1f(self.u(u), v);
+        }
+    }
+
+    fn set1i(&self, gl: &Gl, u: U, v: i32) {
+        if self.changed(u, [v as u32, 0, 0, 0]) {
+            gl.uniform1i(self.u(u), v);
+        }
+    }
+
+    fn set2f(&self, gl: &Gl, u: U, x: f32, y: f32) {
+        if self.changed(u, [x.to_bits(), y.to_bits(), 0, 0]) {
+            gl.uniform2f(self.u(u), x, y);
+        }
+    }
+
+    fn set3f(&self, gl: &Gl, u: U, v: Vec3) {
+        if self.changed(u, [v.x.to_bits(), v.y.to_bits(), v.z.to_bits(), 0]) {
+            gl.uniform3f(self.u(u), v.x, v.y, v.z);
+        }
+    }
+
+    fn set4f(&self, gl: &Gl, u: U, v: [f32; 4]) {
+        if self.changed(u, v.map(f32::to_bits)) {
+            gl.uniform4f(self.u(u), v[0], v[1], v[2], v[3]);
+        }
+    }
+
+    fn set2ui(&self, gl: &Gl, u: U, (x, y): (u32, u32)) {
+        if self.changed(u, [x, y, 0, 0]) {
+            gl.uniform2ui(self.u(u), x, y);
+        }
+    }
+
+    /// Array / matrix uniforms: set every time (not cached).
+    fn set4fv(&self, gl: &Gl, u: U, v: &[f32]) {
+        if let Some(l) = self.u(u) {
+            gl.uniform4fv_with_f32_array(Some(l), v);
+        }
+    }
+
+    fn set_mat4(&self, gl: &Gl, u: U, m: &Mat4) {
+        if let Some(l) = self.u(u) {
+            gl.uniform_matrix4fv_with_f32_array(Some(l), false, &m.to_cols_array());
+        }
+    }
+}
+
+/// The shared per-frame uniform block (PERF-R-003), std140 — the CPU mirror of
+/// `shaders::frame_block()`. Uploaded once per frame with one `bufferSubData`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Pod, Zeroable)]
+pub struct FrameBlock {
+    pub view: [f32; 16],
+    pub view_proj: [f32; 16],
+    pub sun_dir: [f32; 3],
+    pub dither: f32,
+    pub shadow_tint: [f32; 3],
+    pub glow_on: f32,
+    pub fade: [f32; 4],
+    pub night: [f32; 4],
+    pub time: f32,
+    pub _pad: [f32; 3],
+    pub lights: [[f32; 4]; MAX_POINT_LIGHTS],
+    pub light_colors: [[f32; 4]; MAX_POINT_LIGHTS],
+    pub pools: [[f32; 4]; MAX_LIGHT_POOLS],
+}
+
+/// std140 offsets of the frame block members that follow padding (checked against the GL
+/// driver when a program is linked, and unit-tested against [`FrameBlock`]).
+const FRAME_OFFSETS: [(&str, usize); 6] = [
+    ("u_sun_dir", std::mem::offset_of!(FrameBlock, sun_dir)),
+    ("u_glow_on", std::mem::offset_of!(FrameBlock, glow_on)),
+    ("u_time", std::mem::offset_of!(FrameBlock, time)),
+    ("u_lights[0]", std::mem::offset_of!(FrameBlock, lights)),
+    (
+        "u_light_colors[0]",
+        std::mem::offset_of!(FrameBlock, light_colors),
+    ),
+    ("u_pools[0]", std::mem::offset_of!(FrameBlock, pools)),
+];
+
+/// Fails when the driver's layout of the frame block differs from [`FrameBlock`]; returns
+/// the driver's block size (may be padded beyond [`FrameBlock`]).
+fn check_frame_block(gl: &Gl, program: &WebGlProgram, block: u32) -> Result<usize, String> {
+    let size = gl
+        .get_active_uniform_block_parameter(program, block, Gl::UNIFORM_BLOCK_DATA_SIZE)
+        .ok()
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0) as usize;
+    if size < std::mem::size_of::<FrameBlock>() {
+        return Err(format!(
+            "frame block size {size} < {}",
+            std::mem::size_of::<FrameBlock>()
+        ));
+    }
+    let names = js_sys::Array::new();
+    for (n, _) in FRAME_OFFSETS {
+        names.push(&JsValue::from_str(n));
+    }
+    let Some(indices) = gl.get_uniform_indices(program, &names) else {
+        return Err("frame block: getUniformIndices".into());
+    };
+    let offsets =
+        js_sys::Array::from(&gl.get_active_uniforms(program, &indices, Gl::UNIFORM_OFFSET));
+    for (k, (n, want)) in FRAME_OFFSETS.iter().enumerate() {
+        let got = offsets.get(k as u32).as_f64().unwrap_or(-1.0);
+        if got != *want as f64 {
+            return Err(format!("frame block: {n} at {got}, expected {want}"));
+        }
+    }
+    Ok(size)
 }
 
 fn compile(gl: &Gl, kind: u32, src: &str) -> Result<WebGlShader, String> {
@@ -385,6 +642,9 @@ struct MeshInfo {
     height: f32,
     /// Horizontal/vertical extent from the origin (m), for region bounds.
     radius: f32,
+    /// Extra room (m) around the instance bounds that the mesh can reach (rotated corners,
+    /// parts below the origin, moving parts, bobbing): per-draw light masks (PERF-R-001).
+    margin: f32,
     /// A water tile (drawn by the water program, TECH-WATER).
     water: bool,
     /// Bobbing on the water (`u_bob`, TECH-WATER behaviour 8).
@@ -435,6 +695,11 @@ struct Batch {
     edge_mask: f32,
     /// Tallest point of the mesh (m), decides the fade flag of its instances.
     height: f32,
+    /// Mesh extent from the origin (m) and the light-mask margin of the largest instance
+    /// (PERF-R-001).
+    radius: f32,
+    mesh_margin: f32,
+    light_margin: f32,
     /// Re-uploaded every frame with `buffer_sub_data` (characters, placeholders that move).
     dynamic: bool,
     water: bool,
@@ -453,6 +718,16 @@ struct Batch {
 
 /// Ground chunk size for per-batch culling (m).
 pub const CHUNK_M: f32 = 8.0;
+
+/// Light-mask margin (m) of a mesh around its instance bounds `pos ± radius` (PERF-R-001):
+/// the corners of a yawed mesh reach `radius × √2`, parts below the origin `-lo_y`, and
+/// 1 m covers moving parts and bobbing.
+fn light_margin(radius: f32, lo_y: f32) -> f32 {
+    radius * (std::f32::consts::SQRT_2 - 1.0) + (-lo_y).max(0.0) + 1.0
+}
+
+/// Extra room (m) around a skinned character's culling box for its light mask.
+const CHARACTER_LIGHT_MARGIN_M: f32 = 0.5;
 
 /// One material range of a skinned mesh.
 struct Part {
@@ -652,11 +927,13 @@ pub struct Renderer {
     crowd_names: Vec<&'static str>,
     /// Night mode (GAME-NIGHT §10): global light, point lights and light pools of the frame.
     light: DayLight,
-    light_u: [f32; MAX_POINT_LIGHTS * 4],
-    light_col_u: [f32; MAX_POINT_LIGHTS * 4],
     light_count: i32,
-    pool_u: [f32; MAX_LIGHT_POOLS * 4],
     pool_count: i32,
+    /// Shared per-frame uniforms (PERF-R-003): the CPU copy and its uniform buffer.
+    frame: FrameBlock,
+    frame_ubo: WebGlBuffer,
+    /// Debug (e2e PERF-017): every draw gets every light (no per-draw light masks).
+    pub full_light_masks: bool,
     /// Glow slots emissive (night).
     glow_on: bool,
     /// Debug: names of the static batches drawn in the last frame (only while recording).
@@ -690,116 +967,70 @@ impl Renderer {
             .dyn_into()?;
 
         let err = |e: String| JsValue::from_str(&e);
-        let common = [
-            "u_view",
-            "u_view_proj",
-            "u_palette",
-            "u_sun_dir",
-            "u_shadow_tint",
-            "u_edge_mask",
-            "u_fade",
-            "u_dither",
-            "u_tint",
-            "u_night",
-            "u_lights",
-            "u_light_colors",
-            "u_light_count",
-            "u_pools",
-            "u_pool_count",
-            "u_glow_on",
-        ];
-        let mut static_names = common.to_vec();
-        static_names.extend(["u_time", "u_bob", "u_nodes"]);
-        let static_prog = Program::new(
-            &gl,
-            &shaders::static_vs(),
-            &shaders::static_fs(),
-            &static_names,
-        )
-        .map_err(err)?;
-        let rich_prog = Program::new(
-            &gl,
-            &shaders::rich_vs(),
-            &shaders::static_fs(),
-            &static_names,
-        )
-        .map_err(err)?;
-        let mut water_names = static_names.clone();
-        water_names.extend([
-            "u_field",
-            "u_field_xf",
-            "u_obstacles",
-            "u_obstacles_b",
-            "u_ripples",
-            "u_ripples_b",
-            "u_ripple_count",
-        ]);
-        let water_prog = Program::new(
-            &gl,
-            &shaders::water_vs(),
-            &shaders::water_fs(),
-            &water_names,
-        )
-        .map_err(err)?;
-        let mut skinned_names = common.to_vec();
-        skinned_names.extend([
-            "u_model",
-            "u_joint_tex",
-            "u_color",
-            "u_eye",
-            "u_depth_bias",
-            "u_emit",
-        ]);
-        let skinned_prog = Program::new(
-            &gl,
-            &shaders::skinned_vs(),
-            &shaders::static_fs(),
-            &skinned_names,
-        )
-        .map_err(err)?;
-        let crowd_prog = Program::new(
-            &gl,
-            &shaders::crowd_vs(),
-            &shaders::static_fs(),
-            &skinned_names,
-        )
-        .map_err(err)?;
-        let post_prog = Program::new(
-            &gl,
-            &shaders::post_vs(),
-            &shaders::post_fs(),
-            &[
-                "u_color",
-                "u_normal",
-                "u_depth",
-                "u_texel",
-                "u_px",
-                "u_near_far",
-                "u_line_color",
-                "u_inv_view_proj",
-                "u_eye",
-                "u_fog",
-                "u_sky_top",
-                "u_sky_horizon",
-                "u_sky_night",
-            ],
-        )
-        .map_err(err)?;
+        let static_prog =
+            Program::new(&gl, &shaders::static_vs(), &shaders::static_fs()).map_err(err)?;
+        let rich_prog =
+            Program::new(&gl, &shaders::rich_vs(), &shaders::static_fs()).map_err(err)?;
+        let water_prog =
+            Program::new(&gl, &shaders::water_vs(), &shaders::water_fs()).map_err(err)?;
+        let skinned_prog =
+            Program::new(&gl, &shaders::skinned_vs(), &shaders::static_fs()).map_err(err)?;
+        let crowd_prog =
+            Program::new(&gl, &shaders::crowd_vs(), &shaders::static_fs()).map_err(err)?;
+        let post_prog = Program::new(&gl, &shaders::post_vs(), &shaders::post_fs()).map_err(err)?;
+        let decal_prog =
+            Program::new(&gl, &shaders::decal_vs(), &shaders::decal_fs()).map_err(err)?;
 
-        let decal_prog = Program::new(
-            &gl,
-            &shaders::decal_vs(),
-            &shaders::decal_fs(),
-            &[
-                "u_view_proj",
-                "u_tex",
-                "u_normal",
-                "u_sun_dir",
-                "u_shadow_tint",
-                "u_night",
-            ],
-        )
-        .map_err(err)?;
+        // the shared frame block (PERF-R-003): one buffer on binding point 0 for all programs
+        let frame_size = [
+            &static_prog,
+            &rich_prog,
+            &water_prog,
+            &skinned_prog,
+            &crowd_prog,
+            &decal_prog,
+        ]
+        .iter()
+        .map(|p| p.frame_size)
+        .max()
+        .unwrap_or(0)
+        .max(std::mem::size_of::<FrameBlock>());
+        let frame_ubo = gl.create_buffer().ok_or("create_buffer")?;
+        gl.bind_buffer(Gl::UNIFORM_BUFFER, Some(&frame_ubo));
+        gl.buffer_data_with_i32(Gl::UNIFORM_BUFFER, frame_size as i32, Gl::DYNAMIC_DRAW);
+        gl.bind_buffer_base(
+            Gl::UNIFORM_BUFFER,
+            shaders::FRAME_BLOCK_BINDING,
+            Some(&frame_ubo),
+        );
+
+        // uniforms that never change: set once (they live in the program objects)
+        for p in [&static_prog, &rich_prog, &water_prog] {
+            gl.use_program(Some(&p.program));
+            p.set1i(&gl, U::Palette, 0);
+            p.set4f(&gl, U::Tint, [0.0; 4]);
+        }
+        gl.use_program(Some(&water_prog.program));
+        water_prog.set1i(&gl, U::Field, 2);
+        water_prog.set4f(&gl, U::Bob, [0.0; 4]);
+        for p in [&skinned_prog, &crowd_prog] {
+            gl.use_program(Some(&p.program));
+            p.set1i(&gl, U::Palette, 0);
+            p.set1i(&gl, U::JointTex, 1);
+            p.set1f(&gl, U::EdgeMask, 1.0);
+            p.set4f(&gl, U::Tint, [0.0; 4]);
+            p.set1f(&gl, U::DepthBias, 0.0);
+            p.set4f(&gl, U::Emit, [0.0; 4]);
+        }
+        gl.use_program(Some(&crowd_prog.program));
+        crowd_prog.set_mat4(&gl, U::Model, &Mat4::IDENTITY);
+        gl.use_program(Some(&decal_prog.program));
+        decal_prog.set1i(&gl, U::Tex, 0);
+        gl.use_program(Some(&post_prog.program));
+        post_prog.set1i(&gl, U::Color, 0);
+        post_prog.set1i(&gl, U::Normal, 1);
+        post_prog.set1i(&gl, U::Depth, 2);
+        post_prog.set3f(&gl, U::LineColor, OUTLINE);
 
         let palette = create_texture(&gl, 1, 1, &[255, 255, 255, 255])?;
         let mut r = Self {
@@ -837,11 +1068,15 @@ impl Renderer {
             ripple_count: 0,
             crowd_names: Vec::with_capacity(4),
             light: DayLight::default(),
-            light_u: [0.0; MAX_POINT_LIGHTS * 4],
-            light_col_u: [0.0; MAX_POINT_LIGHTS * 4],
             light_count: 0,
-            pool_u: [0.0; MAX_LIGHT_POOLS * 4],
             pool_count: 0,
+            frame: FrameBlock {
+                sun_dir: SUN_DIR.normalize().to_array(),
+                shadow_tint: SHADOW_TINT.to_array(),
+                ..FrameBlock::zeroed()
+            },
+            frame_ubo,
+            full_light_masks: false,
             glow_on: false,
             debug_draws: None,
             cpu_meshes: HashMap::new(),
@@ -1151,6 +1386,9 @@ impl Renderer {
             capacity: 0,
             edge_mask: m.edge_mask,
             height: m.height,
+            radius: m.radius,
+            mesh_margin: m.margin,
+            light_margin: m.margin,
             dynamic: false,
             water: m.water,
             bob: m.bob,
@@ -1299,6 +1537,7 @@ impl Renderer {
                 edge_mask,
                 height: hi.y,
                 radius,
+                margin: light_margin(radius, lo.y),
                 water: TileShape::of_model(name).is_some(),
                 bob: bob_params(name).uniform(),
                 glass_first: packed.glass_first as i32,
@@ -1394,6 +1633,7 @@ impl Renderer {
         inst.scale_fade[2] = scale;
         b.instances.push(inst);
         b.uploaded = usize::MAX;
+        b.light_margin = b.light_margin.max(b.mesh_margin * scale);
         self.grow_region(region, pos, radius * scale, height * scale);
         self.grow_batch(i, pos, radius * scale, height * scale);
         true
@@ -1431,6 +1671,11 @@ impl Renderer {
                 if bytemuck::bytes_of(i) != bytemuck::bytes_of(&inst) {
                     *i = inst;
                     b.uploaded = usize::MAX;
+                    // a stretched instance (string lights) reaches beyond its chunk bounds
+                    let s = inst.scale_fade[0].abs().max(inst.scale_fade[2].abs());
+                    if s > 1.0 {
+                        b.light_margin = b.light_margin.max(b.mesh_margin * s + b.radius * s);
+                    }
                 }
             }
         }
@@ -1625,13 +1870,13 @@ impl Renderer {
     pub fn set_point_lights(&mut self, lights: &[PointLight]) {
         self.light_count = 0;
         for (k, l) in lights.iter().take(MAX_POINT_LIGHTS).enumerate() {
-            self.light_u[k * 4..k * 4 + 4].copy_from_slice(&[l.pos.x, l.pos.y, l.pos.z, l.radius]);
-            self.light_col_u[k * 4..k * 4 + 4].copy_from_slice(&[
+            self.frame.lights[k] = [l.pos.x, l.pos.y, l.pos.z, l.radius];
+            self.frame.light_colors[k] = [
                 l.color.x,
                 l.color.y,
                 l.color.z,
                 l.strength + if l.tinted { 2.0 } else { 0.0 },
-            ]);
+            ];
             self.light_count = k as i32 + 1;
         }
     }
@@ -1641,8 +1886,7 @@ impl Renderer {
     pub fn set_light_pools(&mut self, pools: &[PointLight]) {
         self.pool_count = 0;
         for (k, l) in pools.iter().take(MAX_LIGHT_POOLS).enumerate() {
-            self.pool_u[k * 4..k * 4 + 4]
-                .copy_from_slice(&[l.pos.x, l.pos.z, l.radius, l.strength]);
+            self.frame.pools[k] = [l.pos.x, l.pos.z, l.radius, l.strength];
             self.pool_count = k as i32 + 1;
         }
     }
@@ -1784,31 +2028,61 @@ impl Renderer {
             .count();
     }
 
-    fn set_common(&self, p: &Program, view: &Mat4, view_proj: &Mat4, fade: Vec4) {
+    /// Uploads the shared per-frame values (PERF-R-003): one `bufferSubData` per frame
+    /// replaces ≈ 17 uniform calls per program switch.
+    fn upload_frame_block(&mut self, view: &Mat4, view_proj: &Mat4, fade: Vec4) {
+        let dither = self.outline_px() * 0.5;
+        let glow_on = f32::from(u8::from(self.glow_on));
+        let f = &mut self.frame;
+        f.view = view.to_cols_array();
+        f.view_proj = view_proj.to_cols_array();
+        f.dither = dither;
+        f.glow_on = glow_on;
+        f.fade = fade.to_array();
+        f.night = [self.light.night, self.light.warm, 0.0, 0.0];
+        f.time = self.time;
         let gl = &self.gl;
-        gl.use_program(Some(&p.program));
-        gl.uniform_matrix4fv_with_f32_array(p.u("u_view"), false, &view.to_cols_array());
-        gl.uniform_matrix4fv_with_f32_array(p.u("u_view_proj"), false, &view_proj.to_cols_array());
-        let sun = SUN_DIR.normalize();
-        gl.uniform3f(p.u("u_sun_dir"), sun.x, sun.y, sun.z);
-        gl.uniform3f(
-            p.u("u_shadow_tint"),
-            SHADOW_TINT.x,
-            SHADOW_TINT.y,
-            SHADOW_TINT.z,
+        gl.bind_buffer(Gl::UNIFORM_BUFFER, Some(&self.frame_ubo));
+        gl.buffer_sub_data_with_i32_and_u8_array(
+            Gl::UNIFORM_BUFFER,
+            0,
+            bytemuck::bytes_of(&self.frame),
         );
-        gl.uniform4f(p.u("u_fade"), fade.x, fade.y, fade.z, fade.w);
-        gl.uniform1f(p.u("u_dither"), self.outline_px() * 0.5);
-        gl.uniform1i(p.u("u_palette"), 0);
-        gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
-        gl.uniform4f(p.u("u_night"), self.light.night, self.light.warm, 0.0, 0.0);
-        gl.uniform4fv_with_f32_array(p.u("u_lights"), &self.light_u);
-        gl.uniform4fv_with_f32_array(p.u("u_light_colors"), &self.light_col_u);
-        gl.uniform1i(p.u("u_light_count"), self.light_count);
-        gl.uniform4fv_with_f32_array(p.u("u_pools"), &self.pool_u);
-        gl.uniform1i(p.u("u_pool_count"), self.pool_count);
-        gl.uniform1f(p.u("u_glow_on"), f32::from(u8::from(self.glow_on)));
-        gl.uniform4f(p.u("u_emit"), 0.0, 0.0, 0.0, 0.0);
+    }
+
+    /// The point lights / light pools that can reach a box (PERF-R-001, [`night::light_mask`]).
+    fn box_light_mask(&self, min: Vec3, max: Vec3) -> (u32, u32) {
+        let (nl, np) = (self.light_count as usize, self.pool_count as usize);
+        if nl + np == 0 {
+            return (0, 0);
+        }
+        if self.full_light_masks {
+            return night::full_light_mask(nl, np);
+        }
+        night::light_mask(&self.frame.lights[..nl], &self.frame.pools[..np], min, max)
+    }
+
+    /// Light mask of a static batch: the union over its chunks (all lights for dynamic
+    /// batches, whose instances move every frame).
+    fn batch_light_mask(&self, b: &Batch) -> (u32, u32) {
+        let (nl, np) = (self.light_count as usize, self.pool_count as usize);
+        if nl + np == 0 {
+            return (0, 0);
+        }
+        let full = night::full_light_mask(nl, np);
+        if self.full_light_masks || b.dynamic || b.chunks.is_empty() {
+            return full;
+        }
+        let m = Vec3::splat(b.light_margin);
+        let mut acc = (0, 0);
+        for c in &b.chunks {
+            let k = self.box_light_mask(c.1 - m, c.2 + m);
+            acc = (acc.0 | k.0, acc.1 | k.1);
+            if acc == full {
+                break;
+            }
+        }
+        acc
     }
 
     /// Outline sample offset in device pixels (even, so the fade pattern stays line-free).
@@ -1857,7 +2131,12 @@ impl Renderer {
         for b in &mut self.batches {
             Self::upload(gl, b);
         }
+        if self.gbuf.is_none() {
+            return;
+        }
+        self.upload_frame_block(&view, &view_proj, fade);
 
+        let gl = &self.gl;
         let Some(g) = &self.gbuf else { return };
         gl.bind_framebuffer(Gl::FRAMEBUFFER, Some(&g.fb));
         gl.viewport(0, 0, w, h);
@@ -1873,9 +2152,6 @@ impl Renderer {
         gl.clear_bufferfi(Gl::DEPTH_STENCIL, 0, 1.0, 0);
 
         // Static batches (water tiles last, with the water program; TECH-WATER).
-        self.set_common(&self.static_prog, &view, &view_proj, fade);
-        let gl = &self.gl;
-        gl.uniform1f(self.static_prog.u("u_time"), self.time);
         gl.active_texture(Gl::TEXTURE0);
         gl.bind_texture(Gl::TEXTURE_2D, Some(&self.palette));
         let planes = frustum_planes(&view_proj);
@@ -1900,42 +2176,25 @@ impl Renderer {
         // (models first: big buildings hide the ground behind them before it is shaded)
         for pass in [1u8, 0, 2] {
             let water_pass = pass == 2;
-            if pass == 0 {
-                self.set_common(&self.static_prog, &view, &view_proj, fade);
-                let gl = &self.gl;
-                gl.uniform1f(self.static_prog.u("u_time"), self.time);
-            } else if pass == 1 {
-                self.set_common(&self.rich_prog, &view, &view_proj, fade);
-                let gl = &self.gl;
-                gl.uniform1f(self.rich_prog.u("u_time"), self.time);
-            } else if water_pass && water_prog {
-                self.set_common(&self.water_prog, &view, &view_proj, fade);
-                let gl = &self.gl;
-                let p = &self.water_prog;
-                gl.uniform1f(p.u("u_time"), self.time);
-                gl.uniform4f(p.u("u_bob"), 0.0, 0.0, 0.0, 0.0);
-                gl.active_texture(Gl::TEXTURE2);
-                gl.bind_texture(Gl::TEXTURE_2D, self.field_tex.as_ref());
-                gl.uniform1i(p.u("u_field"), 2);
-                gl.active_texture(Gl::TEXTURE0);
-                let xf = self.field_xf;
-                gl.uniform4f(p.u("u_field_xf"), xf[0], xf[1], xf[2], xf[3]);
-                gl.uniform4fv_with_f32_array(p.u("u_obstacles"), &self.obstacle_u);
-                gl.uniform4fv_with_f32_array(p.u("u_obstacles_b"), &self.obstacle_b);
-                gl.uniform4fv_with_f32_array(p.u("u_ripples"), &self.ripple_u);
-                gl.uniform4fv_with_f32_array(p.u("u_ripples_b"), &self.ripple_b);
-                gl.uniform1i(p.u("u_ripple_count"), self.ripple_count);
-            } else if water_pass {
-                self.set_common(&self.static_prog, &view, &view_proj, fade);
-                let gl = &self.gl;
-                gl.uniform1f(self.static_prog.u("u_time"), self.time);
-            }
             let prog = match pass {
                 1 => &self.rich_prog,
                 2 if water_prog => &self.water_prog,
                 _ => &self.static_prog,
             };
             let gl = &self.gl;
+            gl.use_program(Some(&prog.program));
+            if water_pass && water_prog {
+                gl.active_texture(Gl::TEXTURE2);
+                gl.bind_texture(Gl::TEXTURE_2D, self.field_tex.as_ref());
+                gl.active_texture(Gl::TEXTURE0);
+                let xf = self.field_xf;
+                prog.set4f(gl, U::FieldXf, xf);
+                prog.set4fv(gl, U::Obstacles, &self.obstacle_u);
+                prog.set4fv(gl, U::ObstaclesB, &self.obstacle_b);
+                prog.set4fv(gl, U::Ripples, &self.ripple_u);
+                prog.set4fv(gl, U::RipplesB, &self.ripple_b);
+                prog.set1i(gl, U::RippleCount, self.ripple_count);
+            }
             for b in &self.batches {
                 if b.live == 0 || b.water != water_pass || (!water_pass && b.rich != (pass == 1)) {
                     continue;
@@ -1950,18 +2209,19 @@ impl Renderer {
                 if b.glass_first == 0 {
                     continue; // glass only: drawn in the glass pass
                 }
-                gl.uniform1f(prog.u("u_edge_mask"), b.edge_mask);
+                prog.set1f(gl, U::EdgeMask, b.edge_mask);
                 if !water_pass {
                     let bob = if self.water_animation {
                         b.bob
                     } else {
                         [0.0; 4]
                     };
-                    gl.uniform4f(prog.u("u_bob"), bob[0], bob[1], bob[2], bob[3]);
+                    prog.set4f(gl, U::Bob, bob);
                 }
                 if let Some(nodes) = &b.nodes {
-                    gl.uniform4fv_with_f32_array(prog.u("u_nodes"), nodes);
+                    prog.set4fv(gl, U::Nodes, nodes);
                 }
+                prog.set2ui(gl, U::LightMask, self.batch_light_mask(b));
                 if let Some(d) = &mut self.debug_draws {
                     d.push(format!(
                         "{}@{} x{} {}t",
@@ -1990,12 +2250,19 @@ impl Renderer {
 
         // Skinned characters.
         if !characters.is_empty() {
-            self.set_common(&self.skinned_prog, &view, &view_proj, fade);
+            self.gl.use_program(Some(&self.skinned_prog.program));
         }
+        let eye = camera.eye();
+        let char_half = Vec3::new(CHARACTER_HALF_M, 0.0, CHARACTER_HALF_M)
+            + Vec3::splat(CHARACTER_LIGHT_MARGIN_M);
         for (name, draw) in characters {
             if !character_visible(&planes, draw.pos) {
                 continue; // beyond the close views' far plane or off screen
             }
+            let mask = self.box_light_mask(
+                draw.pos - char_half - Vec3::Y * 0.5,
+                draw.pos + char_half + Vec3::Y * CHARACTER_HEIGHT_M,
+            );
             let Some(sm) = self.skinned.get_mut(*name) else {
                 continue;
             };
@@ -2020,20 +2287,16 @@ impl Renderer {
                         Some(&view),
                     );
             }
-            gl.uniform1i(p.u("u_joint_tex"), 1);
-            gl.uniform1f(p.u("u_edge_mask"), 1.0);
-            let eye = camera.eye();
-            gl.uniform3f(p.u("u_eye"), eye.x, eye.y, eye.z);
+            p.set3f(gl, U::Eye, eye);
             if draw.under_water {
-                let t = UNDER_WATER_TINT;
-                gl.uniform4f(p.u("u_tint"), t[0], t[1], t[2], t[3]);
-                gl.uniform1f(p.u("u_depth_bias"), UNDER_WATER_DEPTH_BIAS_M);
+                p.set4f(gl, U::Tint, UNDER_WATER_TINT);
+                p.set1f(gl, U::DepthBias, UNDER_WATER_DEPTH_BIAS_M);
             } else {
-                gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
-                gl.uniform1f(p.u("u_depth_bias"), 0.0);
+                p.set4f(gl, U::Tint, [0.0; 4]);
+                p.set1f(gl, U::DepthBias, 0.0);
             }
-            let model = draw.model();
-            gl.uniform_matrix4fv_with_f32_array(p.u("u_model"), false, &model.to_cols_array());
+            p.set2ui(gl, U::LightMask, mask);
+            p.set_mat4(gl, U::Model, &draw.model());
             gl.bind_vertex_array(Some(&sm.vao));
             gl.active_texture(Gl::TEXTURE0);
             for part in &sm.parts {
@@ -2043,13 +2306,13 @@ impl Renderer {
                 } else {
                     [part.color[0], part.color[1], part.color[2], 1.0]
                 };
-                gl.uniform4f(p.u("u_color"), c[0], c[1], c[2], c[3]);
+                p.set4f(gl, U::Color, c);
                 // eye_glow (NIGHT-006): unlit eye colour × texel luminance inside the lantern
                 let e = match part.emit {
                     Some(e) if draw.eye_glow => [e[0], e[1], e[2], EMIT_EYE],
                     _ => [0.0; 4],
                 };
-                gl.uniform4f(p.u("u_emit"), e[0], e[1], e[2], e[3]);
+                p.set4f(gl, U::Emit, e);
                 gl.draw_elements_with_i32(
                     Gl::TRIANGLES,
                     part.index_count,
@@ -2069,21 +2332,11 @@ impl Renderer {
             }
         }
         if !self.crowd_names.is_empty() {
-            self.set_common(&self.crowd_prog, &view, &view_proj, fade);
-            let gl = &self.gl;
-            let p = &self.crowd_prog;
-            gl.uniform1f(p.u("u_edge_mask"), 1.0);
-            gl.uniform1f(p.u("u_depth_bias"), 0.0);
-            gl.uniform4f(p.u("u_tint"), 0.0, 0.0, 0.0, 0.0);
-            gl.uniform_matrix4fv_with_f32_array(
-                p.u("u_model"),
-                false,
-                &Mat4::IDENTITY.to_cols_array(),
-            );
-            gl.uniform1i(p.u("u_joint_tex"), 1);
+            self.gl.use_program(Some(&self.crowd_prog.program));
         }
         for k in 0..self.crowd_names.len() {
             let name = self.crowd_names[k];
+            let (mut lo, mut hi) = (Vec3::splat(f32::MAX), Vec3::splat(f32::MIN));
             let Some(sm) = self.skinned.get_mut(name) else {
                 continue;
             };
@@ -2100,13 +2353,20 @@ impl Renderer {
                     let o = (n * n_joints + j) * 16;
                     sm.crowd_data[o..o + 16].copy_from_slice(&(model * *m).to_cols_array());
                 }
+                lo = lo.min(draw.pos - char_half - Vec3::Y * 0.5);
+                hi = hi.max(draw.pos + char_half + Vec3::Y * CHARACTER_HEIGHT_M);
                 n += 1;
             }
             if n == 0 {
                 continue;
             }
+            let Some(sm) = self.skinned.get(name) else {
+                continue;
+            };
+            let mask = self.box_light_mask(lo, hi);
             let gl = &self.gl;
             let p = &self.crowd_prog;
+            p.set2ui(gl, U::LightMask, mask);
             gl.active_texture(Gl::TEXTURE1);
             gl.bind_texture(Gl::TEXTURE_2D, Some(&sm.crowd_tex));
             // SAFETY: the view is consumed by the GL call before any allocation.
@@ -2134,7 +2394,7 @@ impl Renderer {
                 } else {
                     [part.color[0], part.color[1], part.color[2], 1.0]
                 };
-                gl.uniform4f(p.u("u_color"), c[0], c[1], c[2], c[3]);
+                p.set4f(gl, U::Color, c);
                 gl.draw_elements_instanced_with_i32(
                     Gl::TRIANGLES,
                     part.index_count,
@@ -2151,11 +2411,10 @@ impl Renderer {
         // Glass panes (`glass` slot, alpha 0.35): after everything opaque, blended into the
         // colour, the depth and the edge mask untouched (ARCH-007).
         if glass_batches > 0 {
-            self.set_common(&self.rich_prog, &view, &view_proj, fade);
             let gl = &self.gl;
             let prog = &self.rich_prog;
-            gl.uniform1f(prog.u("u_time"), self.time);
-            gl.uniform4f(prog.u("u_bob"), 0.0, 0.0, 0.0, 0.0);
+            gl.use_program(Some(&prog.program));
+            prog.set4f(gl, U::Bob, [0.0; 4]);
             gl.active_texture(Gl::TEXTURE0);
             gl.bind_texture(Gl::TEXTURE_2D, Some(&self.palette));
             gl.enable(Gl::BLEND);
@@ -2170,10 +2429,11 @@ impl Renderer {
                 {
                     continue;
                 }
-                gl.uniform1f(prog.u("u_edge_mask"), b.edge_mask);
+                prog.set1f(gl, U::EdgeMask, b.edge_mask);
                 if let Some(nodes) = &b.nodes {
-                    gl.uniform4fv_with_f32_array(prog.u("u_nodes"), nodes);
+                    prog.set4fv(gl, U::Nodes, nodes);
                 }
+                prog.set2ui(gl, U::LightMask, self.batch_light_mask(b));
                 gl.bind_vertex_array(Some(&b.vao));
                 gl.draw_elements_instanced_with_i32(
                     Gl::TRIANGLES,
@@ -2195,21 +2455,6 @@ impl Renderer {
             let gl = &self.gl;
             let p = &self.decal_prog;
             gl.use_program(Some(&p.program));
-            gl.uniform_matrix4fv_with_f32_array(
-                p.u("u_view_proj"),
-                false,
-                &view_proj.to_cols_array(),
-            );
-            let sun = SUN_DIR.normalize();
-            gl.uniform3f(p.u("u_sun_dir"), sun.x, sun.y, sun.z);
-            gl.uniform3f(
-                p.u("u_shadow_tint"),
-                SHADOW_TINT.x,
-                SHADOW_TINT.y,
-                SHADOW_TINT.z,
-            );
-            gl.uniform1i(p.u("u_tex"), 0);
-            gl.uniform4f(p.u("u_night"), self.light.night, self.light.warm, 0.0, 0.0);
             gl.active_texture(Gl::TEXTURE0);
             gl.enable(Gl::BLEND);
             // colour and normal rgb blend by the decal alpha; the edge mask (dst alpha) stays
@@ -2233,7 +2478,7 @@ impl Renderer {
                     continue;
                 };
                 gl.bind_texture(Gl::TEXTURE_2D, Some(t));
-                gl.uniform3f(p.u("u_normal"), d.normal.x, d.normal.y, d.normal.z);
+                p.set3f(gl, U::Normal, d.normal);
                 gl.draw_elements_with_i32(
                     Gl::TRIANGLES,
                     6,
@@ -2251,6 +2496,7 @@ impl Renderer {
 
         // Outline pass to the canvas.
         let gl = &self.gl;
+        let Some(g) = &self.gbuf else { return };
         gl.bind_vertex_array(None);
         gl.bind_framebuffer(Gl::FRAMEBUFFER, None);
         gl.viewport(0, 0, w, h);
@@ -2258,37 +2504,27 @@ impl Renderer {
         gl.disable(Gl::CULL_FACE);
         let p = &self.post_prog;
         gl.use_program(Some(&p.program));
-        for (unit, tex, name) in [
-            (0, &g.color, "u_color"),
-            (1, &g.normal, "u_normal"),
-            (2, &g.depth, "u_depth"),
-        ] {
+        for (unit, tex) in [(0, &g.color), (1, &g.normal), (2, &g.depth)] {
             gl.active_texture(Gl::TEXTURE0 + unit);
             gl.bind_texture(Gl::TEXTURE_2D, Some(tex));
-            gl.uniform1i(p.u(name), unit as i32);
         }
         gl.active_texture(Gl::TEXTURE0);
-        gl.uniform2f(p.u("u_texel"), 1.0 / w as f32, 1.0 / h as f32);
-        gl.uniform1f(p.u("u_px"), self.outline_px());
-        gl.uniform2f(p.u("u_near_far"), camera.near(), camera.far());
+        p.set2f(gl, U::Texel, 1.0 / w as f32, 1.0 / h as f32);
+        p.set1f(gl, U::Px, self.outline_px());
+        p.set2f(gl, U::NearFar, camera.near(), camera.far());
         // sky + distance haze of the close views (GAME-CAMERA-VIEWS 5, 7; sky.rs)
-        let inv = view_proj.inverse();
-        gl.uniform_matrix4fv_with_f32_array(p.u("u_inv_view_proj"), false, &inv.to_cols_array());
-        let eye = camera.eye();
-        gl.uniform3f(p.u("u_eye"), eye.x, eye.y, eye.z);
+        p.set_mat4(gl, U::InvViewProj, &view_proj.inverse());
+        p.set3f(gl, U::Eye, eye);
         let fog = camera.fog();
-        gl.uniform4f(
-            p.u("u_fog"),
-            fog.start,
-            fog.end,
-            fog.amount,
-            camera.sky_amount(),
+        p.set4f(
+            gl,
+            U::Fog,
+            [fog.start, fog.end, fog.amount, camera.sky_amount()],
         );
-        gl.uniform3f(p.u("u_line_color"), OUTLINE.x, OUTLINE.y, OUTLINE.z);
         let (top, horizon) = crate::sky::sky_colors(self.light.night);
-        gl.uniform3f(p.u("u_sky_top"), top.x, top.y, top.z);
-        gl.uniform3f(p.u("u_sky_horizon"), horizon.x, horizon.y, horizon.z);
-        gl.uniform1f(p.u("u_sky_night"), self.light.night);
+        p.set3f(gl, U::SkyTop, top);
+        p.set3f(gl, U::SkyHorizon, horizon);
+        p.set1f(gl, U::SkyNight, self.light.night);
         gl.draw_arrays(Gl::TRIANGLES, 0, 3);
         stats.draw_calls += 1;
         self.stats = stats;
@@ -2746,5 +2982,60 @@ mod tests {
         let (w, h, rgba) = decode_png(&bytes).unwrap();
         assert_eq!((w, h), (256, 256));
         assert_eq!(rgba.len(), 256 * 256 * 4);
+    }
+
+    // PERF-016 (PERF-R-003): the CPU frame block follows the std140 rules of
+    // `shaders::frame_block()` (vec3 + float share 16 bytes, arrays start on 16).
+    #[test]
+    fn perf_016_frame_block_is_std140() {
+        use std::mem::{offset_of, size_of};
+        assert_eq!(offset_of!(FrameBlock, view), 0);
+        assert_eq!(offset_of!(FrameBlock, view_proj), 64);
+        assert_eq!(offset_of!(FrameBlock, sun_dir), 128);
+        assert_eq!(offset_of!(FrameBlock, dither), 140);
+        assert_eq!(offset_of!(FrameBlock, shadow_tint), 144);
+        assert_eq!(offset_of!(FrameBlock, glow_on), 156);
+        assert_eq!(offset_of!(FrameBlock, fade), 160);
+        assert_eq!(offset_of!(FrameBlock, night), 176);
+        assert_eq!(offset_of!(FrameBlock, time), 192);
+        assert_eq!(offset_of!(FrameBlock, lights), 208);
+        assert_eq!(
+            offset_of!(FrameBlock, light_colors),
+            208 + 16 * MAX_POINT_LIGHTS
+        );
+        assert_eq!(offset_of!(FrameBlock, pools), 208 + 32 * MAX_POINT_LIGHTS);
+        assert_eq!(
+            size_of::<FrameBlock>(),
+            208 + 32 * MAX_POINT_LIGHTS + 16 * MAX_LIGHT_POOLS
+        );
+        // the members named in the driver check exist in the GLSL block, in this order
+        let glsl = shaders::frame_block();
+        let mut at = 0;
+        for (name, _) in FRAME_OFFSETS {
+            let n = name.trim_end_matches("[0]");
+            let k = glsl[at..]
+                .find(&format!(" {n}"))
+                .unwrap_or_else(|| panic!("{n}"));
+            at += k;
+        }
+    }
+
+    // PERF-016: every uniform set per draw / pass has a name; no name of the frame block.
+    #[test]
+    fn perf_016_per_draw_uniforms_are_not_in_the_frame_block() {
+        let glsl = shaders::frame_block();
+        for u in U::ALL {
+            assert!(!glsl.contains(&format!(" {};", u.name())), "{}", u.name());
+            assert!(!glsl.contains(&format!(" {}[", u.name())), "{}", u.name());
+        }
+    }
+
+    // PERF-017: the light-mask margin covers a yawed mesh's corners and parts below the origin.
+    #[test]
+    fn perf_017_light_margin_covers_rotated_corners() {
+        let r = 2.0;
+        // a corner (r, r) of a mesh with the extent r reaches r·√2 when yawed by 45°
+        assert!(r + light_margin(r, 0.0) >= r * std::f32::consts::SQRT_2 + 1.0 - 1e-5);
+        assert!(light_margin(r, -0.8) >= light_margin(r, 0.0) + 0.8 - 1e-5);
     }
 }

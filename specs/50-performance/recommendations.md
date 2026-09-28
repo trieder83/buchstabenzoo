@@ -6,7 +6,7 @@ module: recommendations
 status: draft
 depends_on: [PERF-BUDGETS, PERF-MEASUREMENTS]
 test_prefix: PERFREC
-updated: 2026-09-27
+updated: 2026-09-28
 ---
 
 # Performance recommendations
@@ -33,11 +33,11 @@ entries, when asked, and measures before and after.
 
 | ID | Title | Status | Commit | Measured gain |
 |---|---|---|---|---|
-| PERF-R-001 | Night point lights: cull per draw, cheaper loop | open | — | — |
+| PERF-R-001 | Night point lights: cull per draw, cheaper loop | done (accepted 2026-09-28) | uncommitted (after `4cc87d9`) | real iGPU, phone size: night scene pass −11…−46 % (night zoo 9.9 → 5.3 ms), day ±0; picture identical |
 | PERF-R-002 | Ground tiles: draw only the visible chunks, lighter path tiles | open | — | — |
-| PERF-R-003 | Shared per-frame uniforms (UBO), cached locations, no redundant `set_common` | open | — | — |
+| PERF-R-003 | Shared per-frame uniforms (UBO), cached locations, no redundant `set_common` | done (accepted 2026-09-28) | uncommitted (after `4cc87d9`) | GL calls/frame −53…−60 % (S01 358 → 153), `uniform*` −80…−95 %, CPU `frame()` 0.6–1.1 → 0.4–0.7 ms (SwiftShader) |
 | PERF-R-004 | Zero per-frame heap allocations (zoo-core, zoo-web, zoo-render, host polling) | open | — | — |
-| PERF-R-005 | Pixel-ratio quality tier for weak phones | open (needs Q-170) | — | — |
+| PERF-R-005 | Pixel-ratio quality tier for weak phones (automatic, PERF-BUDGETS rule 5) | accepted (Q-170, 2026-09-28; not implemented yet) | — | — |
 | PERF-R-006 | Full-screen pass: one fewer depth fetch, sky only where needed | open | — | — |
 | PERF-R-007 | Skinned animals: `eye_glow` in the same draw, same-model animals instanced | open | — | — |
 | PERF-R-008 | Animation: skip clips with weight 0, cache clip indices | open | — | — |
@@ -46,6 +46,7 @@ entries, when asked, and measures before and after.
 | PERF-R-011 | Download: drop the palette PNG embedded in every prop `.glb`; serve compressed | open | — | — |
 | PERF-R-012 | WASM size: profile before optimising | open | — | — |
 | PERF-R-013 | Measurement: real-GPU runs, GPU timer queries, a WASM allocation counter | open | — | — |
+| PERF-R-014 | Night light edges: derivatives once before the light loops (Q-180) | open (needs Q-180) | — | — |
 
 ### PERF-R-001 — Night point lights: cull per draw, cheaper loop
 
@@ -65,6 +66,20 @@ entries, when asked, and measures before and after.
 - **Expected gain:** night scene pass −30…50 %; by day nothing changes (early return).
 - **Cost / risk:** low; look identical (same lights, same hard edge). Needs NIGHT-012 and the
   night screenshots re-checked.
+- **Done 2026-09-28** (accepted by the user 2026-09-28; budget 21, tests PERF-017): (a) per
+  draw a light mask `u_light_mask` (`night::light_mask`: point-light spheres / pool discs
+  against the batch's chunk bounds + a margin for yawed corners, parts below the origin and
+  moving parts; characters and crowds by their culling box; dynamic batches get every
+  light); the loops walk the mask (uniform control flow) instead of `u_light_count`;
+  (b) a fragment outside a light's radius skips the band and colour work. The `fwidth` of
+  the distance stays per light before the skip — moving it out of the loop changed rim
+  pixels (Q-180, PERF-R-014). **Measured** (measurements.md, run 2026-09-28): look
+  scenarios L01–L14 pixel-identical; real GPU (AMD Renoir, phone size) night scene pass
+  spawn −24 %, 20 m −27 %, night zoo −46 %, first person −11 %, day ±0; night / day ratio
+  2.9–4.0 × → 2.3–2.5 × (budget 16 wants ≤ 1.3 ×: still open). SwiftShader shows the night
+  zoo −17…−33 % but day / night first person +6…14 % (predicated branches; not on the real
+  GPU). Expected −30…50 % — reached in the lamp-rich views, less where the lights cover most
+  of the screen.
 
 ### PERF-R-002 — Ground tiles: draw only the visible chunks, lighter path tiles
 
@@ -107,6 +122,18 @@ entries, when asked, and measures before and after.
   phones (each WebGL call costs a WASM→JS→GPU-process round trip plus validation).
 - **Cost / risk:** low–medium (std140 padding); no visual change; covered by the existing
   screenshot e2e tests.
+- **Done 2026-09-28** (accepted by the user 2026-09-28; budget 20, tests PERF-016): std140
+  block `Frame` (`shaders::frame_block`, CPU mirror `renderer::FrameBlock`, offsets
+  unit-tested and checked against the driver when a program links) on binding point 0 for
+  the static, rich, water, skinned, crowd and decal programs, one `bufferSubData` per
+  frame; `Program` keeps a location array indexed by `U` and a last-value cache (a per-draw
+  uniform call only on change); samplers, outline colour, the crowd model matrix and other
+  constants set once after linking; the duplicate `set_common(static)` removed.
+  **Measured:** GL calls per frame desktop 320–384 → 143–192, phone 253–332 → 104–147
+  (−53…−60 %); `uniform*` 159–232 → 9–43; `useProgram` 8–9 → 7–8; CPU `frame()` p50
+  0.6–1.1 → 0.4–0.7 ms (SwiftShader); real GPU day frame unchanged (the saving is CPU /
+  driver time, larger on phones with slow WebGL validation). Expected −100…150 calls:
+  reached (−176…−205).
 
 ### PERF-R-004 — Zero per-frame heap allocations
 
@@ -144,6 +171,9 @@ entries, when asked, and measures before and after.
 - **Expected gain:** up to −40 % of all fragment work on weak phones.
 - **Cost / risk:** visible (softer image, outline width in device px); needs the user's
   answer to Q-170.
+- **Status 2026-09-28:** accepted — Q-170 answered "yes, as recommended": automatic, pixel
+  ratio first, lights and clouds only if still too slow, never a menu (PERF-BUDGETS rule 5,
+  test PERF-022). Not implemented in this round.
 
 ### PERF-R-006 — Full-screen pass: one fewer depth fetch, sky only where needed
 
@@ -237,6 +267,26 @@ entries, when asked, and measures before and after.
   `window.__zoo`.
 - **Expected gain:** absolute numbers for budget 1 and Q-166.
 - **Cost / risk:** debug code only.
+
+### PERF-R-014 — Night light edges: derivatives once before the light loops (Q-180)
+
+- **Finding (while implementing PERF-R-001, 2026-09-28):** `shade()` takes the edge width
+  `fwidth(distance)` per light inside the light loops, and for the light pools inside the
+  non-uniform branch `n.y > 0.6 && world.y < 0.5`. Derivatives in non-uniform control flow
+  are undefined in GLSL ES; under SwiftShader they leave a few unlit dark-blue specks on the
+  rims of the lamp pools (0.04–0.14 % of the pixels of a night frame, `tools/perf/look.mjs`
+  L08–L14). To stay pixel-identical, PERF-R-001 keeps the per-light `fwidth` and only skips
+  the band and colour work after it.
+- **Proposal:** take `dFdx(world)` / `dFdy(world)` once before the loops (uniform control
+  flow) and compute the edge width from the neighbour distances; skip a light by
+  `dot(to, to) ≥ r²` before any other work (variant "B", measured).
+- **Expected gain:** measured (measurements.md, run 2026-09-28, variant B vs. the shipped
+  PERF-R-001, real GPU at phone size): night scene pass −2…−4 %; SwiftShader ±0. Mainly a
+  correctness fix: defined derivatives on real GPUs (mobile drivers may show the specks
+  more).
+- **Cost / risk:** the rim pixels of the light pools change (the specks disappear; 49 of
+  518 400 pixels by more than 60 / 255 in the worst look scenario, the edge position is
+  unchanged) — needs the user's answer to Q-180.
 
 ## Acceptance criteria
 

@@ -2393,6 +2393,12 @@ impl App {
         vec![l, p, self.lamps.len() as u32]
     }
 
+    /// Debug (PERF-017): `true` gives every draw every light (no per-draw light masks), to
+    /// compare the masked frame with the unmasked one pixel by pixel.
+    pub fn debug_full_light_masks(&mut self, on: bool) {
+        self.renderer.full_light_masks = on;
+    }
+
     /// Ids of the moon doors, one per line.
     pub fn moon_doors(&self) -> String {
         self.game.moon_doors().join("\n")

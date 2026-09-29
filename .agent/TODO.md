@@ -8,10 +8,10 @@ file; agents update the status of their own item.
 
 | # | Item | Owner | Status | Spec |
 |---|---|---|---|---|
-| 1 | Food boxes back outside, extra crates inside (Q-181, Q-194) | general | done (uncommitted) | GAME-FEED §7, LAYOUT-041 |
-| 2 | Street under the moon door (Q-182), hints tests timing-independent | general | done (uncommitted) | LAYOUT-040, HINT-012 |
+| 1 | Food boxes outside + labelled boxes inside (Q-181, Q-194) | general | done (6373543) | GAME-FEED §7 |
+| 2 | Street under the moon door (Q-182), hints tests timing-independent | general | done (6373543) | LAYOUT-040, HINT-012 |
 | 3 | Outline anti-aliasing (Q-191), haze culling on (Q-193) | performance | paused (state committed): haze culling on (done); AA = prototypes only, see PERF-R-016 "Next" | PERF-R-016, PERF-R-018, CAMV-014 |
-| 4 | Commit all, deploy (skill `deploy`) | main | todo | PLAT-003…009 |
+| 4 | Commit all, deploy | main | done (6373543 live 2026-09-29) | PLAT-003…009 |
 | 5 | spec-manager run (INDEX, FIX log) | spec-manager | todo | — |
 
 ## Next (specified, not built)

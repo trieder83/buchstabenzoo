@@ -5,20 +5,17 @@ by agents when they finish or stop (append a handoff under "Handoffs", ≤ 15 li
 Decisions: `.agent/DECISIONS.md` (generated digest of `specs/open-questions.md`).
 Work queue: `.agent/TODO.md`.
 
-## Now (2026-09-28)
+## Now (2026-09-29, end of week)
 
-- **HEAD:** `c9787d3` + uncommitted work (hints/🌙 indicator, enterable storages, perf
-  R-002a/005/014/015 — finished, waiting for the running agents, then one commit).
-- **Live:** https://letterzoo.web.app = commit `3513018` (deploy via the `deploy` skill;
-  the `firebase deploy` step is run by the user with `!`).
-- **Running agents and what they own:**
-  - food boxes back outside + inside crates, street under the moon door, hints tests
-    → `assets/levels/`, `crates/zoo-core/tests/hints.rs`, feeding/layout/level specs; Q-194–195.
-  - performance (Q-191 outline AA, Q-193 haze culling): **paused** — stopped by the user on
-    2026-09-28 before reporting; any partial edits are in `crates/zoo-render/`, the render path of
-    `crates/zoo-web/src/lib.rs`, `specs/50-performance/`. Check `git diff` there before resuming.
-- **Known red tests:** CAMV-014 (fixed by Q-193, in progress); `hint_002`/`hint_014` (box
-  positions in flux).
+- **HEAD:** `6373543` (+ this state update). Working tree clean.
+- **Live:** https://letterzoo.web.app = commit `6373543` (deployed 2026-09-29 via the `deploy`
+  skill; the user runs the `firebase deploy` command with `!`).
+- **Running agents:** none. Performance work is **paused** until the next optimisation round
+  (outline AA Q-191 / PERF-R-016: prototypes + next steps in `specs/50-performance/recommendations.md`).
+- **Known red tests:** none in the round's specs (344 Rust, 55 web, 46 e2e green on 6373543).
+  The full e2e suite (≈ 65 min) was not run in full this round.
+- **Next week:** start from `.agent/TODO.md` "Next"; run `spec-manager` first (INDEX, FIX log
+  for this round, DECISIONS/CODEMAP regenerate).
 
 ## Conventions
 

@@ -6,7 +6,7 @@ module: player
 status: draft
 depends_on: [PROD-VISION, CONT-READING]
 test_prefix: PLAY
-updated: 2026-09-27
+updated: 2026-09-29
 ---
 
 # Player character, camera and controls
@@ -126,8 +126,9 @@ updated: 2026-09-27
    availability and the result; the host only shows UI.
 6. **Ground speed.** The player can walk on paths and on grass; on grass the player is
    slower (user decision 2026-09-26). **Path speed 1.93 m/s** — 1.75 m/s (+25 %) and then another
-   +10 % (user decisions 2026-09-26, playtests); **grass speed stays 0.98 m/s**, i.e.
-   `grass_speed_factor` ≈ 0.51. The walk clip (authored for 1.4 m/s) plays at speed ÷ 1.4
+   +10 % (user decisions 2026-09-26, playtests); **grass speed raised to 1.45 m/s** (user request
+   2026-09-29: "still less than on streets, but faster than now"; was 0.98 m/s), i.e.
+   `grass_speed_factor` ≈ 0.75 (proposal, tune in playtests — Q-197). Streets stay clearly faster (× 1.33). The walk clip (authored for 1.4 m/s) plays at speed ÷ 1.4
    (≈ 1.38× on paths, within the ART-RIG playback clamp of 0.8–1.4). Following animals use the same
    speeds. Cells covered by solid
    elements (fences, water, hedges, buildings) are not walkable (GAME-LAYOUT).
@@ -181,7 +182,7 @@ updated: 2026-09-27
 | PLAY-003 | Given the player at 1.9 m from a visitor, then the interact button is shown; at 2.1 m it is hidden. | unit |
 | PLAY-004 | Given an object between camera and player, then that object is rendered semi-transparent while it occludes the player. | unit |
 | PLAY-005 | Given joystick input forward for 1 s on a path, then the player moves forward at walking speed ± 5 %. | unit |
-| PLAY-006 | Given joystick input forward for 1 s on grass, then the player moves at walking speed × `grass_speed_factor` ± 5 %. | unit |
+| PLAY-006 | Given joystick input forward for 1 s on grass, then the player moves at walking speed × `grass_speed_factor` ± 5 %, with `grass_speed_factor` ≈ 0.75 (1.45 m/s), i.e. faster than the former 0.98 m/s and still slower than the path speed 1.93 m/s (user request 2026-09-29). | unit |
 | PLAY-007 | Given the player walks from a path onto grass, then the speed changes within 0.2 s (no instant jump). | unit |
 | PLAY-008 | Given the default camera, then its pitch is 55° ± 2°, its distance 14 m ± 0.5 m and its vertical FOV 35° in portrait and landscape. | unit |
 | PLAY-009 | Given the zoo view (`view_mode` `zoo`), when the player zooms in and out to the limits, then the camera distance stays within 10 m … 20 m, and at every distance and rotation no sky is visible (the horizon is above the top screen edge). | unit |

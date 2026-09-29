@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-195** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-201** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-88 answered · 82 open · 10 other (partly answered / proposed / superseded).
+88 answered · 88 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -88,6 +88,12 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-153 — Manifest granularity and the new kind buildings (ART-PIPELINE): APIPE-001 requires a manifest entry with the same id and kind for every … (ART-PIPELINE, ART-ENVIRONMENT, GAME-NIGHT …)
 - Q-154 — Models used by the engine but not listed in any ART-* spec and without their own manifest entry / concept gate: door_wood, glass_door … (ART-ENVIRONMENT, ART-PIPELINE, GAME-NIGHT …)
 - Q-188 — Night progress 🌙 (GAME-NIGHT rule 11, user request 2026-09-28): the request names the day level's animals. (GAME-NIGHT, GAME-HINT)
+- Q-195 — Hint right after reading the board (user request 2026-09-29: the target info must always work, not only after x seconds, and show what to … (GAME-HINT)
+- Q-196 — Intro at the entrance gate (user request 2026-09-29): 3 pages (animals broke out / find them, bring them to the right enclosure / find … (GAME-RESCUE, GAME-SAVE)
+- Q-197 — Grass speed (user request 2026-09-29: faster than 0.98 m/s, still slower than streets). (GAME-PLAYER)
+- Q-198 — Baby trigger (user request 2026-09-29): special food (e.g. (GAME-FAMILY, GAME-GARDEN)
+- Q-199 — Street to the vegetable garden gate (user request 2026-09-29): new path element path_garden_link from the nearest street (bridge / … (GAME-LEVEL-1, GAME-GARDEN)
+- Q-200 — Audio (user request 2026-09-29): budget in PERF-BUDGETS (proposal 1.5 MB), whether a sound-generator API may be used and which (licence … (ART-SOUND, PERF-BUDGETS)
 
 ## Partly answered / other
 

@@ -56,10 +56,10 @@ between missions.
    (`eat`, happy hearts) if it likes it; otherwise it sniffs and turns away (`refuse`), the
    treat stays in the basket. Treats are **not** used to rescue escaped animals (the rescue
    still needs the reading-based food box).
-7. **Baby challenge (GAME-FAMILY):** a treat the animal likes counts as a **care feeding**
-   like the correct food from the storage (one per play session). Proposal: the pair needs
-   its 3 care feedings as before, and at least one of them must be a treat from the garden
-   (so the garden matters) — Q-101.
+7. **Baby (GAME-FAMILY "Special food and babies", user request 2026-09-29):** a treat the
+   animal likes makes it happy; given to a **male and female pair** at home, it makes them
+   have a baby. This replaces the earlier 3-care-feedings / "one treat must be from the garden"
+   proposal (Q-101 obsolete, Q-198).
 8. **Saving:** basket contents, garden plant states and regrow timers are saved (GAME-SAVE).
 
 ## Assets
@@ -97,7 +97,7 @@ between missions.
 | GARD-003 | Given the basket holds 6 treats, then harvesting is refused with gentle feedback and the plant stays. | unit |
 | GARD-004 | Given an empty spot, after 3 minutes of play time, then the plant is ripe again, passing 3 visible growth stages. | unit |
 | GARD-005 | Given the zebra at home and a carrot in the basket, when the player gives it at the fence, then the zebra eats it and the carrot is removed; given a potato, it refuses and the potato stays. | unit |
-| GARD-006 | Given a treat the pair likes, then giving it counts as one care feeding (max one per session, GAME-FAMILY FAM-003). | unit |
+| GARD-006 | Given a treat the pair likes (male and female at home), then giving it makes both happy and one baby appears once (GAME-FAMILY FAM-008); given a single animal, it is only happy. | unit |
 | GARD-007 | Given the player carries a food box item or the fish bowl, then she can still harvest into the basket (separate slot). | unit |
 | GARD-008 | Given a save with basket contents and growing plants, when restored, then both are unchanged. | unit |
 | GARD-009 | Given the garden signs, then their texts come from Fluent per reading level and language (`garden-carrot`, `garden-potato`). | unit |

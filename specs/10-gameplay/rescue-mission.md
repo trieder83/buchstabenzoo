@@ -157,6 +157,25 @@ Rules: `klasse1` sentences ≤ 5 words (READ-002); the word for an animal's home
 once automatically at the very first start of a new game (after the character choice), so
 children who walk off in another direction still know the goal.
 
+## Intro at the entrance gate (user request 2026-09-29)
+
+At the very first start of a new game (after the character choice) the child stands at the
+**entrance gate** and sees a short **intro** (3 pages, one picture + one short text each,
+big "next" arrow ≥ 64 px, skippable, replayable from the welcome board; no time pressure).
+It replaces the automatic welcome panel of the previous section (the board keeps the same text
+for later). Keys `intro-<n>-<reading_level>` (de/en); `kiga` gets pictures and read-aloud only (Q-008).
+
+| Page | Picture | Content (klasse2 wording, de / en) |
+|---|---|---|
+| 1 | empty enclosures, open gate, paw prints | Die Tiere sind ausgebrochen! / The animals have broken out! |
+| 2 | animal → arrow → enclosure | Finde die Tiere und bring sie zurück in das richtige Gehege. / Find the animals and bring them back to the right enclosure. |
+| 3 | food box → animal follows the child | Finde das Futter, das sie mögen – dann folgen sie dir. / Find the food they like – then they follow you. |
+
+Rules: `klasse1` sentences ≤ 5 words (READ-002); the word is *Gehege* / *enclosure*, never
+*Käfig* / *cage* (glossary; the request said "cage", the glossary wins). The intro ends by
+pointing at the first target with the 🧭 hint (GAME-HINT) so the first step is clear. Whether
+the intro was seen is part of the save (GAME-SAVE); a loaded game never repeats it.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -188,10 +207,12 @@ children who walk off in another direction still know the goal.
 | RESC-025 | Given a level whose `[level] missions` lists only some of its enclosures' animals, then only the info boards, animals and gates of the listed missions are interactable; without the field every animal is in scope (§1, Q-069 answered, GAME-LAYOUT). | unit |
 | RESC-026 | Given an animal whose picked hiding place has `perch_height_m` (koala, monkey), then it sits at that height beside its spot, does not wander and faces the player; the player shows the right food from the ground within 2 m; when it follows it first comes down (`climb` at its `climb_speed`, else `walk` at 1.8 m/s) (§12, Q-094). | unit, e2e |
 | RESC-027 | Given the player carries the bowl with the fish, when she interacts at another enclosure's gate, then `ui-refuse` and the fish stays in the bowl; when she puts the bowl down (nothing else in range), then the fish stays safe in the bowl and can be picked up again (goldfish bowl implementation note). | unit |
+| RESC-029 | Given a new game after the character choice, then the intro shows 3 pages at the entrance gate (animals broke out / find them and bring them back to the right enclosure / find the food they like so they follow), each in `de` and `en` for every reading level, skippable and never repeated after saving; it ends with the first hint target. | e2e |
 | RESC-028 | Given the player stands in front of the map board at the entrance, then the reading panel opens with `welcome-<reading_level>` in the current language (kiga: pictures + "Tiere weg!"); at the first start of a new game it is shown once automatically. | e2e |
 
 ## Open questions
 
+- Q-196 Intro: replay from the welcome board, pictures vs. animation (proposal above).
 - Q-030 How many animals per species (herd follows as a group)?
 - Q-034 Math tasks: separate math level, where they appear, can they block?
 - Q-031 What happens after all animals are home (end, sandbox, next zoo)?

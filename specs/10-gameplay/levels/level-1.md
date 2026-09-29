@@ -650,6 +650,16 @@ child harvests carrots and potatoes as treats (GAME-GARDEN). Data: `[[garden]]`,
 `[[garden_bed]]`, `[[plant_spot]]` at the end of `level-1.toml` plus the path element
 `path_garden` (*data shape proposal Q-102*).
 
+**Street to the gate (user request 2026-09-29).** The garden gate must not stand on bare
+grass: a **street** (path cells, kind `path`, full speed) leads from the nearest existing
+street (the bridge / `path_north` ring, the zoo-level-designer picks the shortest route) up
+to the cell just outside the gate (7…8, 35) and runs **through** the gate opening onto
+`path_garden` without a grass gap, so the way bridge → gate → beds is one continuous street
+(same rule as the streets under the gates, LAYOUT-040). It is a new path element
+`path_garden_link` (data proposal Q-199); it crosses no solid element, no hiding-place rect
+and no barrier, opens no shortcut, and lies clear of the panda fence and the river bank
+(LAYOUT-039).
+
 **Location — why here.** The open grass strip **x 6–9, z 36–45** between the panda
 enclosure (west), the river (east) and the north hedge (north) is the only free field in
 the back that is no hiding place, no scenery, no wander area and no path: the other free
@@ -827,6 +837,7 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 |---|---|---|
 | LAYOUT-L1-001 | Given `level-1.toml`, then every enclosure, building, landmark, barrier and hiding place has a walkable cell reachable from the spawn next to it or inside it (flood fill). | unit |
 | LAYOUT-L1-002 | Given `level-1.toml` with all barriers closed, then every border cell of the bounds is solid and the flood fill from the spawn never leaves the bounds. | unit |
+| LAYOUT-L1-044 | Given `level-1.toml`, then the garden gate cell (7, 36) is connected to the zoo's street network by an unbroken chain of `path` cells (`path_garden_link`) ending at the gate opening and continuing onto `path_garden`; no grass cell lies between the last street cell and the gate; A* from the spawn to the gate over path cells only exists (user request 2026-09-29). | unit |
 | LAYOUT-L1-003 | Given `level-1.toml`, then no two solid elements share a cell and no `path` cell is covered by a solid element other than a level-transition barrier (the street runs on under it, LAYOUT-040). | unit |
 | LAYOUT-L1-004 | Given this spec's element table and `level-1.toml`, then both list the same ids, types and rectangles (instance of LAYOUT-005). | unit |
 | LAYOUT-L1-005 | Given `level-1.toml` with path speed 1.93 m/s and grass speed 0.98 m/s, then each neighbour pair of the walking-distance table has a fastest walking time ≤ 10 s (and the table's distances and times are reproduced within 0.1). | unit |

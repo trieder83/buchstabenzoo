@@ -49,6 +49,17 @@ settings gear** shows **one next possible target** and where to walk.
    is shown as the **moon door** while it is open; otherwise it is not offered.
    Pressing the button again within 12 s shows the **next** candidate (cycles through the
    top 3), so a child who doesn't want that target gets another.
+4a. **Always works, always says what to do (user request 2026-09-29):** the hint has no
+   waiting time — it answers on every press from the first second of the game, in every
+   state, and never returns "nothing" (HINT-008). Rule 4's 60 s only changes *how exact* the
+   target is, not *whether* there is one: right after the board was read the hint shows the
+   **wide search area** (≥ 12 m circle around the hiding area) plus a "re-read the riddle"
+   option (📋 in the edge arrow), after 60 s the ≥ 6 m circle of rule 4. Every hint shows
+   **the next step as icon + short line** (Fluent `hint-<step>`, read-aloud on `kiga`): 📋
+   "Lies die Tafel" → 📦 "Hol das Futter" → 🐾 "Suche das Tier hier" → 🚪 "Bring es nach
+   Hause". The step is derived from the current mission (rule 3.2), so it also matches while
+   the child follows several missions. The 🧭 button also works while a panel is open (it closes
+   the panel first), while following animals, in the garden and at night.
 4. **Riddles stay fair:** the hint never points directly at a hidden animal the child has
    not found yet. Instead it points at the **info board** (to read the riddle again) or,
    after the board was read and 60 s have passed without finding it, at the **edge of the
@@ -124,10 +135,13 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-011 | Given the panda board read and no bamboo carried, then the food storage and every full-grown cut spot are priority-2 targets (before the board was read no cut spot is offered); given the right food lying on the ground, it is a "pick up" target, a lying wrong food is not (GAME-FEED §13/§16). | unit |
 | HINT-012 | Given dusk after level 1, then the target is the bed; given night, then the open moon door comes first (the night boards are behind it) and the bed is among the targets; through the door, the target is a night board. | unit |
 | HINT-013 | Given the 🌙 night progress indicator tapped, then the hint shows exactly as with 🧭. | e2e |
+| HINT-015 | Given any state (new game, board read 1 s ago, board read 70 s ago, animal following, carrying the wrong food), when the hint is pressed, then it returns a target immediately (no waiting time) with a next-step key `hint-<step>` that matches the state (read / take food / search / lead home); 1 s after reading the board the target is the ≥ 12 m search area, after 60 s the ≥ 6 m circle, never the animal's position. | unit |
+| HINT-016 | Given a hint is shown, then the indicator shows the step icon and the line (Fluent, `de` and `en`); on `kiga` the line is read aloud; pressed while a reading panel is open, the panel closes and the hint shows. | e2e |
 | HINT-014 | Given a child who only follows the hints (several seeds, every level-1 hiding place at least once), then all level-1 animals come home, night falls, and the bed is among the top 3 hints and brings the morning. | unit |
 
 ## Open questions
 
+- Q-195 Hint right after the board was read: wide area (≥ 12 m) at once, exact circle after 60 s (proposal, rule 4a) instead of the board.
 - Q-127 answered 2026-09-27: idle nudge yes (90 s); hiding-area edge after 60 s.
 - Q-186 answered 2026-09-28 (yes): the rule-4 search timer is not saved; after a reload the
   board is shown again for 60 s.

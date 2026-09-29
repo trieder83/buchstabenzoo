@@ -107,7 +107,8 @@ a hiding place is never visible from its own info board), stay comfortable for c
    gradient `#1E2A5A` → `#3B4C8C` (the haze = the horizon blue, fog end 20.8 m kept), blue
    clouds, an outlined comic moon and a few 4-point stars; shining animal eyes (NIGHT-006) are
    hidden by the haze beyond 20.8 m like all geometry (Q-126 answered). The sky costs no
-   extra draw call (drawn in the outline pass where there is no geometry).
+   extra draw call (drawn in the outline pass where there is no geometry). On weak phones the
+   automatic low quality tier leaves the clouds out (PERF-BUDGETS rule 5, Q-170).
 8. **Near plane and occluders.** The close views use a **0.05 m near plane**, so walls in
    front of the eye are not cut open. The occluder fade (GAME-PLAYER §2) stays on in
    look-around (objects between the camera and the player fade) and is off in first person.

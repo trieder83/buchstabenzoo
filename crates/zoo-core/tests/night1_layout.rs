@@ -204,8 +204,9 @@ fn layout_n1_001_everything_reachable_through_the_open_moon_door() {
             missing.push(h.id.clone());
         }
     }
-    // 3 enclosures + 2 buildings + 4 landmarks + 3 boards + 4 food boxes + 9 places
-    assert_eq!(checked, 25, "things checked");
+    // 3 enclosures + 2 buildings + 4 landmarks + 3 boards + 6 food boxes (4 outside + 2
+    // inside, Q-194 answered 2026-09-29) + 9 places
+    assert_eq!(checked, 27, "things checked");
     assert!(
         missing.is_empty(),
         "not reachable from the level-1 spawn: {missing:?}"
@@ -905,8 +906,10 @@ fn layout_n1_009_night_house() {
 
 // ------------------------------------------------------------------ LAYOUT-N1-010
 
-// LAYOUT-N1-010: the [[food_box]] list has exactly beetles, fruit, worms, nectar, each with a
-// walkable cell centre within 2 m in front of it reachable from the entry.
+// LAYOUT-N1-010: the [[food_box]] list has every night food (beetles, fruit, worms, nectar)
+// outside, plus 2-6 more real, labelled food boxes inside the hut that may repeat a food
+// (Q-194 answered 2026-09-29); every box has a walkable cell centre within 2 m in front of it
+// reachable from the entry.
 #[test]
 fn layout_n1_010_night_food_boxes() {
     let level = night_level();
@@ -914,7 +917,15 @@ fn layout_n1_010_night_food_boxes() {
     let grid = level.grid();
     let mut foods: Vec<&str> = data.food_boxes.iter().map(|b| b.food.as_str()).collect();
     foods.sort_unstable();
+    foods.dedup();
     assert_eq!(foods, ["beetles", "fruit", "nectar", "worms"]);
+    let hut = data.element("food_storage_n1").unwrap().rect;
+    let inside = data
+        .food_boxes
+        .iter()
+        .filter(|b| hut.contains(zoo_core::level::cell_of(b.pos())))
+        .count();
+    assert!((2..=6).contains(&inside), "{inside} inside food boxes");
     let reach = flood_fill(grid, entry_cell(), false);
     for b in &data.food_boxes {
         let ok = walkable_within(grid, b.pos(), 2.0).into_iter().any(|c| {

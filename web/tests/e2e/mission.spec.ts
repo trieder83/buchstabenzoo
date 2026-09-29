@@ -89,10 +89,10 @@ async function playZebra(page: Page, lang: string, level: string, shot?: string)
   await page.keyboard.press('Escape');
   await expect(page.locator('#panel')).toBeHidden();
 
-  // 2. Food boxes in front of the storage: first the wrong one (bamboo), then grass.
+  // 2. Food boxes in front of the storage (Q-181): first the wrong one (bamboo), then grass.
   for (const [food, x] of [
-    ['bamboo', -1.2],
-    ['grass', -0.4],
+    ['bamboo', -2.18],
+    ['grass', -1.5],
   ] as const) {
     await goto(page, x, 9.6);
     await face(page, 'KeyW');
@@ -154,7 +154,7 @@ test.describe('landscape desktop', () => {
   test('wrong food: the zebra is not interested (RESC-005 in the browser)', async ({ page }) => {
     const errors = await start(page, 'de', 'klasse2');
     const t = ftl('de');
-    await goto(page, -1.2, 9.6);
+    await goto(page, -2.18, 9.6); // the bamboo box in the row outside (Q-181)
     await face(page, 'KeyW');
     await expect(page.locator('#take')).toBeVisible(); // panel opens by itself
     await page.locator('#take').click();

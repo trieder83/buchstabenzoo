@@ -131,10 +131,15 @@ fn glsl3(v: Vec3) -> String {
 ///
 /// PERF-R-001: a draw gets only the lights that can reach it (`u_light_mask`, bit `i` = light
 /// `i`, [`light_mask`]; the mask loop is uniform control flow), and a fragment outside a
-/// light's hard edge skips the band and the colour work. The edge width is still
-/// `fwidth(distance)` taken per light before the skip, exactly as before, so the picture is
-/// pixel-identical (moving the derivatives out of the loop changes rim pixels: PERF-R-014,
-/// Q-180).
+/// light's hard edge (`dot(to, to) >= r²`) skips it before any other work.
+///
+/// PERF-R-014 (Q-180): the edge width is `fwidth(distance)` computed from the position
+/// derivatives `g_dwx` / `g_dwy`, taken once by `light_derivs(v_world)` at the top of the
+/// fragment shader's `main` (uniform control flow, defined on every GPU) instead of `fwidth`
+/// inside the light loops and the ground branch (undefined there: dark specks on the rims of
+/// the light pools under SwiftShader). With `∇d = −to / d`: `fwidth(d) = (|to·dFdx(world)| +
+/// |to·dFdy(world)|) / d`. The derivatives are taken only while `u_night.x > 0` (a uniform
+/// condition): by day they cost ≈ 11 % of the scene pass on the AMD iGPU (run 2026-09-28).
 pub fn night_glsl() -> String {
     format!(
         r#"
@@ -152,6 +157,17 @@ vec3 night_color(vec3 albedo, float lit) {{
     c *= {shadow:.3} + (1.0 - {shadow:.3}) * lit;
     return max(c, NIGHT_FLOOR);
 }}
+// position derivatives of the fragment (PERF-R-014): set once at the top of main(), only
+// when lamp light can show (a uniform condition: still uniform control flow; by day and at
+// dusk no fragment pays for them)
+vec3 g_dwx = vec3(0.0);
+vec3 g_dwy = vec3(0.0);
+void light_derivs(vec3 world) {{
+    if (u_night.x > 0.0) {{
+        g_dwx = dFdx(world);
+        g_dwy = dFdy(world);
+    }}
+}}
 // hard cartoon edge at r, anti-aliased over fw = fwidth(d) (at least 2 cm)
 float light_band(float d, float fw, float r) {{
     float aa = max(fw, 0.02);
@@ -162,6 +178,7 @@ vec3 shade(vec3 albedo, float lit, vec3 n, vec3 world) {{
     if (u_night.x <= 0.0 && u_night.y <= 0.0) return c;
     c = mix(c, albedo * mix(DUSK_SHADOW, DUSK_LIT, lit), u_night.y);
     c = mix(c, night_color(albedo, lit), u_night.x);
+    if (u_night.x <= 0.0) return c;   // dusk: lamp light is weighted by the night amount (0)
     // lamp light: flat warm pools with a hard edge (lantern, nearest lamps)
     float k = 0.0;
     bool tinted = false;
@@ -172,9 +189,10 @@ vec3 shade(vec3 albedo, float lit, vec3 n, vec3 world) {{
         if ((bits & 1u) == 0u) continue;
         vec4 L = u_lights[i];
         vec3 to = L.xyz - world;
-        float d = length(to);
-        float fw = fwidth(d);   // before the skip: every quad lane computes it
-        if (d >= L.w) continue;   // outside the hard edge: no light (band 0)
+        float d2 = dot(to, to);
+        if (d2 >= L.w * L.w) continue;   // outside the hard edge: no light (band 0)
+        float d = sqrt(d2);
+        float fw = (abs(dot(to, g_dwx)) + abs(dot(to, g_dwy))) / max(d, 1e-4);   // = fw(d), PERF-R-014
         float a = u_light_colors[i].a;   // strength, + 2 for a tinted (coloured) light
         float b = light_band(d, fw, L.w) * (a > 1.5 ? a - 2.0 : a);
         if (b > k) {{ k = b; tint = u_light_colors[i].rgb; tinted = a > 1.5; }}
@@ -186,9 +204,11 @@ vec3 shade(vec3 albedo, float lit, vec3 n, vec3 world) {{
             if (bits == 0u) break;
             if ((bits & 1u) == 0u) continue;
             vec4 P = u_pools[i];
-            float d = length(world.xz - P.xy);
-            float fw = fwidth(d);
-            if (d >= P.z) continue;
+            vec2 q = world.xz - P.xy;
+            float d2 = dot(q, q);
+            if (d2 >= P.z * P.z) continue;
+            float d = sqrt(d2);
+            float fw = (abs(dot(q, g_dwx.xz)) + abs(dot(q, g_dwy.xz))) / max(d, 1e-4);
             float b = light_band(d, fw, P.z) * P.w;
             if (b > k) {{ k = b; tint = LAMP_LIGHT; tinted = false; }}
         }}
@@ -437,21 +457,56 @@ mod tests {
     }
 
     // PERF-017 (PERF-R-001): the light loops walk the per-draw mask (uniform control flow)
-    // and skip a light outside its radius before the band; the edge width is fwidth(d) taken
-    // before the skip (the unchanged anti-aliasing of the old shader).
+    // and skip a light outside its radius before any other work (no `length`, band or
+    // colour before the skip).
     #[test]
-    fn perf_017_light_loops_skip_far_lights_after_the_derivative() {
+    fn perf_017_light_loops_skip_far_lights_first() {
         let s = night_glsl();
         let body = &s[s.find("vec3 shade(").unwrap()..];
         let loops = &body[body.find("for (int i").unwrap()..];
         assert_eq!(loops.matches("if (bits == 0u) break;").count(), 2);
-        for skip in ["if (d >= L.w) continue;", "if (d >= P.z) continue;"] {
+        for skip in [
+            "if (d2 >= L.w * L.w) continue;",
+            "if (d2 >= P.z * P.z) continue;",
+        ] {
             let at = loops.find(skip).unwrap_or_else(|| panic!("{skip}"));
             let before = &loops[..at];
-            let fw = before.rfind("fwidth(d)").expect("fwidth before the skip");
-            assert!(!before[fw..].contains("light_band("), "{skip}");
+            let from = before.rfind("if ((bits & 1u) == 0u) continue;").unwrap();
+            let head = &before[from..];
+            for work in ["sqrt(", "length(", "light_band(", "fwidth("] {
+                assert!(!head.contains(work), "{skip}: {work} before the skip");
+            }
         }
         assert!(!loops.contains("u_light_count") && !loops.contains("u_pool_count"));
+    }
+
+    // PERF-024 (PERF-R-014, Q-180): no derivative inside the light loops or the ground
+    // branch — the edge width comes from the position derivatives taken once by
+    // `light_derivs`, which every fragment shader with `shade()` calls first in `main()`
+    // (before any branch, discard or return: uniform control flow).
+    #[test]
+    fn perf_024_light_edge_derivatives_in_uniform_control_flow() {
+        let s = night_glsl();
+        let body = &s[s.find("vec3 shade(").unwrap()..];
+        for d in ["fwidth(", "dFdx(", "dFdy("] {
+            assert!(!body.contains(d), "{d} inside shade()");
+        }
+        let derivs = &s[s.find("void light_derivs(").unwrap()..s.find("vec3 shade(").unwrap()];
+        assert!(derivs.contains("dFdx(world)") && derivs.contains("dFdy(world)"));
+        // only under a uniform condition (u_night is in the frame block): no cost by day
+        let cond = derivs.find("if (u_night.x > 0.0)").expect("uniform guard");
+        assert!(cond < derivs.find("dFdx(world)").unwrap());
+        for (name, src) in [
+            ("static_fs", crate::shaders::static_fs()),
+            ("water_fs", crate::shaders::water_fs()),
+        ] {
+            let main = &src[src.find("void main() {").unwrap()..];
+            let first = main.lines().nth(1).unwrap().trim();
+            assert!(
+                first.starts_with("light_derivs(v_world);"),
+                "{name}: first statement {first}"
+            );
+        }
     }
 
     fn lamp_floats(ls: &[(Vec3, f32)]) -> Vec<[f32; 4]> {

@@ -223,6 +223,169 @@
         height: 68px;
         font-size: 36px;
       }
+      /* GAME-HINT: the 🧭 hint button directly below the gear (≥ 64 px), the bouncing
+         indicator above the target (DOM overlay: always visible, also through trees), the
+         edge arrow with distance dots when the target is off-screen. */
+      #compass-btn {
+        position: fixed;
+        right: calc(16px + env(safe-area-inset-right));
+        top: calc(96px + env(safe-area-inset-top));
+        width: 68px;
+        height: 68px;
+        font-size: 36px;
+      }
+      #compass-btn.on {
+        background: #ffd65c;
+      }
+      #compass-btn.pulse {
+        animation: nudge 1.1s ease-in-out 2;
+      }
+      @keyframes nudge {
+        50% {
+          transform: scale(1.18);
+          box-shadow: 0 0 0 10px rgba(255, 214, 92, 0.6);
+        }
+      }
+      #hint-marker,
+      #hint-edge {
+        position: fixed;
+        left: 0;
+        top: 0;
+        pointer-events: none;
+      }
+      #hint-marker .bob {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        animation: bob 0.9s ease-in-out infinite alternate;
+      }
+      #hint-marker .icon,
+      #hint-edge .icon {
+        width: 56px;
+        height: 56px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 5px solid #3b2314;
+        background: #ffd65c;
+        font-size: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 16px rgba(255, 244, 201, 0.9);
+      }
+      #hint-marker .arrow {
+        font-size: 34px;
+        line-height: 1;
+        color: #ffd65c;
+        -webkit-text-stroke: 3px #3b2314;
+        margin-top: -4px;
+      }
+      @keyframes bob {
+        to {
+          transform: translateY(-16px);
+        }
+      }
+      #hint-edge .spin {
+        position: absolute;
+        left: 28px;
+        top: 28px;
+        width: 0;
+        height: 0;
+      }
+      #hint-edge .spin span {
+        position: absolute;
+        left: 30px;
+        top: -22px;
+        font-size: 40px;
+        line-height: 44px;
+        color: #ffd65c;
+        -webkit-text-stroke: 3px #3b2314;
+        animation: poke 0.8s ease-in-out infinite alternate;
+      }
+      @keyframes poke {
+        to {
+          transform: translateX(8px);
+        }
+      }
+      #hint-edge .dots {
+        position: absolute;
+        left: 28px;
+        top: 62px;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 4px;
+      }
+      #hint-edge .dots i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        border: 2px solid #3b2314;
+        background: #fff3d6;
+      }
+      /* GAME-NIGHT rule 11: what is still missing before night falls — 🌙 + one icon per
+         animal of the level (filled = home, faded = missing); tap = hint. */
+      #night-progress {
+        position: fixed;
+        right: calc(16px + env(safe-area-inset-right));
+        top: calc(180px + env(safe-area-inset-top));
+        width: 68px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 6px 0;
+        border-radius: 34px;
+        border: 5px solid #3b2314;
+        background: #fff3d6;
+        box-shadow: 0 5px 0 rgba(59, 35, 20, 0.55);
+      }
+      #night-progress .moon,
+      #night-progress .pa {
+        width: 44px;
+        height: 44px;
+        font-size: 32px;
+        line-height: 44px;
+        text-align: center;
+      }
+      #night-progress .animals {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      #night-progress .pa.missing {
+        filter: grayscale(1);
+        opacity: 0.35;
+      }
+      #night-progress[data-state='night_coming'],
+      #night-progress[data-state='night'],
+      #night-progress[data-state='sleep'] {
+        background: #2e3e7a;
+      }
+      #night-progress[data-state='night_coming'] .moon,
+      #night-progress[data-state='sleep'] .moon {
+        border-radius: 50%;
+        animation: moonglow 1.2s ease-in-out infinite alternate;
+      }
+      @keyframes moonglow {
+        to {
+          box-shadow: 0 0 18px 6px #ffd66b;
+          background: rgba(255, 214, 107, 0.35);
+        }
+      }
+      @media (orientation: landscape) and (max-height: 540px) {
+        #night-progress {
+          top: calc(16px + env(safe-area-inset-top));
+          right: calc(100px + env(safe-area-inset-right));
+          width: auto;
+          height: 58px;
+          flex-direction: row;
+          padding: 0 8px;
+        }
+        #night-progress .animals {
+          flex-direction: row;
+        }
+      }
       #settings {
         position: fixed;
         right: calc(16px + env(safe-area-inset-right));
@@ -558,7 +721,11 @@
     <div id="hud-carry" hidden></div>
     <button id="drop-btn" class="round" type="button" hidden>✋⬇</button>
     <div id="lying-icons"></div>
+    <div id="hint-marker" hidden><div class="bob"><span class="icon"></span><span class="arrow">▼</span></div></div>
+    <div id="hint-edge" hidden><div class="spin"><span>➤</span></div><span class="icon"></span><span class="dots"></span></div>
     <button id="settings-btn" class="round" type="button">⚙️</button>
+    <button id="compass-btn" class="round" type="button">🧭</button>
+    <button id="night-progress" type="button" hidden><span class="moon">🌙</span><span class="animals"></span></button>
     <button id="view-btn" class="round" type="button" aria-pressed="false">👓</button>
     <button id="look-btn" class="round" type="button">👁️</button>
     <div id="settings" hidden></div>

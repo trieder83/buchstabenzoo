@@ -2,7 +2,7 @@
 
 Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-195** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-87 answered · 83 open · 10 other (partly answered / proposed / superseded).
+88 answered · 82 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -88,7 +88,6 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-153 — Manifest granularity and the new kind buildings (ART-PIPELINE): APIPE-001 requires a manifest entry with the same id and kind for every … (ART-PIPELINE, ART-ENVIRONMENT, GAME-NIGHT …)
 - Q-154 — Models used by the engine but not listed in any ART-* spec and without their own manifest entry / concept gate: door_wood, glass_door … (ART-ENVIRONMENT, ART-PIPELINE, GAME-NIGHT …)
 - Q-188 — Night progress 🌙 (GAME-NIGHT rule 11, user request 2026-09-28): the request names the day level's animals. (GAME-NIGHT, GAME-HINT)
-- Q-194 — Inside boxes of the food storages (Q-181 answered: "keep the food boxes outside, some additional boxes can go inside"): what are the boxes … (GAME-FEED, GAME-LAYOUT, GAME-LEVEL-1 …)
 
 ## Partly answered / other
 
@@ -105,6 +104,7 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-194 — Inside boxes of the food storages (Q-181 answered: "keep the food … → 2026-09-29: no — the boxes inside also contain food (real, labelled food boxes that can be taken); foods may be redundant (the …
 - Q-193 — Haze culling in the close views (PERF-R-018; found while checking … → 2026-09-28: yes — switch on haze culling in the close views (fixes CAMV-014).
 - Q-192 — Lighter path tiles (PERF-R-002 b): a trial re-export of kit_ground … → 2026-09-28: yes — keep the current path tiles (no lighter tiles).
 - Q-191 — Smooth turning — outline anti-aliasing (user report 2026-09-28 … → 2026-09-28: yes — anti-aliased outlines to remove the turning flicker.

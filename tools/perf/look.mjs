@@ -6,6 +6,8 @@
 //   node tools/perf/look.mjs capture <dist dir> <out dir>   # raw RGBA + PNG per scenario
 //     (LOOK_SCENARIOS=L08,L10 captures a subset; LOOK_PORT, default 4191)
 //   node tools/perf/look.mjs compare <out dir A> <out dir B> [max channel diff, default 2]
+//     (LOOK_DIFF_DIR=dir: writes <id>_diff.png per differing scenario — B dimmed to grey,
+//      differing pixels red, brighter = larger difference)
 //   node tools/perf/look.mjs ab <dist A> <dist B> [out.json]   # interleaved frame-time A/B
 //     (AB_VIEWPORTS=desktop,phone, AB_ROUNDS=8, AB_FRAMES=3; relative under SwiftShader;
 //      AB_INIT_B=file.js: an init script for the B pages, e.g. a shaderSource patch to
@@ -19,6 +21,7 @@
 // LOOK_PORT (default 4191), stopped at the end.
 import fs from 'node:fs';
 import http from 'node:http';
+import zlib from 'node:zlib';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -246,7 +249,68 @@ async function ab(distA, distB, out) {
   if (out) fs.writeFileSync(out, JSON.stringify(result, null, 1));
 }
 
+/** Minimal RGBA PNG encoder (filter 0, zlib), rows top first. */
+function png(w, h, rgba) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (buf) => {
+    let c = 0xffffffff;
+    for (const x of buf) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const td = Buffer.concat([Buffer.from(type), data]);
+    const c = Buffer.alloc(4);
+    c.writeUInt32BE(crc(td));
+    return Buffer.concat([len, td, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0);
+  ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 6;
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) rgba.copy(raw, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', zlib.deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+/** Diff image of two captures (readPixels order: bottom row first) → PNG buffer. */
+function diffImage(x, y, w, h) {
+  const out = Buffer.alloc(w * h * 4);
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      const i = ((h - 1 - row) * w + col) * 4;
+      const o = (row * w + col) * 4;
+      let m = 0;
+      for (let c = 0; c < 3; c++) m = Math.max(m, Math.abs(x[i + c] - y[i + c]));
+      if (m > 0) {
+        out[o] = 255;
+        out[o + 1] = Math.max(0, 160 - m * 2);
+        out[o + 2] = 0;
+      } else {
+        const g = Math.round((y[i] + y[i + 1] + y[i + 2]) / 3 * 0.45);
+        out[o] = out[o + 1] = out[o + 2] = g;
+      }
+      out[o + 3] = 255;
+    }
+  }
+  return png(w, h, out);
+}
+
 function compare(a, b, tol) {
+  const diffDir = process.env.LOOK_DIFF_DIR;
+  if (diffDir) fs.mkdirSync(diffDir, { recursive: true });
+  const sizes = fs.existsSync(path.join(b, 'summary.json')) ? JSON.parse(fs.readFileSync(path.join(b, 'summary.json'), 'utf8')) : {};
   let worst = 0;
   const rows = [];
   for (const [id] of SCENARIOS) {
@@ -281,6 +345,11 @@ function compare(a, b, tol) {
     }
     const n = x.length / 4;
     worst = Math.max(worst, over);
+    if (diffDir && diff > 0) {
+      const w = sizes[id]?.w ?? W;
+      const h = sizes[id]?.h ?? H;
+      fs.writeFileSync(path.join(diffDir, `${id}_diff.png`), diffImage(x, y, w, h));
+    }
     rows.push(`${id}: ${diff} px differ (${((100 * diff) / n).toFixed(3)} %), ${over} px > ${tol}, max channel diff ${max}, mean ${(sum / (n * 3)).toFixed(4)}`);
   }
   console.log(rows.join('\n'));

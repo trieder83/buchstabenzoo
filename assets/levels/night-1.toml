@@ -123,9 +123,10 @@ type = "building"
 kind = "food_hut"
 rect = [-44, 26, 5, 6]
 door = [-40, 29]             # east facade, opens onto the plaza
+interior = [-43, 27, 3, 4]   # 3 x 4 m walkable floor (Q-092); the wall band holds the inside food boxes and the model's sacks
 blocks_view = true
 height_m = 3.5
-notes = "Small wooden food hut with warmly lit windows (env_night_overview); the 4 night food boxes stand in front of its east facade (proposal Q-135)."
+notes = "Small wooden food hut with warmly lit windows (env_night_overview), enterable: `interior` (-43, 27, 3, 4), door (-40, 29) on the east facade; the 4 night food boxes stand in front of its east facade (Q-181 answered 2026-09-28, Q-135); 2 more real, labelled food boxes stand inside at its west wall (Q-194 answered 2026-09-29: real food, redundant with the outside row allowed)."
 
 # ---------------------------------------------------------------- night house (north-east): enterable hall + three indoor enclosures
 [[element]]
@@ -377,22 +378,38 @@ notes = "The one tall dark pointed fir tree in the north-west corner, with cones
 # plaza stay free in front of them.
 [[food_box]]
 food = "beetles"
-pos = [-38.66, 27.3]
+pos = [-38.66, 26.0]
 facing = "+x"
 
 [[food_box]]
 food = "fruit"
-pos = [-38.66, 28.1]
+pos = [-38.66, 26.65]
 facing = "+x"
 
 [[food_box]]
 food = "worms"
-pos = [-38.66, 30.9]
+pos = [-38.66, 27.3]
 facing = "+x"
 
 [[food_box]]
 food = "nectar"
-pos = [-38.66, 31.7]
+pos = [-38.66, 27.95]
+facing = "+x"
+
+# ---------------------------------------------------------------- food boxes inside `food_storage_n1` (GAME-FEED §7, Q-194 answered 2026-09-29)
+# Real, labelled food boxes (same as the outside row: interact -> label panel -> take) stand
+# against the inner walls on the 0.15 m plank platform of the solid 1 m wall band, labels
+# facing the free floor, clear of the door walkway (LAYOUT-032); foods are redundant with the
+# outside row (the night zoo's own foods, GAME-NIGHT rule 5). Positions kept from the former
+# unlabelled stock crates.
+[[food_box]]
+food = "beetles"
+pos = [-43.44, 28.2]   # back (west) wall; the model's sacks stand in the corners
+facing = "+x"
+
+[[food_box]]
+food = "fruit"
+pos = [-43.44, 29.8]   # back wall
 facing = "+x"
 
 # ================================================================ hiding places (candidates)

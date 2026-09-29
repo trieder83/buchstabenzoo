@@ -124,10 +124,12 @@ fn play_007_speed_blends_within_0_2s() {
 // GAME-PLAYER §6 / GAME-LAYOUT: solid cells are not walkable
 #[test]
 fn cannot_enter_solid_cells() {
-    let start = Vec2::new(0.5, 9.5); // in front of the food storage (solid from z = 11)
+    // in front of the food storage's south facade beside the door (solid from z = 11; the
+    // door cell (0, 11) is walkable since the storage is enterable, LAYOUT-041)
+    let start = Vec2::new(-1.5, 9.5);
     let (level, mut p, params) = setup(start);
     walk(&level, &mut p, &params, Vec2::Y, 3.0);
-    assert!(p.pos.y < 11.0, "entered the storage: {}", p.pos);
+    assert!(p.pos.y < 11.0, "walked into the storage wall: {}", p.pos);
     // sliding along the wall
     let before = p.pos;
     walk(

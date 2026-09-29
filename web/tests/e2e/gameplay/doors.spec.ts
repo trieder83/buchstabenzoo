@@ -2,8 +2,12 @@
 // walkable opening of the joined zoo in both directions with the real keyboard input path
 // (desktop) — the doors of the enterable buildings, the garden gate, the moon door at night —
 // and once with the touch joystick on a phone; closed enclosure gates stay solid when she is
-// not leading an animal (GAME-LAYOUT "Gates and doors"), and she walks right up to every food
-// storage door through the gap in the food-box row (Q-150 answered 2026-09-27). Review shots of the tight spots found
+// not leading an animal (GAME-LAYOUT "Gates and doors"). Since 2026-09-28 every building with a
+// door is enterable (LAYOUT-041): the food storages and the night food hut are walked through
+// too; the labelled food boxes stand outside in rows with a wide door gap (Q-181 answered) and
+// she reaches every one of them; inside, a few more real, labelled food boxes stand along the
+// walls, solid and reachable exactly like an outside box (Q-194 answered 2026-09-29). Review
+// shots of the tight spots found
 // in the QA run go to qa/reports/img/ (report qa/reports/2026-09-27-doors-blocked.md).
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
@@ -28,6 +32,11 @@ const DOORS: Door[] = [
   { name: 'zookeeper_house_1', x: -8.5, z: 2.5, nx: 1, nz: 0 },
   { name: 'zookeeper_house_3', x: -7.5, z: 61.5, nx: 0, nz: -1 },
   { name: 'night_house', x: -36.5, z: 39.5, nx: 0, nz: -1 },
+  // the food storages and the night food hut (enterable since 2026-09-28, LAYOUT-041)
+  { name: 'food_storage', x: 0.5, z: 11.5, nx: 0, nz: -1 },
+  { name: 'food_storage_2', x: 39.5, z: 30.5, nx: -1, nz: 0 },
+  { name: 'food_storage_3', x: 3.5, z: 61.5, nx: 0, nz: -1 },
+  { name: 'food_storage_n1', x: -39.5, z: 29.5, nx: 1, nz: 0 },
   { name: 'garden_veg', x: 8, z: 36, nx: 0, nz: -1 },
   { name: 'moon_door', x: -23, z: 30, nx: 1, nz: 0, night: true },
 ];
@@ -72,20 +81,67 @@ test.describe('desktop 1920×1080', () => {
     expect(errors).toEqual([]);
   });
 
-  test('LAYOUT-032 / Q-150: she walks right up to every food storage door (gap in the box row)', async ({ page }) => {
+  // Day storages / night hut rects (`rect = [x, z, w, d]` in the level data): a box centre
+  // inside one of them stands inside the (enterable) storage (Q-194 answered 2026-09-29).
+  const STORAGE_RECTS = [
+    { x: -4, z: 11, w: 8, d: 6 }, // food_storage
+    { x: 39, z: 27, w: 6, d: 8 }, // food_storage_2
+    { x: -1, z: 61, w: 8, d: 6 }, // food_storage_3
+    { x: -44, z: 26, w: 5, d: 6 }, // food_storage_n1
+  ];
+  const isInside = (b: { x: number; z: number }) =>
+    STORAGE_RECTS.some((s) => b.x >= s.x && b.x < s.x + s.w && b.z >= s.z && b.z < s.z + s.d);
+
+  test('LAYOUT-041 / Q-181: she walks up to each food box in the rows outside and it is her target', async ({ page }) => {
     await startGame(page, 'de', 'klasse1');
-    // storage doors: centre of the door on the facade, outward normal (not enterable: she stops
-    // at the closed door, ≤ player radius + 0.1 m from the facade)
-    for (const [name, x, z, nx, nz] of [
-      ['food_storage', 0.5, 11.0, 0, -1],
-      ['food_storage_2', 39.0, 30.5, -1, 0],
-      ['food_storage_3', 3.5, 61.0, 0, -1],
-      ['food_storage_n1', -39.0, 29.5, 1, 0],
-    ] as const) {
-      await teleport(page, x + nx * 2.5, z + nz * 2.5);
-      const end = await hold(page, [await keyFor(page, -nx, -nz)], 3.0);
-      const gap = (end.x - x) * nx + (end.z - z) * nz;
-      expect(gap, `${name}: distance to the door`).toBeLessThan(0.27 + 0.1);
+    const boxes = JSON.parse(await page.evaluate(() => window.__zoo!.app.food_boxes_json())) as {
+      food: string;
+      x: number;
+      z: number;
+      fx: number;
+      fz: number;
+    }[];
+    // 3 day storages × 10 + the night hut × 4 outside, plus real boxes inside (Q-194)
+    expect(boxes.length).toBe(54);
+    const outside = boxes.filter((b) => !isInside(b));
+    expect(outside.length).toBe(34);
+    for (const b of outside) {
+      // 1.6 m in front of the label, on the path; she walks straight at the box
+      await teleport(page, b.x + b.fx * 1.6, b.z + b.fz * 1.6);
+      const end = await hold(page, [await keyFor(page, -b.fx, -b.fz)], 1.5);
+      const gap = (end.x - b.x) * b.fx + (end.z - b.z) * b.fz;
+      // she stops at the box (half depth 0.3 + her radius), never walks into it
+      expect(gap, `${b.food} at (${b.x}, ${b.z}): she stops at the box`).toBeLessThan(0.9);
+      expect(gap).toBeGreaterThan(0.3);
+      expect(await page.evaluate(() => window.__zoo!.app.target_key()), `${b.food}: her target`).toBe(`food_box:${b.food}`);
+    }
+  });
+
+  test('FEED-027 / FEED-028 / Q-194: the food boxes inside the level-1 storage are solid and a target like any other box', async ({
+    page,
+  }) => {
+    await startGame(page, 'de', 'klasse1');
+    // level-1.toml `[[food_box]]` inside `food_storage`: centre, food and the way the box
+    // faces (into the room) — positions kept from the former unlabelled stock crates.
+    const inside: [string, number, number, number, number][] = [
+      ['grass', -2.52, 16.44, 0, -1],
+      ['melons', -1.88, 16.44, 0, -1],
+      ['bamboo', 1.28, 16.44, 0, -1],
+      ['grass', 1.92, 16.44, 0, -1],
+      ['melons', -3.44, 13.0, 1, 0],
+      ['bamboo', 3.44, 14.6, -1, 0],
+    ];
+    for (const [food, x, z, fx, fz] of inside) {
+      await teleport(page, x + fx * 1.6, z + fz * 1.6);
+      const end = await hold(page, [await keyFor(page, -fx, -fz)], 1.5);
+      const gap = (end.x - x) * fx + (end.z - z) * fz;
+      // she stops at the interior edge in front of the plank platform (the wall band is solid
+      // ground, unaffected by the box being a real food box now), never walks into the box
+      expect(gap, `${food} box (${x}, ${z}): she stops in front of it`).toBeGreaterThan(0.6);
+      expect(gap).toBeLessThan(1.0);
+      expect(await page.evaluate(() => window.__zoo!.app.target_key()), `${food} box (${x}, ${z}): her target`).toBe(
+        `food_box:${food}`,
+      );
     }
   });
 
@@ -118,8 +174,8 @@ test.describe('review shots 1280×720', () => {
     await shot('zh3-tap', -5.5, 60.0);
     // night house: the boards hang flat on the facade (Q-157, `mount = "wall"`)
     await shot('nighthouse-board', -39.3, 38.4);
-    // food storage (Q-150 answered): the box row leaves a gap in front of the door
-    await shot('storage-gap', 0.5, 10.6);
+    // food storage: enterable, more real food boxes inside along the walls (Q-194)
+    await shot('storage-inside', 0.5, 14.0);
     // night: she walks into a lantern post (no collider yet, LAYOUT-035 / F4)
     expect(await page.evaluate(() => window.__zoo!.app.debug_set_daytime('night'))).toBe(true);
     await teleport(page, 52.2, 24.25);

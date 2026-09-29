@@ -6,7 +6,9 @@ mod common;
 use std::collections::{BTreeMap, BTreeSet};
 
 use glam::{IVec2, Vec2};
-use zoo_core::level::{cell_center, CellKind, ElementType, Grid, Level, LevelData, Surface};
+use zoo_core::level::{
+    cell_center, cell_of, CellKind, ElementType, Grid, Level, LevelData, Surface,
+};
 use zoo_core::nav::{flood_fill, min_cost, Cost};
 use zoo_core::wander::{hiding_area, home_area};
 
@@ -181,10 +183,19 @@ fn layout_023_enterable_building() {
     let houses: Vec<_> = zoo.elements.iter().filter(|e| e.is_enterable()).collect();
     let mut ids: Vec<&str> = houses.iter().map(|e| e.id.as_str()).collect();
     ids.sort_unstable();
-    // the zookeeper houses of levels 1 (bed, GAME-NIGHT) and 3, the night house of night_1
+    // every building with a door (LAYOUT-041): the zookeeper houses of levels 1 (bed,
+    // GAME-NIGHT) and 3, the night house of night_1, the food storages and the food hut
     assert_eq!(
         ids,
-        ["night_house", "zookeeper_house_1", "zookeeper_house_3"]
+        [
+            "food_storage",
+            "food_storage_2",
+            "food_storage_3",
+            "food_storage_n1",
+            "night_house",
+            "zookeeper_house_1",
+            "zookeeper_house_3"
+        ]
     );
     for e in houses {
         let inner = e.interior.unwrap();
@@ -371,9 +382,14 @@ fn layout_l2_003_l3_003_no_overlaps() {
         assert!(overlaps.is_empty(), "{}: {overlaps:?}", case.id);
         let grid = Level::new(common::zoo()).grid().clone();
         let mut covered = Vec::new();
+        let zoo = common::zoo();
         for e in data.elements_of(ElementType::Path) {
             for c in e.rect.cells() {
-                if let Some(s) = grid.solid_element(c) {
+                // the street runs on under the level-transition barriers (LAYOUT-040)
+                if let Some(s) = grid
+                    .solid_element(c)
+                    .filter(|&s| zoo.elements[s].ty != ElementType::Barrier)
+                {
                     covered.push((e.id.clone(), s, c));
                 }
             }
@@ -792,20 +808,37 @@ fn layout_l2_009_l3_009_spots_in_reach() {
 }
 
 // LAYOUT-L2-011, LAYOUT-L3-011: 10 food boxes (one per food) in front of the level's
-// storage, each with a reachable walkable standing cell within 2 m.
+// storage, each with a reachable walkable standing cell within 2 m; plus 2-6 more real,
+// labelled food boxes inside the storage (Q-194 answered 2026-09-29), foods may repeat.
 #[test]
 fn layout_l2_011_l3_011_food_boxes() {
     for (case, storage) in [(L2, "food_storage_2"), (L3, "food_storage_3")] {
         let data = part_data(case.id);
-        assert_eq!(data.food_boxes.len(), 10, "{}", case.id);
-        let foods: BTreeSet<&str> = data.food_boxes.iter().map(|b| b.food.as_str()).collect();
+        let rect = data.element(storage).unwrap().rect;
+        let outside: Vec<_> = data
+            .food_boxes
+            .iter()
+            .filter(|b| !rect.contains(cell_of(b.pos())))
+            .collect();
+        let inside: Vec<_> = data
+            .food_boxes
+            .iter()
+            .filter(|b| rect.contains(cell_of(b.pos())))
+            .collect();
+        assert_eq!(outside.len(), 10, "{}", case.id);
+        let foods: BTreeSet<&str> = outside.iter().map(|b| b.food.as_str()).collect();
         assert_eq!(foods.len(), 10);
+        assert!(
+            (2..=6).contains(&inside.len()),
+            "{}: {} inside food boxes",
+            case.id,
+            inside.len()
+        );
         let zoo = common::zoo();
         let level = zoo_level(case.open);
         let grid = level.grid();
         let k = zoo.part_index(case.id).unwrap();
         let reach = reach_of(grid, zoo.parts[k].spawn.cell());
-        let rect = data.element(storage).unwrap().rect;
         for b in &data.food_boxes {
             assert!(
                 rect.distance_to(b.pos()) <= 1.0,

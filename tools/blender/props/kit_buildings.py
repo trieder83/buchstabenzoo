@@ -238,6 +238,20 @@ def zookeeper_house():
     return A
 
 
+PLATFORM = 0.15   # storage platform height (zoo_core::scene::STORAGE_PLATFORM_M): the stock boxes stand on it
+
+
+def platform_ring(A, slabs):
+    """Low plank platform in the solid wall band of an enterable storage (between the inner
+    wall faces and the level `interior`, the door gap left free): the game's unlabelled stock
+    boxes (`[[prop]]` `food_box`, Q-194) stand on it and it shows where the walkable floor ends
+    (LAYOUT-019, no invisible walls; Q-181).
+    slabs = [(x0, x1, y0, y1)]."""
+    for x0, x1, y0, y1 in slabs:
+        A.add(zb.box((x1 - x0, y1 - y0, PLATFORM), ((x0 + x1) / 2, (y0 + y1) / 2, PLATFORM / 2),
+                     color="wood_light", side_color="wood", bevel=0.02, bevel_edges="top"))
+
+
 # --------------------------------------------------------------------------- food storage
 
 def gambrel(x):
@@ -253,8 +267,12 @@ def food_storage():
     """level-1 `food_storage` rect (-4, 11, 8, 6), door cell (0, 11) on the south facade:
     origin = rect centre (0, 14). Barn with a gambrel roof, ridge north-south; south facade
     (outer face) on the rect edge y = -3.0 (the game's "Futter" board is 5 cm in front of
-    it). Door opening x 0.03..0.97 (door_wood, hinge at x 0.03). Not enterable (no interior in
-    the level data); roof + ceiling + inner wall faces are modelled anyway."""
+    it). Door opening x 0.03..0.97 (door_wood, hinge at x 0.03). Enterable (level `interior`
+    (-3, 12, 6, 4), Q-181): the labelled food boxes stand outside, unlabelled stock boxes are
+    separate `food_box` props against the inner wall faces (Q-194), so the model has no crates
+    of its own; roof + ceiling + inner wall
+    faces are modelled (hidden roof / walls_upper inside in the zoo view, kept in first
+    person)."""
     A = nl.Asset("food_storage")
     A.node(UP, pivot=(0, 0, CUT))
     EAVE = 2.6
@@ -310,9 +328,12 @@ def food_storage():
     A.add(zb.box((0.3, yl1 - yl0 + 0.06, 0.12), (0, (yl0 + yl1) / 2, gambrel(0) + th + 0.03),
                  color="roof_brown_dark", bevel=0.03, bevel_edges="long"), node="roof")
     ceiling(A, -X + T, X - T, Y0 + T, Y1 - T, EAVE - 0.04)
-    # a few crates inside (seen when the roof is hidden)
-    for i, (x, y) in enumerate(((-3.2, 2.2), (-2.5, 2.2), (-3.2, 1.5), (3.1, 2.2), (2.4, 2.2))):
-        A.add(zb.box((0.6, 0.6, 0.6), (x, y, 0.3), color="wood_light", side_color="wood"))
+    # no crates inside: the stock boxes (props, Q-194) stand along the walls on a plank platform
+    # in the wall band around the interior (x -3..3, y -2..2), door gap x 0..1 (Q-181)
+    xi, yi = X - T, Y1 - T          # inner wall faces (3.75, 2.75); south inner face Y0 + T
+    platform_ring(A, [(-xi, 0.0, Y0 + T, -2.0), (1.0, xi, Y0 + T, -2.0),   # south, beside the door
+                      (-xi, xi, 2.0, yi),                                    # north (back wall)
+                      (-xi, -3.0, -2.0, 2.0), (3.0, xi, -2.0, 2.0)])         # west, east
     return A
 
 
@@ -323,7 +344,9 @@ def food_hut():
     east facade: origin = rect centre (-41.5, 29). Small plank hut, gable roof with the ridge
     north-south; east facade (outer face) on the rect edge x = +2.5 (wall lamp at level x
     -38.95). Door opening y 0.03..0.97 in the east wall (door_wood). Lit windows on the east
-    (serving hatch), south and west."""
+    (serving hatch), south and west. Enterable (level `interior` (-43, 27, 3, 4), Q-181): a
+    plank platform fills the wall band, two stock boxes (props, Q-194) stand on it at the west
+    wall; the 4 night food boxes stand outside (Q-181)."""
     A = nl.Asset("food_hut")
     A.node(UP, pivot=(0, 0, CUT))
     EAVE, RIDGE = 2.3, 3.4
@@ -369,10 +392,15 @@ def food_hut():
             p.move(cx, 0, 0)
         A.add(parts, mat=mat, node="roof", keep_down=keep)
     ceiling(A, X0 + T, X1 - T, Y0 + T, Y1 - T, EAVE - 0.04)
-    # sacks and crates inside
+    # plank platform in the wall band around the interior (level `interior` = x -1.5..1.5,
+    # y -2..2), door gap y 0..1 in the east band; the stock boxes stand on its west part (Q-194)
+    platform_ring(A, [(X0 + T, -1.5, Y0 + T, Y1 - T),                        # west (back wall)
+                      (1.5, X1 - T, Y0 + T, 0.0), (1.5, X1 - T, 1.0, Y1 - T),  # east, beside the door
+                      (-1.5, 1.5, Y0 + T, -2.0), (-1.5, 1.5, 2.0, Y1 - T)])    # south, north
+    # sacks and crates on the platform in the north corners
     for x, y in ((-1.8, 2.3), (-1.2, 2.3), (-1.8, 1.7)):
-        A.add(zb.box((0.5, 0.5, 0.5), (x, y, 0.25), color="wood_light", side_color="wood"))
-    A.add(zb.knob(0.3, (1.6, 2.2, 0.3), color="straw", u=8, v=5, squash=1.1))
+        A.add(zb.box((0.5, 0.5, 0.5), (x, y, PLATFORM + 0.25), color="wood_light", side_color="wood"))
+    A.add(zb.knob(0.3, (1.6, 2.2, PLATFORM + 0.3), color="straw", u=8, v=5, squash=1.1))
     return A
 
 

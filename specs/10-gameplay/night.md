@@ -96,6 +96,18 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
     separate models; the comic style stays (cel shading, outlines). Performance budget as
     by day.
 
+11. **Night progress (user request 2026-09-28):** the child must always see what is still
+    missing before night falls. A small **🌙 progress indicator** (HUD, no reading needed)
+    shows one icon per animal species of the **current day level**: filled = home, empty
+    (faded) = still missing. It is visible during day play. When all animals of the level are
+    home it shows that **night is coming** (all icons filled, the 🌙 glows) through the
+    celebration and dusk. At night it shows the animals of the unfinished night level
+    (night zoo); when nothing is missing any more it shows 🛏 (sleep) — also by day while the
+    night zoo waits (Q-140). While sleeping and in the morning it is hidden, and when every
+    unlocked level is complete by day it is hidden. **Tapping it is the same as the 🧭 hint
+    button** (GAME-HINT): the hint leads to the next missing animal's mission step. No text
+    is needed; its label for screen readers is the Fluent key `ui-night-progress`.
+
 ## Implementation data (level design, 2026-09-27 — Q-133…Q-139 answered)
 
 Where the night lives in the level data (owner `zoo-level-designer`; details in GAME-LAYOUT
@@ -159,7 +171,11 @@ Rules for the implementation that follow from the data:
   lights with a hard edge: the player's lantern (centre 1.4 m above her feet, radius ≈ 2.87 m —
   she is always lit, ground pool 2.5 m, Q-142) + the 8 lamps nearest to the camera target within
   22 m; the next 24 lamps are **light-pool decals** (flat pools evaluated on the ground in the
-  same shader, no extra draw call — Q-114); farther lamps stay emissive only. Lamp light is
+  same shader, no extra draw call — Q-114); farther lamps stay emissive only. On weak phones
+  the automatic low quality tier (PERF-BUDGETS rule 5, Q-170) lights the lantern + the 4
+  nearest lamps as point lights and the next 24 as light pools. The hard light edge is
+  anti-aliased over the pixel footprint from position derivatives taken once per fragment
+  before the light loops (PERF-R-014, Q-180). Lamp light is
   pulled 35 % towards a flat warm cream (style frame); coloured indoor lights (night house
   blue `#5B7FE0` / red-orange `#E8735A`) keep their colour. Emissive surfaces (instance colour
   alpha 2): lamp glass `#FFD66B`, lit windows `#FFC857` (placeholder panes on procedural building
@@ -185,6 +201,14 @@ Rules for the implementation that follow from the data:
   ≈ 2.87 m centred 1.4 m above her feet, so its hard-edged ground pool is 2.5 m = the
   eyeshine radius (Q-142 answered, NIGHT-018). Placeholders (boxes) remain only as
   fallbacks for missing models.
+- **Night progress** (rule 11, `zoo_core::hints::night_progress`): state `missing` (the
+  first unlocked day level with a missing animal), `night_coming` (dusk pending or dusk:
+  the level of the last nightfall), `night` (the first unlocked, unfinished night level),
+  `sleep` (night with nothing missing, or by day while `night_zoo_waiting`), `hidden`
+  (sleeping, morning, or nothing left by day); one entry per species (a pair counts as home
+  when both are). Host: `#night-progress` (right, below the 🧭 button; a row left of the gear
+  on low landscape screens), icons ≥ 40 px, missing ones faded and grey, tap = hint press
+  (`App::night_progress_json`).
 - **Host:** 🛏 / 🌙 choice icons at night, the dusk / morning / welcome / night-complete
   cut-in texts per reading level (`night-*` keys), the dream fade while sleeping.
 
@@ -210,6 +234,9 @@ Rules for the implementation that follow from the data:
 | NIGHT-016 | Given night and the player standing next to the bed, when `E` is pressed (desktop) or the touch action button (🛏) is tapped, then sleeping starts; away from the bed neither does anything bed-related. | e2e |
 | NIGHT-017 | Given the bat or the owl (`fly_height` in `animal_anims.toml`), then perched at its hiding place it plays `hang` (bat, data pose) / `perch` at the perch height, following the child it plays `fly` 1.5 m above the ground, at home it stands (`idle`); its `eye_glow` shines only inside the lantern radius and never while `sleep` plays (Q-146). | unit |
 | NIGHT-018 | Given the player's lantern at night, then its visible ground pool (sphere radius, centre 1.4 m above her feet) is 2.5 m ± 0.01 m = the eyeshine radius `LANTERN_RADIUS_M` (Q-142). | unit |
+| NIGHT-019 | Given a new game, then the 🌙 progress shows the three level-1 animals empty; each animal home fills its icon; all home → `night_coming` through the celebration and dusk; at night the `night_1` animals; all of them home → `sleep`; sleeping/morning hidden; the next day the level-2 animals; by day with the night zoo waiting → `sleep` and the hint points at the bed (rule 11). | unit |
+| NIGHT-020 | Given day play on a phone in portrait, then the 🌙 progress is visible (not covering the 🧭 button, the gear or the carried-food HUD), shows one icon per level-1 animal, a mission completed fills one icon, and tapping it shows a hint (HINT-013). | e2e |
+| NIGHT-021 | Given all level-1 missions played to the end (scripted child following the hints, real movement), then the 🌙 shows night coming, dusk turns into night, the moon door opens, the bed works with `E` and the next morning comes (the whole night cycle is reachable end to end). | e2e |
 
 ## Open questions
 
@@ -221,6 +248,7 @@ Rules for the implementation that follow from the data:
 - Q-141 answered 2026-09-27: until `night_2` exists, level 3 opens the morning after level 2's night; bed `bed_l2` at level 2's food storage, the 🛏 icon offers the nearest unlocked bed.
 - Q-142 answered 2026-09-27: eyeshine stays 2.5 m, the visible lantern ground pool is 2.5 m too (NIGHT-018).
 - Q-146 answered 2026-09-27: `eye_glow` is skipped while `sleep` plays; no eyelids for v1 (NIGHT-017).
+- Q-188 (open, proposal): the 🌙 progress also shows the night-zoo animals at night and 🛏 when nothing is missing (rule 11).
 - Q-147 (open) String-light spans ≤ 6 m by stretching the model.
 - Q-143 answered 2026-09-27: night animals, `sleep` and `eye_glow` are in ART-ANIMALS (models v1).
 - Q-152 shelter over `bed_l2`. Q-153 / Q-154 night models: manifest entries and ART-ENVIRONMENT listing.

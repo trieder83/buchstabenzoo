@@ -82,7 +82,7 @@ one straight line of pieces, measured in whole metres along x or z.
 |---|---|---|
 | `path` | main path, side path, bridge, jetty, cave floor | yes, `surface = path` (full speed) |
 | `enclosure` | one per animal (see GAME-ANIMALS) | only via its gate when leading an animal |
-| `building` | entrance, food storage, kiosk, toilet, zookeeper house | entrance only if interactive; *proposal Q-092:* a building with an `interior` rect and a `door` cell is **enterable** — interior and door cells are walkable (surface `path`, floor), the rest stays solid (e.g. `zookeeper_house_3`, GAME-LEVEL-3) |
+| `building` | entrance, food storage, kiosk, toilet, zookeeper house | entrance only if interactive; *proposal Q-092:* a building with an `interior` rect and a `door` cell is **enterable** — interior and door cells are walkable (surface `path`, floor), the rest stays solid (e.g. `zookeeper_house_3`, GAME-LEVEL-3). **Every building with a `door` is enterable** (user request 2026-09-28, LAYOUT-041) — see "Enterable buildings" |
 | `landmark` | pirate ship, fountain, map board, stream, waterfall, stage, zoo train | around it / on it if specified; water landmarks (`pond`, `river`, `stream`, `fountain`) are never walkable |
 | `barrier` | road block, stones, fallen tree, construction fence, closed gate, **moon door** (kind `moon_door`, see "Moon door and night levels") | no (while closed) |
 | `boundary` | outer zoo wall, hedge, water | no, never removed |
@@ -212,9 +212,43 @@ open for confirmation):**
   (≈ 119 / 9.2 k).
 - Enterable buildings (Q-092): `interior` + `door` cells are walkable floor (surface
   `path`); the roof and the walls above 1 m are hidden while the player stands on an
-  interior or door cell (PLAY-028).
+  interior or door cell (PLAY-028). Since 2026-09-28 every building with a door is
+  enterable (see "Enterable buildings").
 - LAYOUT-024 treats background kinds (water bodies shared by one animal's places, the
   level-1 tree areas, walls, hedges and the three-part level-1 rock hill) as non-details.
+
+## Enterable buildings (user request 2026-09-28)
+
+**Every building with a door is enterable** once its level is unlocked ("make sure we can
+enter all unlocked doors, like from the Futterhaus"): a `building` element with a `door` cell
+always has an `interior` rect (LAYOUT-041). Today: `zookeeper_house_1`, `zookeeper_house_3`,
+`night_house`, the food storages `food_storage` (interior (−3, 12, 6, 4)), `food_storage_2`
+((40, 28, 4, 6)), `food_storage_3` ((0, 62, 6, 4)) and the food hut `food_storage_n1`
+((−43, 27, 3, 4)). Buildings without a door (entrance arch, kiosk) stay solid blocks.
+- **Floor:** interior and door cells are walkable (surface `path`); the ground height inside is
+  the floor (PLAY-035). The remaining cells of the building rect — the 1 m **wall band** between
+  the outer rect and the interior — stay solid; built-ins, furniture and food boxes may stand
+  in it against the inner wall faces (they are reached from the interior). Where a model's
+  walls are thinner than the band (food storage, food hut: 0.2 m walls on the rect edge), a
+  low plank platform (0.15 m, part of the model) fills the band so the walkable floor ends
+  visibly at the interior edge (LAYOUT-019, no invisible walls); the stock boxes stand on it.
+- **Door:** the door cell touches an interior cell and a walkable cell outside; every interior
+  cell is reachable from the door; the `door_wood` model opens while the player is within
+  1.6 m of the door cell (`Game::opening_open`, "Gates and doors") and closes behind her.
+- **Roof:** in the zoo view the roof, the walls above 1 m and a name board over the door (the
+  "Futter" board of a food storage, the night-house board) are hidden while the player stands
+  on an interior or door cell (PLAY-028); in first person the roof and its ceiling stay
+  (CAMV-022).
+- **Inside is solid where it looks solid:** furniture and stock boxes have colliders or stand in
+  the solid wall band (GAME-PLAYER 9); nothing stands in the door walkway (LAYOUT-032).
+- **Food storages** (Q-181 answered 2026-09-28): the labelled food boxes stay **outside** in a
+  row in front of the door facade (GAME-FEED §7), the door gap wide enough for an enterable
+  door (≥ 0.9 m beside each post, LAYOUT-038; approaches from 3 m aside free, LAYOUT-034).
+  Inside (Q-194 answered 2026-09-29), a few more **real, labelled** food boxes stand on the
+  plank platform along the walls, taken exactly like the outside ones (foods may repeat the
+  outside row, FEED-008/FEED-028); geometry: FEED-027. The `klasse3` distractor boxes go
+  inside once they exist (Q-032). The "Futter" board stays above the storage door (bottom
+  2.3 m).
 
 ## Moon door and night levels (level design, Q-133 answered; GAME-NIGHT rules 3, 4, 7)
 
@@ -418,6 +452,17 @@ is cleared and the gate **swings open visibly** and stays open (walkable, both d
 to a later level) gets its gate too once that level exists. The gate's leaves open outwards
 into the new level and its posts join the hedge/wall on both sides without a gap.
 
+**The street continues under the gate** (user request 2026-09-28, LAYOUT-040): at every level
+transition the path is continuous — path cells under the barrier cells and under the gate,
+joining the old level's path to the new level's `[[entry]]` path without a grass gap, a curb
+(edging stone across the path) or a seam; the story barrier (fallen tree, construction fence,
+closed gate) stands **on** the street, and after unlocking the child walks on path all the way.
+Data: the old level's path element runs on over the barrier cells (`path_ne` to x 23,
+`path_north` to z 47, `path_l2_nw` from x 24); a path cell under a barrier is the one allowed
+"path under a solid element" (LAYOUT-003 and the per-level variants). **The moon door too**
+(Q-182 answered 2026-09-28): `path_moon` runs on under the door cells (x −24…−23) to
+`night_1`'s `path_n1_entry`, so the child walks on path through the open door.
+
 **Enclosure signs stand beside the gate** (user decision 2026-09-27, Q-086 (b)): the
 `enclosure_sign` never stands in front of or over a gate. It stands outside the fence along
 it, on the path side, with ≥ 0.9 m between the sign and the gate post (nothing solid within 0.9 m beside a post, Q-157, LAYOUT-038), flush in front of the fence (back of its footprint 0.09 m off the fence line — no slot behind it, LAYOUT-039); its whole footprint
@@ -433,9 +478,11 @@ rule and CAMV-008 are unchanged (tests green).
 stands in a door or gate opening or in the ≥ 1 m walkway in front of it (the player's body
 width); a sign that belongs to a door goes beside or above it (indoor enclosures of the
 night house: a silhouette board above the glass door, bottom 2.3 m). This holds for
-non-enterable doors too: the food-box row in front of a food storage leaves a free gap
-≥ 1.2 m wide in front of the door, the whole door opening inside it (Q-150, user
-2026-09-27); the boxes that stood in front of the door moved to the ends of the row. Also
+food storage doors (since 2026-09-28 every door is enterable): the food-box row in front of
+a food storage leaves a free gap ≥ 1.2 m wide in front of the door, the whole door opening
+inside it (Q-150, user 2026-09-27), and — the door being enterable — nothing solid within
+0.9 m beside its posts (LAYOUT-038; Q-181 answered: boxes outside); the stock boxes inside
+keep the door walkway inside free the same way (Q-194). Also
 nothing without a collider (lamp posts, taps, items) stands there, and no lamp post in the
 2.5 m leading lane straight in front of an opening.
 
@@ -455,8 +502,8 @@ fence and the garden fence (LAYOUT-039).
 
 *Implementation (2026-09-27):* `zoo_core::scene::LevelScene::openings` lists every gate /
 door model with its opening and model widths; `Game::opening_open` decides: building doors
-of **enterable** buildings while the player is within 1.6 m of the door cell (doors of
-non-enterable buildings stay shut), enclosure gates (`gate_wood`, indoor `glass_door`) while
+of **enterable** buildings — since 2026-09-28 every building with a door — while the player
+is within 1.6 m of the door cell (a door of a building without an interior would stay shut), enclosure gates (`gate_wood`, indoor `glass_door`) while
 the player leads animals (or carries one in its container) within 3 m — they stay open
 1.5 s behind the animals —, the garden gate within 2 m (proposal Q-102), the moon door with
 its barrier. The presentation eases the open amount (≈ 0.5 s open, 0.8 s close):
@@ -496,7 +543,7 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-020 | Given an enclosure with `home_wander_on`, then its home wander area (definition in "Enclosure features and wandering at home") has ≥ 9 cells per listed surface, contains no gate cell and no cell adjacent to a gate cell on the `water` surface, and water and grass cells connect only through ramp cells. | unit |
 | LAYOUT-021 | Given all level files, then their `bounds` are pairwise disjoint, every `[[entry]]` cell is a path cell on the level border that is edge-adjacent to a cell of the named barrier in the named earlier level, and every other border cell of every level is solid (Q-088). | unit |
 | LAYOUT-022 | Given levels 1…N joined and exactly the barriers of completed transitions open, then the flood fill from the level-1 spawn reaches every walkable cell of the unlocked levels that LAYOUT-001 requires and no cell of a locked level; opening the next transition's barrier(s) makes the next level's spawn reachable. | unit |
-| LAYOUT-023 | Given a `building` with `interior` and `door` (Q-092), then its interior and door cells are walkable with surface `path`, its other cells are solid, and the door cell is edge-adjacent to a walkable cell outside the building. | unit |
+| LAYOUT-023 | Given a `building` with `interior` and `door` (Q-092) — since 2026-09-28 every building with a door (LAYOUT-041) — then its interior and door cells are walkable with surface `path`, its other cells are solid, and the door cell is edge-adjacent to a walkable cell outside the building. | unit |
 | LAYOUT-024 | Given all levels joined, then every `[[scenery]]` kind and every element kind named as riddle scenery of a hiding place (e.g. `fountain`, `waterfall`, `treehouse`, `pirate_ship`) occurs only at that one hiding place in the joined map (zoo-wide riddle uniqueness, Q-083). | unit |
 | LAYOUT-025 | Given the joined zoo with level N locked, then the animals of level N are hidden and not simulated (positions unchanged after 120 s), its info boards, animals and gates are not interactable, and the missions in scope are exactly the union of the unlocked levels' missions (Q-088 proposal, RESC-025). | unit |
 | LAYOUT-026 | Given all level files, then every `river` / `stream` element has a `flow` of N/E/S/W and no other element has one; the river pieces (incl. aligned bridges) chain along the flow with constant width and 90° bends at the upstream end of the next piece (level 1: `river_n` → `bridge_river` → `river_mid` → `river_e`, one left bend; level 3: `stream_l3`); a missing or invalid `flow`, a reversed flow or a bend at the wrong end is rejected. (Q-066) | unit |
@@ -505,7 +552,7 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-029 | Given a building with indoor enclosures (`indoor = true`), then each indoor enclosure's gate is edge-adjacent to an `interior` cell of the building, the building's `model_rect` contains the building rect and the indoor enclosures, and none of the enclosure's boards lies inside the building rect (Q-134). | unit |
 | LAYOUT-030 | Given every day level's `[[event_spot]]` list, then it has one `burglar_entry`, one `burglar_target` naming an existing building and one `burglar_hideout` of walkable grass reachable from the target, overlapping no hiding-place rect, scenery, garden or path (Q-139). | unit |
 | LAYOUT-031 | Given every gate/door opening in the joined zoo (enclosure gates, garden gate, building doors, night-house doors, entrance, barrier gates, moon door), then a gate/door model is placed that exactly fills the opening (no gap > 5 cm, no overlap with posts), and it opens/closes per the rules. | unit |
-| LAYOUT-032 | Given every gate/door opening in the joined zoo (LAYOUT-031), then no prop, board, lamp, item or furniture footprint lies in the opening or in the ≥ 1 m walkway in front of it, and a sign that belongs to a door is beside it or above it (bottom above the opening height); also for the non-enterable food storage doors: the food-box row leaves a free gap ≥ 1.2 m wide around the door (Q-150 answered 2026-09-27). This also holds for things without a collider (food boxes, items, furniture props, water taps, night lamp posts and string-light posts), and no lamp post stands in the 2.5 m leading lane straight in front of an opening (QA 2026-09-27). | unit |
+| LAYOUT-032 | Given every gate/door opening in the joined zoo (LAYOUT-031), then no prop, board, lamp, item or furniture footprint lies in the opening or in the ≥ 1 m walkway in front of it, and a sign that belongs to a door is beside it or above it (bottom above the opening height); also for the food storage doors: the food-box row leaves a free gap ≥ 1.2 m around the door (Q-150; boxes outside, Q-181 answered) and the stock boxes inside stand clear of the door walkway (Q-194). This also holds for things without a collider (food boxes, items, furniture props, water taps, night lamp posts and string-light posts), and no lamp post stands in the 2.5 m leading lane straight in front of an opening (QA 2026-09-27). | unit |
 | LAYOUT-033 | Given every outdoor enclosure gate of the joined zoo (levels 1–3, `night_1`), then its `enclosure_sign` stands beside the gate — ≥ 0.9 m from the gate post along the fence (centre ≥ 3.09 m from the gate centre; Q-157, LAYOUT-038), ≤ 5 m away — and the gate's 1 m walkway has no collider; the sign's footprint lies on walkable cells clear of the info board and the food boxes (user decision 2026-09-27, Q-086 (b)). | unit |
 | LAYOUT-034 | Given every opening the player may pass (doors of enterable buildings, the garden gate, enclosure gates and glass doors while leading), when she walks straight at it from 3 m in front, from 2.5 m out and 2.5 m aside, and from 1.5 m out and 3 m aside (both sides), then she reaches the opening without getting stuck (≥ 5 cm progress per second) — nothing beside an opening forms a pocket (QA 2026-09-27; no exceptions since Q-157 was answered). | unit |
 | LAYOUT-035 | Given a lantern post of any level, then it has the collider C(0, 0, 0.12) while it is visible (at night) and none by day (the `[[light]]` placement rules, Q-118/Q-137). | unit |
@@ -513,6 +560,10 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-037 | Given the review screenshots of each level transition before and after unlocking, then a closed gate (behind its barrier) and later an open gate are visible. | e2e |
 | LAYOUT-038 | Given every door, gate and level gate, then no solid item stands within 0.9 m beside its posts so that a player walking at the opening at 45° can get caught in a corner (no pockets, Q-157). | unit |
 | LAYOUT-039 | Given every door and gate opening of the joined zoo with `night_1` (level gates and the moon door included) and the lantern posts solid (night), then no prop collider or lantern post within 3 m of the opening stands 0.1–0.6 m in front of a wall, fence, hedge or facade (non-walkable cell or thin garden fence) — it is flush (< 0.1 m) or ≥ 0.6 m away (Q-173). | unit |
+| LAYOUT-040 | Given every level transition of the joined zoo (each `[[entry]]`, the moon door included since Q-182) and each of its entry cells, then the cells in a straight line from 2 m inside the new level through the entry cell and every barrier cell to the first cell of the old level are path cells (the barrier stands on the street), walkable path once the barrier is open, drawn as path tiles with no edging stone across the line (no grass gap, curb or seam). | unit |
+| LAYOUT-041 | Given every `building` with a `door` in the joined zoo with `night_1`, then it has an `interior` (enterable); its door cell touches an interior cell and a walkable cell outside; every interior cell is reachable from the door over interior cells; its `door_wood` is an enterable building door that is open while the player is at the door and shut when she is ≥ 3 m away; its roof hides inside (building model or roof region); every stock box inside is solid (Q-194). | unit |
+| LAYOUT-042 | Given the level-1 → level-2 gate opened (fallen tree cleared), when the player stands on `path_ne` west of it looking east, then the open gate is on screen and path pixels run continuously from her feet through the gate into level 2 (review screenshot `level-gate-street.png`). | e2e |
+| LAYOUT-043 | Given the player walks from the ring through the door into the level-1 food storage, then the door opens, she stands on the floor inside, the roof and the "Futter" board are hidden in the zoo view and drawn again in first person (review screenshots `storage-inside-zoo.png`, `storage-inside-fp.png`, the stock boxes along the walls), and she walks back out through the door and takes the grass from its box in the row outside (Q-181 answered). | e2e |
 
 ## Open questions
 
@@ -526,3 +577,4 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 - Q-085 tree-area data (`density`, `trees`, `edge`), `[[enclosure_feature]]`, `home_wander_on`, wander areas clipped to `rect`. Q-086 answered 2026-09-27: (b) enclosure sign beside the gate (LAYOUT-033; distance ≥ 0.9 m since Q-157). Q-087 collision footprint values and invisible-wall fixes (band row on the walkable side). Q-098 `kind = "hut"` enclosure feature. Q-099 remaining invisible walls (`map_board` back, fallen tree).
 - Q-044 `hiding_place` element type and `blocks_view` (proposal above). Q-080 (answered) `[[hiding_place]]` / `[[scenery]]` lists, wander area data. Q-069 (answered) `[level] missions`. Q-046 walkable ground (answered). Q-049 high-angle camera (answered — sight test is a screen test; FOV axis Q-052).
 - Q-150 answered 2026-09-27: the food-box rows leave a gap ≥ 1.2 m in front of the storage doors (no exception to LAYOUT-032 any more). Q-157 answered 2026-09-27: no pocket beside a door or gate (zebra board, level-3 tap and night-house boards moved; LAYOUT-034, LAYOUT-038); wall-gap part: Q-173 answered 2026-09-28 (LAYOUT-039, "No wall gaps near a door or gate"). Q-171 answered 2026-09-28: `board_zebra` south of its gate, 22 m margin tested for levels 1–3 (CAMV-008). Q-174 answered: bears in a new level 4; Q-175 what else level 4 contains. Q-154 `door_wood`, `glass_door`, `turnstile` not yet in an ART spec.
+- Q-181 answered 2026-09-28: labelled food boxes outside, a few more boxes inside; Q-194 answered 2026-09-29: the inside boxes are real, labelled food boxes too (foods may repeat the outside row). Q-182 answered 2026-09-28: the street runs under the moon door too (LAYOUT-040).

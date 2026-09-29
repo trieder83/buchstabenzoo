@@ -48,8 +48,8 @@ interface Mission {
   gate: [number, number, string];
 }
 
-const HIPPO: Mission = { animal: 'hippo', food: 'melons', boxX: -3.6, board: [7.0, 21.5, 'KeyD'], gate: [8.4, 16.0, 'KeyD'] };
-const PANDA: Mission = { animal: 'panda', food: 'bamboo', boxX: -1.2, board: [-3.5, 28.8, 'KeyW'], gate: [0.0, 31.3, 'KeyW'] };
+const HIPPO: Mission = { animal: 'hippo', food: 'melons', boxX: -4.22, board: [7.0, 21.5, 'KeyD'], gate: [8.4, 16.0, 'KeyD'] };
+const PANDA: Mission = { animal: 'panda', food: 'bamboo', boxX: -2.18, board: [-3.5, 28.8, 'KeyW'], gate: [0.0, 31.3, 'KeyW'] };
 
 /** Plays one mission end to end like a child (board → box → animal → gate). */
 async function play(page: Page, m: Mission, shot?: (name: string) => Promise<void>) {
@@ -71,7 +71,7 @@ async function play(page: Page, m: Mission, shot?: (name: string) => Promise<voi
   await page.keyboard.press('Escape');
   await expect(page.locator('#panel')).toBeHidden();
   // 2. The food box.
-  await goto(page, m.boxX, 9.6);
+  await goto(page, m.boxX, 9.6); // the row in front of the storage (Q-181)
   await face(page, 'KeyW');
   expect(await app<string>(page, 'target_key')).toBe(`food_box:${m.food}`);
   await settle(page);

@@ -220,9 +220,10 @@ type = "building"
 kind = "food_storage"
 rect = [-1, 61, 8, 6]
 door = [3, 61]
+interior = [0, 62, 6, 4]      # 6 x 4 m walkable floor (Q-092); the wall band holds the inside food boxes
 blocks_view = true
 height_m = 4.5
-notes = "Third food storage (proposal Q-new): all 10 food boxes in a row in front of the south facade."
+notes = "Third food storage (proposal Q-089), enterable: walkable interior (0, 62, 6, 4), door (3, 61) on the south facade; all 10 food boxes in a row in front of the south facade (Q-181 answered 2026-09-28, Q-150 door gap); 6 more real, labelled food boxes stand inside along its walls (Q-194 answered 2026-09-29: real food, redundant with the outside row allowed)."
 
 [[element]]
 id = "trees_l3_center"
@@ -354,32 +355,32 @@ notes = "Washing line of the zookeepers between two posts on the lawn by the str
 # food_storage_3 (labels facing south), on the north row of path_l3_ring_s.
 [[food_box]]
 food = "melons"
-pos = [-0.6, 60.66]
+pos = [-0.93, 60.66]
 facing = "-z"
 
 [[food_box]]
 food = "hay"
-pos = [0.2, 60.66]
+pos = [-0.21, 60.66]
 facing = "-z"
 
 [[food_box]]
 food = "bananas"
-pos = [1.0, 60.66]
+pos = [0.51, 60.66]
 facing = "-z"
 
 [[food_box]]
 food = "bamboo"
-pos = [1.8, 60.66]
+pos = [1.23, 60.66]
 facing = "-z"
 
 [[food_box]]
 food = "grass"
-pos = [2.6, 60.66]
+pos = [1.95, 60.66]
 facing = "-z"
 
 [[food_box]]
 food = "meat"
-pos = [-1.4, 60.66]          # moved from x 3.4 to the west end of the row: the door (x 3…4) stays free (Q-150, LAYOUT-032)
+pos = [-1.65, 60.66]
 facing = "-z"
 
 [[food_box]]
@@ -389,7 +390,7 @@ facing = "-z"
 
 [[food_box]]
 food = "fish_food"
-pos = [5.0, 60.66]
+pos = [5.05, 60.66]
 facing = "-z"
 
 [[food_box]]
@@ -401,6 +402,41 @@ facing = "-z"
 food = "eucalyptus"
 pos = [6.6, 60.66]
 facing = "-z"
+
+# ---------------------------------------------------------------- food boxes inside `food_storage_3` (GAME-FEED §7, Q-194 answered 2026-09-29)
+# Real, labelled food boxes (same as the outside row: interact -> label panel -> take) stand
+# against the inner walls on the 0.15 m plank platform of the solid 1 m wall band, labels
+# facing the free floor, clear of the door walkway (LAYOUT-032); foods are redundant with the
+# outside row. Positions kept from the former unlabelled stock crates.
+[[food_box]]
+food = "fish_food"
+pos = [0.88, 66.44]   # back (north) wall
+facing = "-z"
+
+[[food_box]]
+food = "bananas"
+pos = [1.52, 66.44]   # back (north) wall
+facing = "-z"
+
+[[food_box]]
+food = "berries"
+pos = [4.28, 66.44]   # back wall
+facing = "-z"
+
+[[food_box]]
+food = "fish_food"
+pos = [4.92, 66.44]   # back wall
+facing = "-z"
+
+[[food_box]]
+food = "bananas"
+pos = [-0.44, 64.0]   # west wall
+facing = "+x"
+
+[[food_box]]
+food = "berries"
+pos = [6.44, 63.2]   # east wall
+facing = "-x"
 
 # ================================================================ enclosure features
 # Same data shape as level-1 [[enclosure_feature]] (proposal Q-085): not elements, cells stay solid.

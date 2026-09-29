@@ -126,7 +126,7 @@ test('RESC-010 level 2: giraffe mission de klasse1 — lookout tower, leaves fro
   expect(await app<boolean>(page, 'mission_started', 'giraffe')).toBe(true);
   await page.keyboard.press('Escape');
   // 2. leaves from the level's own food storage (Q-089)
-  await standFacing(page, 37.4, 32.2, 38.66, 32.2);
+  await standFacing(page, 37.4, 32.77, 38.66, 32.77); // the row in front of storage 2 (Q-181)
   expect(await app<string>(page, 'target_key')).toBe('food_box:leaves');
   await settle(page);
   await expect(page.locator('#panel-text')).toHaveText(t['food-leaves']);
@@ -170,7 +170,7 @@ test('LAYOUT-L3-014 / RESC-018…021: goldfish with the bowl de klasse1 — will
   expect(await page.locator('#panel').innerText()).not.toMatch(RAW_KEY);
   await page.keyboard.press('Escape');
   // 2. fish food from storage 3 first: shown without a bowl, the fish cannot come (RESC-018)
-  await standFacing(page, 5.0, 59.5, 5.0, 60.66);
+  await standFacing(page, 5.05, 59.5, 5.05, 60.66); // the row in front of storage 3 (Q-181)
   expect(await app<string>(page, 'target_key')).toBe('food_box:fish_food');
   await settle(page);
   await page.locator('#take').click();
@@ -236,7 +236,8 @@ test('PLAY-028 / PLAY-029: the zookeeper-house roof disappears inside and return
   await nextFrames(page, 3); // well within 0.3 s
   expect(await app<string>(page, 'player_inside')).toBe('zookeeper_house_3');
   expect(await app<boolean>(page, 'region_hidden', 'zookeeper_house_3')).toBe(true);
-  // other buildings keep their roofs (the storage is not enterable)
+  // other buildings keep their roofs (the storages too, while she is not in them)
+  expect(await app<boolean>(page, 'region_hidden', 'food_storage_3')).toBe(false);
   expect(await app<boolean>(page, 'region_hidden', 'barrier_ne_tree')).toBe(true);
   // PLAY-029: the bowl on the table is on screen from every 45° rotation
   for (let k = 0; k < 8; k++) {

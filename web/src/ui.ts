@@ -38,6 +38,82 @@ export interface UiApp {
   put_down?(): boolean;
   /** GAME-FEED §10: lying foods near the player with their screen position (CSS px). */
   lying_icons_json?(): string;
+  /** GAME-HINT: the 🧭 button / `H`; the shown hint as JSON (empty = none); idle pulses. */
+  hint_press?(): string;
+  hint_json?(): string;
+  hint_pulses?(): number;
+  /** GAME-NIGHT rule 11: the 🌙 night progress as JSON. */
+  night_progress_json?(): string;
+}
+
+/** Icons of the hint targets (GAME-HINT rule 2). */
+export const HINT_ICONS: Record<string, string> = {
+  board: '📋',
+  food: '📦',
+  animal: '🐾',
+  gate: '🚪',
+  pick_up: '📦',
+  bamboo: '🎋',
+  water: '💧',
+  garden: '🥕',
+  treat: '🧺',
+  bed: '🛏️',
+  moon_door: '🌙',
+  key_box: '🔑',
+  event: '❗',
+};
+
+/** The shown hint (from `hint_json`). */
+export interface HintView {
+  id: string;
+  kind: string;
+  on: boolean;
+  x: number;
+  y: number;
+  angle: number;
+  dots: number;
+}
+
+/** Parses the hint JSON; null when no hint is shown or the JSON is broken. */
+export function parseHint(json: string | undefined): HintView | null {
+  if (!json) return null;
+  try {
+    const h = JSON.parse(json) as Partial<HintView>;
+    if (typeof h.kind !== 'string' || typeof h.x !== 'number' || typeof h.y !== 'number') return null;
+    return {
+      id: String(h.id ?? ''),
+      kind: h.kind,
+      on: Boolean(h.on),
+      x: h.x,
+      y: h.y,
+      angle: typeof h.angle === 'number' ? h.angle : 90,
+      dots: Math.max(1, Math.min(5, Math.round(h.dots ?? 1))),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** The 🌙 night progress (GAME-NIGHT rule 11). */
+export interface NightProgress {
+  state: string;
+  level: string;
+  animals: { id: string; home: boolean }[];
+}
+
+/** Parses the night progress JSON; hidden on errors. */
+export function parseProgress(json: string | undefined): NightProgress {
+  try {
+    const p = JSON.parse(json ?? '') as Partial<NightProgress>;
+    const animals = Array.isArray(p.animals)
+      ? p.animals
+          .filter((a) => a && typeof a.id === 'string')
+          .map((a) => ({ id: a.id, home: Boolean(a.home) }))
+      : [];
+    return { state: typeof p.state === 'string' ? p.state : 'hidden', level: String(p.level ?? ''), animals };
+  } catch {
+    return { state: 'hidden', level: '', animals: [] };
+  }
 }
 
 /** Treat basket contents (GAME-GARDEN §4). */
@@ -344,6 +420,16 @@ export class Ui {
   /** GAME-FEED §10: readable icons above lying foods near the player. */
   readonly lyingIcons = document.getElementById('lying-icons') as HTMLDivElement | null;
   private lastLying = '';
+  /** GAME-HINT: the 🧭 button, the indicator above the target and the edge arrow. */
+  readonly compass = document.getElementById('compass-btn') as HTMLButtonElement | null;
+  readonly hintMarker = document.getElementById('hint-marker') as HTMLDivElement | null;
+  readonly hintEdge = document.getElementById('hint-edge') as HTMLDivElement | null;
+  /** GAME-NIGHT rule 11: what is still missing before night falls. */
+  readonly nightProgress = document.getElementById('night-progress') as HTMLButtonElement | null;
+  private lastHintKind = '';
+  private lastHintDots = -1;
+  private lastPulses = 0;
+  private lastProgress = '';
   readonly gear = document.getElementById('settings-btn') as HTMLButtonElement;
   readonly settings = document.getElementById('settings') as HTMLDivElement;
   readonly bubble = document.getElementById('bubble') as HTMLDivElement;
@@ -373,6 +459,13 @@ export class Ui {
       e.stopPropagation();
       this.putDown();
     });
+    for (const b of [this.compass, this.nightProgress]) {
+      b?.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.pressHint();
+      });
+    }
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
     // (CAMV-019)
@@ -404,6 +497,87 @@ export class Ui {
     const data = JSON.parse(json) as PanelData;
     if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign') this.openPanel(data);
     this.pollEvents();
+  }
+
+  /** The 🧭 button / tapping the 🌙 progress (GAME-HINT rule 1/8): show the next target. */
+  pressHint(): void {
+    this.app.hint_press?.();
+    this.updateHint();
+  }
+
+  /**
+   * The shown hint (GAME-HINT rule 2): a bouncing indicator above the target when it is on
+   * screen, else an edge arrow at the border with its icon and the distance dots.
+   */
+  private updateHint(): void {
+    if (!this.hintMarker || !this.hintEdge || !this.app.hint_json) return;
+    const h = parseHint(this.app.hint_json());
+    this.compass?.classList.toggle('on', h !== null);
+    if (!h) {
+      if (!this.hintMarker.hidden) this.hintMarker.hidden = true;
+      if (!this.hintEdge.hidden) this.hintEdge.hidden = true;
+      this.lastHintKind = '';
+      return;
+    }
+    const icon = HINT_ICONS[h.kind] ?? '⭐';
+    if (h.kind !== this.lastHintKind) {
+      this.lastHintKind = h.kind;
+      for (const e of [this.hintMarker, this.hintEdge]) {
+        e.dataset.kind = h.kind;
+        (e.querySelector('.icon') as HTMLElement).textContent = icon;
+      }
+    }
+    this.hintMarker.dataset.id = h.id;
+    this.hintEdge.dataset.id = h.id;
+    this.hintMarker.hidden = !h.on;
+    this.hintEdge.hidden = h.on;
+    if (h.on) {
+      this.hintMarker.style.transform = `translate(${h.x.toFixed(0)}px, ${h.y.toFixed(0)}px) translate(-50%, -100%)`;
+    } else {
+      this.hintEdge.style.transform = `translate(${h.x.toFixed(0)}px, ${h.y.toFixed(0)}px) translate(-50%, -50%)`;
+      (this.hintEdge.querySelector('.spin') as HTMLElement).style.transform = `rotate(${h.angle.toFixed(0)}deg)`;
+      if (h.dots !== this.lastHintDots) {
+        this.lastHintDots = h.dots;
+        const dots = this.hintEdge.querySelector('.dots') as HTMLElement;
+        dots.replaceChildren(...Array.from({ length: h.dots }, () => el('i')));
+        this.hintEdge.dataset.dots = String(h.dots);
+      }
+    }
+  }
+
+  /** Idle nudge (GAME-HINT rule 6): the 🧭 button pulses gently once; no popup. */
+  private updatePulse(): void {
+    const n = this.app.hint_pulses?.() ?? 0;
+    if (n === this.lastPulses || !this.compass) return;
+    this.lastPulses = n;
+    this.compass.classList.remove('pulse');
+    void this.compass.offsetWidth; // restart the animation
+    this.compass.classList.add('pulse');
+    this.compass.dataset.pulses = String(n);
+  }
+
+  /** The 🌙 night progress (GAME-NIGHT rule 11): one icon per animal, filled = home. */
+  private updateProgress(): void {
+    if (!this.nightProgress || !this.app.night_progress_json) return;
+    const json = this.app.night_progress_json();
+    if (json === this.lastProgress) return;
+    this.lastProgress = json;
+    const p = parseProgress(json);
+    this.nightProgress.hidden = p.state === 'hidden';
+    this.nightProgress.dataset.state = p.state;
+    this.nightProgress.dataset.level = p.level;
+    const moon = this.nightProgress.querySelector('.moon') as HTMLElement;
+    moon.textContent = p.state === 'sleep' ? '🛏️' : '🌙';
+    const box = this.nightProgress.querySelector('.animals') as HTMLElement;
+    box.replaceChildren(
+      ...p.animals.map((a) => {
+        const e = el('span', `pa ${a.home ? 'home' : 'missing'}`, ANIMAL_ICONS[a.id] ?? '🐾');
+        e.dataset.animal = a.id;
+        return e;
+      }),
+    );
+    this.nightProgress.dataset.home = String(p.animals.filter((a) => a.home).length);
+    this.nightProgress.dataset.missing = String(p.animals.filter((a) => !a.home).length);
   }
 
   /** Put-down button (GAME-FEED §8): drop the item in the hands; a gentle shake if not. */
@@ -459,6 +633,9 @@ export class Ui {
       if (this.dropBtn.hidden === can) this.dropBtn.hidden = !can;
     }
     this.updateLying();
+    this.updateHint();
+    this.updatePulse();
+    this.updateProgress();
     const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}|${this.app.basket_json?.() ?? ''}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
@@ -805,6 +982,8 @@ export class Ui {
     this.act.setAttribute('aria-label', this.app.t('ui-interact'));
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
     this.dropBtn?.setAttribute('aria-label', this.app.t('ui-put-down'));
+    this.compass?.setAttribute('aria-label', this.app.t('ui-hint'));
+    this.nightProgress?.setAttribute('aria-label', this.app.t('ui-night-progress'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
     this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));

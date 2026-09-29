@@ -61,3 +61,16 @@ next steps / questions. The main session prunes entries once committed. -->
 - Tests: cargo test --workspace green, clippy green, wasm dev build ok, npm lint/test ok; e2e green: LAYOUT-043, doors, feeding, save, mission, m5a, zebra-mission-levels (m5b/hints/level_gates: see report).
 - Next: spec-manager run (INDEX); Q-194 open for the user.
 
+### 2026-09-29 performance — Q-193 haze culling on, Q-191 outline AA paused
+- Done (uncommitted): `Renderer::haze_cull` default on (PERF-R-018); `Cull::all` replaces the `no_culling` shortcuts; new debug `debug_haze_cull(on)`; PERF-025 turns haze off in both frames; budget 23 names the exception. CAMV-014 green.
+- Q-191: the earlier agent's partial work was only scratch shader patches (no AA code was in the tree). Measured box4/tent5/tri3/diag2 + a two-pass R8-mask form; all AA code removed from the renderer again (outline pass = committed look). Prototypes kept in `tools/perf/outline_aa_variants.mjs`; numbers in measurements.md run 2026-09-29, PERF-R-016 entry.
+- Next: PERF-R-016 "Next" — review shots of `box4`, cut its cost (≈ +1–1.8 ms/frame on the iGPU) to ≤ +0.5 ms, then implement in `post_fs` + a flicker PERF test.
+- e2e: CAMV-014 + PERF-025 (4) green after `--build`. Not run (paused by the user): m5b / hints / level_gates / camera_views (rest) / night / quality / smoke.
+- Fixed `scripts/e2e.sh`: the timeout watchdog's `sleep` kept the lock fd open for the whole timeout after every run (blocked other agents up to 45 min) — now `9>&-` + `pkill -P`.
+
+### 2026-09-29 general — Q-194 answered: inside boxes are real food too
+- Done (uncommitted): the 6/6/6/2 unlabelled stock crates became real `[[food_box]]` entries (same positions, foods = the level's animals' foods repeated) in `assets/levels/{level-1,level-2,level-3,night-1}.toml`; `scene.rs` elevates a food box to the storage's plank platform only when its centre falls inside the storage rect (no rendering/render-path files touched). `take_food`/`near_own_box` already handled duplicate boxes per food correctly (nearest/any within range) — no code fix needed there.
+- Tests: new FEED-028 (unit + e2e) "interact with an inside box → panel → take"; FEED-008/027 and LAYOUT-L1-013/L2-011/L3-011/N1-010 updated for outside-unique-inside-may-repeat; PLAY-020 count 3+16+4; `cargo test --workspace` green, clippy -p zoo-core clean, rustfmt applied; e2e green: `FEED-|LAYOUT-041|LAYOUT-043` (5 tests, incl. rewritten `doors.spec.ts`).
+- Specs: feeding §7/test table, layout.md, levels 1/2/3/night-1 (element notes + inside-box tables), open-questions Q-194 "Implemented 2026-09-29".
+- Next: spec-manager run (INDEX, glossary); no open questions from me.
+

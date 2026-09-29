@@ -307,8 +307,9 @@ fn feed_014_back_into_box_and_limit() {
     assert!(g
         .drain_events()
         .contains(&GameEvent::FoodPutBack { food: Food::Hay }));
-    // another food next to the hay box does not go in
-    carry(&mut g, Food::Meat);
+    // another food next to the hay box does not go in (leaves: its own box is at the far
+    // end of the row, not within reach)
+    carry(&mut g, Food::Leaves);
     assert!(matches!(g.put_down(), Ok(Dropped::Food { .. })));
     assert_eq!(g.lying.foods.len(), 1);
 

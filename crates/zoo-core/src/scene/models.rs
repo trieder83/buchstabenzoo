@@ -280,6 +280,9 @@ pub fn level_gate_pose(en: &crate::level::EntryData, data: &LevelData) -> Option
     Some((c, facing_yaw(dir), dir))
 }
 
+/// Top of the plank platform in the wall band of the food storage / food hut models
+/// (`kit_buildings.py` `PLATFORM`): the unlabelled stock boxes inside stand on it (Q-194).
+pub const STORAGE_PLATFORM_M: f32 = 0.15;
 /// Soil top of `garden_bed` (m): plants stand on it.
 pub const GARDEN_SOIL_M: f32 = 0.22;
 /// `door_wood` leaf width (m, x 0.01…0.95).
@@ -552,6 +555,8 @@ impl LevelScene {
         let y = match model {
             "window_moon" => WINDOW_MOON_MOUNT_M,
             "rug_round" => crate::ground::PATH_TOP_M + 0.001,
+            // stock boxes stand on the plank platform of the storage's wall band (Q-194)
+            "food_box" | "food_box_stack" => STORAGE_PLATFORM_M,
             _ => 0.0,
         };
         let k = self.model_at_y(model, p.pos(), y, yaw);
@@ -742,6 +747,9 @@ fn furniture_model(m: &str) -> Option<&'static str> {
         "toy_chest",
         "bed",
         "flower_pots",
+        // unlabelled stock boxes inside a food storage (GAME-FEED §7, proposal Q-194)
+        "food_box",
+        "food_box_stack",
     ]
     .into_iter()
     .find(|x| *x == m)

@@ -51,10 +51,10 @@ for (const lang of LANGS) {
 
       // Wrong box first (bamboo), shown to the zebra: not interested.
       for (const [food, x] of [
-        ['bamboo', -1.2],
-        ['grass', -0.4],
+        ['bamboo', -2.18],
+        ['grass', -1.5],
       ] as const) {
-        await goto(page, x, 9.6);
+        await goto(page, x, 9.6); // the row in front of the storage (Q-181)
         await turn(page, 'KeyW');
         expect((await state(page)).target).toBe(`food_box:${food}`);
         await ensurePanel(page, () => pressE(page));

@@ -37,7 +37,7 @@ async function carry(page: Page): Promise<string> {
   return page.evaluate(() => window.__zoo!.app.carry_food());
 }
 
-/** Takes a food at its box in the level-1 food storage row (GAME-FEED §6). */
+/** Takes a food at its box in the level-1 food storage row outside (GAME-FEED §6-7, Q-181). */
 async function takeFood(page: Page, food: string, x: number) {
   await goto(page, x, 9.5);
   expect(await page.evaluate((f) => window.__zoo!.app.take_food(f), food)).toBe(true);
@@ -64,7 +64,7 @@ test('FEED-009 / FEED-016: hay is put down with G and the put-down button, and p
   await expect(drop).toBeHidden();
 
   // FEED-009 desktop: G puts the hay down ≈ 0.8 m in front of her, on the surface
-  await takeFood(page, 'hay', -2.8);
+  await takeFood(page, 'hay', -2.86);
   await onPlaza(page);
   await expect(drop).toBeVisible();
   const box = await drop.boundingBox();

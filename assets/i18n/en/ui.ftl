@@ -33,3 +33,8 @@ ui-refuse = I don't live here!
 sign-food-storage = Food
 # Name board of the entrance arch (proposal Q-148)
 sign-zoo-entrance = Letter Zoo
+
+## Hint (GAME-HINT) and night progress (GAME-NIGHT rule 11): screen-reader / read-aloud labels only
+
+ui-hint = Where next?
+ui-night-progress = These animals are still missing before night

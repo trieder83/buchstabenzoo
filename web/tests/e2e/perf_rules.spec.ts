@@ -128,3 +128,54 @@ for (const where of ['spawn', 'night_zoo'] as const) {
     expect(r.diff, 'differing channels masked vs. every light').toBe(0);
   });
 }
+
+// PERF-025 (PERF-R-015, budget 22): frustum culling never changes the picture — while the
+// view turns (first person, look-around, the zoo view's 45° glide, the night zoo with its
+// stretched string lights), every frame with culling equals the same frame without culling
+// (`debug_no_culling`): nothing pops in or out at the screen edge, and the per-chunk ranges
+// of PERF-R-002 draw everything in view. The haze culling of the close views (PERF-R-018,
+// Q-193: an approved look change of 1–4 outline px) is off in both frames here.
+for (const [name, setup, step] of [
+  ['first person', `a.debug_teleport(-2.5, 20.5); a.debug_face_point(-2.5, 30); a.set_view_mode('first_person');`, `a.look_drag(40, 0);`],
+  ['look-around', `const s = a.level_spawn('level_1'); a.debug_teleport(s[0], s[1]); a.look_hold(true);`, `a.look_drag(40, 0);`],
+  ['zoo view rotation', `const s = a.level_spawn('level_1'); a.debug_teleport(s[0], s[1]); a.zoom(100);`, `if (i % 4 === 0) a.rotate(1);`],
+  ['night zoo first person', `a.debug_set_daytime('night'); a.debug_teleport(-34.5, 29.5); a.set_view_mode('first_person');`, `a.look_drag(40, 0);`],
+] as const) {
+  test(`PERF-025: culling changes no pixel while turning (${name})`, async ({ page }) => {
+    await start(page);
+    const r = await page.evaluate(
+      ([setup, step]) => {
+        const a = window.__zoo!.app;
+        a.debug_haze_cull(false);
+        new Function('a', setup)(a);
+        for (let i = 0; i < 20; i++) a.frame(0.1);
+        const canvas = document.getElementById('game') as HTMLCanvasElement;
+        const gl = canvas.getContext('webgl2')!;
+        const read = () => {
+          a.frame(0);
+          const px = new Uint8Array(canvas.width * canvas.height * 4);
+          gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, px);
+          return px;
+        };
+        const stepFn = new Function('a', 'i', step);
+        const out: { frame: number; diff: number; culled: number }[] = [];
+        for (let i = 0; i < 12; i++) {
+          stepFn(a, i);
+          a.frame(0.05);
+          const culled = read();
+          const nCulled = a.culled_batches();
+          a.debug_no_culling(true);
+          const all = read();
+          a.debug_no_culling(false);
+          let diff = 0;
+          for (let k = 0; k < culled.length; k++) if (culled[k] !== all[k]) diff++;
+          out.push({ frame: i, diff, culled: nCulled });
+        }
+        return out;
+      },
+      [setup, step] as const,
+    );
+    expect(r.some((f) => f.culled > 0), 'culling is active').toBe(true);
+    expect(r.filter((f) => f.diff > 0), 'frames where culling changed pixels').toEqual([]);
+  });
+}

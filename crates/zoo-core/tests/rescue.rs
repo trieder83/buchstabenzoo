@@ -628,25 +628,55 @@ fn feed_007_interact_with_box_shows_label_then_take() {
     assert_eq!(g.carry.food(), Some(Food::Grass));
 }
 
-// FEED-008
+// FEED-008 (Q-181 answered 2026-09-28: the labelled boxes stay outside; Q-194 answered
+// 2026-09-29: more real boxes inside may repeat a food): every food has exactly one box in
+// the OUTSIDE row of each storage; every box (outside or inside) stands within 1 m of an
+// enterable food storage / food hut rect (the door gap: LAYOUT-032, Q-150), with a walkable
+// standing point within 2 m in front of its label (GAME-PLAYER §5 interaction range); only
+// the outside boxes stand on walkable ground themselves (the inside ones stand on the solid
+// wall-band platform, FEED-027).
 #[test]
 fn feed_008_one_box_per_food_next_to_storage() {
-    let g = common::game(1);
-    let storage = g.level.data.element("food_storage").unwrap().rect;
-    for f in Food::DAY {
-        assert_eq!(g.food_boxes.iter().filter(|b| b.0 == f).count(), 1, "{f:?}");
-    }
+    let g = common::night_game(1);
+    let data = &g.level.data;
     let grid = g.level.grid();
+    let storages: Vec<_> = data
+        .elements
+        .iter()
+        .filter(|e| matches!(e.kind.as_deref(), Some("food_storage" | "food_hut")))
+        .collect();
+    assert_eq!(storages.len(), 4, "three day storages and the night hut");
+    for s in &storages {
+        assert!(s.is_enterable(), "{} is enterable (LAYOUT-041)", s.id);
+        let outside: Vec<Food> = g
+            .food_boxes
+            .iter()
+            .filter(|b| !s.rect.contains(cell_of(b.1)) && s.rect.distance_to(b.1) <= 1.0)
+            .map(|b| b.0)
+            .collect();
+        let mut unique = outside.clone();
+        unique.sort_by_key(|f| f.id());
+        unique.dedup();
+        assert_eq!(
+            unique.len(),
+            outside.len(),
+            "{}: one box per food outside",
+            s.id
+        );
+    }
     for &(f, pos, facing) in &g.food_boxes {
+        let inside = storages.iter().any(|s| s.rect.contains(cell_of(pos)));
+        if !inside {
+            assert!(
+                grid.is_walkable(cell_of(pos), false),
+                "{f:?} at {pos} not on walkable ground (outside)"
+            );
+        }
         assert!(
-            grid.is_walkable(cell_of(pos), false),
-            "{f:?} not on walkable ground"
+            storages.iter().any(|s| s.rect.distance_to(pos) <= 1.0),
+            "{f:?} at {pos} not next to a storage"
         );
-        assert!(
-            storage.distance_to(pos) <= 1.0,
-            "{f:?} not next to the storage"
-        );
-        let stand = g.level.data.level.bounds.cells().find(|&c| {
+        let stand = data.level.bounds.cells().find(|&c| {
             let to = cell_center(c) - pos;
             grid.is_passable(c, false)
                 && to.length() <= 2.0
@@ -654,6 +684,104 @@ fn feed_008_one_box_per_food_next_to_storage() {
         });
         assert!(stand.is_some(), "{f:?}: no standing point in front");
     }
+}
+
+// FEED-027 (Q-194 answered 2026-09-29): 2-6 more `[[food_box]]` entries stand inside every
+// food storage / food hut (whose centre falls inside the storage's rect): each stands on the
+// 0.15 m plank platform of the solid wall band (no interior or door cell, clear of the door
+// walkway), solid for the player, like any other food box.
+#[test]
+fn feed_027_food_boxes_inside_every_storage() {
+    use zoo_core::scene::{LevelScene, STORAGE_PLATFORM_M};
+    let g = common::night_game(1);
+    let data = &g.level.data;
+    let grid = g.level.grid();
+    let scene = LevelScene::build(data);
+    for s in data
+        .elements
+        .iter()
+        .filter(|e| matches!(e.kind.as_deref(), Some("food_storage" | "food_hut")))
+    {
+        let inside: Vec<_> = data
+            .food_boxes
+            .iter()
+            .filter(|b| s.rect.contains(cell_of(b.pos())))
+            .collect();
+        assert!(
+            (2..=6).contains(&inside.len()),
+            "{}: {} food boxes inside",
+            s.id,
+            inside.len()
+        );
+        for b in inside {
+            // food_box model footprint (collision.rs): 0.62 x 0.6 m, half extents 0.31/0.30
+            let f = b.facing();
+            let (hx, hz) = if f.x.abs() > 0.5 {
+                (0.30, 0.31)
+            } else {
+                (0.31, 0.30)
+            };
+            for dx in [-hx, 0.0, hx] {
+                for dz in [-hz, 0.0, hz] {
+                    // 1 cm inside the footprint's edge
+                    let q = b.pos() + Vec2::new(dx * 0.98, dz * 0.98);
+                    let c = cell_of(q);
+                    assert!(
+                        s.rect.contains(c) && !s.is_open_cell(c) && !grid.is_walkable(c, false),
+                        "{}: {q} not in the wall band of {}",
+                        b.food,
+                        s.id
+                    );
+                }
+            }
+            assert!(
+                g.level.colliders().overlaps(b.pos(), 0.05),
+                "{}: not solid",
+                b.food
+            );
+            // on the plank platform, like the outside boxes elsewhere
+            let w = zoo_core::coords::level_to_world(b.pos());
+            let pl = scene
+                .placements
+                .iter()
+                .find(|x| {
+                    x.model == "food_box" && Vec2::new(x.pos.x - w.x, x.pos.z - w.z).length() < 0.01
+                })
+                .unwrap_or_else(|| panic!("{}: no model placed", b.food));
+            assert!((pl.pos.y - STORAGE_PLATFORM_M).abs() < 1e-4, "{}", b.food);
+        }
+    }
+}
+
+// FEED-028 (Q-194 answered 2026-09-29): interacting with a food box inside the storage works
+// exactly like an outside one: label panel -> take, even when the food is a repeat of an
+// outside box.
+#[test]
+fn feed_028_inside_box_interact_then_take() {
+    let mut g = common::game(1);
+    let rect = g.level.data.element("food_storage").unwrap().rect;
+    let &(food, pos, facing) = g
+        .food_boxes
+        .iter()
+        .find(|b| rect.contains(cell_of(b.1)))
+        .expect("an inside food box");
+    let front = cell_of(pos + facing * 1.1);
+    walk_to(&mut g, front, 60.0);
+    g.player.facing = -facing;
+    let it = g.interact().expect("inside box available");
+    assert_eq!(
+        it,
+        zoo_core::Interaction::FoodBox {
+            food,
+            label: zoo_core::food::FoodLabel {
+                word_key: food.label_key(),
+                picture: false,
+            }
+        }
+    );
+    assert_eq!(g.carry.food(), None, "interacting alone takes nothing");
+    g.take_food(food).unwrap();
+    assert_eq!(g.carry.food(), Some(food));
 }
 
 // Scripted player (PROD-POC M4 e2e helper) reaches the zebra board and the grass box.

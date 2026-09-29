@@ -3,6 +3,7 @@
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
 import { attachInput, attachLookButton, type StickView } from './input';
+import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
 import { loadSettings, Ui } from './ui';
@@ -113,6 +114,8 @@ async function main(): Promise<void> {
 
   const resize = () => app.resize(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio || 1);
   resize();
+  // automatic quality tier for weak phones (PERF-BUDGETS rule 5); `?quality=` overrides
+  app.set_quality(qualityMode(window.location.search, navigator.webdriver === true));
   new ResizeObserver(resize).observe(canvas);
   window.addEventListener('orientationchange', resize);
 

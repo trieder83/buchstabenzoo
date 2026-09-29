@@ -40,9 +40,26 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
    while the panel is open — makes the player carry that food (§3). Closing the panel
    without taking changes nothing. The carried food is shown in the HUD (icon + word).
 7. **Box positions** come from the level data (`[[food_box]]` entries: food id, level
-   position of the box centre, label facing); every food has exactly one box. *PoC:* the
-   storage interior is not modelled yet, so level 1 places the 10 boxes in a row along the
-   storage's south facade (Q-065).
+   position of the box centre, label facing); every food has **at least one** labelled box
+   per storage (FEED-008). Every food storage (and the night food hut) is **enterable**
+   (GAME-LAYOUT "Enterable buildings", user request 2026-09-28); the outside row stays
+   **complete and unique** — one box per food, no repeats (Q-181 answered 2026-09-28): a row
+   in front of the storage's door facade (night hut: its east facade), labels facing out
+   towards the arriving child, with a free gap ≥ 1.2 m in front of the door (Q-150,
+   LAYOUT-032); a walkable standing point within 2 m in front of every label (GAME-PLAYER
+   §5). The "Futter" board hangs above the storage door (bottom 2.3 m). Positions:
+   GAME-LEVEL-1/2/3, GAME-LEVEL-NIGHT-1.
+   **More boxes inside** (Q-181 "some additional boxes can go inside"; Q-194 answered
+   2026-09-29): 2–6 more `[[food_box]]` entries stand inside every (enterable) storage
+   against the inner walls, on the 0.15 m plank platform of the solid 1 m wall band, labels
+   facing the free floor of the interior, with a walkable standing point within 2 m
+   (GAME-PLAYER §5), solid (collider + wall band), never in the door walkway (LAYOUT-032).
+   They are **real, labelled food boxes**, taken exactly like the outside ones (interact →
+   label panel → take, §6): their food **may repeat** a food already outside (Q-194: "the
+   same food outside and inside" is allowed) — FEED-008's "one box per food" / "no repeats"
+   check counts only the outside row; FEED-027 checks the inside boxes' geometry, FEED-028
+   that interacting with one gives its food like any other box. The `klasse3` distractor
+   boxes (§1 table) will stand inside too once they exist (Q-032); today there are none.
 
 ## Putting an item down (user request 2026-09-27)
 
@@ -138,8 +155,8 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 - The basket (GAME-GARDEN keeps treats without the hands) and the honey pot (GAME-EVENTS)
   are no hand items and have no drop path in `carrying` (Q-172); the drop only ever takes
   the food or the bowl.
-- **Not yet:** golf carts (GAME-CART) do not exist yet, the hint
-  targets of §13/§16 wait for GAME-HINT, the `pick_up` clip and the rustle sound of §14.
+- The hint targets of §13/§16 are implemented in GAME-HINT (`zoo_core::hints`, HINT-011).
+- **Not yet:** golf carts (GAME-CART) do not exist yet, the `pick_up` clip and the rustle sound of §14.
 
 ## Test cases
 
@@ -152,7 +169,7 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 | FEED-005 | Given every animal's correct food, then a food box with that food exists in the storage. | unit |
 | FEED-006 | Given the player has taken food from the grass box 10 times, when taking it again, then the player carries grass (boxes never run out). | unit |
 | FEED-007 | Given the player stands in front of the grass box facing it, when interacting, then the text panel with the grass label opens and the player carries nothing yet; when taking, the player carries grass. | unit |
-| FEED-008 | Given the level data, then every food has exactly one food box, every box stands on walkable ground next to the food storage, and a walkable standing point within 2 m in front of each box's label exists. | unit |
+| FEED-008 | Given the level data, then every food has exactly one labelled box in the outside row of each storage (no repeats there); every box (outside or inside) stands within 1 m of an (enterable) food storage / food hut rect, and a walkable standing point within 2 m in front of each box's label exists (Q-181 answered: boxes outside; Q-194 answered: more boxes inside may repeat a food). | unit |
 | FEED-009 | Given the player carries hay, when `G` is pressed (desktop) or the put-down button is tapped, then hay lies on free walkable ground ≈ 0.8 m in front of her, standing on the surface, and she carries nothing. | unit + e2e |
 | FEED-010 | Given the spot in front is water, a fence, a gate walkway or inside an enclosure, then the item lies on the nearest free walkable spot within 1.5 m, or is not dropped when none exists; in a golf cart nothing is dropped. | unit |
 | FEED-011 | Given hay lying on the ground, when the player within 2 m interacts, then she carries hay; given she carries bamboo, then bamboo lies on that spot and she carries hay (swap). | unit |
@@ -171,11 +188,13 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 | FEED-024 | Given the current mission needs an item that lies on the ground (the fish bowl, or the mission's food) and the child carries nothing better, when the hint is asked, then a candidate of GAME-HINT priority 2 is "pick up" at that lying item (§13). | unit |
 | FEED-025 | Given the panda info board not read, then no hint points at a bamboo cut spot; given it was read and a cut spot is full grown, then the nearest ripe cut spot may be a hint candidate for bamboo beside the bamboo food box (§16). | unit |
 | FEED-026 | Given the exported bamboo forest model, then every cut spot has the stage nodes `stalk_full`, `stalk_young` and `stump` (§17). | asset |
+| FEED-027 | Given every food storage / food hut, then 2–6 `[[food_box]]` entries stand inside it (whose position falls inside the storage's rect), each stands on the 0.15 m plank platform of the solid wall band, is solid for the player, and has a walkable standing point within 2 m in front of its label, clear of the door walkway (Q-194 answered 2026-09-29). | unit |
+| FEED-028 | Given the player stands in front of a food box inside a storage facing it, when interacting, then the text panel with that box's label opens exactly as for an outside box; when taking, the player carries that food (Q-194 answered 2026-09-29: inside boxes are real food boxes). | unit |
 
 ## Open questions
 
 - Q-032 Distractor design per reading level, Q-033 storage locked by `quest_key`?
-- Q-065 Food storage interior (PoC: boxes outside along the facade).
+- Q-065 Food storage interior — superseded by Q-181 (answered 2026-09-28: storages enterable, labelled boxes outside, extra boxes inside). Q-194 stock boxes inside (unlabelled decoration; `klasse3` distractors inside once they exist).
 - Q-025 How food is carried, Q-042 `give` clip vs. food not consumed, Q-034 food portions vs. one food at a time.
 - Q-156 answered 2026-09-27: 4 cut spots on `bamboo_sw`, 3 min regrowth, hands only, only `bamboo_sw` for now.
 - Q-158 answered 2026-09-28: the put-down details (a)–(f) are rules now (§8–11, §14).

@@ -4,7 +4,7 @@ title: Next-target hint
 aspect: gameplay
 module: hints
 status: draft
-depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS]
+depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN]
 test_prefix: HINT
 updated: 2026-09-28
 ---
@@ -41,7 +41,12 @@ settings gear** shows **one next possible target** and where to walk.
    3. an **unstarted mission**: the nearest unread info board,
    4. **optional activities**: garden (if the basket has room and plants are ripe), treats for
       animals at home, the golf-cart key box, the map board,
-   5. at night: the bed or the moon door (GAME-NIGHT).
+   5. at night: the bed or the moon door (GAME-NIGHT); from the end of the celebration of a
+      day level (dusk) the bed. They are only offered when they are the way forward (dusk,
+      night, or by day while the night zoo waits, Q-140), so they rank **before** the optional
+      activities of 4 and together with 3 (Q-189 answered 2026-09-28).
+   A target on the other side of the moon door (the night zoo from the day zoo, or back)
+   is shown as the **moon door** while it is open; otherwise it is not offered.
    Pressing the button again within 12 s shows the **next** candidate (cycles through the
    top 3), so a child who doesn't want that target gets another.
 4. **Riddles stay fair:** the hint never points directly at a hidden animal the child has
@@ -55,6 +60,52 @@ settings gear** shows **one next possible target** and where to walk.
    60 s (Q-127 answered).
 7. The hint logic lives in zoo-core (deterministic, testable); the host only draws the
    indicator and the button.
+8. **Night progress** (GAME-NIGHT "Night progress"): tapping the 🌙 progress indicator is the
+   same as pressing 🧭; while animals of the day level are missing the hint leads to the next
+   missing animal's mission step (rule 3).
+
+## Implementation (2026-09-28)
+
+- **Core** (`zoo_core::hints`): `candidates(game, tracker)` lists every useful target, sorted
+  by priority, then the straight distance, then id (deterministic); one entry per id.
+  `HintTracker` (owned by the host glue, not saved) holds the shown target, the top-3
+  cycle, the rule-4 search timers and the idle nudge. A hint is re-evaluated every 0.25 s
+  while shown and hides when it is reached (≤ 2.5 m), when it is no longer a candidate
+  (board read, food taken, …), after 12 s, or when the child goes to sleep.
+- **Current mission:** while a group follows (or the goldfish is in the carried bowl) its
+  gate is the mission target; else a started mission whose food is in the hands. Only the
+  current mission's steps are priority 2; other started missions count as priority 3 (so
+  the hint never sends the child to take a second food while the first is still needed).
+  Without a current mission every started mission's step is priority 2.
+- **Mission steps** (rule 3.2): the goldfish first needs the bowl (📦 pick up) and water
+  (💧, the nearest water point); food missing → the nearest unlocked **food storage** (its
+  door, the gap in the box row in front of it — never the right box, reading the labels stays
+  the child's job, Q-187 answered 2026-09-28; without a storage building the centre of the boxes),
+  every lying food the animal eats (📦 "pick up", GAME-FEED §13) and, for bamboo eaters, every
+  full-grown cut spot (🎋, only because the board was read — GAME-FEED §16); right food in
+  the hands → the board for the first 60 s after it was read, then the hiding-area edge.
+- **Hiding-area circle** (rule 4): centre = the hiding place's spot, radius =
+  max(3 m, `wander_radius_m`) + 1 m (≥ 6 m wide, and always ≥ 1 m beyond where the animal
+  wanders, so the edge is never its position); the target is the point of the circle
+  nearest to the child; none while she is inside the circle.
+- **Optional** (rule 3.4): ripe plants while the basket has room; animals at home that
+  like a treat in the basket (at their fence). Not in the game yet and therefore skipped:
+  events (priority 1, GAME-EVENTS), golf carts and their key box (GAME-CART), the map board
+  (GAME-MAP), ad boards.
+- **Never stuck** (HINT-008): if nothing else is useful, the nearest board in scope (read
+  again), else the bed, else an open moon door.
+- **Idle nudge** (rule 6): useful actions are the child's interactions (every progress event,
+  a panel opening, "not interested", a refusal, a missing bowl/water, a refused treat, a full
+  basket) and entering a grid cell not visited before. Idle time does not count while a hint
+  is shown, a reading panel is open, or the child sleeps.
+- **Host** (`App::hint_press`, `hint_json`, key `H`): the 🧭 button `#compass-btn` (68 px,
+  right, directly below the ⚙ gear), the bouncing indicator `#hint-marker` (DOM overlay,
+  always on top — visible through trees) with the target icon, and at the screen border the
+  edge arrow `#hint-edge` (arrow + icon + 1–5 dots, one per 10 m of walking distance, the
+  grid path measured once per second). Icons: 📋 board, 📦 food / pick up, 🐾 hiding area,
+  🚪 gate, 🎋 bamboo, 💧 water, 🥕 garden, 🧺 treat, 🛏 bed, 🌙 moon door.
+- The rule-4 search timer is not saved: after a reload the board is shown again for 60 s
+  (Q-186 answered 2026-09-28).
 
 ## Test cases
 
@@ -70,7 +121,16 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-008 | Given any reachable game state (fuzz over 1 000 seeded states), then the hint always returns a target (the game is never stuck). | unit |
 | HINT-009 | Given touch, then the 🧭 button is directly below the gear, ≥ 64 px, and works; desktop `H` does the same. | e2e |
 | HINT-010 | Given 90 s without a useful action (no interaction, no new cell explored), then the 🧭 button pulses once and no popup opens; any useful action restarts the 90 s (rule 6, Q-127). | unit |
+| HINT-011 | Given the panda board read and no bamboo carried, then the food storage and every full-grown cut spot are priority-2 targets (before the board was read no cut spot is offered); given the right food lying on the ground, it is a "pick up" target, a lying wrong food is not (GAME-FEED §13/§16). | unit |
+| HINT-012 | Given dusk after level 1, then the target is the bed; given night, then the open moon door comes first (the night boards are behind it) and the bed is among the targets; through the door, the target is a night board. | unit |
+| HINT-013 | Given the 🌙 night progress indicator tapped, then the hint shows exactly as with 🧭. | e2e |
+| HINT-014 | Given a child who only follows the hints (several seeds, every level-1 hiding place at least once), then all level-1 animals come home, night falls, and the bed is among the top 3 hints and brings the morning. | unit |
 
 ## Open questions
 
 - Q-127 answered 2026-09-27: idle nudge yes (90 s); hiding-area edge after 60 s.
+- Q-186 answered 2026-09-28 (yes): the rule-4 search timer is not saved; after a reload the
+  board is shown again for 60 s.
+- Q-189 answered 2026-09-28 (yes): the bed / moon door rank before optional activities (rule 3.5).
+- Q-187 answered 2026-09-28 (yes): the food-storage hint points at the storage (its door since
+  the labelled boxes stand outside in a row, Q-181), never at the right box.

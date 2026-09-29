@@ -30,7 +30,9 @@ updated: 2026-09-27
 9. **Camera views, sky and haze** (GAME-CAMERA-VIEWS): the camera poses and glides are pure
    math in `zoo_render::camera` (constants in `zoo_core::view`); the sky and the distance
    haze are drawn in the outline pass from the depth buffer (no extra draw call). Static
-   batches are culled per 8 m chunk of their instances, decals and skinned characters per
+   batches are culled per 8 m chunk of their instances — a batch with instances in several
+   chunks keeps them sorted by chunk on the GPU and draws only the chunk ranges in view
+   (PERF-BUDGETS budget 22, PERF-R-002) — decals and skinned characters per
    bounds, against the frustum (whose far plane is the fog end + 2 m = 22.8 m in the close
    views, GAME-CAMERA-VIEWS 6). Tested by CAMV-001…005, 014, 018.
 

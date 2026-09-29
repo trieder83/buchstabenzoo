@@ -146,20 +146,21 @@ fn save_005_invalid_saves_start_a_new_game() {
 fn save_006_unwalkable_position_moves_to_nearest_walkable_cell() {
     let g = common::game(1);
     let mut s = g.to_save();
-    // inside the food storage (solid building, cells x -4..4, z 11..17), near its south wall
-    s.player.pos = [0.5, 11.4];
+    // in the south wall of the food storage beside its door (solid wall band; the door and the
+    // interior are walkable since the storage is enterable, LAYOUT-041)
+    s.player.pos = [-1.5, 11.4];
     let r = Game::from_save(common::level1(), &s).unwrap();
     let c = cell_of(r.player.pos);
     assert!(r.level.grid().is_walkable(c, false), "{}", r.player.pos);
     assert!(
-        r.player.pos.distance(Vec2::new(0.5, 11.4)) <= 1.5,
+        r.player.pos.distance(Vec2::new(-1.5, 11.4)) <= 1.5,
         "nearest: {}",
         r.player.pos
     );
     // a following zebra that stood on a now solid cell appears behind the player
     let mut g = game_in_progress();
     let i = g.animal_index("zebra").unwrap();
-    g.animals[i].pos = Vec2::new(0.5, 13.5);
+    g.animals[i].pos = Vec2::new(-3.5, 13.5); // west wall band of the storage
     let r = restore(&g);
     let z = r.animal("zebra").unwrap().pos;
     assert!(r.level.grid().is_walkable(cell_of(z), true));

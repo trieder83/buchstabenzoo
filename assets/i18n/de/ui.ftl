@@ -35,3 +35,8 @@ ui-refuse = Hier wohne ich nicht!
 sign-food-storage = Futter
 # Name board of the entrance arch (proposal Q-148)
 sign-zoo-entrance = Buchstaben Zoo
+
+## Hinweis (GAME-HINT) und Nacht-Fortschritt (GAME-NIGHT Regel 11): nur Vorlese-/Bildschirmleser-Texte
+
+ui-hint = Wohin jetzt?
+ui-night-progress = Diese Tiere fehlen noch bis zur Nacht

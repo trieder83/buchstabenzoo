@@ -55,6 +55,7 @@ uniform vec4 u_fog;   // start m, end m, fog amount 0..1, sky amount 0..1
 uniform vec3 u_sky_top;       // day {top} … night (GAME-NIGHT, Q-126)
 uniform vec3 u_sky_horizon;   // day {horizon} … night; also the haze colour
 uniform float u_sky_night;    // 0 day … 1 night: moon, stars, blue clouds
+uniform float u_sky_clouds;   // 1 clouds, 0 none (low quality tier, PERF-BUDGETS rule 5)
 const vec3 CLOUD = {cloud};
 const vec3 CLOUD_SHADE = {shade};
 const vec3 NIGHT_CLOUD = vec3(0.30, 0.38, 0.66);
@@ -107,6 +108,7 @@ vec3 sky_color(vec3 dir, out vec3 haze) {{
     float bs = 1.0;
     float cell = floor(az / 45.0);
     for (int k = -1; k <= 1; k++) {{
+        if (u_sky_clouds < 0.5) break;   // uniform: the fwidth below stays in uniform flow
         float i = mod(cell + float(k), 8.0);
         if (sky_hash(i + 0.5) < 0.2) continue;   // a gap now and then
         float cx = i * 45.0 + 22.5 + (sky_hash(i + 1.7) - 0.5) * 18.0;

@@ -26,7 +26,13 @@ PERF_VIEWPORTS=phone PERF_SCENARIOS=S01,S10 tools/perf/run.sh --skip-build   # a
 node tools/perf/look.mjs capture <web/dist> <out>   # look scenarios L01–L14 (deterministic)
 node tools/perf/look.mjs compare <out A> <out B> 0   # pixel diff ("no visible change")
 LOOK_ANGLE=gl node tools/perf/look.mjs ab <dist A> <dist B>   # interleaved frame-time A/B
+LOOK_DIFF_DIR=<dir> node tools/perf/look.mjs compare <A> <B> 0  # + diff images per scenario
+node tools/perf/turn.mjs flicker <web/dist> <out>   # turning flicker vs. 2×2 supersampling (T01–T04)
+LOOK_ANGLE=gl node tools/perf/turn.mjs pacing <web/dist>   # frame intervals + turn speed jitter
 ```
+
+- All tools open the game with the `high` quality tier (automated browsers, PERF-BUDGETS
+  rule 5), so runs stay comparable; `?quality=low` in a scenario URL measures the low tier.
 
 - **"No visible change" optimisations** are checked with `tools/perf/look.mjs`: capture the
   look scenarios of the build before and after and `compare` them (0 differing pixels
@@ -353,6 +359,130 @@ rule uses SwiftShader).
 Regressions (> 10 % worse than the previous run): none in counts; the sequential SwiftShader
 times are load-dominated; the interleaved SwiftShader day +6…12 % is explained above (not
 seen on the real GPU).
+
+## Run 2026-09-28 (2) — PERF-R-002 (a), PERF-R-005, PERF-R-014, turning flicker (PERF-R-015…018)
+
+- **Commit** `1a9dcf5` **plus the performance agent's uncommitted changes only** (built from a
+  clean snapshot: HEAD + `zoo-render` renderer / night / shaders / sky, `zoo_core::quality`,
+  the quality / culling hunks of `zoo-web`, `web/src/quality.ts`, `main.ts`; the other
+  agents' work in progress — hints, level data — excluded). Machine: AMD Ryzen 5 5500U,
+  12 CPUs, **load average 12–27** (other agents' Playwright and Blender runs): SwiftShader
+  times unreliable, counts exact. Real GPU: AMD Renoir iGPU, ANGLE → OpenGL 4.6 (shared with
+  the load above; relative A/B only).
+- **What changed:** chunk-sorted static batches drawn per visible chunk range (PERF-R-002 a),
+  automatic quality tier (PERF-R-005), light-edge derivatives before the loops (PERF-R-014),
+  exact conservative culling boxes (PERF-R-015). New tools: `tools/perf/turn.mjs`,
+  `look.mjs compare` diff images (LOOK_DIFF_DIR).
+- **Note on the counts:** `run.sh` ran on the state with `MAX_CHUNK_RUNS` 6 / gap 4 096
+  triangles and the first culling boxes; the final code merges runs more (3 / 16 384) and
+  uses tighter swept boxes — draw calls are therefore **lower or equal** to the table
+  (CAMV-014 spots: equal to the committed renderer), triangles / instances slightly higher.
+  The next run's baseline must come from the committed state.
+
+### Counts (`tools/perf/run.sh`, before = baseline 2026-09-28 → after)
+
+| Scenario | desktop draw calls | desktop instances | desktop triangles | phone draw calls | phone triangles |
+|---|---|---|---|---|---|
+| S01 spawn 14 m | 30 → 30 | 2 709 → 842 | 228 k → 86 k (−62 %) | 17 → 17 | 192 k → 42 k (−78 %) |
+| S02 spawn 20 m | 37 → 37 | 2 800 → 1 025 | 251 k → 97 k (−61 %) | 20 → 21 | 219 k → 46 k (−79 %) |
+| S03 walking | 29 → 30 | 2 761 → 615 | 239 k → 78 k (−67 %) | 18 → 19 | 218 k → 36 k (−83 %) |
+| S04 look-around | 37 → 40 | 2 839 → 1 178 | 234 k → 109 k (−53 %) | 18 → 22 | 204 k → 52 k (−75 %) |
+| S05 first person | 36 → 39 | 2 864 → 1 555 | 242 k → 123 k (−49 %) | 15 → 22 | 200 k → 46 k (−77 %) |
+| S06 house | 29 → 30 | 2 693 → 832 | 238 k → 82 k (−66 %) | 22 → 23 | 215 k → 32 k (−85 %) |
+| S07 garden | 35 → 37 | 2 735 → 784 | 201 k → 50 k (−75 %) | 25 → 27 | 169 k → 31 k (−82 %) |
+| S08 pond | **27 → 34** | 4 671 → 848 | 291 k → 56 k (−81 %) | 16 → 17 | 72 k → 22 k (−69 %) |
+| S09 level-3 spawn 20 m | **36 → 41** | 7 460 → 1 486 | **454 k → 104 k (−77 %)** | 23 → 25 | 304 k → 24 k (−92 %) |
+| S10 night spawn | 35 → 35 | 2 733 → 853 | 234 k → 89 k (−62 %) | 19 → 19 | 195 k → 45 k (−77 %) |
+| S11 night zoo | 27 → 30 | 4 420 → 677 | 269 k → 63 k (−77 %) | 14 → 14 | 177 k → 34 k (−81 %) |
+
+- Budget 19 (≤ 300 k triangles, ≤ 10 k instances): **met in every scenario** (was 454 k in S09).
+- Budget 3 (≤ 140 draw calls): max 41. The draw-call rises in bold (> 10 %) come from the
+  first run settings and are gone in the final code (runs merged, see the note).
+- Sizes: release WASM 1 723 KB raw / 498 KB brotli (−15 KB against 1 738 KB); dist 8.42 MB,
+  6.65 MB transferred on first load. Heaps: WASM 17.25 MB, JS 10.1 MB.
+
+### Look (`look.mjs`, final build vs. the shipped build)
+
+- Day and dusk (L01–L07): **0 differing pixels**. Night (L08–L14): only the light-pool and
+  lamp rims (PERF-R-014): 314 / 752 / 279 / 184 / 11 / 669 / 271 px, max channel difference
+  121; diff images `specs/50-performance/review/r014_*`.
+- Per-chunk drawing alone (PERF-R-002 a) and the culling boxes (PERF-R-015): 0 px in all 14.
+
+### Frame time — interleaved A/B on the real GPU (scene pass, geometric mean of both page orders)
+
+| Scenario | phone 720 × 1560 | desktop 1920 × 1080 |
+|---|---|---|
+| L01 day spawn | −5 % | +5 % |
+| L02 day 20 m | −6 % | +4 % |
+| L04 day first person | +1 % | +5 % |
+| L06 day pond | −2 % | −5 % |
+| L08 night spawn | −12 % | −10 % |
+| L09 night 20 m | −11 % | −7 % |
+| L10 night zoo | −10 % | −15 % |
+| L12 night first person | −11 % | +4 % |
+
+- Noise check (the same build on both pages): up to ±5 %. Day is unchanged within the
+  noise; the triangle saving does not show on this iGPU (not vertex-bound).
+- Two regressions were found and fixed during the round (both measured with shader / order
+  A/B): taking the position derivatives unconditionally cost ≈ 11 % of the day scene pass →
+  now only under the uniform `u_night.x > 0`; the first chunk order (north rows first =
+  back to front) cost up to +19 % in first person → rows south first.
+
+### Turning flicker (user report 2026-09-28) — `turn.mjs`, shipped build
+
+| Turn (48 frames) | TV per px and frame vs. 2 × 2 SSAA | aliasing excess | hot px, lines on → off |
+|---|---|---|---|
+| T01 first person, slow drag | 4.67 vs 4.46 (× 1.05) | 6.9 % | 1 393 → 41 |
+| T02 look-around at the spawn | 5.72 vs 5.23 (× 1.09) | 11.5 % | 13 924 → 1 735 |
+| T03 zoo view 45° glide | 7.77 vs 7.21 (× 1.08) | 10.2 % | 12 843 → 321 |
+| T04 first person, night zoo | 4.09 vs 3.87 (× 1.06) | 9.5 % | 3 261 → 389 |
+
+- Cause: the aliased screen-space outlines of dense small detail (stones, bricks, rails,
+  cords) at a distance — 87–97 % of the strongly flickering pixels disappear without lines
+  (heat maps `specs/50-performance/review/flicker_*`). Fix changes the look: Q-191.
+- Pacing (real iGPU, desktop and phone viewport, → held 4 s): 241 intervals, p50 = p95 =
+  16.7 ms, max 16.8 ms, 0 long frames, turn speed 90.0°/s ± 0.03 %. SwiftShader 0.6–1.6 s per
+  frame (not representative).
+
+### Findings vs. budgets
+
+| Budget | Measured | Verdict |
+|---|---|---|
+| 16 night ≤ 1.3 × day | real iGPU, phone: night scene pass −10…−12 % more | ❌ still above (reference phone needed, Q-013) |
+| 19 triangles / instances | max 123 k (desktop S05), 1 555 instances | ✅ (was ❌ 454 k) |
+| 22 per-chunk ranges | L01–L14 0 px by day; ≤ 3 draws per batch | ✅ |
+| 23 culling = no culling | e2e PERF-025 0 px in 4 turning sequences | ✅ |
+| 4 close views < zoo view | CAMV-014 red at the spawn (44 vs 43) — level data of 2026-09-28, the committed renderer too | ❌ Q-193 |
+| rule 5 quality tier | e2e PERF-022 green; default unchanged | ✅ |
+
+## Run 2026-09-29 — PERF-R-018 on (Q-193), PERF-R-016 prototypes (Q-191, paused)
+
+- **Commit:** `267dfd9` + uncommitted round. **Changed since the last run:** haze culling of
+  the close views on (PERF-R-018); outline AA only as shader-patch prototypes
+  (`tools/perf/outline_aa_variants.mjs`), not in the renderer (paused by the user).
+- **Machine:** Linux, headless Chromium; flicker under SwiftShader (relative only), frame
+  time on the real iGPU (AMD Renoir, ANGLE GL) with `look.mjs ab`.
+- **Draw calls:** CAMV-014 green (first person / look-around below the zoo view at 20 m at
+  all three spots; 44 → 35 at the level-1 spawn, run 2026-09-28 prototype numbers).
+
+### Turning flicker — `turn.mjs flicker`, 48 frames, hot px vs. 2 × 2 SSAA of today's look
+
+| Turn | today | `box4` prototype | `tent5` prototype |
+|---|---|---|---|
+| T01 first person | 1 393 (TV × 1.05 of SSAA) | 355 (× 0.95) | 348 |
+| T02 look-around | 13 402 (× 1.09) | 3 346 (× 0.97) | 2 911 |
+| T03 zoo view 45° glide | 12 678 (× 1.08) | 1 992 (× 0.98) | 1 167 |
+| T04 night zoo first person | 3 254 (× 1.06) | 651 (× 0.98) | 354 |
+
+### Cost of the prototypes — real iGPU, `look.mjs ab`, 16 rounds × 3 frames (B − A per frame)
+
+| Scenario | `box4` in the outline pass | two-pass `box4` (R8 mask) |
+|---|---|---|
+| desktop L01 / L04 / L09 | +0.9 / +1.8 / +1.8 ms | +4.9 / +4.0 / +1.3 ms (noisy run; 10-round run +2.1 / +2.1 / +1.4) |
+| phone L01 / L04 / L09 | +1.6 / +1.0 / +1.3 ms (full-screen 1.5 → 2.8 ms at L01) | +2.1 / +1.4 / +1.8 ms |
+
+- No regression in the shipped path (the renderer's outline pass is unchanged). The AA cost
+  is to be cut before it ships (PERF-R-016 "Next").
 
 ## Test cases
 

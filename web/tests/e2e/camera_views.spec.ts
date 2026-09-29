@@ -349,3 +349,99 @@ test('CAMV-022: inside the zookeeper house in first person the roof and its ceil
   expect(await page.evaluate(() => window.__zoo!.app.region_hidden('zookeeper_house_1')), 'back in the zoo view: hidden again').toBe(true);
   expect(errors).toEqual([]);
 });
+
+// LAYOUT-043 (GAME-LAYOUT "Enterable buildings", user request 2026-09-28): she walks (keyboard)
+// from the ring through the door into the level-1 food storage; the door opens, she stands on
+// the floor inside between the unlabelled stock boxes (Q-194, never a target), the roof, the
+// upper walls and the "Futter" board hide in the zoo view and come back in first person
+// (CAMV-022); she walks back out through the door and takes the grass from its box in the row
+// outside (Q-181 answered: the labelled boxes stay outside).
+test('LAYOUT-043: into the food storage and out — door opens, roof hidden in the zoo view, kept in first person', async ({ page }) => {
+  const errors = await start(page);
+  const door = async () => {
+    const all = JSON.parse(await page.evaluate(() => window.__zoo!.app.openings_json())) as {
+      kind: string;
+      x: number;
+      z: number;
+      open: number;
+    }[];
+    return all.find((o) => o.kind === 'door' && Math.hypot(o.x - 0.5, o.z - 11.5) < 0.1)!;
+  };
+  /** Holds the WASD key that walks along a level direction (camera yaw, camera.rs) for `s` seconds. */
+  const walk = async (dx: number, dz: number, s: number) =>
+    page.evaluate(
+      ([ddx, ddz, secs]) => {
+        const a = window.__zoo!.app;
+        const yaw = a.camera_target_yaw_deg() * (Math.PI / 180);
+        const fwd = [-Math.sin(yaw), Math.cos(yaw)];
+        const right = [Math.cos(yaw), Math.sin(yaw)];
+        const keys: [string, number[]][] = [
+          ['KeyW', fwd],
+          ['KeyS', [-fwd[0], -fwd[1]]],
+          ['KeyD', right],
+          ['KeyA', [-right[0], -right[1]]],
+        ];
+        keys.sort((p, q) => q[1][0] * ddx + q[1][1] * ddz - (p[1][0] * ddx + p[1][1] * ddz));
+        a.key(keys[0][0], true);
+        for (let k = 0; k < Math.round(secs * 10); k++) a.frame(0.1);
+        a.key(keys[0][0], false);
+        a.frame(0.1);
+        return { x: a.player_x(), z: a.player_z() };
+      },
+      [dx, dz, s] as const,
+    );
+  await goto(page, 0.5, 9.0);
+  expect((await door()).open, 'shut while she is away').toBe(0);
+  // in through the door (walking north)
+  let p = await walk(0, 1, 1.2);
+  expect(p.z, 'at the door').toBeGreaterThan(10.4);
+  expect((await door()).open, 'the door opens as she comes').toBeGreaterThan(0.5);
+  p = await walk(0, 1, 2.5);
+  expect(p.z, 'inside, stopped in front of the back wall band').toBeGreaterThan(14.5);
+  expect(p.z).toBeLessThan(16.0);
+  expect(await page.evaluate(() => window.__zoo!.app.player_inside())).toBe('food_storage');
+  expect(await page.evaluate(() => window.__zoo!.app.player_foot_y())).toBeGreaterThan(0.06);
+  // the stock boxes along the walls are decoration: never a target (Q-194)
+  await page.evaluate(() => window.__zoo!.app.debug_face_point(-1.88, 16.44));
+  await page.evaluate(() => window.__zoo!.app.frame(0));
+  expect(await page.evaluate(() => window.__zoo!.app.target_key())).not.toMatch(/^food_box:/);
+  expect(await page.evaluate(() => window.__zoo!.app.region_hidden('food_storage')), 'zoo view: roof hidden').toBe(true);
+  await nextFrames(page, 3);
+  await page.screenshot({ path: path.join(shots, 'screenshot_storage_inside_zoo.png') });
+  // first person, looking back at the door and a little up: roof, ceiling and the open door
+  await page.evaluate(() => window.__zoo!.app.debug_face_point(0.5, 11.0));
+  await nextFrames(page, 3);
+  await page.keyboard.press('KeyV');
+  await glide(page, 1);
+  await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    a.look_drag(0, -250);
+    a.frame(0);
+  });
+  expect(await page.evaluate(() => window.__zoo!.app.region_hidden('food_storage')), 'first person: roof drawn').toBe(false);
+  await nextFrames(page, 3);
+  await page.screenshot({ path: path.join(shots, 'screenshot_storage_inside_fp.png') });
+  // looking up as far as allowed: the ceiling, no sky
+  await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    a.look_drag(0, -2000);
+    a.frame(0);
+  });
+  expect(await skyFraction(page, 0.1)).toBeLessThan(0.02);
+  await page.keyboard.press('KeyV');
+  await glide(page, 0);
+  // out again through the door (walking south): the roof is back
+  await goto(page, p.x, p.z);
+  p = await walk(0, -1, 3.5);
+  expect(p.z, 'walked out through the door').toBeLessThan(10.0);
+  expect(await page.evaluate(() => window.__zoo!.app.player_inside())).toBe('');
+  expect(await page.evaluate(() => window.__zoo!.app.region_hidden('food_storage'))).toBe(false);
+  // the grass from its box in the row outside
+  await goto(page, -1.5, 9.6);
+  await page.evaluate(() => window.__zoo!.app.debug_face_point(-1.5, 10.66));
+  await page.evaluate(() => window.__zoo!.app.frame(0));
+  expect(await page.evaluate(() => window.__zoo!.app.target_key())).toBe('food_box:grass');
+  expect(await page.evaluate(() => window.__zoo!.app.take_food('grass'))).toBe(true);
+  expect(await page.evaluate(() => window.__zoo!.app.carry_food())).toBe('grass');
+  expect(errors).toEqual([]);
+});

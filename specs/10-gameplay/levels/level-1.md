@@ -64,7 +64,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Sight test data | Solid elements carry `blocks_view` (and `height_m` for the mockups). | Q-044 |
 | Barrier unlock | `barrier_ne_tree` opens **the morning after `night_1` is complete** (GAME-NIGHT rule 7, Q-078 answered; data `unlock_after = "night_1"`, `opens_at = "morning"`); the moon door opens at nightfall; the other two barriers belong to later levels. | Q-022, Q-023, Q-133 |
 | Food boxes in level 1 | All 10 food boxes stand in the storage (natural distractors). | Q-047 |
-| Food box positions (PoC) | The storage interior is not modelled yet: the 10 boxes stand in a row in front of the storage's south facade (box centres z = 10.66, labels facing south), on the north row of `path_ring_s`, with a free gap in front of the door (x 0…1; Q-150 answered 2026-09-27: doors are never blocked): meat x −4.4, melons −3.6, hay −2.8, bananas −2.0, bamboo −1.2, **grass** −0.4, gap (box edges −0.09 … 1.69), fish food 2.0, berries 2.8, eucalyptus 3.6, leaves 4.4 (meat and leaves moved from 0.4 / 1.2 to the row ends). Data: `[[food_box]]` in `level-1.toml`. | Q-065 |
+| Food box positions | The storage is enterable (`interior` (−3, 12, 6, 4), door (0, 11)), but the 10 labelled boxes stay **outside** (Q-181 answered 2026-09-28): a row in front of the storage's south facade (box centres z = 10.66, labels facing south), on the north row of `path_ring_s`, with a free gap in front of the door (x 0…1; Q-150): meat x −4.9, melons −4.22, hay −3.54, bananas −2.86, bamboo −2.18, **grass** −1.5, gap (box edges −1.19 … 1.79), fish food 2.1, berries 2.8, eucalyptus 3.6, leaves 4.4. The gap is wider than the Q-150 row (box edges −0.09 … 1.69) because the door is enterable now: nothing solid within 0.9 m beside a door post (LAYOUT-038, Q-157). **Inside** (Q-194 answered 2026-09-29): 6 more real, labelled food boxes (interact → label panel → take, same as outside) on the 0.15 m plank platform of the wall band, labels facing the free floor: back (north) wall grass (−2.52, 16.44), melons (−1.88, 16.44), bamboo (1.28, 16.44), grass (1.92, 16.44), west wall melons (−3.44, 13.0), east wall bamboo (3.44, 14.6) — the foods of the level's three animals, repeated. Data: `[[food_box]]` (all 16) in `level-1.toml`. | Q-065, Q-150, Q-181, Q-194 |
 | Walking speed | 1.93 m/s on paths; grass 0.98 m/s (GAME-PLAYER §6, user decisions 2026-09-26). | Q-024 |
 | Panda spot and cave view | Panda lies near the cave mouth so its head is visible from the high camera (see "High-angle camera" below). | — (level design) |
 | Hippo pool data | `hippo_pool` is an `[[enclosure_feature]]` (not an element) at x 11–18, z 15–21 with a west ramp; `enc_hippo.home_wander_on = ["grass", "water"]`; water and grass connect only over the ramp; the hippo picks a water target 7 of 10 times; the hut area is the `[[enclosure_feature]]` `hippo_hut` (`kind = "hut"`, x 15–18, z 11–14) (see "Hippo enclosure pool"). Implemented in M5a as proposed (data-driven). | Q-085, Q-098 |
@@ -217,7 +217,7 @@ Solid = every type except `path` and `hiding_place`.
 | `path_ring_w` | path | -8, 11, 3, 16 | Ring path, west side; zebra gate, pond jetty. |
 | `path_ring_e` | path | 5, 11, 3, 16 | Ring path, east side; hippo gate. |
 | `path_ring_n` | path | -8, 27, 16, 3 | Ring path, north side; panda gate, bridge. |
-| `food_storage` | building (food_storage) | -4, 11, 8, 6 | Food storage, door at cell (0, 11) on the south facade. Unlocked (proposal Q-033). |
+| `food_storage` | building (food_storage) | -4, 11, 8, 6 | Food storage, door at cell (0, 11) on the south facade; enterable (every building with a door is, GAME-LAYOUT), walkable interior (-3, 12, 6, 4); the 10 food boxes stand outside in front of the south facade, 6 more real labelled food boxes inside (Q-181, Q-194 answered 2026-09-29). Unlocked (proposal Q-033). |
 | `hedge_center_w` | decoration (hedge) | -5, 11, 1, 6 | Tall hedge beside the food storage (sight blocker). |
 | `hedge_center_e` | decoration (hedge) | 4, 11, 1, 6 | Tall hedge beside the food storage (sight blocker). |
 | `grove_center` | decoration (tree_grove) | -5, 17, 10, 10 | Dense grove of tall trees inside the ring (main sight blocker). `density = "dense"`: solid, never entered (LAYOUT-016); bush border on all four walkable sides (`edge = "bushes"`, proposal Q-085); no canopy within 1.5 m of the north edge so it does not hide the player at `board_panda` (QA F11). |
@@ -228,15 +228,15 @@ Solid = every type except `path` and `hiding_place`.
 | `bench_pond` | decoration (bench) | -11, 26, 2, 1 | Bench on the pond shore. |
 | `enc_panda` | enclosure | -6, 32, 12, 10 | Panda enclosure; gate (-1, 32, 2, 1) on the south fence; cut bamboo on a feeding rack (Q-081 answered — no growing bamboo clumps), wooden platform and shelter, **no stone/cave**. |
 | `board_panda` | decoration (info_board) | -4, 30, 1, 1 | Info board of `enc_panda`, next to the gate. |
-| `path_moon` | path | -22, 29, 13, 2 | Side path from `path_north` / the ring west along the pond to the moon door. |
-| `path_north` | path | -9, 30, 3, 16 | Side path to `barrier_north_gate`. |
+| `path_moon` | path | -24, 29, 15, 2 | Side path from `path_north` / the ring west along the pond to the moon door; runs on under the door cells (x −24…−23) to `path_n1_entry` of `night_1` (Q-182, LAYOUT-040). |
+| `path_north` | path | -9, 30, 3, 18 | Side path to `barrier_north_gate`; runs on under the gate cells (z 46…47) to `path_l3_gate` (LAYOUT-040). |
 | `trees_nw` | decoration (trees) | -20, 32, 8, 10 | Open wood, `density = "sparse"`: walkable between 8 `tree_round` and 2 bushes (positions in "Woods"); its west row overhangs `shade_w` (`loc_shade`). Not solid as an element. |
 | `path_bridge_w` | path | 8, 28, 2, 3 | Short path from the ring to the bridge. |
 | `bridge_river` | path (bridge) | 10, 28, 3, 3 | Wooden bridge over the river (inherits the flow of `river_n`); four piles stand in the water (`bridge_wood`, foam obstacles, Q-068). |
 | `river_n` | landmark (river) | 10, 31, 3, 17 | River, `flow = "S"` (Q-066), from under the north hedge; small rapids with three stones (`rock` × 0.3 at (10.9, 43.4), (12.0, 44.3), (11.3, 45.8), foam obstacles, Q-068); ducks (animated ambient animals living near the bridge, GAME-AMBIENT). |
 | `river_mid` | landmark (river) | 10, 27, 3, 1 | River under the bridge (south side), `flow = "S"`. |
 | `river_e` | landmark (river) | 10, 24, 14, 3 | River bend, `flow = "E"`: the first 3 × 3 cells are the 90° bend (left turn around the inner corner (13, 27), TECH-WATER); leaves through a grate under the east hedge. |
-| `path_ne` | path | 13, 28, 9, 3 | Path behind the bridge to `barrier_ne_tree`. |
+| `path_ne` | path | 13, 28, 11, 3 | Path behind the bridge to `barrier_ne_tree`; runs on under the fallen tree (x 22…23) to the level-2 gate and `path_l2_entry` (LAYOUT-040): the tree lies on the street. |
 | `trees_ne` | decoration (trees) | 15, 34, 6, 9 | Open wood east of the river, `density = "sparse"`: walkable between 6 `tree_round` and 1 bush (positions in "Woods"); `loc_meadow` lies south of it, `loc_leaves` north-east of it; `path_leaves_trail` crosses it at x 18. Not solid as an element. |
 | `path_ne_trail` | path (side) | 13, 31, 2, 12 | Narrow trail from `path_ne` north between the river and `trees_ne` towards the leaf pile (`loc_leaves`). |
 | `path_leaves_trail` | path (side) | 18, 34, 1, 9 | 1 m stepping-stone trail straight through `trees_ne` from the north edge of the meadow to the bench at the leaf pile; keeps `loc_leaves` ≤ 10 s from `loc_meadow` (7.7 s) after the leaf pile moved into the north-east corner (FIX-056). |
@@ -444,7 +444,9 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
    the cave mouth (GAME-PLAYER §2). *Proposal (level design):* the panda lies near the
    mouth (head visible from above); the "dark" riddle detail comes from lighting (dark
    blue-grey floor, shadow) rather than from an enclosed interior.
-4. **Food storage.** The roof is cut away while the player is inside (GAME-PLAYER §2).
+4. **Food storage.** Enterable (`interior` (−3, 12, 6, 4)); the roof, the walls above 1 m and
+   the "Futter" board are hidden while the player is inside in the zoo view, kept in first
+   person (GAME-PLAYER §2, PLAY-028, CAMV-022).
 5. **Signs and info boards** are tilted back towards the camera; riddle texts and food box
    labels are read in the close-up text panel (ART-DIRECTION §4, GAME-PLAYER §4, ADIR-001/003).
 6. **Hedges.** 3 m hedges still frame areas and seal the level from above; their role as
@@ -459,7 +461,9 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
    candidate) is reachable from the spawn over walkable cells (hedges and walls need not be).
 4. Every border cell of the level bounds `(-24, -2, 48, 50)` is solid; with all barriers
    closed no walkable cell outside the bounds can be reached.
-5. No two solid elements overlap, and no path cell lies under a solid element.
+5. No two solid elements overlap, and no path cell lies under a solid element — except under
+   the barriers of level transitions: the street runs on under them (GAME-LAYOUT "Gates between
+   the levels", LAYOUT-040).
 6. Walking time between neighbouring points of interest (table above) is ≤ 10 s with
    1.93 m/s on paths and 0.98 m/s on grass.
 7. For each level-1 mission and **each of its candidate hiding places**, while the player
@@ -478,7 +482,8 @@ zoom 10–20 m, rotation in 45° steps; user decision 2026-09-26). Effects on th
 11. The food storage is open from the start (proposal Q-033).
 12. The food boxes (`[[food_box]]`, GAME-FEED §7) are props, not layout elements: they do not
     occupy grid cells (LAYOUT-L1-003/004 unaffected) but are solid for the player
-    (GAME-PLAYER §7); at least 2 m of `path_ring_s` stays free in front of them.
+    (GAME-PLAYER §7); at least 2 m of `path_ring_s` stays free in front of them (Q-181
+    answered: outside), and the door gap keeps 0.9 m beside each post (LAYOUT-038).
 13. Every candidate hiding place has a **wander area** (definition in "Hiding places") of
     ≥ 9 cells with a cell ≥ 2 m from the spot; it contains no solid cell and no `path` cell
     except cave floor, lies inside the place's `rect`, and wander areas and `rect`s of
@@ -765,8 +770,8 @@ than the thicket (4 m house vs. `loc_bamboo` "taller than the wall" still holds:
 ## Moon door (GAME-NIGHT rules 3, 7; Q-133 answered)
 
 The **moon door** `moon_door` sits in the **west zoo wall** at x −24…−23, z 29…30 (the wall
-is split into `wall_west_s` and `wall_west`). On the level-1 side `path_moon` (x −22…−10,
-z 29…30) leads to it from the ring corner at `path_north`, along the north shore of the pond;
+is split into `wall_west_s` and `wall_west`). On the level-1 side `path_moon` (x −24…−10,
+z 29…30; under the door cells too, the street is continuous, Q-182) leads to it from the ring corner at `path_north`, along the north shore of the pond;
 behind it lies the night zoo `night_1` (GAME-LEVEL-NIGHT-1), whose entry cells (−25, 29…30)
 are edge-adjacent to the door's cells (LAYOUT-021).
 
@@ -822,7 +827,7 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 |---|---|---|
 | LAYOUT-L1-001 | Given `level-1.toml`, then every enclosure, building, landmark, barrier and hiding place has a walkable cell reachable from the spawn next to it or inside it (flood fill). | unit |
 | LAYOUT-L1-002 | Given `level-1.toml` with all barriers closed, then every border cell of the bounds is solid and the flood fill from the spawn never leaves the bounds. | unit |
-| LAYOUT-L1-003 | Given `level-1.toml`, then no two solid elements share a cell and no `path` cell is covered by a solid element. | unit |
+| LAYOUT-L1-003 | Given `level-1.toml`, then no two solid elements share a cell and no `path` cell is covered by a solid element other than a level-transition barrier (the street runs on under it, LAYOUT-040). | unit |
 | LAYOUT-L1-004 | Given this spec's element table and `level-1.toml`, then both list the same ids, types and rectangles (instance of LAYOUT-005). | unit |
 | LAYOUT-L1-005 | Given `level-1.toml` with path speed 1.93 m/s and grass speed 0.98 m/s, then each neighbour pair of the walking-distance table has a fastest walking time ≤ 10 s (and the table's distances and times are reproduced within 0.1). | unit |
 | LAYOUT-L1-006 | Given missions `zebra`, `hippo`, `panda`, **every candidate hiding place of the mission** (`[[hiding_place]]`), the player on each walkable cell next to the info board or the enclosure gate, and the camera of GAME-PLAYER §2 at every 45° rotation and at 10, 14 and 20 m distance on a 1080×2340 viewport, then the animal spot and every cell centre of its wander area (0.5 m above ground) lie outside the view frustum (depends on Q-052). | unit |
@@ -832,7 +837,7 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 | LAYOUT-L1-010 | Given missions `zebra`, `hippo`, `panda` complete, then `barrier_ne_tree` stays solid until the next morning (with `night_1` joined: the morning after `night_1` is complete, NIGHT-010); then its cells are walkable, `barrier_north_gate` and `barrier_east_repair` are still solid (depends on Q-022). | unit |
 | LAYOUT-L1-011 | Given level 1 starts on a 1080×2340 viewport, then the player stands on the plaza facing north with the camera at maximum zoom-out (20 m) and the food storage is on screen. | e2e |
 | LAYOUT-L1-012 | Given the approved mockups `loc_river` and `loc_pond`, then a reviewer can tell river and pond apart without text (flow + bridge + ducks vs. still + lilies + frogs), and `env_zebra` shows no water, `env_panda` no stone cave. | manual |
-| LAYOUT-L1-013 | Given `level-1.toml`, then it has 10 `food_box` entries (one per food) in front of the food storage (centres along the south facade, up to 1 m beyond its corners — the row's ends since Q-150), and a walkable cell centre within 2 m in front of each box is reachable from the spawn. | unit |
+| LAYOUT-L1-013 | Given `level-1.toml`, then it has 10 `food_box` entries (one per food) in front of the food storage (centres along the south facade, up to 1 m beyond its corners — the row's ends since Q-150) plus 2–6 more inside that may repeat a food, and a walkable cell centre within 2 m in front of each box is reachable from the spawn (Q-181 answered: outside; Q-194 answered: more inside). | unit |
 | LAYOUT-L1-014 | Given each `[[hiding_place]]` of level 1, when its wander area is computed (cells within `wander_radius_m` = 3 m of the spot centre, surface = `wander_on`, 4-connected to the spot), then it contains the spot, has ≥ 9 cells and a cell ≥ 2 m from the spot, contains no solid cell and no `path` cell except kind `cave`, lies inside the place's `rect`, and wander areas and `rect`s of places of different animals are disjoint. | unit |
 | LAYOUT-L1-015 | Given the `[[hiding_place]]` list of level 1, then every animal with an enclosure has ≥ 3 candidates, and for every candidate there is a combination (one candidate per animal) that contains it and has all spots pairwise ≥ 12 m apart; in level 1 all 27 combinations do (RESC-014). | unit |
 | LAYOUT-L1-016 | Given the `[[scenery]]` list, then no scenery rect overlaps a solid element or a `path` cell, each lies inside the `rect` of its `hiding_place`, and each scenery `kind` occurs once in level 1. | unit |
@@ -875,3 +880,4 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 - Q-056 answered (axes: level x east / z north, world = (x, 0, −z)). Q-057 answered (fences, hedges, walls: 2 m + 1 m segments, bands as one row on the centre line — GAME-LAYOUT "Modular edges", LAYOUT-013). Q-059 band joins, Q-060 fence/band placement (proposals).
 - Q-147 string-light spans (≤ 6 m, stretched model); Q-148 answered (`sign-zoo-entrance` = de *Buchstaben Zoo*, en *Letter Zoo*); Q-150 answered (the food-box row leaves a gap ≥ 1.2 m in front of the storage door); Q-157 answered (no pocket beside a gate: `board_zebra` → (−9, 15), since Q-171 (−9, 10); the enclosure signs ≥ 0.9 m from the gate posts, `board_hippo` → (8, 21), LAYOUT-038).
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).
+- Q-181 answered 2026-09-28: the labelled food boxes stay outside (door gap per LAYOUT-038), a few more inside. Q-194 answered 2026-09-29: the inside boxes are real, labelled food boxes too (foods may repeat the outside row). Q-182 answered 2026-09-28: `path_moon` runs under the moon door.

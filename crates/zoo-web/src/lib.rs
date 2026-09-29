@@ -21,6 +21,7 @@ use zoo_core::level::ElementType;
 use zoo_core::nav::Autopilot;
 use zoo_core::night_scene::NightScene;
 use zoo_core::player::walk_clip_rate;
+use zoo_core::quality::{QualityGovernor, QualityMode, QualityTier};
 use zoo_core::scene::{model_path, OpeningKind};
 use zoo_core::view::{self as views, ViewMode};
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
@@ -296,6 +297,8 @@ pub struct App {
     /// Characters drawn this frame (reused, no per-frame allocation once grown).
     draws: Vec<(&'static str, CharacterDraw)>,
     autopilot: Option<Autopilot>,
+    /// Next-target hint and idle nudge (GAME-HINT, `zoo_core::hints`).
+    hints: zoo_core::hints::HintTracker,
     outbox: Vec<String>,
     time: f64,
     /// Decals of the level scene (debug getters, AENV-011/012).
@@ -332,6 +335,8 @@ pub struct App {
     water_wheels: Vec<zoo_core::scene::WaterWheel>,
     lamps: Vec<PointLight>,
     lamp_order: Vec<(f32, usize)>,
+    /// Automatic quality tier (PERF-BUDGETS rule 5, PERF-R-005).
+    quality: QualityGovernor,
     frame_lights: Vec<PointLight>,
     frame_pools: Vec<PointLight>,
     glows: Vec<Instance>,
@@ -868,6 +873,7 @@ impl App {
             anims,
             draws: Vec::with_capacity(8),
             autopilot: None,
+            hints: Default::default(),
             outbox: Vec::new(),
             time: 0.0,
             decals,
@@ -891,6 +897,7 @@ impl App {
             water_wheels: scene.water_wheels.clone(),
             lamps,
             lamp_order: Vec::with_capacity(128),
+            quality: QualityGovernor::default(),
             frame_lights: Vec::with_capacity(nightfx::MAX_POINT_LIGHTS),
             frame_pools: Vec::with_capacity(nightfx::MAX_LIGHT_POOLS),
             glows: Vec::with_capacity(64),
@@ -922,6 +929,7 @@ impl App {
         self.camera.snap(player_feet(&self.game));
         self.player_yaw = facing_to_yaw(self.game.player.facing);
         self.autopilot = None;
+        self.hints = Default::default();
         self.outbox.clear();
         self.reset_views();
         true
@@ -942,6 +950,48 @@ impl App {
             .map(|a| (a.id(), a.hiding_place.as_str()))
             .collect();
         serde_json::to_string(&m).unwrap_or_default()
+    }
+
+    /// Quality tier (PERF-BUDGETS rule 5, PERF-R-005): `auto` (default; steps down by
+    /// itself on slow frames, never back up) or a fixed tier `high` | `low1` (pixel ratio
+    /// 1.5) | `low` (pixel ratio 1.5, lantern + 4 lamps, no clouds) — the debug override
+    /// `?quality=…` of the host. Returns `false` for an unknown id.
+    pub fn set_quality(&mut self, id: &str) -> bool {
+        let mode = match id {
+            "auto" => QualityMode::Auto,
+            _ => match QualityTier::from_id(id) {
+                Some(t) => QualityMode::Fixed(t),
+                None => return false,
+            },
+        };
+        self.quality.set_mode(mode);
+        self.apply_quality();
+        true
+    }
+
+    /// Current quality tier id (`high` | `low1` | `low`).
+    pub fn quality(&self) -> String {
+        self.quality.tier().id().to_owned()
+    }
+
+    /// `auto` or `fixed`.
+    pub fn quality_mode(&self) -> String {
+        match self.quality.mode() {
+            QualityMode::Auto => "auto",
+            QualityMode::Fixed(_) => "fixed",
+        }
+        .to_owned()
+    }
+
+    /// Drawing-buffer pixels per CSS pixel (capped at 2, or 1.5 in the low tier).
+    pub fn pixel_ratio(&self) -> f32 {
+        self.renderer.pixel_ratio()
+    }
+
+    fn apply_quality(&mut self) {
+        let tier = self.quality.tier();
+        self.renderer.set_max_pixel_ratio(tier.max_pixel_ratio());
+        self.renderer.clouds = tier.clouds();
     }
 
     /// Canvas CSS size and device pixel ratio (render resolution is capped at 2×).
@@ -974,6 +1024,11 @@ impl App {
                 self.put_down();
             }
             "KeyG" => {}
+            // GAME-HINT rule 1: H = the 🧭 hint button
+            "KeyH" if down => {
+                self.hint_press();
+            }
+            "KeyH" => {}
             // FIX-024: E interacts, so rotation is Q (left) / R (right).
             "KeyQ" if down => self.camera.rotate_steps(-1),
             "KeyR" if down => self.camera.rotate_steps(1),
@@ -1186,6 +1241,7 @@ impl App {
             }
         }
         self.autopilot = None;
+        self.hints = Default::default();
         self.outbox.clear();
         true
     }
@@ -1240,6 +1296,27 @@ impl App {
             .available_target()
             .map(|t| t.kind().to_owned())
             .unwrap_or_default()
+    }
+
+    /// Debug (e2e, LAYOUT-041 / Q-181): every food box as JSON `[{food, x, z, fx, fz}]` —
+    /// box centre and label facing (level).
+    pub fn food_boxes_json(&self) -> String {
+        let rows: Vec<String> = self
+            .game
+            .food_boxes
+            .iter()
+            .map(|(f, p, d)| {
+                format!(
+                    "{{\"food\":\"{}\",\"x\":{:.2},\"z\":{:.2},\"fx\":{:.2},\"fz\":{:.2}}}",
+                    f.id(),
+                    p.x,
+                    p.y,
+                    d.x,
+                    d.y
+                )
+            })
+            .collect();
+        format!("[{}]", rows.join(","))
     }
 
     /// Stable key of the available interactable (e.g. `food_box:grass`) or empty.
@@ -1512,8 +1589,12 @@ impl App {
 
     // ------------------------------------------------------------------ frame
 
-    /// Advances the game by `dt` seconds and renders one frame.
+    /// Advances the game by `dt` seconds and renders one frame. `dt` is the real interval
+    /// since the last frame (it also drives the automatic quality tier, PERF-R-005).
     pub fn frame(&mut self, dt: f32) {
+        if self.quality.sample(dt) {
+            self.apply_quality();
+        }
         let dt = if self.paused { 0.0 } else { dt.clamp(0.0, 0.1) };
         self.time += dt as f64;
         self.simulate(dt);
@@ -2393,6 +2474,18 @@ impl App {
         vec![l, p, self.lamps.len() as u32]
     }
 
+    /// Debug (PERF-025): `true` draws all static geometry without frustum culling (regions,
+    /// chunks, chunk ranges), to check that culling never changes the picture (no popping).
+    pub fn debug_no_culling(&mut self, on: bool) {
+        self.renderer.no_culling = on;
+    }
+
+    /// Debug (PERF-025, PERF-R-018): `false` switches the haze culling of the close views off
+    /// (default on, Q-193), so the frustum culling can be compared on its own.
+    pub fn debug_haze_cull(&mut self, on: bool) {
+        self.renderer.haze_cull = on;
+    }
+
     /// Debug (PERF-017): `true` gives every draw every light (no per-draw light masks), to
     /// compare the masked frame with the unmasked one pixel by pixel.
     pub fn debug_full_light_masks(&mut self, on: bool) {
@@ -2553,7 +2646,8 @@ impl App {
                 &self.lamps,
                 self.camera.target,
                 nightfx::LAMP_CULL_M,
-                1,
+                // the lantern + the tier's lamps as point lights (PERF-BUDGETS rule 5)
+                nightfx::MAX_POINT_LIGHTS - self.quality.tier().lamp_lights(),
                 &mut self.lamp_order,
                 &mut self.frame_lights,
                 &mut self.frame_pools,
@@ -2636,6 +2730,7 @@ impl App {
         }
         self.game.update(dt, dir);
         self.handle_events();
+        self.hints.update(&self.game, dt);
         self.update_animals(dt);
         if self.ambient_on {
             self.ambient.update(dt, self.game.player.pos);
@@ -2804,6 +2899,7 @@ impl App {
     /// Game events → animation clips and host feedback (GAME-RESCUE §11).
     fn handle_events(&mut self) {
         for e in self.game.drain_events() {
+            self.hints.observe(&e);
             match e {
                 GameEvent::StartedFollowing { animal } => {
                     self.queue(&animal, &["happy"], false);
@@ -3570,6 +3666,114 @@ fn stretch(r: &mut Renderer, h: InstanceHandle, k: f32) {
 fn text_texture_id(key: &str) -> String {
     format!("text:{key}")
 }
+
+#[wasm_bindgen]
+impl App {
+    // -------------------------------------------------------------- hints (GAME-HINT)
+
+    /// The 🧭 hint button / `H` / tapping the 🌙 progress (GAME-HINT rule 2/3, rule 8):
+    /// shows the best next target, pressed again within 12 s the next of the top 3.
+    /// Returns the target kind (`board`, `food`, …) or empty.
+    pub fn hint_press(&mut self) -> String {
+        self.hints
+            .press(&self.game)
+            .map(|h| h.kind.id().to_owned())
+            .unwrap_or_default()
+    }
+
+    /// The shown hint for the overlay, or empty when none is shown: JSON `{"id", "kind",
+    /// "on" (on screen), "x", "y" (CSS px: above the target, or the edge-arrow position),
+    /// "angle" (edge arrow, degrees, 0 = right, 90 = down), "dots" (1…5 walking distance),
+    /// "left" (s), "lx", "lz" (target, level), "sx", "sz" (stand point), "animal"}`.
+    pub fn hint_json(&self) -> String {
+        let Some(h) = self.hints.shown() else {
+            return String::new();
+        };
+        let (w, hgt) = self.renderer.size();
+        let ratio = self.renderer.pixel_ratio().max(1e-3);
+        let (w, hgt) = (w as f32 / ratio, hgt as f32 / ratio);
+        let vp = self.camera.view_proj(self.renderer.aspect());
+        let ground = self.game.level.ground_height(h.pos);
+        let p = level_to_world(h.pos) + Vec3::Y * (ground + h.height);
+        let clip = vp * p.extend(1.0);
+        let place = zoo_core::hints::screen_place(clip, w, hgt, HINT_EDGE_MARGIN_PX);
+        format!(
+            "{{\"id\":{},\"kind\":{},\"on\":{},\"x\":{:.1},\"y\":{:.1},\"angle\":{:.1},\"dots\":{},\"left\":{:.2},\"lx\":{:.2},\"lz\":{:.2},\"sx\":{:.2},\"sz\":{:.2},\"animal\":{}}}",
+            js(&h.id),
+            js(h.kind.id()),
+            place.on_screen,
+            place.x,
+            place.y,
+            place.angle_deg,
+            self.hints.dots(),
+            self.hints.time_left(),
+            h.pos.x,
+            h.pos.y,
+            h.stand.x,
+            h.stand.y,
+            js(h.animal.unwrap_or(""))
+        )
+    }
+
+    /// How often the 🧭 button should have pulsed so far (idle nudge, GAME-HINT rule 6).
+    pub fn hint_pulses(&self) -> u32 {
+        self.hints.pulses()
+    }
+
+    /// The 🌙 night progress (GAME-NIGHT rule 11): JSON `{"state": "hidden" | "missing" |
+    /// "night_coming" | "night" | "sleep", "level", "animals": [{"id", "home"}]}`.
+    pub fn night_progress_json(&self) -> String {
+        let p = zoo_core::hints::night_progress(&self.game);
+        let animals: Vec<String> = p
+            .animals
+            .iter()
+            .map(|(id, home)| format!("{{\"id\":{},\"home\":{}}}", js(id), home))
+            .collect();
+        format!(
+            "{{\"state\":{},\"level\":{},\"animals\":[{}]}}",
+            js(p.state.id()),
+            js(&p.level),
+            animals.join(",")
+        )
+    }
+
+    /// Debug/e2e: the food box of a food nearest to the player `[x, z, facing_x, facing_z]`
+    /// (level; read from the level data), empty if there is none.
+    pub fn debug_food_box(&self, food_id: &str) -> Vec<f32> {
+        let Some(food) = Food::from_id(food_id) else {
+            return Vec::new();
+        };
+        let p = self.game.player.pos;
+        self.game
+            .food_boxes
+            .iter()
+            .filter(|b| b.0 == food)
+            .min_by(|a, b| a.1.distance(p).total_cmp(&b.1.distance(p)))
+            .map(|b| vec![b.1.x, b.1.y, b.2.x, b.2.y])
+            .unwrap_or_default()
+    }
+
+    /// Debug/e2e: the food an animal eats (what its board says).
+    pub fn debug_animal_food(&self, id: &str) -> String {
+        self.game
+            .animal(id)
+            .and_then(|a| a.info.foods.first())
+            .map(|f| f.id().to_owned())
+            .unwrap_or_default()
+    }
+
+    /// Debug/e2e: the gate cell of an animal's enclosure `[x, z]` (cell centre), empty if none.
+    pub fn debug_gate_point(&self, id: &str) -> Vec<f32> {
+        self.game
+            .animal(id)
+            .and_then(|a| self.game.level.data.elements[a.enclosure].gate)
+            .map(|g| vec![g.x as f32 + 0.5, g.z as f32 + 0.5])
+            .unwrap_or_default()
+    }
+}
+
+/// The edge arrow of the hint stays this far inside the screen border (CSS px).
+const HINT_EDGE_MARGIN_PX: f32 = 56.0;
 
 fn target_key(t: &Target) -> String {
     match t {

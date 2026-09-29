@@ -106,11 +106,20 @@ fn layout_031_gates_and_doors_open_by_the_rules() {
     assert!(g.opening_open(&door));
     g.player.pos = door.center + Vec2::new(4.0, 0.0);
     assert!(!g.opening_open(&door));
-    // a non-enterable building's door stays shut
+    // every building with a door is enterable (LAYOUT-041): the food storage door opens too
     let shed = find(
         &|k| matches!(k, OpeningKind::BuildingDoor { building, .. } if building == "food_storage"),
     );
+    assert!(matches!(
+        shed.kind,
+        OpeningKind::BuildingDoor {
+            enterable: true,
+            ..
+        }
+    ));
     g.player.pos = shed.center + Vec2::new(0.0, -1.0);
+    assert!(g.opening_open(&shed));
+    g.player.pos = shed.center + Vec2::new(0.0, -4.0);
     assert!(!g.opening_open(&shed));
     // enclosure gate: only while leading animals near it
     let gate = find(
@@ -801,4 +810,110 @@ fn layout_039_no_wall_gap_near_a_door_or_gate() {
         bad.len(),
         bad.join("\n")
     );
+}
+
+// LAYOUT-041 (user request 2026-09-28, "we can enter all unlocked doors"): every building
+// with a door is enterable — it has an `interior`, its door cell touches an interior cell and
+// a walkable cell outside, every interior cell is reachable from the door over interior
+// cells, its door model is an enterable `BuildingDoor` that opens while the player is near,
+// its roof hides inside (building model or procedural roof region), and every stock box /
+// furniture inside is solid.
+#[test]
+fn layout_041_every_building_with_a_door_is_enterable() {
+    use zoo_core::level::{cell_of, CellKind, Surface};
+    let data = common::zoo_with_night();
+    let s = LevelScene::build(&data);
+    let g = common::night_game(1);
+    let grid = g.level.grid();
+    let mut n = 0;
+    for e in data.elements_of(ElementType::Building) {
+        let Some(door) = e.door_cell() else { continue };
+        n += 1;
+        let inner = e
+            .interior
+            .unwrap_or_else(|| panic!("{}: a door but no interior", e.id));
+        assert!(e.is_enterable(), "{}", e.id);
+        let n4 = [
+            glam::IVec2::X,
+            glam::IVec2::NEG_X,
+            glam::IVec2::Y,
+            glam::IVec2::NEG_Y,
+        ];
+        assert!(
+            n4.iter().any(|d| inner.contains(door + *d)),
+            "{}: door not next to the interior",
+            e.id
+        );
+        assert!(
+            n4.iter()
+                .any(|d| !e.rect.contains(door + *d) && grid.is_walkable(door + *d, false)),
+            "{}: door leads nowhere",
+            e.id
+        );
+        // flood fill from the door over the building's open cells
+        let mut seen = vec![door];
+        let mut i = 0;
+        while i < seen.len() {
+            let c = seen[i];
+            i += 1;
+            for d in n4 {
+                let q = c + d;
+                if e.is_open_cell(q)
+                    && grid.kind(q) == CellKind::Walkable(Surface::Path)
+                    && !seen.contains(&q)
+                {
+                    seen.push(q);
+                }
+            }
+        }
+        for c in inner.cells() {
+            assert!(
+                seen.contains(&c),
+                "{}: interior cell {c} not reachable",
+                e.id
+            );
+        }
+        // the door opens for the player (enterable), shut when she is away
+        let o = s
+            .openings
+            .iter()
+            .find(|o| matches!(&o.kind, OpeningKind::BuildingDoor { building, enterable: true } if *building == e.id))
+            .unwrap_or_else(|| panic!("{}: no enterable door model", e.id));
+        let mut gg = common::night_game(1);
+        gg.player.pos = o.center;
+        assert!(gg.opening_open(o), "{}: door stays shut", e.id);
+        gg.player.pos = o.center + Vec2::new(3.0, 3.0);
+        assert!(!gg.opening_open(o), "{}: door open while away", e.id);
+        // roof hides inside (zoo view): model with roof nodes, or a procedural roof region
+        assert!(
+            s.building_models.iter().any(|b| b.element == e.id)
+                || s.roof_boxes.iter().any(|(id, _)| *id == e.id),
+            "{}: no roof to hide",
+            e.id
+        );
+    }
+    assert_eq!(n, 7, "buildings with a door");
+    // the stock boxes inside a building are solid (never walked through, Q-194); the labelled
+    // food boxes stand outside (Q-181 answered)
+    for p in data
+        .props
+        .iter()
+        .filter(|p| matches!(p.model.as_str(), "food_box" | "food_box_stack"))
+    {
+        let e = data
+            .element(p.building.as_deref().expect("stock box of a building"))
+            .unwrap();
+        assert!(
+            e.rect.contains(cell_of(p.pos())),
+            "{} outside {}",
+            p.id,
+            e.id
+        );
+        assert!(
+            g.level.colliders().overlaps(p.pos(), 0.1)
+                && !grid.is_walkable(cell_of(p.pos()), false),
+            "{}: not solid",
+            p.id
+        );
+    }
 }

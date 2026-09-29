@@ -296,9 +296,10 @@ type = "building"
 kind = "food_storage"
 rect = [-4, 11, 8, 6]
 door = [0, 11]               # door cell on the south facade, opens onto path_ring_s
+interior = [-3, 12, 6, 4]    # 6 x 4 m walkable floor (Q-092); the 1 m band inside the walls holds the inside food boxes
 blocks_view = true
 height_m = 4.5
-notes = "Unlocked in level 1 (proposal, Q-033). Holds the food boxes (Q-047)."
+notes = "Unlocked in level 1 (proposal, Q-033). Enterable (every building with a door is enterable, GAME-LAYOUT): walkable interior (-3, 12, 6, 4), door (0, 11). The 10 labelled food boxes stay in the row in front of its south facade (Q-181 answered 2026-09-28, Q-150 door gap); 6 more real, labelled food boxes stand inside along its walls (Q-194 answered 2026-09-29: real food, redundant with the outside row allowed; Q-047)."
 
 [[element]]
 id = "hedge_center_w"
@@ -389,15 +390,15 @@ enclosure = "enc_panda"
 id = "path_moon"
 type = "path"
 kind = "side"
-rect = [-22, 29, 13, 2]
-notes = "From path_north / the ring west along the north shore of the pond to the moon door (GAME-NIGHT)."
+rect = [-24, 29, 15, 2]
+notes = "From path_north / the ring west along the north shore of the pond to the moon door (GAME-NIGHT); runs on under the moon door (x -24..-23 = barrier cells) to path_n1_entry of night_1: the street is continuous under the door (Q-182 answered 2026-09-28, LAYOUT-040)."
 
 [[element]]
 id = "path_north"
 type = "path"
 kind = "side"
-rect = [-9, 30, 3, 16]
-notes = "Leads to barrier_north_gate (future level)."
+rect = [-9, 30, 3, 18]
+notes = "Leads to barrier_north_gate (level 3); runs on under the gate (z 46-47 = barrier cells: the street is continuous under the gate, LAYOUT-040)."
 
 [[element]]
 id = "trees_nw"
@@ -468,8 +469,8 @@ notes = "Bends east and leaves the level through a grate under the east hedge."
 id = "path_ne"
 type = "path"
 kind = "side"
-rect = [13, 28, 9, 3]
-notes = "Leads to barrier_ne_tree (level 2)."
+rect = [13, 28, 11, 3]
+notes = "Leads to barrier_ne_tree (level 2); runs on under the fallen tree to the level-2 gate (x 22-23 = barrier cells: the street is continuous under the barrier, LAYOUT-040)."
 
 [[element]]
 id = "trees_ne"
@@ -602,32 +603,32 @@ notes = "2 m garden path from the garden gate (south) between the four beds to t
 # pos = box centre in level coordinates (x, z).
 [[food_box]]
 food = "melons"
-pos = [-3.6, 10.66]
+pos = [-4.22, 10.66]
 facing = "-z"
 
 [[food_box]]
 food = "hay"
-pos = [-2.8, 10.66]
+pos = [-3.54, 10.66]
 facing = "-z"
 
 [[food_box]]
 food = "bananas"
-pos = [-2.0, 10.66]
+pos = [-2.86, 10.66]
 facing = "-z"
 
 [[food_box]]
 food = "bamboo"
-pos = [-1.2, 10.66]
+pos = [-2.18, 10.66]
 facing = "-z"
 
 [[food_box]]
 food = "grass"
-pos = [-0.4, 10.66]
+pos = [-1.5, 10.66]
 facing = "-z"
 
 [[food_box]]
 food = "meat"
-pos = [-4.4, 10.66]          # moved from x 0.4 to the west end of the row: the door (x 0…1) stays free (Q-150, LAYOUT-032)
+pos = [-4.9, 10.66]
 facing = "-z"
 
 [[food_box]]
@@ -637,7 +638,7 @@ facing = "-z"
 
 [[food_box]]
 food = "fish_food"
-pos = [2.0, 10.66]
+pos = [2.1, 10.66]
 facing = "-z"
 
 [[food_box]]
@@ -649,6 +650,42 @@ facing = "-z"
 food = "eucalyptus"
 pos = [3.6, 10.66]
 facing = "-z"
+
+# ---------------------------------------------------------------- food boxes inside `food_storage` (GAME-FEED §7, Q-194 answered 2026-09-29)
+# Real, labelled food boxes (same as the outside row: interact -> label panel -> take)
+# stand against the inner walls on the 0.15 m plank platform of the solid 1 m wall band,
+# labels facing the free floor, clear of the door walkway (LAYOUT-032); foods are redundant
+# with the outside row (Q-194: "the same food outside and inside" is allowed). Positions kept
+# from the former unlabelled stock crates.
+[[food_box]]
+food = "grass"
+pos = [-2.52, 16.44]   # back (north) wall
+facing = "-z"
+
+[[food_box]]
+food = "melons"
+pos = [-1.88, 16.44]   # back (north) wall
+facing = "-z"
+
+[[food_box]]
+food = "bamboo"
+pos = [1.28, 16.44]   # back wall
+facing = "-z"
+
+[[food_box]]
+food = "grass"
+pos = [1.92, 16.44]   # back wall
+facing = "-z"
+
+[[food_box]]
+food = "melons"
+pos = [-3.44, 13.0]   # west wall
+facing = "+x"
+
+[[food_box]]
+food = "bamboo"
+pos = [3.44, 14.6]   # east wall
+facing = "-x"
 
 # ================================================================ enclosure features
 # Proposal Q-085 (data shape): things inside an enclosure that change how its animal moves at

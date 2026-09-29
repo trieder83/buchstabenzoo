@@ -134,11 +134,12 @@ fn play_020_availability_sweep_all_boards_and_boxes() {
         .into_iter()
         .filter(|i| i.readable.is_some())
         .collect();
-    // (the 4 garden signs of `garden_veg` are read like boards, GAME-GARDEN 1, GARD-009)
+    // (the 4 garden signs of `garden_veg` are read like boards, GAME-GARDEN 1, GARD-009;
+    // 16 food boxes = 10 outside + 6 inside the storage, Q-194 answered 2026-09-29)
     assert_eq!(
         targets.len(),
-        3 + 10 + 4,
-        "3 info boards, 10 food boxes, 4 garden signs"
+        3 + 16 + 4,
+        "3 info boards, 16 food boxes, 4 garden signs"
     );
     let ang = |u: Vec2, v: Vec2| {
         u.normalize()

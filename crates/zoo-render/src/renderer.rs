@@ -366,10 +366,11 @@ enum U {
     SkyTop,
     SkyHorizon,
     SkyNight,
+    SkyClouds,
 }
 
 impl U {
-    const ALL: [U; 31] = [
+    const ALL: [U; 32] = [
         U::Palette,
         U::EdgeMask,
         U::Tint,
@@ -401,6 +402,7 @@ impl U {
         U::SkyTop,
         U::SkyHorizon,
         U::SkyNight,
+        U::SkyClouds,
     ];
 
     fn name(self) -> &'static str {
@@ -436,6 +438,7 @@ impl U {
             U::SkyTop => "u_sky_top",
             U::SkyHorizon => "u_sky_horizon",
             U::SkyNight => "u_sky_night",
+            U::SkyClouds => "u_sky_clouds",
         }
     }
 }
@@ -645,6 +648,16 @@ struct MeshInfo {
     /// Extra room (m) around the instance bounds that the mesh can reach (rotated corners,
     /// parts below the origin, moving parts, bobbing): per-draw light masks (PERF-R-001).
     margin: f32,
+    /// Lowest point below the origin (m, ≤ 0 for most meshes) for the culling bounds.
+    lo_y: f32,
+    /// Largest horizontal distance of a vertex from the origin (m): culling at any yaw.
+    radius_xz: f32,
+    /// Culling at rest and in motion (PERF-R-015, [`static_reach`]): the square half-size for
+    /// quarter turns and the top, both including the swept space of turning parts, and the
+    /// extra room of bobbing props.
+    cull_radius: f32,
+    cull_height: f32,
+    bob_margin: f32,
     /// A water tile (drawn by the water program, TECH-WATER).
     water: bool,
     /// Bobbing on the water (`u_bob`, TECH-WATER behaviour 8).
@@ -664,6 +677,10 @@ struct MeshInfo {
 struct Region {
     min: Vec3,
     max: Vec3,
+    /// How far (m) its meshes can reach beyond `min`..`max` (yawed corners, stretched
+    /// instances, parts below the origin): the culling box is grown by it, so nothing pops
+    /// at the frustum edge (PERF-R-015).
+    margin: f32,
     hidden: bool,
 }
 
@@ -672,6 +689,7 @@ impl Default for Region {
         Self {
             min: Vec3::splat(f32::MAX),
             max: Vec3::splat(f32::MIN),
+            margin: 0.0,
             hidden: false,
         }
     }
@@ -700,6 +718,9 @@ struct Batch {
     radius: f32,
     mesh_margin: f32,
     light_margin: f32,
+    /// Extra culling room (m) around the chunk boxes: moving / bobbing parts and stretched
+    /// or re-yawed instances (PERF-R-015; the boxes already hold every instance at rest).
+    cull_margin: f32,
     /// Re-uploaded every frame with `buffer_sub_data` (characters, placeholders that move).
     dynamic: bool,
     water: bool,
@@ -714,6 +735,170 @@ struct Batch {
     /// drawn only when one of its chunks is in view, so the short far plane of the close
     /// views culls every mesh that has no instance nearby (GAME-CAMERA-VIEWS 6).
     chunks: Vec<(IVec2, Vec3, Vec3)>,
+    /// Per instance: its index in `chunks` (static batches; PERF-R-002).
+    inst_chunk: Vec<u16>,
+    /// Chunk-sorted GPU order (PERF-R-002, budget 22): the instances of a static batch with
+    /// several chunks are uploaded sorted by chunk (row-major), one [`ChunkRange`] per chunk,
+    /// so only the chunk ranges in view are drawn. Rebuilt when instances are added
+    /// (`sorted = false`); instance handles keep indexing `instances`.
+    ranges: Vec<ChunkRange>,
+    sorted: bool,
+    /// GPU slot → index in `instances`, and the upload scratch in that order.
+    order: Vec<u32>,
+    gpu: Vec<Instance>,
+    /// The mesh buffers (for the VAO of each chunk range).
+    vbo: WebGlBuffer,
+    ibo: WebGlBuffer,
+}
+
+impl Batch {
+    /// Whether an instance of the batch in one of its chunks can be in view: the chunk
+    /// boxes (every instance at rest, yawed corners and parts below the origin included,
+    /// [`instance_extent`]) grown by the batch's culling margin (moving parts, stretched
+    /// instances) — conservative, so nothing pops at the frustum edge (PERF-R-015).
+    fn any_chunk_visible(&self, cull: &Cull) -> bool {
+        let m = Vec3::splat(self.cull_margin);
+        self.chunks.iter().any(|c| cull.visible(c.1 - m, c.2 + m))
+    }
+
+    /// Whether chunk range `i` can be in view (grown like [`Batch::any_chunk_visible`]).
+    fn range_visible(&self, cull: &Cull, i: usize) -> bool {
+        let m = Vec3::splat(self.cull_margin);
+        let r = &self.ranges[i];
+        cull.visible(r.lo - m, r.hi + m)
+    }
+
+    /// Whether the batch is drawn per chunk range (PERF-R-002): a never-moving batch of a
+    /// culled region with instances in more than one chunk.
+    fn chunked(&self) -> bool {
+        self.region != REGION_ALWAYS
+            && !self.dynamic
+            && self.chunks.len() > 1
+            && self.inst_chunk.len() == self.instances.len()
+    }
+}
+
+/// Instances of one ground chunk in a chunk-sorted batch (PERF-R-002): GPU slots
+/// `first .. first + count`, their bounds, and a VAO whose instance attributes start at
+/// `first` (WebGL2 has no base instance; `None` = the batch's own VAO, `first = 0`).
+struct ChunkRange {
+    lo: Vec3,
+    hi: Vec3,
+    first: u32,
+    count: u32,
+    vao: Option<WebGlVertexArrayObject>,
+}
+
+/// Most instanced draws of one chunk-sorted batch per frame (PERF-R-002): more visible runs
+/// are merged into the last one.
+pub const MAX_CHUNK_RUNS: usize = 3;
+/// Off-screen chunks between two visible runs are drawn along (one draw instead of two)
+/// when their triangles are at most this many — about the cost of one more draw call.
+pub const GAP_MERGE_TRIANGLES: u64 = 16_384;
+
+/// Plans the draws of a chunk-sorted batch (PERF-R-002, pure): `n` chunk ranges in GPU
+/// order, `visible(i)` / `count(i)` per range, `tris` triangles per instance. Writes the
+/// inclusive range spans `(first, last)` to `out` and returns how many: consecutive visible
+/// ranges form one run; a gap of off-screen ranges is drawn along when it costs at most
+/// [`GAP_MERGE_TRIANGLES`]; at most [`MAX_CHUNK_RUNS`] runs (the last one absorbs the rest).
+pub fn plan_chunk_runs(
+    n: usize,
+    visible: impl Fn(usize) -> bool,
+    count: impl Fn(usize) -> u32,
+    tris: u32,
+    out: &mut [(usize, usize); MAX_CHUNK_RUNS],
+) -> usize {
+    let mut k = 0;
+    let mut cur: Option<(usize, usize)> = None;
+    let mut gap = 0u64;
+    for i in 0..n {
+        if visible(i) {
+            cur = Some(match cur {
+                None => (i, i),
+                Some((s, e)) => {
+                    if gap * u64::from(tris) <= GAP_MERGE_TRIANGLES || k + 1 >= MAX_CHUNK_RUNS {
+                        (s, i)
+                    } else {
+                        out[k] = (s, e);
+                        k += 1;
+                        (i, i)
+                    }
+                }
+            });
+            gap = 0;
+        } else if cur.is_some() {
+            gap += u64::from(count(i));
+        }
+    }
+    if let Some(c) = cur {
+        out[k] = c;
+        k += 1;
+    }
+    k
+}
+
+/// GPU order of a chunked batch (PERF-R-002, pure): instance indices sorted by their chunk
+/// key row-major (rows from south = +z to north, then x ascending; stable, so instances of a
+/// chunk keep their order), and per chunk in that order `(chunk index, first slot, count)`.
+pub fn chunk_order(keys: &[IVec2], inst_chunk: &[u16]) -> (Vec<u32>, Vec<(usize, u32, u32)>) {
+    let mut chunks: Vec<usize> = (0..keys.len()).collect();
+    // south (+z) rows first: front to back for the default camera, which looks north (−z),
+    // so early depth test rejects the hidden fragments as with the level's placement order
+    chunks.sort_by_key(|&c| (-keys[c].y, keys[c].x));
+    let mut rank = vec![0usize; keys.len()];
+    for (r, &c) in chunks.iter().enumerate() {
+        rank[c] = r;
+    }
+    let mut order: Vec<u32> = (0..inst_chunk.len() as u32).collect();
+    order.sort_by_key(|&i| rank[inst_chunk[i as usize] as usize]);
+    let mut spans = Vec::with_capacity(chunks.len());
+    let mut first = 0u32;
+    for &c in &chunks {
+        let count = inst_chunk.iter().filter(|&&k| k as usize == c).count() as u32;
+        if count > 0 {
+            spans.push((c, first, count));
+            first += count;
+        }
+    }
+    (order, spans)
+}
+
+/// VAO of a static mesh with its instance buffer, the instance attributes starting at
+/// instance `first` (lean or rich vertex format, ARCH-007).
+fn static_vao(
+    gl: &Gl,
+    vbo: &WebGlBuffer,
+    ibo: &WebGlBuffer,
+    rich: bool,
+    inst_vbo: &WebGlBuffer,
+    first: u32,
+) -> Option<WebGlVertexArrayObject> {
+    let vao = gl.create_vertex_array()?;
+    gl.bind_vertex_array(Some(&vao));
+    gl.bind_buffer(Gl::ARRAY_BUFFER, Some(vbo));
+    let stride = if rich {
+        (STATIC_VERTEX_FLOATS * 4) as i32
+    } else {
+        32
+    };
+    attrib(gl, 0, 3, stride, 0);
+    attrib(gl, 1, 3, stride, 12);
+    attrib(gl, 2, 2, stride, 24);
+    if rich {
+        attrib(gl, 6, 4, stride, 32);
+        attrib(gl, 7, 4, stride, 48);
+    }
+    gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, Some(ibo));
+    gl.bind_buffer(Gl::ARRAY_BUFFER, Some(inst_vbo));
+    let inst_stride = std::mem::size_of::<Instance>() as i32;
+    let base = first as i32 * inst_stride;
+    let locs: &[u32] = if rich { &[3, 4, 5, 8] } else { &[3, 4, 5] };
+    for (k, &loc) in locs.iter().enumerate() {
+        attrib(gl, loc, 4, inst_stride, base + k as i32 * 16);
+        gl.vertex_attrib_divisor(loc, 1);
+    }
+    gl.bind_vertex_array(None);
+    Some(vao)
 }
 
 /// Ground chunk size for per-batch culling (m).
@@ -724,6 +909,84 @@ pub const CHUNK_M: f32 = 8.0;
 /// 1 m covers moving parts and bobbing.
 fn light_margin(radius: f32, lo_y: f32) -> f32 {
     radius * (std::f32::consts::SQRT_2 - 1.0) + (-lo_y).max(0.0) + 1.0
+}
+
+/// Swept reach of a static mesh (pure; PERF-R-015): `(radius_xz, rotating_xz, top)` — the
+/// largest horizontal distance from the origin any vertex can reach (a vertex of a turning
+/// pivot), the same for the turning parts alone (0 without), the highest and the lowest
+/// point.
+pub fn static_reach(p: &StaticVertices) -> (f32, f32, f32, f32) {
+    let (mut rxz, mut rot, mut top, mut bottom) = (0.01f32, 0.0f32, f32::MIN, f32::MAX);
+    for v in p.vertices.chunks(STATIC_VERTEX_FLOATS) {
+        let pos = Vec3::new(v[0], v[1], v[2]);
+        let code = v[15] as usize;
+        let turns = code > 0 && code < MAX_NODE_PARTS && p.nodes[code * 4] > 0.0;
+        if turns {
+            // the vertex circles the part's axis through its pivot (1 = X, 2 = Y, 3 = Z)
+            let pivot = Vec3::new(v[12], v[13], v[14]);
+            let d = pos - pivot;
+            let (r, lo_y, hi_y) = match p.nodes[code * 4] as i32 {
+                1 => {
+                    let c = d.y.hypot(d.z);
+                    (pos.x.hypot(pivot.z.abs() + c), pivot.y - c, pivot.y + c)
+                }
+                2 => (pivot.x.hypot(pivot.z) + d.x.hypot(d.z), pos.y, pos.y),
+                _ => {
+                    let c = d.x.hypot(d.y);
+                    ((pivot.x.abs() + c).hypot(pos.z), pivot.y - c, pivot.y + c)
+                }
+            };
+            rxz = rxz.max(r);
+            rot = rot.max(r);
+            top = top.max(hi_y);
+            bottom = bottom.min(lo_y);
+        } else {
+            rxz = rxz.max(pos.x.hypot(pos.z));
+            top = top.max(pos.y);
+            bottom = bottom.min(pos.y);
+        }
+    }
+    (rxz, rot, top, bottom)
+}
+
+/// Extra culling room (m) of a bobbing prop (`u_bob` = amplitude, tilt, drift; TECH-WATER).
+fn bob_margin(bob: [f32; 4], radius: f32) -> f32 {
+    if bob.iter().all(|&v| v == 0.0) {
+        return 0.0;
+    }
+    bob[0].abs() + bob[2].abs() + bob[1].abs() * radius + 0.05
+}
+
+/// Whether a yaw is a whole number of quarter turns (a mesh then stays inside its
+/// `±radius` square).
+fn quarter_turn(yaw: f32) -> bool {
+    let q = yaw / std::f32::consts::FRAC_PI_2;
+    (q - q.round()).abs() < 1e-4
+}
+
+/// Culling box of one instance around its origin (pure; PERF-R-015): `radius` = the mesh's
+/// largest |x| / |z| extent, `radius_xz` its largest horizontal distance from the origin
+/// (≤ `radius × √2`), `lo_y` ≤ 0 its lowest point, `height` its top (unscaled). A yaw that
+/// is not a quarter turn can bring any vertex round to `radius_xz`; the box keeps 0.1 m
+/// below and above for flat meshes.
+pub fn instance_extent(
+    radius: f32,
+    radius_xz: f32,
+    lo_y: f32,
+    height: f32,
+    yaw: f32,
+    scale: f32,
+) -> (Vec3, Vec3) {
+    let r = scale
+        * if quarter_turn(yaw) {
+            radius
+        } else {
+            radius_xz.min(radius * std::f32::consts::SQRT_2)
+        };
+    (
+        Vec3::new(-r, lo_y.min(0.0) * scale - 0.1, -r),
+        Vec3::new(r, (height * scale).max(0.1), r),
+    )
 }
 
 /// Extra room (m) around a skinned character's culling box for its light mask.
@@ -865,10 +1128,9 @@ struct DecalDraw {
 const CHARACTER_HALF_M: f32 = 2.5;
 const CHARACTER_HEIGHT_M: f32 = 5.5;
 
-fn character_visible(planes: &[Vec4; 6], pos: Vec3) -> bool {
+fn character_visible(cull: &Cull, pos: Vec3) -> bool {
     let h = Vec3::new(CHARACTER_HALF_M, 0.0, CHARACTER_HALF_M);
-    aabb_visible(
-        planes,
+    cull.visible(
         pos - h - Vec3::Y * 0.5,
         pos + h + Vec3::Y * CHARACTER_HEIGHT_M,
     )
@@ -908,6 +1170,12 @@ pub struct Renderer {
     width: i32,
     height: i32,
     pixel_ratio: f32,
+    /// Pixel ratio cap of the quality tier (PERF-BUDGETS rule 5): [`MAX_PIXEL_RATIO`] or the
+    /// low tier's 1.5; the last CSS size and device pixel ratio (re-applied on a change).
+    max_pixel_ratio: f64,
+    css: (f64, f64, f64),
+    /// Clouds in the close-view sky (off in the low tier, PERF-BUDGETS rule 5).
+    pub clouds: bool,
     pub stats: FrameStats,
     /// Water clock (`water_time`, s in [0, 16)).
     time: f32,
@@ -934,6 +1202,12 @@ pub struct Renderer {
     frame_ubo: WebGlBuffer,
     /// Debug (e2e PERF-017): every draw gets every light (no per-draw light masks).
     pub full_light_masks: bool,
+    /// Haze culling of the close views (PERF-R-018, Q-193 answered yes 2026-09-28): on.
+    pub haze_cull: bool,
+    /// Debug (e2e PERF-025): no frustum culling (regions, chunks, chunk ranges, characters,
+    /// decals) — the picture must be the same as with culling. The haze culling of the close
+    /// views stays on: it is part of the approved look (Q-193).
+    pub no_culling: bool,
     /// Glow slots emissive (night).
     glow_on: bool,
     /// Debug: names of the static batches drawn in the last frame (only while recording).
@@ -1055,6 +1329,9 @@ impl Renderer {
             width: 0,
             height: 0,
             pixel_ratio: 1.0,
+            max_pixel_ratio: MAX_PIXEL_RATIO,
+            css: (0.0, 0.0, 1.0),
+            clouds: true,
             stats: FrameStats::default(),
             time: 0.0,
             field_tex: None,
@@ -1077,6 +1354,8 @@ impl Renderer {
             },
             frame_ubo,
             full_light_masks: false,
+            no_culling: false,
+            haze_cull: true,
             glow_on: false,
             debug_draws: None,
             cpu_meshes: HashMap::new(),
@@ -1101,7 +1380,8 @@ impl Renderer {
 
     /// Resizes the drawing buffer to CSS size × device pixel ratio (capped).
     pub fn resize(&mut self, css_w: f64, css_h: f64, dpr: f64) {
-        let ratio = dpr.clamp(1.0, MAX_PIXEL_RATIO);
+        self.css = (css_w, css_h, dpr);
+        let ratio = dpr.clamp(1.0, self.max_pixel_ratio.max(1.0));
         let w = (css_w * ratio).round().max(1.0) as i32;
         let h = (css_h * ratio).round().max(1.0) as i32;
         self.pixel_ratio = ratio as f32;
@@ -1113,6 +1393,18 @@ impl Renderer {
         self.width = w;
         self.height = h;
         self.gbuf = self.create_gbuffer(w, h).ok();
+    }
+
+    /// Caps the pixel ratio (quality tier, PERF-BUDGETS rule 5) and resizes the drawing
+    /// buffer with the last CSS size.
+    pub fn set_max_pixel_ratio(&mut self, max: f64) {
+        if max != self.max_pixel_ratio {
+            self.max_pixel_ratio = max;
+            let (w, h, dpr) = self.css;
+            if w > 0.0 && h > 0.0 {
+                self.resize(w, h, dpr);
+            }
+        }
     }
 
     /// Device pixels per CSS pixel of the drawing buffer.
@@ -1350,31 +1642,8 @@ impl Renderer {
         }
         let m = self.meshes.get(name)?;
         let gl = &self.gl;
-        let vao = gl.create_vertex_array()?;
-        gl.bind_vertex_array(Some(&vao));
-        gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&m.vbo));
-        let stride = if m.rich {
-            (STATIC_VERTEX_FLOATS * 4) as i32
-        } else {
-            32
-        };
-        attrib(gl, 0, 3, stride, 0);
-        attrib(gl, 1, 3, stride, 12);
-        attrib(gl, 2, 2, stride, 24);
-        if m.rich {
-            attrib(gl, 6, 4, stride, 32);
-            attrib(gl, 7, 4, stride, 48);
-        }
-        gl.bind_buffer(Gl::ELEMENT_ARRAY_BUFFER, Some(&m.ibo));
         let inst_vbo = gl.create_buffer()?;
-        gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&inst_vbo));
-        let inst_stride = std::mem::size_of::<Instance>() as i32;
-        let locs: &[u32] = if m.rich { &[3, 4, 5, 8] } else { &[3, 4, 5] };
-        for (k, &loc) in locs.iter().enumerate() {
-            attrib(gl, loc, 4, inst_stride, k as i32 * 16);
-            gl.vertex_attrib_divisor(loc, 1);
-        }
-        gl.bind_vertex_array(None);
+        let vao = static_vao(gl, &m.vbo, &m.ibo, m.rich, &inst_vbo, 0)?;
         let batch = Batch {
             name: name.to_owned(),
             region,
@@ -1389,6 +1658,7 @@ impl Renderer {
             radius: m.radius,
             mesh_margin: m.margin,
             light_margin: m.margin,
+            cull_margin: m.bob_margin,
             dynamic: false,
             water: m.water,
             bob: m.bob,
@@ -1397,6 +1667,13 @@ impl Renderer {
             rich: m.rich,
             live: 0,
             chunks: Vec::new(),
+            inst_chunk: Vec::new(),
+            ranges: Vec::new(),
+            sorted: false,
+            order: Vec::new(),
+            gpu: Vec::new(),
+            vbo: m.vbo.clone(),
+            ibo: m.ibo.clone(),
         };
         self.batch_index
             .insert((name.to_owned(), region), self.batches.len());
@@ -1404,34 +1681,41 @@ impl Renderer {
         Some(self.batches.len() - 1)
     }
 
-    fn grow_region(&mut self, region: u16, pos: Vec3, radius: f32, height: f32) {
+    fn grow_region(&mut self, region: u16, pos: Vec3, (lo, hi): (Vec3, Vec3)) {
         if region == REGION_ALWAYS {
             return;
         }
         if let Some(r) = self.regions.get_mut(region as usize) {
-            r.min = r.min.min(pos - Vec3::new(radius, 0.1, radius));
-            r.max = r.max.max(pos + Vec3::new(radius, height.max(0.1), radius));
+            r.min = r.min.min(pos + lo);
+            r.max = r.max.max(pos + hi);
         }
     }
 
     /// Grows the bounds of a static batch (per-batch culling, GAME-CAMERA-VIEWS 6).
-    fn grow_batch(&mut self, i: usize, pos: Vec3, radius: f32, height: f32) {
+    fn grow_batch(&mut self, i: usize, pos: Vec3, (lo, hi): (Vec3, Vec3)) {
         let b = &mut self.batches[i];
         let key = IVec2::new(
             (pos.x / CHUNK_M).floor() as i32,
             (pos.z / CHUNK_M).floor() as i32,
         );
-        let (lo, hi) = (
-            pos - Vec3::new(radius, 0.1, radius),
-            pos + Vec3::new(radius, height.max(0.1), radius),
-        );
-        match b.chunks.iter_mut().find(|c| c.0 == key) {
-            Some(c) => {
+        let (lo, hi) = (pos + lo, pos + hi);
+        let k = match b.chunks.iter().position(|c| c.0 == key) {
+            Some(k) => {
+                let c = &mut b.chunks[k];
                 c.1 = c.1.min(lo);
                 c.2 = c.2.max(hi);
+                k
             }
-            None => b.chunks.push((key, lo, hi)),
+            None => {
+                b.chunks.push((key, lo, hi));
+                b.chunks.len() - 1
+            }
+        };
+        // the instance just pushed (PERF-R-002: chunk-sorted upload)
+        if b.inst_chunk.len() + 1 == b.instances.len() {
+            b.inst_chunk.push(k as u16);
         }
+        b.sorted = false;
     }
 
     /// Duration in seconds of a clip of a skinned model.
@@ -1509,6 +1793,7 @@ impl Renderer {
             bytemuck::cast_slice(&packed.indices),
             Gl::STATIC_DRAW,
         );
+        let reach = static_reach(&packed);
         let radius =
             lo.x.abs()
                 .max(hi.x.abs())
@@ -1538,6 +1823,11 @@ impl Renderer {
                 height: hi.y,
                 radius,
                 margin: light_margin(radius, lo.y),
+                lo_y: lo.y.min(reach.3).min(0.0),
+                radius_xz: reach.0,
+                cull_radius: radius.max(reach.1),
+                cull_height: hi.y.max(reach.2),
+                bob_margin: bob_margin(bob_params(name).uniform(), radius),
                 water: TileShape::of_model(name).is_some(),
                 bob: bob_params(name).uniform(),
                 glass_first: packed.glass_first as i32,
@@ -1620,7 +1910,11 @@ impl Renderer {
         yaw: f32,
         scale: f32,
     ) -> bool {
-        let Some((radius, height)) = self.meshes.get(name).map(|m| (m.radius, m.height)) else {
+        let Some((radius, radius_xz, height, lo_y)) = self
+            .meshes
+            .get(name)
+            .map(|m| (m.cull_radius, m.radius_xz, m.cull_height, m.lo_y))
+        else {
             return false;
         };
         let Some(i) = self.batch_for(name, region) else {
@@ -1634,8 +1928,13 @@ impl Renderer {
         b.instances.push(inst);
         b.uploaded = usize::MAX;
         b.light_margin = b.light_margin.max(b.mesh_margin * scale);
-        self.grow_region(region, pos, radius * scale, height * scale);
-        self.grow_batch(i, pos, radius * scale, height * scale);
+        let margin = b.cull_margin;
+        if let Some(r) = self.regions.get_mut(region as usize) {
+            r.margin = r.margin.max(margin);
+        }
+        let ext = instance_extent(radius, radius_xz, lo_y, height, yaw, scale);
+        self.grow_region(region, pos, ext);
+        self.grow_batch(i, pos, ext);
         true
     }
 
@@ -1669,12 +1968,24 @@ impl Renderer {
         if let Some(b) = self.batches.get_mut(h.batch) {
             if let Some(i) = b.instances.get_mut(h.index) {
                 if bytemuck::bytes_of(i) != bytemuck::bytes_of(&inst) {
+                    let old_yaw = i.pos_yaw[3];
                     *i = inst;
                     b.uploaded = usize::MAX;
                     // a stretched instance (string lights) reaches beyond its chunk bounds
                     let s = inst.scale_fade[0].abs().max(inst.scale_fade[2].abs());
                     if s > 1.0 {
                         b.light_margin = b.light_margin.max(b.mesh_margin * s + b.radius * s);
+                        b.cull_margin = b.cull_margin.max(b.radius * s * std::f32::consts::SQRT_2);
+                    }
+                    // turned to an angle its chunk box was not grown for (PERF-R-015)
+                    if inst.pos_yaw[3] != old_yaw && !quarter_turn(inst.pos_yaw[3]) {
+                        b.cull_margin = b
+                            .cull_margin
+                            .max(b.radius * s.max(1.0) * (std::f32::consts::SQRT_2 - 1.0));
+                    }
+                    let (region, margin) = (b.region, b.cull_margin);
+                    if let Some(r) = self.regions.get_mut(region as usize) {
+                        r.margin = r.margin.max(margin);
                     }
                 }
             }
@@ -1709,8 +2020,9 @@ impl Renderer {
             .push(Instance::flat(pos, yaw, size, color, fadeable));
         b.uploaded = usize::MAX;
         let radius = (size.x * size.x + size.z * size.z).sqrt() * 0.5;
-        self.grow_region(region, pos, radius, size.y);
-        self.grow_batch(i, pos, radius, size.y);
+        let ext = instance_extent(radius, radius, 0.0, size.y, 0.0, 1.0);
+        self.grow_region(region, pos, ext);
+        self.grow_batch(i, pos, ext);
     }
 
     /// Replaces the instances of a dynamic batch (e.g. the player capsule) for this frame.
@@ -1912,8 +2224,9 @@ impl Renderer {
         b.instances.push(Instance::glow(pos, yaw, size, color));
         b.uploaded = usize::MAX;
         let radius = (size.x * size.x + size.z * size.z).sqrt() * 0.5;
-        self.grow_region(region, pos, radius, size.y);
-        self.grow_batch(i, pos, radius, size.y);
+        let ext = instance_extent(radius, radius, 0.0, size.y, 0.0, 1.0);
+        self.grow_region(region, pos, ext);
+        self.grow_batch(i, pos, ext);
     }
 
     /// Sets the water clock from the elapsed game time (TECH-WATER behaviour 9).
@@ -2005,8 +2318,14 @@ impl Renderer {
         if b.uploaded == b.instances.len() {
             return;
         }
+        let chunked = b.chunked();
+        if chunked && !b.sorted {
+            Self::sort_chunks(gl, b);
+        }
+        if !chunked && !b.ranges.is_empty() {
+            Self::drop_ranges(gl, b);
+        }
         gl.bind_buffer(Gl::ARRAY_BUFFER, Some(&b.inst_vbo));
-        let bytes: &[u8] = bytemuck::cast_slice(&b.instances);
         if b.instances.len() > b.capacity {
             b.capacity = b.instances.len().next_power_of_two();
             gl.buffer_data_with_i32(
@@ -2019,6 +2338,15 @@ impl Renderer {
                 },
             );
         }
+        let bytes: &[u8] = if chunked {
+            // GPU order: sorted by chunk (PERF-R-002)
+            b.gpu.clear();
+            b.gpu
+                .extend(b.order.iter().map(|&i| b.instances[i as usize]));
+            bytemuck::cast_slice(&b.gpu)
+        } else {
+            bytemuck::cast_slice(&b.instances)
+        };
         gl.buffer_sub_data_with_i32_and_u8_array(Gl::ARRAY_BUFFER, 0, bytes);
         b.uploaded = b.instances.len();
         b.live = b
@@ -2026,6 +2354,39 @@ impl Renderer {
             .iter()
             .filter(|i| i.scale_fade[0] != 0.0)
             .count();
+    }
+
+    /// Rebuilds the chunk-sorted GPU order and the chunk ranges of a batch (PERF-R-002).
+    fn sort_chunks(gl: &Gl, b: &mut Batch) {
+        Self::drop_ranges(gl, b);
+        let keys: Vec<IVec2> = b.chunks.iter().map(|c| c.0).collect();
+        let (order, spans) = chunk_order(&keys, &b.inst_chunk);
+        b.order = order;
+        for (c, first, count) in spans {
+            let vao = if first == 0 {
+                None
+            } else {
+                static_vao(gl, &b.vbo, &b.ibo, b.rich, &b.inst_vbo, first)
+            };
+            b.ranges.push(ChunkRange {
+                lo: b.chunks[c].1,
+                hi: b.chunks[c].2,
+                first,
+                count,
+                vao,
+            });
+        }
+        b.sorted = true;
+    }
+
+    fn drop_ranges(gl: &Gl, b: &mut Batch) {
+        for r in b.ranges.drain(..) {
+            if let Some(v) = r.vao {
+                gl.delete_vertex_array(Some(&v));
+            }
+        }
+        b.order.clear();
+        b.sorted = false;
     }
 
     /// Uploads the shared per-frame values (PERF-R-003): one `bufferSubData` per frame
@@ -2085,8 +2446,37 @@ impl Renderer {
         acc
     }
 
-    /// Outline sample offset in device pixels (even, so the fade pattern stays line-free).
+    /// Light mask of the chunk ranges `first..=last` of a chunk-sorted batch (PERF-R-002):
+    /// the union over their chunks, like [`Renderer::batch_light_mask`].
+    fn ranges_light_mask(&self, b: &Batch, first: usize, last: usize) -> (u32, u32) {
+        let (nl, np) = (self.light_count as usize, self.pool_count as usize);
+        if nl + np == 0 {
+            return (0, 0);
+        }
+        let full = night::full_light_mask(nl, np);
+        if self.full_light_masks {
+            return full;
+        }
+        let m = Vec3::splat(b.light_margin);
+        let mut acc = (0, 0);
+        for r in &b.ranges[first..=last] {
+            let k = self.box_light_mask(r.lo - m, r.hi + m);
+            acc = (acc.0 | k.0, acc.1 | k.1);
+            if acc == full {
+                break;
+            }
+        }
+        acc
+    }
+
+    /// Outline sample offset in device pixels (twice the screen-door cell, so the fade
+    /// pattern stays line-free). Capped by the low tier (PERF-BUDGETS rule 5) the lines stay
+    /// 2 CSS px: 3 device px at the pixel ratio 1.5.
     fn outline_px(&self) -> f32 {
+        if self.max_pixel_ratio < MAX_PIXEL_RATIO && self.pixel_ratio >= self.max_pixel_ratio as f32
+        {
+            return 2.0 * self.pixel_ratio;
+        }
         2.0 * self.pixel_ratio.round().max(1.0)
     }
 
@@ -2154,18 +2544,33 @@ impl Renderer {
         // Static batches (water tiles last, with the water program; TECH-WATER).
         gl.active_texture(Gl::TEXTURE0);
         gl.bind_texture(Gl::TEXTURE_2D, Some(&self.palette));
-        let planes = frustum_planes(&view_proj);
-        let ground = visible_ground(&view_proj);
+        // frustum + haze (PERF-R-018, Q-193): in the full close views everything beyond the
+        // fog end is exactly the sky colour (GAME-CAMERA-VIEWS 7), so boxes entirely beyond
+        // it are skipped (a nearer silhouette's outline may lose 1–4 px inside the haze —
+        // approved); never in the zoo view. `no_culling` (debug) keeps only the haze.
+        let fog = camera.fog();
+        let cull = Cull {
+            planes: frustum_planes(&view_proj),
+            all: self.no_culling,
+            haze: (self.haze_cull && fog.amount >= 1.0 && camera.sky_amount() >= 1.0)
+                .then(|| (camera.eye(), fog.end + HAZE_CULL_MARGIN_M)),
+        };
+        let ground = if self.no_culling {
+            None
+        } else {
+            visible_ground(&view_proj)
+        };
         let visible: Vec<bool> = self
             .regions
             .iter()
             .enumerate()
             .map(|(k, r)| {
+                let (min, max) = (r.min - Vec3::splat(r.margin), r.max + Vec3::splat(r.margin));
                 k == REGION_ALWAYS as usize
                     || (!r.hidden
-                        && aabb_visible(&planes, r.min, r.max)
+                        && cull.visible(min, max)
                         && ground.is_none_or(|(lo, hi)| {
-                            r.min.x <= hi.x && r.max.x >= lo.x && r.min.z <= hi.y && r.max.z >= lo.y
+                            min.x <= hi.x && max.x >= lo.x && min.z <= hi.y && max.z >= lo.y
                         }))
             })
             .collect();
@@ -2200,8 +2605,7 @@ impl Renderer {
                     continue;
                 }
                 if !visible.get(b.region as usize).copied().unwrap_or(true)
-                    || (b.region != REGION_ALWAYS
-                        && !b.chunks.iter().any(|c| aabb_visible(&planes, c.1, c.2)))
+                    || (b.region != REGION_ALWAYS && !b.any_chunk_visible(&cull))
                 {
                     stats.culled_batches += 1;
                     continue;
@@ -2221,27 +2625,70 @@ impl Renderer {
                 if let Some(nodes) = &b.nodes {
                     prog.set4fv(gl, U::Nodes, nodes);
                 }
-                prog.set2ui(gl, U::LightMask, self.batch_light_mask(b));
-                if let Some(d) = &mut self.debug_draws {
-                    d.push(format!(
-                        "{}@{} x{} {}t",
-                        b.name,
-                        b.region,
-                        b.instances.len(),
-                        (b.glass_first as usize / 3) * b.instances.len()
-                    ));
+                let tris = b.glass_first as u32 / 3;
+                if !b.ranges.is_empty() {
+                    // chunk-sorted batch (PERF-R-002): only the chunk ranges in view
+                    let mut runs = [(0usize, 0usize); MAX_CHUNK_RUNS];
+                    let n = plan_chunk_runs(
+                        b.ranges.len(),
+                        |i| b.range_visible(&cull, i),
+                        |i| b.ranges[i].count,
+                        tris,
+                        &mut runs,
+                    );
+                    let mut drawn = 0u32;
+                    for &(s, e) in &runs[..n] {
+                        let (r0, r1) = (&b.ranges[s], &b.ranges[e]);
+                        let count = r1.first + r1.count - r0.first;
+                        prog.set2ui(gl, U::LightMask, self.ranges_light_mask(b, s, e));
+                        gl.bind_vertex_array(Some(r0.vao.as_ref().unwrap_or(&b.vao)));
+                        gl.draw_elements_instanced_with_i32(
+                            Gl::TRIANGLES,
+                            b.glass_first,
+                            Gl::UNSIGNED_INT,
+                            0,
+                            count as i32,
+                        );
+                        stats.draw_calls += 1;
+                        drawn += count;
+                    }
+                    stats.instances += drawn;
+                    stats.triangles += tris * drawn;
+                    if let Some(d) = &mut self.debug_draws {
+                        d.push(format!(
+                            "{}@{} x{} {}t ({} of {} in {} draws)",
+                            b.name,
+                            b.region,
+                            drawn,
+                            tris * drawn,
+                            drawn,
+                            b.instances.len(),
+                            n
+                        ));
+                    }
+                } else {
+                    prog.set2ui(gl, U::LightMask, self.batch_light_mask(b));
+                    if let Some(d) = &mut self.debug_draws {
+                        d.push(format!(
+                            "{}@{} x{} {}t",
+                            b.name,
+                            b.region,
+                            b.instances.len(),
+                            tris as usize * b.instances.len()
+                        ));
+                    }
+                    gl.bind_vertex_array(Some(&b.vao));
+                    gl.draw_elements_instanced_with_i32(
+                        Gl::TRIANGLES,
+                        b.glass_first,
+                        Gl::UNSIGNED_INT,
+                        0,
+                        b.instances.len() as i32,
+                    );
+                    stats.draw_calls += 1;
+                    stats.instances += b.instances.len() as u32;
+                    stats.triangles += tris * b.instances.len() as u32;
                 }
-                gl.bind_vertex_array(Some(&b.vao));
-                gl.draw_elements_instanced_with_i32(
-                    Gl::TRIANGLES,
-                    b.glass_first,
-                    Gl::UNSIGNED_INT,
-                    0,
-                    b.instances.len() as i32,
-                );
-                stats.draw_calls += 1;
-                stats.instances += b.instances.len() as u32;
-                stats.triangles += (b.glass_first as u32 / 3) * b.instances.len() as u32;
                 if b.glass_first < b.index_count {
                     glass_batches += 1;
                 }
@@ -2256,7 +2703,7 @@ impl Renderer {
         let char_half = Vec3::new(CHARACTER_HALF_M, 0.0, CHARACTER_HALF_M)
             + Vec3::splat(CHARACTER_LIGHT_MARGIN_M);
         for (name, draw) in characters {
-            if !character_visible(&planes, draw.pos) {
+            if !character_visible(&cull, draw.pos) {
                 continue; // beyond the close views' far plane or off screen
             }
             let mask = self.box_light_mask(
@@ -2344,7 +2791,7 @@ impl Renderer {
             let mut n = 0usize;
             for (_, draw) in crowd
                 .iter()
-                .filter(|(m, d)| *m == name && character_visible(&planes, d.pos))
+                .filter(|(m, d)| *m == name && character_visible(&cull, d.pos))
                 .take(MAX_CROWD)
             {
                 pose_character(sm, draw);
@@ -2424,8 +2871,7 @@ impl Renderer {
                 if b.live == 0
                     || b.glass_first >= b.index_count
                     || !visible.get(b.region as usize).copied().unwrap_or(true)
-                    || (b.region != REGION_ALWAYS
-                        && !b.chunks.iter().any(|c| aabb_visible(&planes, c.1, c.2)))
+                    || (b.region != REGION_ALWAYS && !b.any_chunk_visible(&cull))
                 {
                     continue;
                 }
@@ -2465,7 +2911,7 @@ impl Renderer {
             gl.polygon_offset(-1.0, -4.0);
             gl.bind_vertex_array(self.decals.vao.as_ref());
             for d in &self.decals.draws {
-                if !aabb_visible(&planes, d.min, d.max)
+                if !cull.visible(d.min, d.max)
                     || (d.region != REGION_ALWAYS
                         && self
                             .regions
@@ -2525,6 +2971,7 @@ impl Renderer {
         p.set3f(gl, U::SkyTop, top);
         p.set3f(gl, U::SkyHorizon, horizon);
         p.set1f(gl, U::SkyNight, self.light.night);
+        p.set1f(gl, U::SkyClouds, f32::from(u8::from(self.clouds)));
         gl.draw_arrays(Gl::TRIANGLES, 0, 3);
         stats.draw_calls += 1;
         self.stats = stats;
@@ -2571,6 +3018,28 @@ fn visible_ground(view_proj: &Mat4) -> Option<(Vec2, Vec2)> {
     }
     Some((lo, hi))
 }
+
+/// Frame culling (PERF-R-015, PERF-R-018): the view frustum and, in the full close views,
+/// the haze — a box whose nearest point is farther from the eye than the fog end (+ margin)
+/// is fully hidden by the haze and not drawn. `all` (debug `no_culling`): no frustum test.
+struct Cull {
+    planes: [Vec4; 6],
+    all: bool,
+    haze: Option<(Vec3, f32)>,
+}
+
+impl Cull {
+    fn visible(&self, min: Vec3, max: Vec3) -> bool {
+        min.x <= max.x
+            && (self.all || aabb_visible(&self.planes, min, max))
+            && self
+                .haze
+                .is_none_or(|(eye, end)| eye.clamp(min, max).distance_squared(eye) <= end * end)
+    }
+}
+
+/// Room beyond the fog end (m) before the haze culls a box.
+const HAZE_CULL_MARGIN_M: f32 = 0.05;
 
 /// Whether an axis-aligned box intersects the frustum (conservative).
 fn aabb_visible(planes: &[Vec4; 6], min: Vec3, max: Vec3) -> bool {
@@ -3027,6 +3496,121 @@ mod tests {
         for u in U::ALL {
             assert!(!glsl.contains(&format!(" {};", u.name())), "{}", u.name());
             assert!(!glsl.contains(&format!(" {}[", u.name())), "{}", u.name());
+        }
+    }
+
+    // PERF-023 (PERF-R-002): instances are uploaded sorted by chunk row-major; each chunk is
+    // one contiguous range; instances of a chunk keep their order.
+    #[test]
+    fn perf_023_chunk_order_is_row_major_and_contiguous() {
+        let keys = [
+            IVec2::new(1, 0),
+            IVec2::new(0, 1),
+            IVec2::new(0, 0),
+            IVec2::new(-1, 1),
+        ];
+        // instance → chunk index
+        let inst = [0u16, 1, 2, 0, 3, 2, 1];
+        let (order, spans) = chunk_order(&keys, &inst);
+        // row z = 1 (south) first: (-1,1) then (0,1); then row z = 0: (0,0) then (1,0)
+        let want_chunks: Vec<usize> = spans.iter().map(|s| s.0).collect();
+        assert_eq!(want_chunks, vec![3, 1, 2, 0]);
+        assert_eq!(order, vec![4, 1, 6, 2, 5, 0, 3]);
+        let mut next = 0;
+        for &(c, first, count) in &spans {
+            assert_eq!(first, next);
+            for slot in first..first + count {
+                assert_eq!(inst[order[slot as usize] as usize] as usize, c);
+            }
+            next += count;
+        }
+        assert_eq!(next as usize, inst.len());
+    }
+
+    // PERF-023: one draw per run of visible chunks; cheap off-screen gaps are drawn along;
+    // never more than MAX_CHUNK_RUNS draws; nothing visible → no draw.
+    #[test]
+    fn perf_023_chunk_runs_merge_cheap_gaps_and_are_capped() {
+        let mut out = [(0, 0); MAX_CHUNK_RUNS];
+        let vis = |v: &'static [u8]| move |i: usize| v[i] == 1;
+        // two visible runs split by an expensive gap (3 chunks × 64 × 158 triangles)
+        let v: &[u8] = &[0, 1, 1, 0, 0, 0, 1, 0];
+        let n = plan_chunk_runs(v.len(), vis(v), |_| 64, 158, &mut out);
+        assert_eq!(&out[..n], &[(1, 2), (6, 6)]);
+        // the same gap of tiny grass tiles (28 triangles, 2 per chunk) is drawn along
+        let n = plan_chunk_runs(v.len(), vis(v), |_| 2, 28, &mut out);
+        assert_eq!(&out[..n], &[(1, 6)]);
+        // nothing visible
+        let v: &[u8] = &[0, 0, 0];
+        assert_eq!(plan_chunk_runs(3, vis(v), |_| 1, 1, &mut out), 0);
+        // every other chunk visible, expensive gaps: capped, the last run takes the rest
+        let v: &[u8] = &[1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
+        let n = plan_chunk_runs(v.len(), vis(v), |_| 100, 200, &mut out);
+        assert_eq!(n, MAX_CHUNK_RUNS);
+        assert_eq!(out[0], (0, 0));
+        assert_eq!(out[MAX_CHUNK_RUNS - 1], (2 * (MAX_CHUNK_RUNS - 1), 14));
+    }
+
+    // PERF-025 (PERF-R-015): the culling box of an instance holds every corner of its mesh
+    // at any yaw (±radius square for quarter turns, √2 otherwise), scaled, and the parts
+    // below the origin — so frustum culling never drops a visible instance.
+    #[test]
+    fn perf_025_instance_extent_holds_the_mesh_at_any_yaw() {
+        let (radius, lo_y, height) = (1.5, -0.4, 2.0);
+        for k in 0..64 {
+            let yaw = k as f32 * std::f32::consts::TAU / 64.0;
+            for scale in [0.5, 1.0, 2.0] {
+                // the square's corner is the farthest vertex: radius_xz = radius × √2
+                let rxz = radius * std::f32::consts::SQRT_2;
+                let (lo, hi) = instance_extent(radius, rxz, lo_y, height, yaw, scale);
+                let (s, c) = yaw.sin_cos();
+                for (x, z) in [(1.0, 1.0), (1.0, -1.0), (-1.0, 1.0), (-1.0, -1.0)] {
+                    let p = Vec3::new(x * radius, 0.0, z * radius) * scale;
+                    let w = Vec3::new(c * p.x + s * p.z, 0.0, -s * p.x + c * p.z);
+                    assert!(w.x >= lo.x - 1e-4 && w.x <= hi.x + 1e-4, "{yaw} {scale}");
+                    assert!(w.z >= lo.z - 1e-4 && w.z <= hi.z + 1e-4, "{yaw} {scale}");
+                }
+                assert!(lo.y <= lo_y * scale && hi.y >= height * scale);
+            }
+        }
+        // quarter turns keep the tight square (ground tiles: no extra chunk overlap)
+        let (lo, hi) = instance_extent(0.5, 0.7, 0.0, 0.05, std::f32::consts::FRAC_PI_2 * 3.0, 1.0);
+        assert!((hi.x - 0.5).abs() < 1e-6 && (lo.z + 0.5).abs() < 1e-6);
+        // a round mesh (tree canopy) keeps its circle at any yaw
+        let (lo, hi) = instance_extent(2.0, 2.05, 0.0, 5.0, 0.3, 1.0);
+        assert!((hi.x - 2.05).abs() < 1e-6 && (lo.z + 2.05).abs() < 1e-6);
+    }
+
+    // PERF-025: the swept space of turning parts is inside the culling extent: a door leaf
+    // hinged at x = 1 (1 m wide, closed towards the centre) reaches √2 m when it opens.
+    #[test]
+    fn perf_025_turning_parts_are_inside_the_culling_extent() {
+        let mut nodes = [0.0; MAX_NODE_PARTS * 4];
+        nodes[4..8].copy_from_slice(&[2.0, std::f32::consts::FRAC_PI_2, 0.0, 0.0]); // part 1 turns about Y
+        let mut vertices = Vec::new();
+        for (x, y, code) in [(1.0f32, 0.0f32, 1.0f32), (0.0, 2.0, 1.0), (0.3, 0.0, 0.0)] {
+            vertices.extend_from_slice(&[x, y, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]);
+            vertices.extend_from_slice(&[0.0; 4]);
+            vertices.extend_from_slice(&[1.0, 0.0, 0.0, code]); // pivot (1, 0, 0)
+        }
+        let p = StaticVertices {
+            vertices,
+            indices: vec![0, 1, 2],
+            glass_first: 3,
+            nodes,
+            has_nodes: true,
+        };
+        let (rxz, rot, top, bottom) = static_reach(&p);
+        // the leaf's far edge (x = 0) is 1 m from the hinge axis (Y): it can swing out to
+        // 1 + 1 = 2 m from the origin (a sphere bound would say 1 + √5)
+        assert!((rxz - 2.0).abs() < 1e-5 && (rot - 2.0).abs() < 1e-5);
+        assert!(top >= 2.0 && bottom <= 0.0);
+        // every angle of the swing stays inside
+        for k in 0..32 {
+            let a = k as f32 * std::f32::consts::TAU / 32.0;
+            let (sn, c) = a.sin_cos();
+            let q = Vec3::new(1.0 - c, 2.0, sn); // (0, 2, 0) turned about the hinge (1, _, 0)
+            assert!(q.x.hypot(q.z) <= rxz + 1e-5);
         }
     }
 

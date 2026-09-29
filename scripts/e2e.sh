@@ -45,10 +45,11 @@ fi
 setsid npx playwright test "$@" >"$LOG" 2>&1 &
 PID=$!
 ( sleep $((TIMEOUT_MIN * 60)); echo "e2e: TIMEOUT after ${TIMEOUT_MIN} min — killing the run" >>"$LOG";
-  kill -TERM -- -"$PID" 2>/dev/null; sleep 20; kill -KILL -- -"$PID" 2>/dev/null ) &
+  kill -TERM -- -"$PID" 2>/dev/null; sleep 20; kill -KILL -- -"$PID" 2>/dev/null ) 9>&- &
 WATCH=$!
 wait "$PID"; RC=$?
-kill "$WATCH" 2>/dev/null; wait "$WATCH" 2>/dev/null
+# the watchdog's `sleep` must die too (it used to keep the lock fd open for the whole timeout)
+pkill -P "$WATCH" 2>/dev/null; kill "$WATCH" 2>/dev/null; wait "$WATCH" 2>/dev/null
 pkill -f "vite preview --port ${E2E_PORT:-4173}" 2>/dev/null
 
 grep -E "✘|^\s+[0-9]+ (passed|failed|flaky|skipped|did not run)|TIMEOUT|Error:" "$LOG" | head -40

@@ -648,6 +648,21 @@ pub fn walkable_row_center(rect: Rect, grid: &Grid) -> Vec2 {
         .map_or(c, |(_, p)| *p)
 }
 
+/// The facade of a building's door cell (the rect edge the door cell lies on).
+pub fn door_facade(e: &Element) -> Option<Dir> {
+    let dc = e.door_cell()?;
+    let r = e.rect;
+    Some(if dc.y == r.z {
+        Dir::S
+    } else if dc.y == r.z + r.d - 1 {
+        Dir::N
+    } else if dc.x == r.x {
+        Dir::W
+    } else {
+        Dir::E
+    })
+}
+
 /// The bed of an enterable zookeeper house (GAME-NIGHT rule 3, Q-096): centre (level) and
 /// size (level x, z). Door in the east / west facade: along the opposite wall (the bedroom
 /// corner of `zookeeper_house_1`); else in the north-east corner.
@@ -851,10 +866,23 @@ impl LevelScene {
                 }
             }
         }
-        // Food boxes (GAME-FEED §7): label plate (model front) towards the box facing.
+        // Food boxes (GAME-FEED §7): label plate (model front) towards the box facing. Most
+        // stand outside in front of the storage (Q-181 answered); a few real, labelled boxes
+        // also stand inside the enterable storage / hut (Q-194 answered 2026-09-29) — those
+        // whose centre falls inside a `food_storage` / `food_hut` rect stand on the 0.15 m
+        // plank platform of the wall band, like the old stock crates did.
         for b in &data.food_boxes {
             let first = s.placements.len();
-            s.model_at("food_box", b.pos(), facing_yaw(Dir::from_vec(b.facing())));
+            let yaw = facing_yaw(Dir::from_vec(b.facing()));
+            let inside = data.elements.iter().any(|e| {
+                matches!(e.kind.as_deref(), Some("food_storage" | "food_hut"))
+                    && e.rect.contains(crate::level::cell_of(b.pos()))
+            });
+            if inside {
+                s.model_at_y("food_box", b.pos(), STORAGE_PLATFORM_M, yaw);
+            } else {
+                s.model_at("food_box", b.pos(), yaw);
+            }
             for p in &mut s.placements[first..] {
                 p.part = b.part as u8;
             }
@@ -1080,16 +1108,17 @@ impl LevelScene {
             .push(crate::water::Obstacle { pos, radius, river });
     }
 
-    /// Wooden "Futter" board on the south facade of the food storage, centred above the row
-    /// of food boxes, with the `sign-food-storage` text decal (ART-ENVIRONMENT 7).
+    /// Wooden "Futter" board on the door facade of the food storage, centred on it, over the door
+    /// (bottom 2.3 m), with the `sign-food-storage` text decal (ART-ENVIRONMENT 7).
     fn food_storage_sign(&mut self, e: &Element, data: &LevelData, wall_height: f32) {
         let r = e.rect;
-        // the facade the food boxes stand in front of (their label facing), default south
-        let dir = data
-            .food_boxes
-            .iter()
-            .find(|b| r.distance_to(b.pos()) < 2.0)
-            .map_or(Dir::S, |b| Dir::from_vec(b.facing()));
+        // the door facade; without a door the facade the food boxes face, default south
+        let dir = door_facade(e).unwrap_or_else(|| {
+            data.food_boxes
+                .iter()
+                .find(|b| r.distance_to(b.pos()) < 2.0)
+                .map_or(Dir::S, |b| Dir::from_vec(b.facing()))
+        });
         let bottom = STORAGE_SIGN_BOTTOM_M.min(wall_height - STORAGE_SIGN_BOARD.y - 0.15);
         self.building_sign(e, dir, bottom, STORAGE_SIGN_BOARD, FOOD_STORAGE_SIGN_KEY);
     }
@@ -2048,10 +2077,24 @@ impl LevelScene {
                 );
             }
             (ElementType::Building, _) if e.is_enterable() => {
-                if !self.building_by_model(e, data) {
+                let by_model = self.building_by_model(e, data);
+                if !by_model {
                     self.enterable_building(e, data);
                 } else {
                     self.furnish_building(e, data);
+                }
+                if kind == "food_storage" || kind == "food_hut" {
+                    // the "Futter" board over the door hides with the roof while the player
+                    // is inside (zoo view), like the night-house name board
+                    let wall_h = if by_model {
+                        f32::MAX
+                    } else {
+                        e.height_m.unwrap_or(4.0) * 0.7
+                    };
+                    let first = self.boxes.len();
+                    self.food_storage_sign(e, data, wall_h);
+                    self.roof_boxes
+                        .push((e.id.clone(), first..self.boxes.len()));
                 }
                 if kind == "night_house" {
                     // name board over the door (south facade); hidden with the roof while
@@ -3656,10 +3699,11 @@ mod tests {
         assert_eq!(signs, enclosures);
     }
 
-    // AENV-012 (scene part): the "Futter" sign hangs on the south facade of the food storage
-    // above the row of food boxes and faces south (the path and the default camera).
+    // AENV-012 (scene part): the "Futter" sign hangs on the south (door) facade of the food
+    // storage over the door and faces south (the path and the default camera); the boxes
+    // stand inside (Q-181), the board hides with the roof while the player is inside.
     #[test]
-    fn aenv_012_food_storage_sign_above_the_boxes() {
+    fn aenv_012_food_storage_sign_above_the_door() {
         let data = level1();
         let s = LevelScene::build(&data);
         let d = s
@@ -3674,14 +3718,18 @@ mod tests {
         let n = d.normal();
         assert!((n - Vec3::Z).length() < 1e-5, "faces south: {n}");
         let [tl, _, br, _] = d.corners();
-        let boxes: Vec<Vec2> = data.food_boxes.iter().map(|b| b.pos()).collect();
-        let (min_x, max_x) = boxes
+        // the door opening (level x 0 … 1) lies under the board
+        assert!(tl.x <= 0.0 && br.x >= 1.0, "over the door: {tl} {br}");
+        // in the roof region of the storage (hidden inside in the zoo view, PLAY-028)
+        let board_i = s
+            .boxes
             .iter()
-            .fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p.x), b.max(p.x)));
-        assert!(
-            tl.x >= min_x - 0.5 && br.x <= max_x + 0.5,
-            "over the box row"
-        );
+            .position(|b| b.source == "food_storage:sign")
+            .unwrap();
+        assert!(s
+            .roof_boxes
+            .iter()
+            .any(|(id, r)| id == "food_storage" && r.contains(&board_i)));
         // board bottom 2.3 m: above the 2.1 m door opening, in the gable below the ridge
         // (4.53 m) of the `food_storage` model (README_night open point 2)
         let board_bottom = d.center.y - d.up.y - STORAGE_SIGN_FRAME_M;

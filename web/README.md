@@ -43,6 +43,12 @@ emoji placeholders.
 `draw_calls`, `instances`, `triangles`, `placeholders`, `player_is_model`,
 `animal_is_model`, `animal_state/x/z`, `mission_started/complete`, `debug_teleport(x, z)`,
 `debug_goto(x, z)` + `debug_step(seconds)` (scripted walk with real movement/collision,
-simulated without rendering).
+simulated without rendering), `quality()` / `quality_mode()` / `pixel_ratio()` and
+`debug_no_culling(on)`, `debug_haze_cull(on)` (performance checks).
+
+**Quality tier** (PERF-BUDGETS rule 5, `src/quality.ts`): automatic by default — slow
+frames switch the game to the pixel ratio 1.5, then to the lantern + 4 lamps and no clouds,
+never back. `?quality=auto|high|low1|low` overrides it; automated browsers (Playwright,
+`navigator.webdriver`) start with `high` so e2e and perf numbers stay comparable.
 
 E2E screenshots go to `art/environment/poc/`.

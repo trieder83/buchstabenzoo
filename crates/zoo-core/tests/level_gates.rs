@@ -149,3 +149,98 @@ fn layout_036_level_gates_closed_while_locked_open_after() {
         }
     }
 }
+
+// LAYOUT-040 (GAME-LAYOUT "Gates between the levels", user request 2026-09-28): the street
+// continues under every level gate and the moon door (Q-182). For each entry cell of a level
+// transition, the cells in a straight line from 2 m inside the new level (behind the gate)
+// through the entry cell and every barrier cell to the first cell of the old level are path
+// cells (the barrier stands ON the street), walkable path once the barrier is open, and the scene draws a path tile on
+// each of them with no edging stone (curb) across the line — no grass gap, curb or seam.
+#[test]
+fn layout_040_street_continues_under_every_level_gate() {
+    let data = common::zoo_with_night();
+    // the level gates and the moon door (Q-182 answered 2026-09-28: the street also runs
+    // under the moon door, from `path_moon` to night_1's entry path)
+    let ts: Vec<(String, String)> = data
+        .parts
+        .iter()
+        .flat_map(|p| p.entries.iter())
+        .map(|en| (en.barrier.clone(), en.id.clone()))
+        .collect();
+    assert!(ts.len() >= 4, "{ts:?}");
+    assert!(ts.iter().any(|(b, _)| b == "moon_door"), "{ts:?}");
+    let s = LevelScene::build(&data);
+    let closed = zoo_core::level::Grid::build(&data, &Default::default());
+    let all: std::collections::BTreeSet<String> = ts.iter().map(|(b, _)| b.clone()).collect();
+    let open = zoo_core::level::Grid::build(&data, &all);
+    let tile_at = |c: glam::IVec2| -> Option<&'static str> {
+        let w = zoo_core::coords::level_to_world(zoo_core::level::cell_center(c));
+        // the ground tile of the cell (path, plaza or grass)
+        s.placements
+            .iter()
+            .filter(|p| p.model.ends_with("_tile") || p.model.starts_with("path_tile"))
+            .find(|p| (p.pos - w).length() < 0.01)
+            .map(|p| p.model)
+    };
+    let curb_between = |a: glam::IVec2, b: glam::IVec2| -> bool {
+        let mid = (zoo_core::level::cell_center(a) + zoo_core::level::cell_center(b)) / 2.0;
+        s.placements.iter().any(|p| {
+            p.model == "path_edge" && zoo_core::coords::world_to_level(p.pos).distance(mid) < 0.2
+        })
+    };
+    let mut bad = Vec::new();
+    for (barrier, entry) in &ts {
+        let en = data
+            .parts
+            .iter()
+            .flat_map(|p| p.entries.iter())
+            .find(|e| &e.id == entry)
+            .unwrap();
+        let b = data.element(barrier).unwrap();
+        // towards the old level: the side of the entry cells the barrier touches
+        let to_old = level_gate_pose(en, &data)
+            .map(|(_, _, dir)| dir.offset())
+            .or_else(|| {
+                zoo_core::scene::Dir::ALL
+                    .into_iter()
+                    .map(|d| d.offset())
+                    .find(|&o| en.cells.cells().any(|c| b.rect.contains(c + o)))
+            })
+            .expect("barrier next to the entry");
+        for c in en.cells.cells() {
+            // 2 cells inside the new level (the gate row and behind it) … through the barrier …
+            // the first cell of the old level
+            let mut line = vec![c - to_old * 2, c - to_old, c];
+            let mut k = c + to_old;
+            while b.rect.contains(k) {
+                line.push(k);
+                k += to_old;
+            }
+            line.push(k);
+            for (i, &q) in line.iter().enumerate() {
+                if !closed.has_path(q) {
+                    bad.push(format!("{barrier}: {q} not a path cell"));
+                }
+                if open.kind(q)
+                    != zoo_core::level::CellKind::Walkable(zoo_core::level::Surface::Path)
+                {
+                    bad.push(format!("{barrier}: {q} not walkable path when open"));
+                }
+                match tile_at(q) {
+                    Some(m) if m.starts_with("path_tile") || m == "plaza_tile" => {}
+                    m => bad.push(format!("{barrier}: {q} drawn as {m:?}")),
+                }
+                if i > 0 && curb_between(line[i - 1], q) {
+                    bad.push(format!("{barrier}: curb between {} and {q}", line[i - 1]));
+                }
+            }
+        }
+        // the barrier stands on the street: every barrier cell is a path cell
+        for q in b.rect.cells() {
+            if !closed.has_path(q) {
+                bad.push(format!("{barrier}: barrier cell {q} off the street"));
+            }
+        }
+    }
+    assert!(bad.is_empty(), "{bad:#?}");
+}

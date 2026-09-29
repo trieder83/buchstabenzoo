@@ -85,13 +85,13 @@ fn play_024_walking_past_does_not_flash_a_panel() {
     let mut g = common::game(1);
     let grass = food_box(&g, Food::Grass);
     // available for 0.2 s only (passing by, then turned away)
-    place(&mut g, Vec2::new(grass.x, 9.6), Vec2::Y);
+    place(&mut g, Vec2::new(grass.x, grass.y - 1.4), Vec2::Y);
     assert_eq!(
         g.available_target(),
         Some(Target::FoodBox { food: Food::Grass })
     );
     assert!(idle(&mut g, 0.2).is_empty());
-    place(&mut g, Vec2::new(grass.x + 0.3, 9.4), Vec2::NEG_Y); // turned away
+    place(&mut g, Vec2::new(grass.x + 0.3, grass.y - 1.6), Vec2::NEG_Y); // turned away
     assert!(idle(&mut g, 1.0).is_empty());
     assert_eq!(g.panel.open, None);
 
@@ -158,7 +158,7 @@ fn play_026_closed_by_hand_stays_closed_until_leaving_range() {
 fn play_027_food_only_taken_by_the_take_button() {
     let mut g = common::game(1);
     let grass = food_box(&g, Food::Grass);
-    place(&mut g, Vec2::new(grass.x, 9.6), Vec2::Y);
+    place(&mut g, Vec2::new(grass.x, grass.y - 1.4), Vec2::Y);
     let ev = idle(&mut g, 1.0);
     assert_eq!(
         ev,
@@ -178,10 +178,10 @@ fn nearer_interactable_switches_the_panel() {
     let mut g = common::game(1);
     let grass = food_box(&g, Food::Grass);
     let bamboo = food_box(&g, Food::Bamboo);
-    place(&mut g, Vec2::new(grass.x, 9.6), Vec2::Y);
+    place(&mut g, Vec2::new(grass.x, grass.y - 1.4), Vec2::Y);
     idle(&mut g, 0.5);
     assert_eq!(g.panel.open, Some(Target::FoodBox { food: Food::Grass }));
-    place(&mut g, Vec2::new(bamboo.x, 9.6), Vec2::Y);
+    place(&mut g, Vec2::new(bamboo.x, bamboo.y - 1.4), Vec2::Y);
     let ev = idle(&mut g, 1.0);
     assert_eq!(
         ev,

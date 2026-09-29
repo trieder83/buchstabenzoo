@@ -19,6 +19,7 @@ layout(location = 0) out vec4 o_color;
 layout(location = 1) out vec4 o_normal;
 // @night (GAME-NIGHT §10; night.rs)
 void main() {
+    light_derivs(v_world);   // before any branch or discard (PERF-R-014)
     if (v_fadeable > 0.5 && u_fade.z > 0.0) {
         vec2 d = gl_FragCoord.xy - u_fade.xy;
         if (dot(d, d) < u_fade.z * u_fade.z && v_view_depth < u_fade.w - 1.2) {
@@ -566,6 +567,7 @@ vec3 ripples(vec2 p, float t, vec3 light, vec3 col) {
 }
 
 void main() {
+    light_derivs(v_world);   // before any branch (PERF-R-014)
     vec2 p = v_world.xz;
     g_px = max(length(fwidth(p)) * 0.7071, 1e-4);
     int cell = int(floor(v_uv.y * 16.0)) * 16 + int(floor(v_uv.x * 16.0));

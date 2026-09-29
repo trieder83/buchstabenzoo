@@ -175,8 +175,8 @@ every type except `path` and `hiding_place`. The level has no legacy `[[element]
 | `path_l2_station` | path (side) | 54, 17, 2, 7 | Narrow platform path from path_l2_se down to the zoo train station. |
 | `path_l2_e` | path (side) | 67, 27, 3, 4 | Short path from path_l2_se north to the giant tree east of the elephant enclosure. |
 | `path_l2_north` | path (side) | 36, 42, 3, 10 | Side path north from the ring to the construction fence (level 3). |
-| `path_l2_nw` | path (side) | 26, 52, 13, 3 | Leads west to barrier_l2_construction. |
-| `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30). Second food storage (proposal Q-089): all 10 food boxes, row in front of the west facade facing the arriving child. |
+| `path_l2_nw` | path (side) | 24, 52, 15, 3 | Leads west to barrier_l2_construction and runs on under it (x 24…25) to the level-3 gate and `path_l3_entry`: the construction fence stands on the street (LAYOUT-040). |
+| `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30); enterable, walkable interior (40, 28, 4, 6). Second food storage (proposal Q-089): all 10 food boxes, row in front of the west facade facing the arriving child (Q-181 answered); 6 more real labelled food boxes inside (Q-194 answered 2026-09-29). |
 | `grove_l2_center` | decoration (tree_grove) | 45, 27, 6, 12 | density `dense`.  |
 | `trees_l2_center_n` | decoration (trees) | 39, 35, 6, 4 | density `dense`.  |
 | `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter, feeding trough (GAME-FAMILY). No tree taller than the others, no blossoms, no tree house (riddle guards). |
@@ -340,15 +340,19 @@ elephant board stands south of its gate — FIX-056). Each hiding place is ≤ 1
 ## Food storage 2 (proposal Q-089)
 
 `food_storage_2` (39, 27, 6, 8) stands at the end of the entry path, door (39, 30) on the
-west facade. The 10 food boxes (`[[food_box]]`, same order as level 1: melons, hay,
-bananas, bamboo, grass, meat, leaves, fish food, berries, eucalyptus from south to north)
-stand in a row in front of the west facade (box centres x = 38.66, labels facing west) on
-the east row of `path_l2_ring_w`; 2 m of the ring stay free. The door (z 30…31) keeps a free
-gap (Q-150 answered 2026-09-27: doors are never blocked): bamboo z 26.6, melons 27.4, hay
-28.2, bananas 29.0, gap (box edges 29.31 … 31.09), meat 31.4, leaves 32.2, fish food 33.0,
-berries 33.8, eucalyptus 34.6, grass 35.4 (bamboo and grass moved from 29.8 / 30.6 to the
-row ends).
-A "Futter" sign board hangs above them (ART-ENVIRONMENT rule 7).
+west facade. It is **enterable** like every building with a door (GAME-LAYOUT): `interior`
+(40, 28, 4, 6) is walkable floor. The 10 food boxes (`[[food_box]]`, same order as level 1:
+melons, hay, bananas, bamboo, grass, meat, leaves, fish food, berries, eucalyptus from south to
+north) stay **outside** (Q-181 answered 2026-09-28) in a row in front of the west facade (box
+centres x = 38.66, labels facing west) on the east row of `path_l2_ring_w`; 2 m of the ring stay
+free. The door (z 30…31) keeps a free gap with ≥ 0.9 m beside each post (Q-150, LAYOUT-038,
+since the door is enterable): bamboo z 26.6, melons 27.4, hay 28.2, bananas 28.9, gap (box edges
+29.21 … 31.74), meat 32.05, leaves 32.77, fish food 33.49, berries 34.21, eucalyptus 34.93,
+grass 35.65. **Inside** (Q-194 answered 2026-09-29): 6 more real, labelled food boxes (interact
+→ label panel → take, same as outside) on the plank platform of the wall band, labels facing
+the free floor — the level's four animals' foods, repeated: back (east) wall hay (44.44, 32.48),
+leaves (44.44, 33.12), eucalyptus (44.44, 29.08), meat (44.44, 29.72); north wall hay (42.0,
+34.44); south wall leaves (41.0, 27.56).
 
 ## Bed of level 2 (Q-141 answered, option b)
 
@@ -446,7 +450,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 |---|---|---|
 | LAYOUT-L2-001 | Given `level-1.toml` and `level-2.toml` joined with `barrier_ne_tree` open, then every enclosure, building, landmark, barrier and hiding place of level 2 has a walkable cell reachable from the level-2 spawn next to or inside it (flood fill), and the level-1 spawn reaches the level-2 spawn. | unit |
 | LAYOUT-L2-002 | Given `level-2.toml`, then every border cell of its bounds is solid except the `[[entry]]` cells, which are path cells edge-adjacent to a cell of their barrier in `level-1.toml`; the bounds of levels 1, 2 and 3 are pairwise disjoint. | unit |
-| LAYOUT-L2-003 | Given `level-2.toml`, then no two solid elements share a cell and no path cell is covered by a solid element. | unit |
+| LAYOUT-L2-003 | Given `level-2.toml`, then no two solid elements share a cell and no path cell is covered by a solid element other than a level-transition barrier (the street runs on under `barrier_l2_construction`, LAYOUT-040). | unit |
 | LAYOUT-L2-004 | Given this spec's element table and `level-2.toml`, then both list the same ids, types and rectangles (instance of LAYOUT-005). | unit |
 | LAYOUT-L2-005 | Given the joined levels 1–2 with path speed 1.93 m/s and grass 0.98 m/s, then each pair of the walking-distance table and each hiding place → neighbour pair is ≤ 10 s. | unit |
 | LAYOUT-L2-006 | Given missions `koala`, `elephant`, `giraffe`, `lion`, every candidate hiding place, the player on each walkable cell next to the info board or gate, and the camera of GAME-PLAYER §2 at every 45° rotation and 10/14/20 m on 1080×2340, then every wander cell centre at 0.5 m, at the animal's height (koala 0.9, elephant 3.0, giraffe 4.5, lion 1.5 m) and, if `perch_height_m` is set, at perch height + 1 m lies outside the view frustum. | unit |
@@ -454,7 +458,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 | LAYOUT-L2-008 | Given the joined levels 1–2, then each of the element kinds `fountain`, `treehouse`, `giant_tree`, `blossom_tree`, `play_ball`, `log_pile`, `lookout_tower`, `zoo_train`, `slide`, `swings`, `stage`, `deckchairs` and the scenery kinds `flat_rocks`, `petal_carpet` occur exactly once; no tree element other than `tree_giant_e` has `height_m` > 7; `enc_lion` notes contain no rocks. | unit |
 | LAYOUT-L2-009 | Given each level-2 hiding place, then at least one walkable cell centre is within 2 m of its animal spot. | unit |
 | LAYOUT-L2-010 | Given missions `koala`, `elephant`, `giraffe`, `lion` complete but the next morning not yet started, then `barrier_l2_construction` is solid; after the morning starts it is walkable and the level-3 spawn is reachable (Q-091). | unit |
-| LAYOUT-L2-011 | Given `level-2.toml`, then it has 10 `food_box` entries (one per food) in front of `food_storage_2`, each with a walkable standing cell within 2 m reachable from the spawn. | unit |
+| LAYOUT-L2-011 | Given `level-2.toml`, then it has 10 `food_box` entries (one per food) in front of `food_storage_2` plus 2–6 more inside that may repeat a food, each with a walkable standing cell within 2 m reachable from the spawn. | unit |
 | LAYOUT-L2-012 | Given the level-2 spawn on a 1080×2340 viewport at maximum zoom-out, then the player faces east and `food_storage_2` is on screen. | e2e |
 | LAYOUT-L2-013 | Given the `[[hiding_place]]` list of level 2, then every animal with an enclosure has ≥ 3 candidates, each wander area (as LAYOUT-L1-014) has ≥ 9 cells inside its rect, places of different animals are disjoint, and every candidate is in a combination with all spots pairwise ≥ 12 m (57 of 81 combinations). | unit |
 | LAYOUT-L2-014 | Given the `[[scenery]]` list of level 2, then no scenery rect overlaps a solid element or a path cell, each lies inside its hiding place's rect, and each scenery kind occurs once in the joined levels 1–3. | unit |
@@ -502,3 +506,4 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
   answered by Q-141 (b): `bed_l2` at the food storage; Q-152 shelter over `bed_l2`.
 - Q-150 answered: the food-box row of `food_storage_2` leaves a gap ≥ 1.2 m in front of the door.
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).
+- Q-181 answered 2026-09-28: the food boxes stay outside, a few more inside; Q-194 answered 2026-09-29: the inside boxes are real, labelled food boxes too (foods may repeat the outside row).

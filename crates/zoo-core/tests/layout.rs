@@ -90,7 +90,11 @@ fn layout_003_l1_003_no_solid_overlaps_and_no_path_under_solid() {
     let mut covered = Vec::new();
     for e in data.elements_of(ElementType::Path) {
         for c in e.rect.cells() {
-            if let Some(s) = grid.solid_element(c) {
+            // the street runs on under the level-transition barriers (LAYOUT-040)
+            if let Some(s) = grid
+                .solid_element(c)
+                .filter(|&s| data.elements[s].ty != ElementType::Barrier)
+            {
                 covered.push((e.id.clone(), data.elements[s].id.clone(), c));
             }
         }
@@ -569,16 +573,28 @@ fn grid_bounds_cover_all_solid_types() {
     }
 }
 
-// LAYOUT-L1-013
+// LAYOUT-L1-013 (Q-194 answered 2026-09-29: more real food boxes stand inside the storage
+// too, may repeat a food).
 #[test]
 fn layout_l1_013_food_boxes_in_front_of_storage_reachable() {
     let data = common::level1();
-    assert_eq!(data.food_boxes.len(), 10);
     let storage = data.element("food_storage").unwrap().rect;
+    let outside: Vec<_> = data
+        .food_boxes
+        .iter()
+        .filter(|b| !storage.contains(zoo_core::level::cell_of(b.pos())))
+        .collect();
+    let inside: Vec<_> = data
+        .food_boxes
+        .iter()
+        .filter(|b| storage.contains(zoo_core::level::cell_of(b.pos())))
+        .collect();
+    assert_eq!(outside.len(), 10);
+    assert!((2..=6).contains(&inside.len()), "{} inside", inside.len());
     let level = Level::new(data.clone());
     let grid = level.grid();
     let spawn = data.spawn.cell();
-    for b in &data.food_boxes {
+    for b in outside {
         let pos = b.pos();
         // in front of the south facade
         assert!(
@@ -593,7 +609,10 @@ fn layout_l1_013_food_boxes_in_front_of_storage_reachable() {
             "{}",
             b.food
         );
-        let front = zoo_core::level::cell_of(pos + b.facing() * 1.1);
+    }
+    // every box (outside or inside) has a reachable, passable standing cell in front
+    for b in &data.food_boxes {
+        let front = zoo_core::level::cell_of(b.pos() + b.facing() * 1.1);
         assert!(
             grid.is_passable(front, false),
             "{}: front cell blocked",

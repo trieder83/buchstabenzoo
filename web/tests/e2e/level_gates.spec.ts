@@ -134,3 +134,61 @@ test('LAYOUT-037: level gates are closed behind their barriers, then swing open 
   expect(z, 'she walks through the open level gate').toBeGreaterThan(49.5);
   expect(errors).toEqual([]);
 });
+
+// LAYOUT-042 (GAME-LAYOUT "Gates between the levels", user request 2026-09-28): the street
+// continues under the level gate. With the level-1 → level-2 gate open she walks from
+// `path_ne` east through the gate into level 2 and never leaves the path (her surface speed
+// stays at the path speed, GAME-PLAYER §6 — a grass gap under the gate would slow her down);
+// review shot of the open gate with the street through it.
+test('LAYOUT-042: the street runs on under the open level-1 → level-2 gate', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text());
+  });
+  page.on('pageerror', (e) => errors.push(String(e)));
+  await page.addInitScript(() => {
+    localStorage.clear();
+    localStorage.setItem('zoo.language', 'de');
+    localStorage.setItem('zoo.readingLevel', 'klasse1');
+  });
+  await page.goto('/?seed=4');
+  await waitFrames(page, 3);
+  await finish(page, ['zebra', 'hippo', 'panda']);
+  await run(page, 3);
+  expect((await gate(page, 25.5, 29.5)).open).toBeGreaterThan(0.99);
+  // on path_ne west of the fallen tree's place, the camera behind her looking east
+  const walk = await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    a.debug_teleport(18.5, 29.5);
+    a.rotate(-2);
+    for (let k = 0; k < 8; k++) a.frame(0.25);
+    a.debug_goto(30.5, 29.5);
+    const out: { x: number; v: number }[] = [];
+    for (let k = 0; k < 80; k++) {
+      a.debug_step(0.1);
+      out.push({ x: a.player_x(), v: a.surface_speed() });
+    }
+    return out;
+  });
+  expect(walk[walk.length - 1].x, 'she walks through the gate').toBeGreaterThan(29.5);
+  const slow = walk.filter((w) => w.v < 1.9);
+  expect(slow, 'on the path all the way (no grass under the gate)').toEqual([]);
+  // review shot: back on path_ne, the open gate and the street through it
+  await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    // on the former barrier cells (the fallen tree lay here), 3 m before the gate; the
+    // celebration bubbles and confetti are gone after a few seconds
+    a.debug_teleport(22.5, 29.5);
+    a.debug_face_point(25.5, 29.5);
+    for (let k = 0; k < 60; k++) a.frame(0.25);
+    // the review shot is about the ground: the morning banner and the last celebration
+    // bubble (host overlays with their own real-time timers) are hidden for it
+    for (const id of ['celebrate', 'night-banner', 'bubble']) {
+      const el = document.getElementById(id);
+      if (el) el.style.visibility = 'hidden';
+    }
+  });
+  await nextFrames(page, 3);
+  await page.screenshot({ path: path.join(shots, 'screenshot_level_gate_street.png') });
+  expect(errors).toEqual([]);
+});

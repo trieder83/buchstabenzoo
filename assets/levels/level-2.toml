@@ -179,8 +179,8 @@ notes = "Side path north from the ring to the construction fence (level 3)."
 id = "path_l2_nw"
 type = "path"
 kind = "side"
-rect = [26, 52, 13, 3]
-notes = "Leads west to barrier_l2_construction."
+rect = [24, 52, 15, 3]
+notes = "Leads west to barrier_l2_construction; runs on under the construction fence (x 24-25 = barrier cells) to the level-3 gate (LAYOUT-040)."
 
 # ---------------------------------------------------------------- centre: food storage 2, grove, map board
 [[element]]
@@ -189,9 +189,10 @@ type = "building"
 kind = "food_storage"
 rect = [39, 27, 6, 8]
 door = [39, 30]
+interior = [40, 28, 4, 6]     # 4 x 6 m walkable floor (Q-092); the wall band holds the inside food boxes
 blocks_view = true
 height_m = 4.5
-notes = "Second food storage (proposal Q-085): all 10 food boxes, row in front of the west facade facing the arriving child."
+notes = "Second food storage (proposal Q-085), enterable: walkable interior (40, 28, 4, 6), door (39, 30) on the west facade; all 10 food boxes in a row in front of the west facade facing the arriving child (Q-181 answered 2026-09-28, Q-150 door gap); 6 more real, labelled food boxes stand inside along its walls (Q-194 answered 2026-09-29: real food, redundant with the outside row allowed)."
 
 [[element]]
 id = "grove_l2_center"
@@ -415,7 +416,7 @@ facing = "-x"
 
 [[food_box]]
 food = "bananas"
-pos = [38.66, 29.0]
+pos = [38.66, 28.9]
 facing = "-x"
 
 [[food_box]]
@@ -425,33 +426,68 @@ facing = "-x"
 
 [[food_box]]
 food = "grass"
-pos = [38.66, 35.4]          # moved from z 30.6 to the north end of the row (Q-150)
+pos = [38.66, 35.65]
 facing = "-x"
 
 [[food_box]]
 food = "meat"
-pos = [38.66, 31.4]
+pos = [38.66, 32.05]
 facing = "-x"
 
 [[food_box]]
 food = "leaves"
-pos = [38.66, 32.2]
+pos = [38.66, 32.77]
 facing = "-x"
 
 [[food_box]]
 food = "fish_food"
-pos = [38.66, 33.0]
+pos = [38.66, 33.49]
 facing = "-x"
 
 [[food_box]]
 food = "berries"
-pos = [38.66, 33.8]
+pos = [38.66, 34.21]
 facing = "-x"
 
 [[food_box]]
 food = "eucalyptus"
-pos = [38.66, 34.6]
+pos = [38.66, 34.93]
 facing = "-x"
+
+# ---------------------------------------------------------------- food boxes inside `food_storage_2` (GAME-FEED §7, Q-194 answered 2026-09-29)
+# Real, labelled food boxes (same as the outside row: interact -> label panel -> take) stand
+# against the inner walls on the 0.15 m plank platform of the solid 1 m wall band, labels
+# facing the free floor, clear of the door walkway (LAYOUT-032); foods are redundant with the
+# outside row. Positions kept from the former unlabelled stock crates.
+[[food_box]]
+food = "hay"
+pos = [44.44, 32.48]   # back (east) wall
+facing = "-x"
+
+[[food_box]]
+food = "leaves"
+pos = [44.44, 33.12]   # back (east) wall
+facing = "-x"
+
+[[food_box]]
+food = "eucalyptus"
+pos = [44.44, 29.08]   # back wall
+facing = "-x"
+
+[[food_box]]
+food = "meat"
+pos = [44.44, 29.72]   # back wall
+facing = "-x"
+
+[[food_box]]
+food = "hay"
+pos = [42.0, 34.44]   # north wall
+facing = "-z"
+
+[[food_box]]
+food = "leaves"
+pos = [41.0, 27.56]   # south wall
+facing = "+z"
 
 # ================================================================ items
 # Bed of level 2 (Q-141 answered, option b): the child sleeps here after level 2's nightfall

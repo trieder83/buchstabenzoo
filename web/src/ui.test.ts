@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   FOOD_ICONS,
+  HINT_ICONS,
   TARGET_ICONS,
   loadSettings,
   parseBasket,
+  parseHint,
   parseLyingIcons,
+  parseProgress,
   saveSettings,
   targetIcon,
   type KeyValue,
@@ -132,5 +135,32 @@ describe('put down and lying items (GAME-FEED §8–11)', () => {
     expect(parseLyingIcons('[{"food":"hay"}, 3, null]')).toEqual([]);
     expect(parseLyingIcons('nope')).toEqual([]);
     expect(parseLyingIcons(undefined)).toEqual([]);
+  });
+});
+
+describe('GAME-HINT overlay data (HINT-007)', () => {
+  it('parses a shown hint and clamps the distance dots to 1…5', () => {
+    const h = parseHint('{"id":"board:zebra","kind":"board","on":false,"x":40,"y":300,"angle":180,"dots":9}');
+    expect(h).toEqual({ id: 'board:zebra', kind: 'board', on: false, x: 40, y: 300, angle: 180, dots: 5 });
+    expect(parseHint('')).toBeNull();
+    expect(parseHint('{broken')).toBeNull();
+    expect(parseHint('{"kind":"board"}')).toBeNull();
+  });
+  it('has an icon for every hint kind of rule 2', () => {
+    for (const k of ['board', 'food', 'animal', 'gate', 'garden', 'key_box', 'bed', 'moon_door', 'event', 'pick_up', 'bamboo', 'water', 'treat']) {
+      expect(HINT_ICONS[k], k).toBeTruthy();
+    }
+  });
+});
+
+describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
+  it('parses the animals and their state; broken JSON is hidden', () => {
+    const p = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"zebra","home":true},{"id":"hippo","home":false}]}');
+    expect(p.state).toBe('missing');
+    expect(p.animals).toEqual([
+      { id: 'zebra', home: true },
+      { id: 'hippo', home: false },
+    ]);
+    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [] });
   });
 });

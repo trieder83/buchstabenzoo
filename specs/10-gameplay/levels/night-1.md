@@ -59,7 +59,7 @@ and gate, behind the dense groves `grove_n1_center` and `grove_n1_north`.
 - **Spawn** (only used when a save inside `night_1` has no position): cell (−28, 29) on the
   entry path, facing **−x (west)**, camera east of the player looking west (GAME-PLAYER §2).
 - **First view** (camera looking west): the plaza under its string lights straight ahead with
-  the food hut and its boxes behind it, the map board on the right (north), the night house with
+  the food hut and its boxes in front of it, the map board on the right (north), the night house with
   its blue and red-orange portholes and the three lit boards at the upper right.
 
 ## Map
@@ -90,12 +90,12 @@ Scale **1 character = 1 m**. North (+z) is up, x axis below. Generated from
    34 %%......===......................=========....%%
    33 %%AA....===......................=========....%%
    32 %%AAmm..===..TTTTTTTTTTTTT.......=========M...%%
-   31 %%..mm..===..TTTTTTTTTTTTT..FFFFFf========M...%%
-   30 %%..3...===..TTTTTTTTTTTTT..FFFFFf==============
+   31 %%..mm..===..TTTTTTTTTTTTT..FFFFF=========M...%%
+   30 %%..3...===..TTTTTTTTTTTTT..FFFFF===============
    29 %%......===..TTTTTTTTTTTTT..FFFFD===========S===
    28 %%......===..TTTTTTTTTTTTT..FFFFFf========....%%
    27 %%......===..TTTTTTTTTTTTT..FFFFFf========....%%
-   26 %%......===..TTTTTTTTTTTTT..FFFFF=========....%%
+   26 %%......===..TTTTTTTTTTTTT..FFFFFf========....%%
    25 %%......===..TTTTTTTTTTTTT.......=========.bb.%%
    24 %%......===..TTTTTTTTTTTTT.......=========....%%
    23 %%......===..TTTTTTTTTTTTT.......===..........%%
@@ -125,7 +125,7 @@ Scale **1 character = 1 m**. North (+z) is up, x axis below. Generated from
 | `%` | tall hedge (level edge, solid) | `=` | path (entry, plaza, loop, trails) |
 | `S` | spawn | `M` | map board `map_board_n1` |
 | `b` | bench | `t` | toy telescope `telescope_n1` |
-| `F` / `D` | food hut `food_storage_n1` / door (also the night-house door) | `f` | night food boxes (props on the plaza edge) |
+| `F` / `D` | food hut `food_storage_n1` / door (also the night-house door) | `f` | night food boxes (props on the plaza edge, Q-181 answered: outside) |
 | `N` / `n` | night house walls / hall (interior, walkable) | `g` | glass gate of an indoor enclosure |
 | `e` `a` `u` | indoor enclosure hedgehog / bat / owl | `i` | info board (with board lamp) |
 | `T` | dense old-tree grove (`grove_n1_center`, `grove_n1_north`, `trees_n1_ne`) | `.` | grass (walkable, slower) |
@@ -152,10 +152,10 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `hedge_n1_east_s` | decoration (hedge) | -26, 8, 2, 21 | East edge in front of the level-1 zoo wall (wall_west_s), south of the moon door. |
 | `hedge_n1_east_n` | decoration (hedge) | -26, 31, 2, 21 | East edge in front of the level-1 zoo wall (wall_west), north of the moon door. |
 | `path_n1_entry` | path (main) | -30, 29, 6, 2 | From the moon door (level 1) west to the plaza; cells (-25, 29..30) are the level entry. |
-| `path_n1_plaza` | path (plaza) | -39, 24, 9, 11 | Night plaza under string lights; food boxes on its west edge, path to the night house north, s_link south. |
+| `path_n1_plaza` | path (plaza) | -39, 24, 9, 11 | Night plaza under string lights; food boxes and the food hut door on its west edge, path to the night house north, s_link south. |
 | `map_board_n1` | landmark (map_board) | -30, 31, 1, 2 | Picture map of the night garden (silhouettes, no text), with a board lamp. |
 | `bench_n1_plaza` | decoration (bench) | -29, 25, 2, 1 |  |
-| `food_storage_n1` | building (food_hut) | -44, 26, 5, 6 | `door` (-40, 29). Small wooden food hut with warmly lit windows (env_night_overview); the 4 night food boxes stand in front of its east facade (Q-135 answered). |
+| `food_storage_n1` | building (food_hut) | -44, 26, 5, 6 | `door` (-40, 29), `interior` (-43, 27, 3, 4): enterable. Small wooden food hut with warmly lit windows (env_night_overview); the 4 night food boxes stand in front of its east facade, two more real labelled food boxes inside (Q-135, Q-181 answered, Q-194 answered 2026-09-29). |
 | `path_n1_house` | path (main) | -38, 35, 3, 4 | From the plaza north to the night-house door (-37, 39). |
 | `night_house` | building (night_house) | -45, 39, 17, 5 | `interior` (-44, 40, 15, 4), `door` (-37, 39), `model_rect` (-45, 39, 17, 13). Rounded night house with a grass roof, painted moon, blue and warm red-orange porthole windows (env_night_house, Q-116). Inside: dim blue and red-orange light, three glass-fronted indoor enclosures along the north side, each with a small glass door (gate) and an enclosure sign above it. |
 | `enc_n1_hedgehog` | enclosure | -45, 44, 6, 8 | gate (-43, 44, 2, 1), `indoor = true`, `home_wander_on = ["grass"]`. Indoor enclosure, warm red-orange light: straw nest box, a hollow log tunnel, low ferns, earth floor. No twig heap, no mushrooms, no flower pots (riddle guards). |
@@ -212,15 +212,25 @@ gate, 2 m) and an enclosure sign above it. The roof and the walls above 1 m of t
 - Leading an animal home: through the door (−37, 39), along the hall to the gate; the hall is
   4 m wide, so a following animal fits next to the player.
 
-## Night food storage (Q-135 answered)
+## Night food storage (Q-135 answered; boxes outside: Q-181 answered)
 
 `food_storage_n1` (x −44…−40, z 26…31, door (−40, 29) on the east facade) is a small wooden food
-hut with warm windows. Its four `[[food_box]]`es stand on the west row of the plaza in front of the
-east facade (x −38.66, labels facing east, towards the spawn camera): *Käfer* / *beetles*
-(z 27.3), *Obst* / *fruit* (28.1), *Würmer* / *worms* (30.9), *Nektar* / *nectar* (31.7) — the
-door at z 29…30 stays free. Hedgehog and owl both need *Käfer*: the child takes from the same box
-twice. *Würmer* and *Nektar* are distractors now and foods of later night levels (GAME-NIGHT
-table: badger/kiwi, slow loris).
+hut with warm windows. It is **enterable** like every building with a door (GAME-LAYOUT
+"Enterable buildings"): `interior` (−43, 27, 3, 4) is walkable floor, the door opens as the child
+comes near, the roof, the upper walls and the "Futter" board hide inside in the zoo view (kept in
+first person). Its four `[[food_box]]`es stay **outside** (Q-181 answered 2026-09-28) on the
+plaza's west row in front of the east facade (x −38.66, labels facing east, towards the spawn
+camera), in one row south of the door: *Käfer* / *beetles* (z 26.0), *Obst* / *fruit* (26.65),
+*Würmer* / *worms* (27.3), *Nektar* / *nectar* (27.95). The door (z 29…30) is enterable, so
+nothing solid stands within 0.9 m beside its posts (LAYOUT-038) and the diagonal approaches from
+3 m aside stay free (LAYOUT-034) — the Q-135 rows on both sides of the door (27.3 / 28.1 and
+30.9 / 31.7) no longer fit. Inside (Q-194 answered 2026-09-29): two more real, labelled food
+boxes (interact → label panel → take, same as outside) on the plank platform at the back (west)
+wall: *Käfer* / *beetles* (−43.44, 28.2) and *Obst* / *fruit* (−43.44, 29.8) — the night zoo's
+active foods, repeated; the model's sacks and crates stay in the corners of the wall band.
+Hedgehog and owl both need *Käfer*: the child takes from the same box twice. *Würmer* and
+*Nektar* are distractors now and foods of later night levels (GAME-NIGHT table: badger/kiwi,
+slow loris).
 
 ## Hiding places (candidates)
 
@@ -318,7 +328,7 @@ Every place has a neighbour ≤ 10 s. Around the loop three legs are close to th
 information; each end has a nearer neighbour): telescope → `loc_hilltop` 9.5 s, `loc_hilltop` →
 `loc_mushrooms` 9.7 s, `loc_brush_pile` → `loc_windmill` 9.6 s. Since FIX-056 the south
 places join the plaza over `loc_moon_pond` → food boxes (7.2 s); `loc_hollow_tree` → food boxes
-is 10.7 s (not a neighbour pair any more). Board → own spot: 14–25 s (the places are far on
+is not a neighbour pair. Board → own spot: 14–25 s (the places are far on
 purpose, as in level 1).
 
 ## Night lights (GAME-NIGHT rule 1, Q-118, Q-114)
@@ -384,7 +394,7 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 | LAYOUT-N1-007 | Given the hiding places, then each has ≥ 9 wander cells (counts of the table: 26, 25, 26, 13, 20, 15, 25, 21, 22), a cell ≥ 2 m from the spot, no solid or path cell, lies inside its rect; places of different animals do not overlap; all 27 combinations keep spots ≥ 12 m apart. | unit |
 | LAYOUT-N1-008 | Given the hiding places, then their `features` contain the CONT-MISSIONS details, every `scenery` id exists, each scenery kind and each riddle element kind (`windmill`, `tree_hollow`, `fir_tree`, `hill`, `pond`, `potting_bench`, `tree_crooked`) occurs once in the night levels, and `firefly` props appear only in `firefly_meadow_n1`. | unit |
 | LAYOUT-N1-009 | Given `night_house`, then its interior and door are walkable with surface `path`, each indoor enclosure (`indoor = true`) has its gate edge-adjacent to an interior cell, and its `model_rect` contains the hall and all three enclosures. | unit |
-| LAYOUT-N1-010 | Given the `[[food_box]]` list, then it has exactly `beetles`, `fruit`, `worms`, `nectar`, each with a walkable cell centre within 2 m in front of it reachable from the entry. | unit |
+| LAYOUT-N1-010 | Given the `[[food_box]]` list, then the foods it has are exactly `beetles`, `fruit`, `worms`, `nectar`; 2–6 more boxes stand inside the hut and may repeat a food; every box has a walkable cell centre within 2 m in front of it reachable from the entry. | unit |
 | LAYOUT-N1-011 | Given the `[[light]]` list, then every post / string end is on a walkable cell outside hiding-place rects and scenery, every board and the map board has exactly one `board_lamp`, every `attach` id exists, and the night house has an `indoor` light per enclosure with the Q-116 colours. | unit |
 | LAYOUT-N1-012 | Given the player walks through the open moon door from level 1, then she stands on `path_n1_entry` in `night_1` and the night missions are in scope; walking back east returns her to `path_moon` (NIGHT-004). | e2e |
 | LAYOUT-N1-013 | Given the layout-true night mockups (after approval), then a reviewer can name each place's night clue without text and confirms nothing is scary (NIGHT-009). | manual |
@@ -403,3 +413,4 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 - Q-147 string-light spans on the plaza; Q-149 `loc_hilltop` perch height 2.4 m vs. the `rock_hill` model (1.95 m); Q-151 "Futter" board of the `food_hut` above its eaves.
 - Q-154 `kit_landmarks` (windmill, trees, `rock_hill`, …) has no manifest entry / ART listing yet.
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).
+- Q-181 answered 2026-09-28: the night food boxes stay outside (one row south of the door), two more real, labelled food boxes inside (Q-194 answered 2026-09-29).

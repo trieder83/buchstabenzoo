@@ -33,11 +33,11 @@ entries, when asked, and measures before and after.
 
 | ID | Title | Status | Commit | Measured gain |
 |---|---|---|---|---|
-| PERF-R-001 | Night point lights: cull per draw, cheaper loop | done (accepted 2026-09-28) | uncommitted (after `4cc87d9`) | real iGPU, phone size: night scene pass −11…−46 % (night zoo 9.9 → 5.3 ms), day ±0; picture identical |
-| PERF-R-002 | Ground tiles: draw only the visible chunks, lighter path tiles | open | — | — |
-| PERF-R-003 | Shared per-frame uniforms (UBO), cached locations, no redundant `set_common` | done (accepted 2026-09-28) | uncommitted (after `4cc87d9`) | GL calls/frame −53…−60 % (S01 358 → 153), `uniform*` −80…−95 %, CPU `frame()` 0.6–1.1 → 0.4–0.7 ms (SwiftShader) |
+| PERF-R-001 | Night point lights: cull per draw, cheaper loop | done (accepted 2026-09-28) | `0e71960` | real iGPU, phone size: night scene pass −11…−46 % (night zoo 9.9 → 5.3 ms), day ±0; picture identical |
+| PERF-R-002 | Ground tiles: draw only the visible chunks, lighter path tiles | (a) done (accepted 2026-09-28); (b) not taken — visible change, Q-192 | uncommitted (after `1a9dcf5`) | submitted triangles and instances: see measurements.md run 2026-09-28 (2); picture identical (L01–L14 0 px); real iGPU day frame ±5 % (within noise) |
+| PERF-R-003 | Shared per-frame uniforms (UBO), cached locations, no redundant `set_common` | done (accepted 2026-09-28) | `0e71960` | GL calls/frame −53…−60 % (S01 358 → 153), `uniform*` −80…−95 %, CPU `frame()` 0.6–1.1 → 0.4–0.7 ms (SwiftShader) |
 | PERF-R-004 | Zero per-frame heap allocations (zoo-core, zoo-web, zoo-render, host polling) | open | — | — |
-| PERF-R-005 | Pixel-ratio quality tier for weak phones (automatic, PERF-BUDGETS rule 5) | accepted (Q-170, 2026-09-28; not implemented yet) | — | — |
+| PERF-R-005 | Pixel-ratio quality tier for weak phones (automatic, PERF-BUDGETS rule 5) | done (accepted 2026-09-28, Q-170) | uncommitted (after `1a9dcf5`) | low tier: 720 × 1560 → 540 × 1170 (−44 % pixels) on a 1080 × 2340 phone; desktop default unchanged (0 px) |
 | PERF-R-006 | Full-screen pass: one fewer depth fetch, sky only where needed | open | — | — |
 | PERF-R-007 | Skinned animals: `eye_glow` in the same draw, same-model animals instanced | open | — | — |
 | PERF-R-008 | Animation: skip clips with weight 0, cache clip indices | open | — | — |
@@ -46,7 +46,11 @@ entries, when asked, and measures before and after.
 | PERF-R-011 | Download: drop the palette PNG embedded in every prop `.glb`; serve compressed | open | — | — |
 | PERF-R-012 | WASM size: profile before optimising | open | — | — |
 | PERF-R-013 | Measurement: real-GPU runs, GPU timer queries, a WASM allocation counter | open | — | — |
-| PERF-R-014 | Night light edges: derivatives once before the light loops (Q-180) | open (needs Q-180) | — | — |
+| PERF-R-014 | Night light edges: derivatives once before the light loops (Q-180) | done (accepted 2026-09-28, Q-180) | uncommitted (after `1a9dcf5`) | real iGPU, phone size, with PERF-R-002 per-range light masks: night scene pass −10…−12 %; rim pixels only (11–752 px per night scenario) |
+| PERF-R-015 | Conservative culling boxes (no popping while turning) | done (no look change; user report 2026-09-28) | uncommitted (after `1a9dcf5`) | culling = no culling in every turning frame (e2e PERF-025); +1…+8 draw calls |
+| PERF-R-016 | Smooth turning: outline anti-aliasing (cause of the reported flicker) | accepted (Q-191); paused 2026-09-29 — prototype measured, not in the renderer | — | prototype `box4`: hot px −75…−84 %; cost real iGPU +0.9…+1.8 ms per frame (see entry) |
+| PERF-R-017 | Frame pacing while turning | rejected (no problem found) | — | real iGPU: 241 of 241 intervals 16.7 ms, turn speed jitter 0.03 % |
+| PERF-R-018 | Haze culling in the close views | done (Q-193 answered yes 2026-09-28) | uncommitted (after `267dfd9`) | first person at the level-1 spawn 44 → 35 draw calls; 1–4 outline px per frame change |
 
 ### PERF-R-001 — Night point lights: cull per draw, cheaper loop
 
@@ -104,6 +108,25 @@ entries, when asked, and measures before and after.
 - **Cost / risk:** medium (renderer + scene code; the chunked bake must keep the
   per-region hiding of barriers and the edge mask of ground tiles = 0); (b) needs art
   review. No visible change intended.
+- **Done 2026-09-28, part (a)** (accepted by the user 2026-09-28; budget 22, tests PERF-023):
+  the second variant — every static batch with instances in more than one 8 m chunk is
+  uploaded sorted by chunk (rows south → north, so the default north-looking camera draws
+  front to back; instance handles keep their indices through a GPU-order table), each chunk
+  one contiguous range with its own VAO (WebGL2 has no base instance); per frame the visible
+  ranges form runs (`plan_chunk_runs`: off-screen gaps ≤ 16 384 triangles drawn along, at most
+  3 draws per batch — a first setting of 4 096 / 6 split the close views into more draws
+  than the zoo view, CAMV-014), each run with its own light mask (union of its chunks). **Measured:**
+  look scenarios L01–L14 pixel-identical by day (0 px); draw calls +1…+8; submitted
+  triangles / instances: measurements.md run 2026-09-28 (2). Real iGPU (both page orders):
+  day scene pass phone −6…+1 %, desktop +4…+5 % (noise ±5 %) — the iGPU is not
+  vertex-bound, the saving is for tile-based phone GPUs (binning) and is not measurable
+  here. A first row order (north first = back to front) cost up to +19 % in first person
+  through lost early depth rejection; fixed by the south-first order.
+- **Part (b) not taken:** the bottom faces are already removed by the kit
+  (`delete_down_faces`); the only further saving (6-sided cobbles, plain edging stones:
+  path tiles −21 %, `path_edge` −49 % triangles) is **visible** in the 55° zoo view
+  (square edging bricks, angular cobbles, a few new outline specks; review shots
+  `specs/50-performance/review/r002b_*`). The tiles stay as they are; Q-192.
 
 ### PERF-R-003 — Shared per-frame uniforms (UBO), cached locations, no redundant `set_common`
 
@@ -173,7 +196,18 @@ entries, when asked, and measures before and after.
   answer to Q-170.
 - **Status 2026-09-28:** accepted — Q-170 answered "yes, as recommended": automatic, pixel
   ratio first, lights and clouds only if still too slow, never a menu (PERF-BUDGETS rule 5,
-  test PERF-022). Not implemented in this round.
+  test PERF-022).
+- **Done 2026-09-28:** `zoo_core::quality::QualityGovernor` (pure, unit-tested): 3 s windows
+  of the real frame intervals, a window with > 5 % frames slower than 1/30 s (p95 > 33 ms)
+  steps down one tier — `low1` pixel ratio 1.5 (outline offset 3 device px = still 2 CSS
+  px), then `low` (+ lantern and 4 lamps as point lights, the rest light pools, no clouds in
+  the close-view sky); never back up within a session (no flicker); 5 s warm-up, 2 s settle
+  after a switch, intervals > 1 s ignored. Host: `?quality=auto|high|low1|low`; automated
+  browsers start `high`. e2e `quality.spec.ts` (slow frames forced with a 45 ms busy wait:
+  high → low1 → low, canvas 720 × 1560 → 540 × 1170, night lights 9 → ≤ 5). **Measured:**
+  the pixel count of the low tier is −44 %; the frame-time gain on a weak phone needs the
+  reference phone (Q-013). By default (desktop, fast phones) nothing changes: 0 px in all
+  look scenarios.
 
 ### PERF-R-006 — Full-screen pass: one fewer depth fetch, sky only where needed
 
@@ -287,6 +321,118 @@ entries, when asked, and measures before and after.
 - **Cost / risk:** the rim pixels of the light pools change (the specks disappear; 49 of
   518 400 pixels by more than 60 / 255 in the worst look scenario, the edge position is
   unchanged) — needs the user's answer to Q-180.
+- **Done 2026-09-28** (Q-180 answered yes; budget 21, test PERF-024): `light_derivs(v_world)`
+  is the first statement of the scene fragment shaders and takes `dFdx` / `dFdy` of the
+  world position once, under the uniform condition `u_night.x > 0`; a light is skipped by
+  `dot(to, to) ≥ r²` before any work and its edge width is `(|to·dx| + |to·dy|) / d`; at dusk
+  (night 0) `shade()` returns before the loops. **Measured:** the pixel diff against the
+  shipped build is limited to the light rims (L08 314, L09 752, L10 279, L11 184, L12 11,
+  L13 669, L14 271 px; day and dusk 0 px; diff images `specs/50-performance/review/r014_*`).
+  Taking the derivatives unconditionally cost ≈ 11 % of the day scene pass on the iGPU
+  (A/B with a shader patch) — hence the uniform guard. Night scene pass (real iGPU, phone
+  size, geometric mean of both page orders, together with the per-range light masks of
+  PERF-R-002): spawn −12 %, 20 m −11 %, night zoo −10 %, first person −11 %.
+
+### PERF-R-015 — Conservative culling boxes (no popping while turning)
+
+- **Finding (user report 2026-09-28, "looking left or right is slightly flickery"):** the
+  culling boxes of regions and chunks were `pos ± radius` from 0.1 m below the origin: a
+  mesh yawed by a non-quarter turn reaches `radius × √2`, parts below the origin and
+  stretched instances (string lights, up to 6 m) reach beyond — such an instance could be
+  culled while a corner was already in view and pop in at the screen edge while turning.
+  The per-chunk ranges of PERF-R-002 cull more finely, so this had to be exact.
+- **Change (no look change):** `instance_extent` — per instance `±radius` for quarter
+  turns, the mesh's largest horizontal vertex distance otherwise (a round canopy keeps its
+  circle), the mesh's lowest point; `static_reach` adds the space swept by turning parts
+  (each vertex's circle about its part axis — a flat 1 m margin, then a sphere bound, each
+  added draws for the turnstile and the moon door and made CAMV-014 worse); bobbing props
+  get their drift + amplitude; stretched or re-yawed instances grow the batch / region
+  margin. A debug
+  switch `debug_no_culling` and the e2e PERF-025 compare every frame of four turning
+  sequences with and without culling.
+- **Measured:** 0 differing pixels in all turning frames (e2e PERF-025); look scenarios
+  0 px; draw calls at the CAMV-014 spots equal to the committed renderer (43 / 44 / 43 at
+  the spawn, 41 / 36 / 37, 48 / 35 / 41). A first try that reused the light-mask margin cost
+  +10…+23 draw calls and was replaced.
+
+### PERF-R-018 — Haze culling in the close views
+
+- **Finding (2026-09-28, while checking CAMV-014):** with the level data of 2026-09-28,
+  first person at the level-1 spawn draws 44 calls against 43 in the zoo view at 20 m
+  (CAMV-014 / PERF-004 red, with the committed renderer too): the view reaches the pond and
+  river at the edge of the haze (water tiles, lily pads, reeds, jetty, ducks). Beyond the
+  fog end (20.8 m) every pixel is exactly the sky colour.
+- **Proposal:** skip boxes whose nearest point is beyond the fog end (+ 5 cm) in the full
+  close views (`Cull::haze`, implemented as `Renderer::haze_cull`, off).
+- **Measured:** first person 44 → 35, look-around 43 → 34 at the spawn (36 → 29, 35 → 30 at
+  the other CAMV-014 spots); CAMV-014 green. PERF-025 (culling vs. no culling while turning):
+  1–4 pixels per frame differ in first person — outlines of nearer silhouettes that sample
+  the culled geometry behind them.
+- **Cost / risk:** a few outline pixels inside the haze change; needs the user's answer to
+  Q-193.
+- **Done 2026-09-29** (Q-193 answered yes): `Renderer::haze_cull` defaults to on. The debug
+  switch `debug_no_culling` drops only the frustum / chunk culling (`Cull::all`); PERF-025
+  switches the haze culling off in both frames (`debug_haze_cull(false)`, new) — with it on,
+  first person differed by 3 px in one frame (a haze-culled chunk range drawn along as a gap
+  of a merged run in one frame only). Budget 23 names the exception. CAMV-014 green.
+
+### PERF-R-016 — Smooth turning: outline anti-aliasing (the cause of the flicker)
+
+- **Finding (`tools/perf/turn.mjs flicker`, run 2026-09-28):** four slow turns (first person,
+  look-around, the zoo view's 45° glide, first person in the night zoo) rendered frame by
+  frame at 960 × 540 and at 2 × 2 supersampling. The per-pixel temporal variation of the
+  normal render exceeds the supersampled reference by 6.9–11.5 % of all change; the heat
+  maps put it on the outlines of dense small detail — cobble and plaza stones, wall stones,
+  fence rails, string-light cords — at a distance (moiré and crawling lines). With the
+  outline pass drawing no lines (shader patch) the strongly flickering pixels fall from
+  1 393 / 13 924 / 12 843 / 3 261 to 41 / 1 735 / 321 / 389 (−87…−97 %). The renderer has no
+  anti-aliasing (`antialias: false`, hard 2 px lines, no MSAA on the G-buffer).
+- **Proposal (changes the look slightly, Q-191):** (a) anti-aliased lines in the outline
+  pass (soft 1 px fringe from sub-pixel depth / normal samples, no extra pass); (b) an FXAA
+  pass; (c) line level of detail for small depth steps at a distance.
+- **Expected gain:** the aliasing excess towards the supersampled reference (TV × 1.05–1.09
+  → ≈ × 1.0), most of the hot pixels; cost (a) ≈ +8 texture reads per pixel in the
+  full-screen pass (budget 16: ≤ 3 ms), (b) +1 full-screen pass.
+- **Cost / risk:** softer line edges; needs the user's answer to Q-191 and a review.
+- **Status 2026-09-29: accepted (Q-191: yes, anti-aliased outlines), paused by the user**
+  before it reached the renderer — the committed renderer draws the outlines as before.
+  Prototypes as shader patches in `tools/perf/outline_aa_variants.mjs` (turn.mjs
+  `TURN_VARIANTS_FILE`). Flicker (`turn.mjs flicker`, 48 frames, SwiftShader, hot px vs the
+  2 × 2 supersampled current look; base T01 / T02 / T03 / T04 = 1 393 / 13 402 / 12 678 /
+  3 254):
+  | Variant | Edge evaluations | T01 | T02 | T03 | T04 |
+  |---|---|---|---|---|---|
+  | `box4` (mean of the 2 × 2 block) | 4 | 355 | 3 346 | 1 992 | 651 |
+  | `tent5` (½ centre + ⅛ × 4 neighbours) | 5 | 348 | 2 911 | 1 167 | 354 |
+  | `tri3` | 3 | 404 | 4 034 | 2 342 | 623 |
+  | `diag2` | 2 | 506 | 5 071 | 5 083 | 1 076 |
+  | `box4d` / `box4n` (depth / normal edges only) | 4 | 1 263 / 1 181 | 8 898 / 6 336 | 11 607 / 2 351 | 1 807 / 1 597 |
+  `box4` brings the TV per pixel and frame below the supersampled reference (× 0.95–0.98,
+  was × 1.05–1.09); both edge kinds must be filtered. **Cost** (real iGPU AMD Renoir, `look.mjs
+  ab`, 16 rounds): `box4` in the one outline pass +0.9…+1.8 ms per frame (phone size
+  720 × 1560: full-screen pass 1.5 → 2.8 ms at L01 — inside budget 16's 3 ms on this iGPU,
+  a real phone is slower), `tent5` ≈ +0.4 ms more. A two-pass form (R8 edge mask, one
+  bilinear fetch = the same `box4` picture, 352 / 3 356 / 1 996 / 653 hot px) cost more:
+  +1.4…+2.1 ms per frame (extra render-target pass) — dropped.
+- **Next (resume):** (1) review shots of `box4` vs today in L01 / L02 / L04 / L09 into
+  `specs/50-performance/review/` (lines 0.5 / 1 / 0.5 across 3 px, shifted ½ px — bold lines
+  stay bold, check they do not look blurry); (2) make `box4` cheaper before shipping — share
+  the normal taps, `texelFetch` with integer offsets, skip the 3 extra evaluations where the
+  centre's 5 depth taps and 3 normal taps are all flat; target ≤ +0.5 ms on the iGPU phone
+  size; (3) implement in `post_fs` with a PERF test (turn flicker metric, PERF-026 draft) and
+  look.mjs L01–L14 review.
+
+### PERF-R-017 — Frame pacing while turning
+
+- **Finding (`tools/perf/turn.mjs pacing`, 2026-09-28):** real iGPU (AMD Renoir, ANGLE GL),
+  desktop and phone viewport, → held in first person for 4 s: 241 intervals, p50 = p95 =
+  16.7 ms, max 16.8 ms, 0 long frames, turn speed 90.0°/s with 0.03 % jitter; the zoo
+  view's 45° steps ease smoothly (exponential, dt-based). The camera turn is already
+  eased with the real `dt` (rAF timestamps). SwiftShader: 0.6–1.6 s per frame (not
+  representative); there the `dt` clamp of 0.1 s slows turning, which only matters below
+  10 fps.
+- **Status:** rejected — no pacing problem found; per-frame allocations and host string
+  polling (possible GC hitches on phones) stay in PERF-R-004.
 
 ## Acceptance criteria
 

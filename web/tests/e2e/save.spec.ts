@@ -29,7 +29,7 @@ async function reload(page: Page) {
 }
 
 async function takeGrass(page: Page) {
-  await goto(page, -0.4, 9.6);
+  await goto(page, -1.5, 9.6); // the grass box in the row outside (Q-181)
   await face(page, 'KeyW');
   await expect(page.locator('#take')).toBeVisible();
   await page.locator('#take').click();

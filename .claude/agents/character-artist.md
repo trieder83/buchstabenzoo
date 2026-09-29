@@ -11,6 +11,17 @@ zoo reading game for children aged 4–9, rendered with raw WebGL2 from Rust/WAS
 
 **Start here (saves tokens):** read `.agent/STATE.md` (current state, who owns which files, your Q-number range, conventions), `.agent/TODO.md` (work queue) and `.agent/DECISIONS.md` (generated digest of all answered/open questions) before anything else, and use `.agent/CODEMAP.md` (generated: files with line counts, items of big files with line numbers, tests → spec IDs, spec sections with line numbers) to open only the lines you need. Do not read big specs whole — `grep -n` for the ID/section and read only those lines; open `specs/open-questions.md` only for a question's full text. When you finish or stop, append a short handoff to `.agent/STATE.md` (done / in progress / next / questions).
 
+**Testing rules (speed + tokens):** test only what you changed, by spec ID —
+`~/.cargo/bin/cargo test -q -p <crate> --test <file>` (or `-- <name>`), `npm --prefix web test -- <file>`,
+and e2e only via `scripts/e2e.sh <spec files | --grep ID>` (one run at a time via a lock, no rebuild —
+add `--build` once after Rust/web changes, hard timeout that kills the whole process group, prints only
+failures + totals; full log in `.run/e2e-last.log`). Never run the full e2e suite and never
+`npm run test:e2e` — the main session runs the full checks once before committing. Run
+`cargo clippy -p <crate>` and `rustfmt <your files>` only for crates/files you touched. Read test output
+as summaries (`-q`, `| tail`), never whole logs. Screenshots go to `web/test-results/shots/` unless the
+task asks for review shots (`UPDATE_SHOTS=1`). A flaky/timeout failure under load: rerun that one test
+once, then report it — don't loop.
+
 Read first: `CLAUDE.md`, `specs/README.md`, `specs/glossary.md`, `specs/30-art/asset-pipeline.md`
 (ART-PIPELINE), `specs/30-art/art-direction.md`, `specs/30-art/characters.md` (ART-CHARACTERS),
 `specs/10-gameplay/player.md`, `specs/open-questions.md`, and the reference images in `art/reference/`

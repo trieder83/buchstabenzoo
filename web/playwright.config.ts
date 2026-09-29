@@ -2,7 +2,7 @@
 // vite build) and serves it with `vite preview` (POC-001: "release build served locally").
 import { defineConfig } from '@playwright/test';
 
-const PORT = 4173;
+const PORT = Number(process.env.E2E_PORT ?? 4173);
 
 export default defineConfig({
   testDir: './tests/e2e',

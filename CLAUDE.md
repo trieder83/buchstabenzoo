@@ -97,6 +97,8 @@ Agents never decide game design silently — they add open questions and report 
 | End-to-end (real browser, WebGL) | Playwright | `npm --prefix web run test:e2e` |
 | i18n completeness | test in `zoo-core` | every key in `de` must exist in `en` (and `fr` once added) |
 
+E2E: always via `scripts/e2e.sh <specs | --grep ID>` (lock, no rebuild, process-group timeout, short output; `--build` once; screenshots to the tracked `art/environment/poc/` only with `UPDATE_SHOTS=1`). Agents run only the tests of the spec IDs they changed; the full suite runs once before a commit (see `.agent/STATE.md` "Testing rules").
+
 Prefer testing logic in `zoo-core` (fast, deterministic). Rendering is tested via
 Playwright smoke tests + screenshot comparisons, not by unit-testing GL calls.
 

@@ -7,7 +7,11 @@ import { expect, type Page } from '@playwright/test';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const repo = path.resolve(here, '../../..');
-export const shots = path.join(repo, 'art/environment/poc');
+// Review screenshots: written to the tracked art/environment/poc/ only with UPDATE_SHOTS=1,
+// otherwise to the ignored web/test-results/shots/ (keeps git diffs clean, saves agent tokens).
+export const shots = process.env.UPDATE_SHOTS
+  ? path.join(repo, 'art/environment/poc')
+  : path.join(repo, 'web/test-results/shots');
 
 /**
  * Start URL with a fixed seed (GAME-RESCUE §1 discovery): seed 17 puts the zebra at

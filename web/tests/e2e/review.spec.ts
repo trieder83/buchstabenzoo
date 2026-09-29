@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 import { START_URL } from './helpers';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const shots = path.resolve(here, '../../../art/environment/poc');
+const shots = path.resolve(here, process.env.UPDATE_SHOTS ? '../../../art/environment/poc' : '../../test-results/shots');
 
 test.use({ viewport: { width: 2340, height: 1080 } });
 

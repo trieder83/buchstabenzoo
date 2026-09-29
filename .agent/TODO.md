@@ -8,9 +8,9 @@ file; agents update the status of their own item.
 
 | # | Item | Owner | Status | Spec |
 |---|---|---|---|---|
-| 1 | Food boxes back outside, extra crates inside (Q-181, Q-194) | general | doing | GAME-FEED §7, LAYOUT-041 |
-| 2 | Street under the moon door (Q-182), hints tests timing-independent | general | doing | LAYOUT-040, HINT-012 |
-| 3 | Outline anti-aliasing (Q-191), haze culling on (Q-193) | performance | doing | PERF-R-018, CAMV-014 |
+| 1 | Food boxes back outside, extra crates inside (Q-181, Q-194) | general | done (uncommitted) | GAME-FEED §7, LAYOUT-041 |
+| 2 | Street under the moon door (Q-182), hints tests timing-independent | general | done (uncommitted) | LAYOUT-040, HINT-012 |
+| 3 | Outline anti-aliasing (Q-191), haze culling on (Q-193) | performance | paused (stopped by user 2026-09-28; partial edits may be in crates/zoo-render/) | PERF-R-018, CAMV-014 |
 | 4 | Commit all, deploy (skill `deploy`) | main | todo | PLAT-003…009 |
 | 5 | spec-manager run (INDEX, FIX log) | spec-manager | todo | — |
 

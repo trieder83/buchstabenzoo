@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { START_URL } from './helpers';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const shots = path.resolve(here, '../../../art/environment/poc');
+const shots = path.resolve(here, process.env.UPDATE_SHOTS ? '../../../art/environment/poc' : '../../test-results/shots');
 
 async function waitFrames(page: Page, n: number) {
   await page.waitForFunction(

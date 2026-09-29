@@ -17,3 +17,7 @@ zoo-render = { path = "crates/zoo-render" }
 [profile.release]
 opt-level = "s"
 lto = true
+
+# Tests run optimised: the simulation-heavy tests (hints, walking, layout) are ~5-10x faster.
+[profile.test]
+opt-level = 2

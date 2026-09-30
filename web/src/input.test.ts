@@ -164,24 +164,56 @@ describe('TouchGestures', () => {
 });
 
 describe('camera views (GAME-CAMERA-VIEWS)', () => {
-  it('CAMV-010: a right-thumb drag also sends continuous look drags; the stick is unaffected', () => {
+  it('CAMV-010 / PLAY-037: the right-thumb look stick turns a close view continuously; the walk stick is unaffected', () => {
     const sink = new Sink();
     const g = new TouchGestures(sink, new View());
     g.down(1, 100, 500, 800); // left thumb: stick
     g.move(1, 100, 470);
+    g.tick(0.1);
     expect(sink.looks).toEqual([]);
-    g.down(2, 500, 300, 800);
-    g.move(2, 510, 296);
-    g.move(2, 530, 290);
-    expect(sink.looks).toEqual([
-      [10, -4],
-      [20, -6],
-    ]);
+    g.down(2, 500, 300, 800); // right thumb: look stick under the thumb
+    g.move(2, 530, 300); // half deflection to the right
+    g.tick(0.1);
+    expect(sink.looks.length).toBe(1);
+    expect(sink.looks[0][0]).toBeCloseTo(0.5 * 420 * 0.1, 3); // x: turn right
+    expect(sink.looks[0][1]).toBeCloseTo(0);
     expect(sink.stick[1]).toBeCloseTo(0.5);
-    // a pinch sends no look drags
+    // a pinch sends no look turns
     g.down(3, 600, 300, 800);
-    g.move(3, 700, 300);
-    expect(sink.looks.length).toBe(2);
+    g.tick(0.1);
+    expect(sink.looks.length).toBe(1);
+  });
+  it('PLAY-037: the look stick shows under the right thumb, follows it and hides on release', () => {
+    const sink = new Sink();
+    const view = new View();
+    const look = new View();
+    const g = new TouchGestures(sink, view, 60, look);
+    g.down(2, 600, 400, 800);
+    expect(look.shown).toEqual([600, 400, 600, 400]);
+    g.move(2, 630, 400);
+    expect(look.shown).toEqual([600, 400, 630, 400]);
+    g.move(2, 900, 400); // clamped to the rim
+    expect(look.shown![2]).toBeCloseTo(660);
+    g.up(2);
+    expect(look.shown).toBeNull();
+    expect(view.shown).toBeNull();
+  });
+  it('PLAY-037: holding the look stick past the threshold repeats the 45° step; releasing stops it', () => {
+    const sink = new Sink();
+    const g = new TouchGestures(sink, new View());
+    g.down(2, 500, 300, 800);
+    g.move(2, 550, 300); // 50 px ≥ 40 px: first step at once
+    expect(sink.rotations).toEqual([1]);
+    g.tick(0.3);
+    expect(sink.rotations).toEqual([1]);
+    g.tick(0.4); // 0.7 s held: second step
+    expect(sink.rotations).toEqual([1, 1]);
+    g.move(2, 450, 300); // other direction: turns back
+    g.tick(0.7);
+    expect(sink.rotations).toEqual([1, 1, -1]);
+    g.up(2);
+    g.tick(1);
+    expect(sink.rotations).toEqual([1, 1, -1]);
   });
   it('CAMV-010: right mouse button holds look-around and turns; left drags step/turn', () => {
     const sink = new Sink();

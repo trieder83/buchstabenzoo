@@ -16,6 +16,7 @@ ui-level-kiga = Kindergarten
 ui-level-klasse1 = Klasse 1
 ui-level-klasse2 = Klasse 2
 ui-new-game = Neues Spiel
+ui-sound = Ton
 ui-yes = Ja
 ui-no = Nein
 ui-level-klasse3 = Klasse 3

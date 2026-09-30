@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION]
 test_prefix: ADS
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Ad billboards (in-world)
@@ -17,6 +17,11 @@ A **few ad billboards** in the zoo — on some building walls or beside the path
 request 2026-09-27). Up to **3 campaigns** run at the same time; each campaign is shown on
 **several** boards. For now the boards show placeholders: **"Your ad 1"**, **"Your ad 2"**,
 **"Your ad 3"** (de: *Deine Werbung 1/2/3*).
+
+**Campaign directories (user request 2026-09-30):** each of the 3 campaigns has its own
+directory with its resources and spec: [`ads/campaign-1-mathfighter/`](ads/campaign-1-mathfighter/campaign.md)
+(Math Fighter, images + tagline + link), [`ads/campaign-2/`](ads/campaign-2/campaign.md) and
+[`ads/campaign-3/`](ads/campaign-3/campaign.md) (placeholders until filled).
 
 ## Behaviour
 
@@ -34,7 +39,10 @@ request 2026-09-27). Up to **3 campaigns** run at the same time; each campaign i
 4. **Passive only — child safety** (see Q-128): ads are **static pictures in the world**.
    They are **not interactable** (no tap, no link, no store, no popup, no video, no sound),
    collect **no data**, need **no network** (images ship with the game), never interrupt play
-   and are never placed in the reading panels or the UI. Content rules: age-appropriate, no
+   and are never placed in the reading panels or the UI. **Exception (user request 2026-09-30,
+   Q-217, pending confirmation):** the own cross-promotion campaign `mathfighter` is readable
+   and offers a link behind a parental gate (`ads/campaign-1-mathfighter/campaign.md`);
+   placeholder campaigns and every other board stay fully passive. Content rules: age-appropriate, no
    food/sweets marketing to children, no gambling, no in-app purchase hints (to be confirmed
    legally).
 5. At night, boards are lit softly like other signs (GAME-NIGHT, category b).
@@ -52,11 +60,12 @@ request 2026-09-27). Up to **3 campaigns** run at the same time; each campaign i
 | ADS-001 | Given a level, then it has 4–6 ad boards, none on enclosures, info boards, hiding places or blocking a riddle sight line (LAYOUT-L*-006 still holds). | unit |
 | ADS-002 | Given the campaign table, then at most 3 are active and each active campaign is shown on ≥ 2 boards. | unit |
 | ADS-003 | Given the placeholder campaigns, then boards show "Deine Werbung 1/2/3" (de) / "Your ad 1/2/3" (en) from Fluent. | e2e |
-| ADS-004 | Given an ad board, then it is not interactable and the game makes no network request for ads. | e2e |
+| ADS-004 | Given an ad board of a placeholder campaign (or any campaign other than `mathfighter`, rule 4 exception, ADC1-002..005), then it is not interactable and the game makes no network request for ads. | e2e |
 | ADS-005 | Given two play sessions with different seeds, then the campaign-to-board assignment differs, with the same seed it is identical. | unit |
 | ADS-006 | Given the campaign table, then every active campaign is a placeholder or own cross-promotion (e.g. "Math Fighter") unless a legal/child-safety check is recorded for it (rule 6, Q-128). | manual |
 
 ## Open questions
 
+- Q-217 Clickable link of campaign 1 (Math Fighter) vs. rule 4 / Q-128 / CLAUDE.md "no external links": parental gate proposal, see `ads/campaign-1-mathfighter/campaign.md`.
 - Q-128 answered 2026-09-27: passive boards only (no links, no tracking, no network), own
   cross-promotion first, legal/child-safety check before any third-party ad (rules 4, 6).

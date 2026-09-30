@@ -3,7 +3,7 @@
 // built by wasm-pack into crates/zoo-web/pkg (imported directly from there).
 //
 // Game assets are NOT copied into web/: the `zooAssets` plugin serves the repo's
-// `assets/{levels,models,textures,i18n}` under `/assets/` in dev and preview, emits them
+// `assets/{levels,models,textures,i18n,audio}` under `/assets/` in dev and preview, emits them
 // into `dist/assets/` on build, and publishes `/assets/index.json` (the list of files) so
 // the host only fetches files that exist (no 404s in the console).
 import fs from 'node:fs';
@@ -15,13 +15,15 @@ import { defineConfig } from 'vite';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
 const assetsRoot = path.join(repoRoot, 'assets');
-const ASSET_DIRS = ['levels', 'models', 'textures', 'i18n'];
+const ASSET_DIRS = ['levels', 'models', 'textures', 'i18n', 'audio'];
 const TYPES: Record<string, string> = {
   '.glb': 'model/gltf-binary',
   '.png': 'image/png',
   '.toml': 'text/plain; charset=utf-8',
   '.ftl': 'text/plain; charset=utf-8',
   '.json': 'application/json',
+  '.ogg': 'audio/ogg',
+  '.m4a': 'audio/mp4',
 };
 
 /** Paths (relative to assets/, forward slashes) of every servable asset file. */

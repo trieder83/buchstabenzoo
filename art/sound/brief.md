@@ -2,7 +2,7 @@
 
 Sound-artist log: where every cue comes from. The sound artist cannot listen; all cues are
 `approved = false` until a human has listened. Manifest block: `python3 tools/sound/register.py`.
-Build: `python3 tools/sound/{steps,doors,pickups,ui}.py` (deterministic, seeded, output to
+Build: `python3 tools/sound/{steps,doors,pickups,ui,animals}.py` (deterministic, seeded, output to
 `assets/audio/<group>/<cue>_<n>.{ogg,m4a}`); checks: `python3 tools/sound/check_audio.py`
 and `cargo test -p zoo-assets --test audio` (ASND-001/002/003/008; ASND-004 `--ignored`).
 
@@ -56,3 +56,36 @@ websocket, speech oriented), `veo-3.1-*` (video with audio, paid per second of v
 
 Findings: see the sound artist report and Q-210..Q-213 in `specs/open-questions.md`.
 Both candidates are `licence = "generated"`, `approved = false`.
+
+## Group animals - real recordings (route 1 of Q-210, 2026-09-30)
+
+User decision: real recordings under a free licence, processed until cute; no speech. Built by
+`python3 tools/sound/animals.py` (downloads the sources once into `.run/sound-src/`, cuts,
+high-pass 120 Hz, pitch via ffmpeg `rubberband` (length kept), low-pass, gentle fades, then
+`process.py`). Cue table (segment, semitones, filter) = `CUES` in that script and the `cut` field of
+each manifest entry. Sources searched: Wikimedia Commons (API, category "Audio files of <taxon>",
+licence from `extmetadata`), OpenGameArt (licence shown on the page). Freesound: no
+`FREESOUND_API_KEY` in the environment, not used. Nobody has listened; analysis only (length,
+LUFS, peak, spectral centroid, silence ratio, clipping: all ok, see report). Everything `approved = false`.
+
+| Species | Cues | Source (licence) | Remark |
+|---|---|---|---|
+| elephant | call / happy / refuse | Commons `Elephant_voice_-_trumpeting.ogg` (CC0) | trumpet cut 1.3 / 0.5 / 0.3 s, +3 / +6 / -2 st, low-pass 6 kHz |
+| zebra | call / happy / refuse | Commons `Wiehern.ogg` (public domain) | real horse neigh; `_baby` = foal whinny from OGA "Baby Animals - Sounds Pack" (CC0). The two Gemini TTS candidates are replaced. A real zebra whinny exists on OGA (CC-BY, `zebra-whinny`), not used because a CC0 / PD one was available |
+| lion | call / happy / refuse | Commons `Lion_raring-sound1TamilNadu178.ogg` (PD) | first roar only, +4 st, low-pass 2.8 kHz to take the edge off; happy / refuse are short grumbles |
+| panda | call / happy / refuse | Commons `Giant_panda_twittering.ogg` (PD) | friendly twitter by nature |
+| monkey | call / happy / refuse | OGA `monkey-sounds` (CC0) | human imitation (Stendhal), not a recording of an animal |
+| hippo | call / happy / refuse | OGA `camel-groan` (CC0) | STAND-IN, no free hippo recording found |
+| snow_fox, fennec | call / happy / refuse each | Commons `Fennec_Singing.ogg` (PD) | snow fox = other pieces, lower pitch (stand-in) |
+| bat | call / happy / refuse | OGA `bat-screeches` (CC0) | pitched down, low-pass 5 kHz |
+| owl | call / happy / refuse | Commons `Steinkauz.OGG` (PD, little owl) | |
+| hedgehog | call / happy / refuse | Commons `Hedgehog_O.ogg` (CC0, eared hedgehog) | short snippets, 3 segments guessed from the level envelope |
+| koala | call / happy / refuse / baby | Commons PLoS ONE Movie S1 (CC-BY 2.5) | male bellow, pieces pitched +5 / +8 / +3 / +12 st, low-passed; credit in CREDITS.md. Replaces the Gemini candidate |
+| kiwi | call / happy / refuse | Commons `Male-ni-brown-kiwi.wav` (CC-BY 4.0, DOC NZ) | credit in CREDITS.md |
+| raccoon | call / happy / refuse | OGA `raccoon-chatter` (CC-BY 3.0+) | credit in CREDITS.md |
+| goldfish | call / happy / refuse | synthesised (`animals.py`, own) | rising "blub" chirps, plop |
+
+Not found under a free licence (Q-215): giraffe (hums exist but CC BY-SA), badger, porcupine,
+slow loris, tarsier. Also excluded: OGA barn owl and toucan (CC BY-SA), dolphin (BY-SA), Commons
+hedgehog "sleeping" (BY-SA). The Gemini feasibility test above is kept as history; its two
+candidate files are gone (replaced by `animal_zebra_call_1`, `animal_koala_call_1` from recordings).

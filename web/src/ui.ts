@@ -3,6 +3,7 @@
 // mission celebration. Every text comes from the game (Fluent via `App.t` / `App.interact`);
 // icons are placeholders (emoji) until the icon art exists.
 
+import { SOUND_EVENT } from './audio';
 import { dragScroll } from './scroll';
 
 /** The gate intro (RESC-029) is shown in a new game; automated tests skip it unless `?intro=1`. */
@@ -313,6 +314,8 @@ export interface Settings {
   readingLevel: string;
   /** Camera view (GAME-CAMERA-VIEWS 9): `zoo` (default) or `first_person`. */
   view?: string;
+  /** Sound effects on (ASND-009); default on, stored as `zoo.sound` = `0` when off. */
+  sound?: boolean;
 }
 
 /** Views that are stored (look-around is only held, never stored). */
@@ -321,6 +324,7 @@ export const SAVED_VIEWS = ['zoo', 'first_person'] as const;
 const KEY_LANG = 'zoo.language';
 const KEY_LEVEL = 'zoo.readingLevel';
 const KEY_VIEW = 'zoo.view';
+const KEY_SOUND = 'zoo.sound';
 
 /**
  * Stored settings, falling back to `defaultLanguage` (always `de`, CONT-L10N §5 — the stored
@@ -330,10 +334,12 @@ export function loadSettings(store: KeyValue | null, defaultLanguage: string): S
   let lang: string | null = null;
   let level: string | null = null;
   let view: string | null = null;
+  let sound: string | null = null;
   try {
     lang = store?.getItem(KEY_LANG) ?? null;
     level = store?.getItem(KEY_LEVEL) ?? null;
     view = store?.getItem(KEY_VIEW) ?? null;
+    sound = store?.getItem(KEY_SOUND) ?? null;
   } catch {
     // storage blocked (private mode): defaults
   }
@@ -341,6 +347,7 @@ export function loadSettings(store: KeyValue | null, defaultLanguage: string): S
     language: (LANGUAGES as readonly string[]).includes(lang ?? '') ? lang! : defaultLanguage,
     readingLevel: (READING_LEVELS as readonly string[]).includes(level ?? '') ? level! : 'klasse1',
     view: (SAVED_VIEWS as readonly string[]).includes(view ?? '') ? view! : 'zoo',
+    sound: sound !== '0',
   };
 }
 
@@ -349,6 +356,7 @@ export function saveSettings(store: KeyValue | null, s: Settings): void {
     store?.setItem(KEY_LANG, s.language);
     store?.setItem(KEY_LEVEL, s.readingLevel);
     if (s.view && (SAVED_VIEWS as readonly string[]).includes(s.view)) store?.setItem(KEY_VIEW, s.view);
+    if (s.sound !== undefined) store?.setItem(KEY_SOUND, s.sound ? '1' : '0');
   } catch {
     // storage blocked: settings live for this session only
   }
@@ -423,6 +431,8 @@ export class Ui {
   private lastView = '';
   private lastDaytime = '';
   private bannerTimer = 0;
+  /** Sound effects switch (ASND-009). */
+  private sound = true;
 
   readonly act = document.getElementById('act') as HTMLButtonElement;
   readonly hint = document.getElementById('hint') as HTMLButtonElement;
@@ -490,6 +500,7 @@ export class Ui {
       this.app.toggle_first_person?.();
       this.update();
     });
+    this.sound = loadSettings(this.store, 'de').sound !== false;
     this.buildSettings();
     this.applyLabels();
     if (introEnabled) this.showIntro();
@@ -743,6 +754,7 @@ export class Ui {
         language: this.app.language(),
         readingLevel: this.app.reading_level(),
         view,
+        sound: this.sound,
       });
     }
   }
@@ -1024,7 +1036,15 @@ export class Ui {
       this.onNewGame();
     });
     gameRow.append(newGame, confirm);
-    this.settings.replaceChildren(langRow, levelRow, gameRow);
+    // Sound on / off (ASND-009): icon button 🔊 / 🔇, saved with the other settings.
+    const soundRow = el('div', 'row');
+    soundRow.id = 'settings-sound';
+    const soundBtn = el('button', 'choice', '');
+    soundBtn.id = 'sound-toggle';
+    soundBtn.addEventListener('click', () => this.setSound(!this.sound));
+    soundRow.append(soundBtn);
+    this.settings.replaceChildren(langRow, levelRow, soundRow, gameRow);
+    this.markSound();
   }
 
   private change(part: Partial<Settings>): void {
@@ -1034,6 +1054,7 @@ export class Ui {
       language: this.app.language(),
       readingLevel: this.app.reading_level(),
       view: this.app.saved_view_mode?.() ?? 'zoo',
+      sound: this.sound,
     });
     // All visible texts follow at once (L10N-004): labels, HUD, an open panel.
     const panel = this.panelKey ? this.app.panel_json() : '';
@@ -1044,8 +1065,30 @@ export class Ui {
     this.markSettings();
   }
 
+  /** Sound switch: saved, the host audio is told (ASND-009). */
+  private setSound(on: boolean): void {
+    this.sound = on;
+    saveSettings(this.store, {
+      language: this.app.language(),
+      readingLevel: this.app.reading_level(),
+      view: this.app.saved_view_mode?.() ?? 'zoo',
+      sound: on,
+    });
+    window.dispatchEvent(new CustomEvent(SOUND_EVENT, { detail: { on } }));
+    this.markSound();
+  }
+
+  private markSound(): void {
+    const b = this.settings.querySelector<HTMLButtonElement>('#sound-toggle');
+    if (!b) return;
+    b.textContent = this.sound ? '🔊' : '🔇';
+    b.classList.toggle('on', this.sound);
+    b.setAttribute('aria-pressed', String(this.sound));
+  }
+
   private markSettings(): void {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
+      if (b.id === 'sound-toggle') continue;
       const on = b.dataset.lang === this.app.language() || b.dataset.level === this.app.reading_level();
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
@@ -1064,6 +1107,7 @@ export class Ui {
     this.nightProgress?.setAttribute('aria-label', this.app.t('ui-night-progress'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
+    this.settings.querySelector('#sound-toggle')?.setAttribute('aria-label', this.app.t('ui-sound'));
     this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));
     this.settings.querySelector('#new-game-yes')?.setAttribute('aria-label', this.app.t('ui-yes'));
     this.settings.querySelector('#new-game-no')?.setAttribute('aria-label', this.app.t('ui-no'));

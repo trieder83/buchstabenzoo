@@ -921,6 +921,57 @@ script = "tools/sound/ui.py"
 approved = false
 
 [[asset]]
+id = "animal_elephant_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_elephant_call_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg"
+author = "Tamil Wikipedia user (Own work, 2011)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.05-1.45 s, pitch +3 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_elephant_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_elephant_happy_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg"
+author = "Tamil Wikipedia user (Own work, 2011)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.05-0.65 s, pitch +6 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_elephant_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_elephant_refuse_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Elephant_voice_-_trumpeting.ogg"
+author = "Tamil Wikipedia user (Own work, 2011)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.05-0.4 s, pitch -2 st, low-pass 3500 Hz"
+approved = false
+
+[[asset]]
 id = "animal_zebra_call"
 kind = "audio"
 spec = "ART-SOUND"
@@ -928,10 +979,536 @@ concept_approved = false
 group = "animals"
 variants = 1
 files = "assets/audio/animals/animal_zebra_call_<n>.ogg"
-licence = "generated"
-source = "gemini-tts-candidate"
-model = "gemini-3.1-flash-tts-preview"
-prompt = "Make a short, cute cartoon horse whinny sound, like a happy zebra: a rising, wobbling, playful 'nyeeeh-hehehe'. Only the animal sound, no words."
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Wiehern.ogg"
+author = "Hue (Own work, 2006)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.1-1.9 s, pitch +2 st, low-pass 7000 Hz"
+note = "real horse neigh (zebras are equids); no free zebra recording"
+approved = false
+
+[[asset]]
+id = "animal_zebra_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_zebra_happy_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Wiehern.ogg"
+author = "Hue (Own work, 2006)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.2-0.85 s, pitch +5 st, low-pass 7000 Hz"
+note = "real horse neigh (zebras are equids); no free zebra recording"
+approved = false
+
+[[asset]]
+id = "animal_zebra_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_zebra_refuse_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Wiehern.ogg"
+author = "Hue (Own work, 2006)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "1.1-1.45 s, pitch -1 st, low-pass 3500 Hz"
+note = "real horse neigh (zebras are equids); no free zebra recording"
+approved = false
+
+[[asset]]
+id = "animal_zebra_baby"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_zebra_baby_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/baby-animals-sounds-pack"
+author = "Technopeasant (pack, sources CC0 from Freesound)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-1.4 s, pitch +2 st, low-pass 8000 Hz"
+note = "foal whinny from the CC0 baby animals pack"
+approved = false
+
+[[asset]]
+id = "animal_lion_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_lion_call_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg"
+author = "Tamil Wikipedia uploader (lion in a zoo)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.55-2.25 s, pitch +4 st, low-pass 2800 Hz"
+approved = false
+
+[[asset]]
+id = "animal_lion_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_lion_happy_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg"
+author = "Tamil Wikipedia uploader (lion in a zoo)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.65-1.25 s, pitch +6 st, low-pass 2400 Hz"
+approved = false
+
+[[asset]]
+id = "animal_lion_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_lion_refuse_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg"
+author = "Tamil Wikipedia uploader (lion in a zoo)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.65-1.0 s, pitch +3 st, low-pass 2000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_panda_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_panda_call_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Giant_panda_twittering.ogg"
+author = "own work, Wikimedia Commons uploader (2009)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.14-2.2 s, pitch +1 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_panda_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_panda_happy_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Giant_panda_twittering.ogg"
+author = "own work, Wikimedia Commons uploader (2009)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "1.0-1.9 s, pitch +3 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_panda_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_panda_refuse_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Giant_panda_twittering.ogg"
+author = "own work, Wikimedia Commons uploader (2009)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.14-0.5 s, pitch -1 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_monkey_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_monkey_call_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/monkey-sounds"
+author = "AntumDeluge (human imitation of a monkey)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-1.3 s, pitch +2 st, low-pass 9000 Hz"
+note = "human imitation of a monkey, not a recording of a monkey"
+approved = false
+
+[[asset]]
+id = "animal_monkey_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_monkey_happy_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/monkey-sounds"
+author = "AntumDeluge (human imitation of a monkey)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-1.0 s, pitch +3 st, low-pass 9000 Hz"
+note = "human imitation of a monkey, not a recording of a monkey"
+approved = false
+
+[[asset]]
+id = "animal_monkey_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_monkey_refuse_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/monkey-sounds"
+author = "AntumDeluge (human imitation of a monkey)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-0.45 s, pitch -2 st, low-pass 6000 Hz"
+note = "human imitation of a monkey, not a recording of a monkey"
+approved = false
+
+[[asset]]
+id = "animal_hippo_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_hippo_call_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/camel-groan"
+author = "AntumDeluge (from a recording by craigsmith)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.15-1.45 s, pitch -2 st, low-pass 3000 Hz"
+note = "stand-in: camel groan, no free hippo recording found"
+approved = false
+
+[[asset]]
+id = "animal_hippo_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_hippo_happy_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/camel-groan"
+author = "AntumDeluge (from a recording by craigsmith)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.15-0.75 s, pitch +1 st, low-pass 3000 Hz"
+note = "stand-in: camel groan, no free hippo recording found"
+approved = false
+
+[[asset]]
+id = "animal_hippo_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_hippo_refuse_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/camel-groan"
+author = "AntumDeluge (from a recording by craigsmith)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.15-0.5 s, pitch -4 st, low-pass 2500 Hz"
+note = "stand-in: camel groan, no free hippo recording found"
+approved = false
+
+[[asset]]
+id = "animal_snow_fox_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_snow_fox_call_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg"
+author = "Eosin-Y (2007)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "12.78-13.95 s, pitch -3 st, low-pass 7000 Hz"
+note = "derived from the fennec recording (no free snow fox recording)"
+approved = false
+
+[[asset]]
+id = "animal_snow_fox_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_snow_fox_happy_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg"
+author = "Eosin-Y (2007)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.74-1.25 s, pitch -1 st, low-pass 7000 Hz"
+note = "derived from the fennec recording (no free snow fox recording)"
+approved = false
+
+[[asset]]
+id = "animal_snow_fox_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_snow_fox_refuse_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg"
+author = "Eosin-Y (2007)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "9.08-9.48 s, pitch -4 st, low-pass 5000 Hz"
+note = "derived from the fennec recording (no free snow fox recording)"
+approved = false
+
+[[asset]]
+id = "animal_fennec_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_fennec_call_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg"
+author = "Eosin-Y (2007)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "4.52-5.68 s, pitch +2 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_fennec_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_fennec_happy_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg"
+author = "Eosin-Y (2007)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "12.78-13.4 s, pitch +4 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_fennec_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_fennec_refuse_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg"
+author = "Eosin-Y (2007)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "9.08-9.48 s, pitch +0 st, low-pass 5000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_bat_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_bat_call_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/bat-screeches"
+author = "AntumDeluge (from a recording by polymorpheva)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "1.0-1.75 s, pitch -3 st, low-pass 5000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_bat_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_bat_happy_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/bat-screeches"
+author = "AntumDeluge (from a recording by polymorpheva)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.1-0.5 s, pitch -1 st, low-pass 5000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_bat_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_bat_refuse_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/bat-screeches"
+author = "AntumDeluge (from a recording by polymorpheva)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-0.25 s, pitch -3 st, low-pass 4000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_owl_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_owl_call_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Steinkauz.OGG"
+author = "Rabe19 (Own work, 2013, little owl)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "8.0-9.8 s, pitch -2 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_owl_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_owl_happy_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Steinkauz.OGG"
+author = "Rabe19 (Own work, 2013, little owl)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "1.3-2.05 s, pitch +0 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_owl_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_owl_refuse_<n>.ogg"
+licence = "public-domain"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Steinkauz.OGG"
+author = "Rabe19 (Own work, 2013, little owl)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "2.52-2.72 s, pitch -3 st, low-pass 5000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_hedgehog_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_hedgehog_call_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Hedgehog_O.ogg"
+author = "Ullus (Own work, 2013, eared hedgehog)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "13.6-14.35 s, pitch +3 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_hedgehog_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_hedgehog_happy_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Hedgehog_O.ogg"
+author = "Ullus (Own work, 2013, eared hedgehog)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "6.7-7.05 s, pitch +5 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_hedgehog_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_hedgehog_refuse_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Hedgehog_O.ogg"
+author = "Ullus (Own work, 2013, eared hedgehog)"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "9.72-10.12 s, pitch +0 st, low-pass 6000 Hz"
 approved = false
 
 [[asset]]
@@ -942,10 +1519,206 @@ concept_approved = false
 group = "animals"
 variants = 1
 files = "assets/audio/animals/animal_koala_call_<n>.ogg"
-licence = "generated"
-source = "gemini-tts-candidate"
-model = "gemini-3.1-flash-tts-preview"
-prompt = "Make a tiny, cute koala sound: a soft squeaky grunt, 'hnk-eek!', playful and friendly. Only the animal sound, no words."
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Perception-of-Male-Caller-Identity-in-Koalas-(Phascolarctos-cinereus)-Acoustic-Analysis-and-pone.0020329.s001.ogv"
+author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY 2.5), Movie S1"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "19.5-20.5 s, pitch +5 st, low-pass 3500 Hz"
+approved = false
+
+[[asset]]
+id = "animal_koala_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_koala_happy_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Perception-of-Male-Caller-Identity-in-Koalas-(Phascolarctos-cinereus)-Acoustic-Analysis-and-pone.0020329.s001.ogv"
+author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY 2.5), Movie S1"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "20.75-21.45 s, pitch +8 st, low-pass 4000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_koala_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_koala_refuse_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Perception-of-Male-Caller-Identity-in-Koalas-(Phascolarctos-cinereus)-Acoustic-Analysis-and-pone.0020329.s001.ogv"
+author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY 2.5), Movie S1"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "22.1-22.5 s, pitch +3 st, low-pass 3000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_koala_baby"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_koala_baby_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Perception-of-Male-Caller-Identity-in-Koalas-(Phascolarctos-cinereus)-Acoustic-Analysis-and-pone.0020329.s001.ogv"
+author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY 2.5), Movie S1"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "20.75-21.35 s, pitch +12 st, low-pass 6000 Hz"
+note = "derived: koala bellow piece pitched up 12 semitones"
+approved = false
+
+[[asset]]
+id = "animal_kiwi_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_kiwi_call_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Male-ni-brown-kiwi.wav"
+author = "Department of Conservation (New Zealand), CC BY 4.0"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "5.3-6.42 s, pitch +2 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_kiwi_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_kiwi_happy_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Male-ni-brown-kiwi.wav"
+author = "Department of Conservation (New Zealand), CC BY 4.0"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "5.3-5.85 s, pitch +5 st, low-pass 8000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_kiwi_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_kiwi_refuse_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://commons.wikimedia.org/wiki/File:Male-ni-brown-kiwi.wav"
+author = "Department of Conservation (New Zealand), CC BY 4.0"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "6.42-6.72 s, pitch -2 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_raccoon_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_raccoon_call_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/raccoon-chatter"
+author = "jnargus (video), cut by AntumDeluge, CC BY 3.0 or later"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-0.98 s, pitch +3 st, low-pass 9000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_raccoon_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_raccoon_happy_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/raccoon-chatter"
+author = "jnargus (video), cut by AntumDeluge, CC BY 3.0 or later"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-0.6 s, pitch +2 st, low-pass 9000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_raccoon_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_raccoon_refuse_<n>.ogg"
+licence = "CC-BY"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/raccoon-chatter"
+author = "jnargus (video), cut by AntumDeluge, CC BY 3.0 or later"
+retrieved = "2026-09-30"
+script = "tools/sound/animals.py"
+cut = "0.0-0.3 s, pitch -2 st, low-pass 6000 Hz"
+approved = false
+
+[[asset]]
+id = "animal_goldfish_call"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_goldfish_call_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/animals.py"
+approved = false
+
+[[asset]]
+id = "animal_goldfish_happy"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_goldfish_happy_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/animals.py"
+approved = false
+
+[[asset]]
+id = "animal_goldfish_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "animals"
+variants = 1
+files = "assets/audio/animals/animal_goldfish_refuse_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/animals.py"
 approved = false
 
 # END audio

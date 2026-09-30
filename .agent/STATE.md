@@ -85,3 +85,12 @@ next steps / questions. The main session prunes entries once committed. -->
 - Gemini test (3 calls): Lyria = 30 s music (unusable); TTS model = 1.5-2 s vocal imitations, candidates `animal_zebra_call`, `animal_koala_call`.
 - Open: Q-210 (animal source), Q-211 (size with 60 animal cues), Q-212 (formats), Q-213 (generated terms). Needs a human listen.
 - Next: 18 species without calls, all `_happy`/`_refuse`/`_baby`; host playback (TS) not started.
+
+### 2026-09-30 sound-artist - animal calls from real recordings (Q-210 route 1)
+- Done (uncommitted): `tools/sound/animals.py` (+ `register.py` now writes the animal entries), 51 cues in `assets/audio/animals/` (.ogg + .m4a, all <= 18 KB ogg; audio total 969 KB), manifest (67 audio entries, all `approved = false`), `assets/audio/CREDITS.md`, `art/sound/brief.md`, `art/catalog.js` (`sound_animals`), ASND-004 un-ignored for 15 species (reports the rest), ASND-002 accepts `public-domain` (spec line + test).
+- Covered: zebra(+baby), koala(+baby), elephant, lion, panda, monkey, hippo (stand-in), goldfish (synth), snow_fox, fennec, bat, owl, hedgehog, kiwi, raccoon. Missing: giraffe, badger, porcupine, slow_loris, tarsier (Q-215).
+- Open: Q-214 (CC-BY ok?), Q-215 (missing species), Q-216 (stand-ins). Nothing listened: needs a human listen; run `python3 tools/agent_state.py` done; spec-manager should refresh INDEX.
+
+### 2026-09-30 sound playback (ART-SOUND "Playback", uncommitted)
+- Done: `zoo-core/src/sound.rs` (gains, distance law, footfall clock, surface, event→cue, door cue, notice tracker; tests `crates/zoo-core/tests/sound.rs` ASND-010…016), `zoo-web` `poll_sounds()/audio_animals()/ui_tap()/debug_step_surface()`, host `web/src/audio.ts` (+ `audio.test.ts`), sound switch in `ui.ts` (`zoo.sound`), `vite.config.ts` serves `assets/audio`, `firebase.json` audio MIME, `deploy.test.ts` ASND-018, `web/tests/e2e/audio.spec.ts` (ASND-005/006/007/009 green). Q-220…222 new; Q-212 answered.
+- Not done: follower footsteps (Q-220), pan (Q-221), music (Q-222); cues for species without files are skipped silently.

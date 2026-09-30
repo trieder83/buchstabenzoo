@@ -22,7 +22,9 @@ use zoo_core::nav::Autopilot;
 use zoo_core::night_scene::NightScene;
 use zoo_core::player::walk_clip_rate;
 use zoo_core::quality::{QualityGovernor, QualityMode, QualityTier};
+use zoo_core::rng::Pcg32;
 use zoo_core::scene::{model_path, OpeningKind};
+use zoo_core::sound::{self, FootfallClock, NoticeTracker};
 use zoo_core::view::{self as views, ViewMode};
 use zoo_core::{AnimalState, Content, Food, Game, GameEvent, Language, LevelData, ReadingLevel};
 use zoo_render::night::{self as nightfx, DayLight, PointLight};
@@ -270,6 +272,8 @@ struct OpeningView {
     open: f32,
     hold: f32,
     enclosure_gate: bool,
+    /// Open / closed state last sounded (ASND-014); `None` until the first frame.
+    sounded: Option<bool>,
 }
 
 /// A garden plant spot: its model per growth stage (sprout, young, ripe) and the one shown.
@@ -322,6 +326,11 @@ pub struct App {
     /// Next-target hint and idle nudge (GAME-HINT, `zoo_core::hints`).
     hints: zoo_core::hints::HintTracker,
     outbox: Vec<String>,
+    /// Sound events for the host (`poll_sounds`, ART-SOUND "Playback").
+    snd_out: Vec<String>,
+    snd_rng: Pcg32,
+    footfall: FootfallClock,
+    notice: NoticeTracker,
     time: f64,
     /// Decals of the level scene (debug getters, AENV-011/012).
     decals: Vec<Decal>,
@@ -653,6 +662,7 @@ impl App {
                         o.kind,
                         OpeningKind::EnclosureGate { .. } | OpeningKind::GlassDoor { .. }
                     ),
+                    sounded: None,
                 }
             })
             .collect();
@@ -923,6 +933,10 @@ impl App {
             autopilot: None,
             hints: Default::default(),
             outbox: Vec::new(),
+            snd_out: Vec::new(),
+            snd_rng: Pcg32::new(0x0053_4f55_4e44),
+            footfall: FootfallClock::default(),
+            notice: NoticeTracker::default(),
             time: 0.0,
             decals,
             text_textures,
@@ -979,6 +993,7 @@ impl App {
         self.autopilot = None;
         self.hints = Default::default();
         self.outbox.clear();
+        self.reset_sound();
         self.reset_views();
         true
     }
@@ -1291,6 +1306,7 @@ impl App {
         self.autopilot = None;
         self.hints = Default::default();
         self.outbox.clear();
+        self.reset_sound();
         true
     }
 
@@ -1633,6 +1649,41 @@ impl App {
         let out = format!("[{}]", self.outbox.join(","));
         self.outbox.clear();
         out
+    }
+
+    /// Sound events since the last call (empty string = none) as a JSON array `{"cue", "x", "z", "g", "r", "v"}`:
+    /// cue id, level position, final gain (master × group × distance), pitch rate, variation
+    /// number (ART-SOUND "Playback"). The host only plays them.
+    pub fn poll_sounds(&mut self) -> String {
+        if self.snd_out.is_empty() {
+            return String::new(); // no allocation in the common frame
+        }
+        let out = format!("[{}]", self.snd_out.join(","));
+        self.snd_out.clear();
+        out
+    }
+
+    /// A tap on a settings button (host): queues the `ui_tap` cue at the player.
+    pub fn ui_tap(&mut self) {
+        let at = self.game.player.pos;
+        self.emit_cue("ui_tap", at);
+    }
+
+    /// Ids of the animals whose calls the host may prefetch: every animal of the unlocked levels.
+    pub fn audio_animals(&self) -> String {
+        let mut ids: Vec<&str> = self
+            .game
+            .animals
+            .iter()
+            .filter(|a| self.game.in_scope(a))
+            .map(|a| a.id())
+            .collect();
+        ids.sort_unstable();
+        ids.dedup();
+        format!(
+            "[{}]",
+            ids.iter().map(|i| js(i)).collect::<Vec<_>>().join(",")
+        )
     }
 
     // ------------------------------------------------------------------ frame
@@ -2280,6 +2331,15 @@ impl App {
         self.game.player.y
     }
 
+    /// Debug/e2e (ASND-012): the footstep surface (`path`, `grass`, `sand`, `wood`, `water`)
+    /// under a level position.
+    pub fn debug_step_surface(&self, x: f32, z: f32) -> String {
+        sound::step_surface(&self.game.level, Vec2::new(x, z))
+            .cue()
+            .trim_start_matches("step_")
+            .to_owned()
+    }
+
     /// Debug/e2e (PLAY-035/036): `ground_height` at a level position (m).
     pub fn ground_height(&self, x: f32, z: f32) -> f32 {
         self.game.level.ground_height(Vec2::new(x, z))
@@ -2615,6 +2675,7 @@ impl App {
     /// wants; an enclosure gate stays open a moment behind the animals.
     fn update_openings(&mut self, dt: f32) {
         let openings = self.game.level.openings();
+        let mut cues: Vec<(&'static str, Vec2)> = Vec::new();
         for (o, v) in openings.iter().zip(self.openings.iter_mut()) {
             let Some(h) = v.handle else { continue };
             let want = self.game.opening_open(o);
@@ -2624,6 +2685,12 @@ impl App {
                 v.hold = (v.hold - dt).max(0.0);
             }
             let target = if want || v.hold > 0.0 { 1.0 } else { 0.0 };
+            // the gate / door starts to open or close: one cue (ASND-014), none at the start
+            let open_now = target > 0.5;
+            if v.sounded.is_some_and(|s| s != open_now) {
+                cues.push((sound::door_cue(&o.kind, open_now), o.center));
+            }
+            v.sounded = Some(open_now);
             let before = v.open;
             if target > v.open {
                 v.open = (v.open + OPEN_RATE * dt).min(1.0);
@@ -2642,6 +2709,36 @@ impl App {
                 i.node[0] = k;
             }
             self.renderer.set_instance(h, i);
+        }
+        for (cue, at) in cues {
+            self.emit_cue(cue, at);
+        }
+    }
+
+    /// Queues a sound event for the host: gain by distance to the player (silent = dropped),
+    /// seeded variation number and pitch (ASND-013/016).
+    fn emit_cue(&mut self, cue: &str, at: Vec2) {
+        let d = at.distance(self.game.player.pos);
+        let g = sound::cue_gain(cue, d);
+        if g <= 0.0 {
+            return;
+        }
+        let (v, r) = sound::variation(&mut self.snd_rng);
+        self.snd_out.push(format!(
+            "{{\"cue\":{},\"x\":{:.2},\"z\":{:.2},\"g\":{g:.4},\"r\":{r:.4},\"v\":{v}}}",
+            js(cue),
+            at.x,
+            at.y
+        ));
+    }
+
+    /// New game / restored save: no sounds for what changed silently.
+    fn reset_sound(&mut self) {
+        self.snd_out.clear();
+        self.footfall = FootfallClock::default();
+        self.notice = NoticeTracker::default();
+        for v in &mut self.openings {
+            v.sounded = None;
         }
     }
 
@@ -2809,9 +2906,34 @@ impl App {
             }
         }
         self.game.update(dt, dir);
+        // one footstep per footfall of the walk clip, only while moving (ASND-005/011)
+        let speed = self.game.player.last_speed;
+        if dt > 0.0
+            && self
+                .footfall
+                .advance(dt * walk_clip_rate(speed), speed > 0.1)
+        {
+            let pos = self.game.player.pos;
+            let cue = sound::step_surface(&self.game.level, pos).cue();
+            self.emit_cue(cue, pos);
+        }
         self.handle_events();
         self.hints.update(&self.game, dt);
         self.update_animals(dt);
+        for id in self.notice.update(&self.game, dt) {
+            let at = self
+                .game
+                .animals
+                .iter()
+                .filter(|a| a.id() == id)
+                .min_by(|a, b| {
+                    a.pos
+                        .distance(self.game.player.pos)
+                        .total_cmp(&b.pos.distance(self.game.player.pos))
+                })
+                .map_or(self.game.player.pos, |a| a.pos);
+            self.emit_cue(&format!("animal_{id}_call"), at);
+        }
         if self.ambient_on {
             self.ambient.update(dt, self.game.player.pos);
         }
@@ -2978,8 +3100,20 @@ impl App {
 
     /// Game events → animation clips and host feedback (GAME-RESCUE §11).
     fn handle_events(&mut self) {
+        let mut sounded: Vec<sound::CueRequest> = Vec::new();
         for e in self.game.drain_events() {
             self.hints.observe(&e);
+            for r in sound::cues_for_event(&e) {
+                if !sounded.contains(&r) {
+                    let at = r
+                        .animal
+                        .as_deref()
+                        .and_then(|id| self.game.animals.iter().find(|a| a.id() == id))
+                        .map_or(self.game.player.pos, |a| a.pos);
+                    self.emit_cue(&r.cue, at);
+                    sounded.push(r);
+                }
+            }
             match e {
                 GameEvent::StartedFollowing { animal } => {
                     self.queue(&animal, &["happy"], false);

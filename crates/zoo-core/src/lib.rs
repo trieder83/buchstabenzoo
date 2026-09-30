@@ -22,6 +22,7 @@ pub mod quality;
 pub mod rng;
 pub mod save;
 pub mod scene;
+pub mod sound;
 pub mod view;
 pub mod wander;
 pub mod water;

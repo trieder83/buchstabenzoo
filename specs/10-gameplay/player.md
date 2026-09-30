@@ -6,7 +6,7 @@ module: player
 status: draft
 depends_on: [PROD-VISION, CONT-READING]
 test_prefix: PLAY
-updated: 2026-09-29
+updated: 2026-09-30
 ---
 
 # Player character, camera and controls
@@ -67,8 +67,14 @@ updated: 2026-09-29
        the screen places the stick under the thumb; dragging sets direction and speed
        (deflection 0–100 %, dead zone 10 %); releasing stops the player. Directions are
        relative to the camera (up = away from the camera).
-     - **Right thumb — camera and actions:** in the right half, a horizontal swipe (≥ 40 px)
-       rotates the camera by one 45° step per swipe; a two-finger pinch zooms (10–20 m). The
+     - **Right thumb — camera and actions:** in the right half a **floating look stick**
+       (user request 2026-09-30, PLAY-037), drawn like the walk stick with an eye 👁 knob,
+       appears under the thumb, so the child never has to swipe across the whole screen:
+       pushing it sideways by ≥ 40 px takes **one 45° step** at once (a quick flick still
+       works) and, while it stays pushed, **repeats the step every 0.6 s**; in the close views
+       the same deflection turns the view **continuously** (up/down = pitch; 420 px/s at
+       full deflection, dead zone 10 %). The stick disappears on release; a two-finger pinch
+       zooms (10–20 m). The
        **interact button** (§4) sits bottom-right within right-thumb reach, with the **eye
        button** 👁 (look-around while held) next to it and the **first-person toggle** 👓
        above it (GAME-CAMERA-VIEWS 2/3); in the close views right-half drags turn the view
@@ -193,6 +199,7 @@ updated: 2026-09-29
 | PLAY-014 | Given a touch device, when the first touch happens, then the touch controls become visible and stay visible. | e2e |
 | PLAY-015 | Given a touch in the left half, when the thumb drags up by 60 % of the stick radius, then the player walks away from the camera at 60 % of the surface speed (± 5 %); on release the player stops. | e2e |
 | PLAY-016 | Given a horizontal swipe of ≥ 40 px in the right half, then the camera rotates by exactly one 45° step in the swipe direction. | e2e |
+| PLAY-037 | Given the right thumb touches the right half, then a look stick with an eye knob appears under it and follows the thumb (clamped to the radius); pushed ≥ 40 px it takes one 45° step at once and repeats every 0.6 s while held, stops on release; in a close view the deflection turns the view continuously (PLAY-016 flick unchanged, pinch shows no stick). | unit, e2e |
 | PLAY-017 | Given the left thumb holds the joystick, when the right thumb swipes, then the player keeps walking and the camera rotates (multi-touch). | e2e |
 | PLAY-018 | Given a touch session, then the page does not scroll, zoom or select text (touch-action none, no browser gestures). | e2e |
 | PLAY-019 | Given the player walks straight into an info board, a sign, a bench and a tree, then her collision circle (r = 0.3 m) never overlaps their collision shapes and she slides along them. | unit |

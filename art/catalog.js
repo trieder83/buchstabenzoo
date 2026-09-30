@@ -1192,20 +1192,200 @@ window.ART_CATALOG = {
         },
         {
           "id": "sound_animals",
-          "title": "Animal calls (candidates)",
+          "title": "Animal calls (real recordings, processed)",
           "status": "in-review",
-          "description": "Only two candidates so far, made with Gemini TTS (a human voice imitating the animal — probably not usable, Q-210). The other species have no calls yet.",
+          "description": "Calls / happy / refuse (+ baby for zebra and koala) cut from free recordings (CC0 / public domain; koala, kiwi, raccoon CC-BY) and pitched, filtered and faded to sound friendly. Goldfish is synthesised. Nobody has listened yet. Stand-ins: hippo (camel groan), zebra (horse neigh), monkey (human imitation), snow fox (fennec). Missing: giraffe, badger, porcupine, slow loris, tarsier (Q-215).",
           "spec": "ART-SOUND",
           "brief": "sound/brief.md",
-          "notes": "Generated with Gemini TTS (licence: generated, provider terms to check, Q-213). Listen and decide whether to keep.",
+          "notes": "Sources and licences per cue: assets/audio/CREDITS.md and art/sound/brief.md. Listen and mark the cues to keep or redo (Q-214, Q-216).",
           "audio": [
+            {
+              "file": "../assets/audio/animals/animal_bat_call_1.ogg",
+              "label": "animal_bat_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_bat_happy_1.ogg",
+              "label": "animal_bat_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_bat_refuse_1.ogg",
+              "label": "animal_bat_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_elephant_call_1.ogg",
+              "label": "animal_elephant_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_elephant_happy_1.ogg",
+              "label": "animal_elephant_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_elephant_refuse_1.ogg",
+              "label": "animal_elephant_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_fennec_call_1.ogg",
+              "label": "animal_fennec_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_fennec_happy_1.ogg",
+              "label": "animal_fennec_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_fennec_refuse_1.ogg",
+              "label": "animal_fennec_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_goldfish_call_1.ogg",
+              "label": "animal_goldfish_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_goldfish_happy_1.ogg",
+              "label": "animal_goldfish_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_goldfish_refuse_1.ogg",
+              "label": "animal_goldfish_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_hedgehog_call_1.ogg",
+              "label": "animal_hedgehog_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_hedgehog_happy_1.ogg",
+              "label": "animal_hedgehog_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_hedgehog_refuse_1.ogg",
+              "label": "animal_hedgehog_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_hippo_call_1.ogg",
+              "label": "animal_hippo_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_hippo_happy_1.ogg",
+              "label": "animal_hippo_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_hippo_refuse_1.ogg",
+              "label": "animal_hippo_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_kiwi_call_1.ogg",
+              "label": "animal_kiwi_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_kiwi_happy_1.ogg",
+              "label": "animal_kiwi_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_kiwi_refuse_1.ogg",
+              "label": "animal_kiwi_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_koala_baby_1.ogg",
+              "label": "animal_koala_baby_1"
+            },
             {
               "file": "../assets/audio/animals/animal_koala_call_1.ogg",
               "label": "animal_koala_call_1"
             },
             {
+              "file": "../assets/audio/animals/animal_koala_happy_1.ogg",
+              "label": "animal_koala_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_koala_refuse_1.ogg",
+              "label": "animal_koala_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_lion_call_1.ogg",
+              "label": "animal_lion_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_lion_happy_1.ogg",
+              "label": "animal_lion_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_lion_refuse_1.ogg",
+              "label": "animal_lion_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_monkey_call_1.ogg",
+              "label": "animal_monkey_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_monkey_happy_1.ogg",
+              "label": "animal_monkey_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_monkey_refuse_1.ogg",
+              "label": "animal_monkey_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_owl_call_1.ogg",
+              "label": "animal_owl_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_owl_happy_1.ogg",
+              "label": "animal_owl_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_owl_refuse_1.ogg",
+              "label": "animal_owl_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_panda_call_1.ogg",
+              "label": "animal_panda_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_panda_happy_1.ogg",
+              "label": "animal_panda_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_panda_refuse_1.ogg",
+              "label": "animal_panda_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_raccoon_call_1.ogg",
+              "label": "animal_raccoon_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_raccoon_happy_1.ogg",
+              "label": "animal_raccoon_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_raccoon_refuse_1.ogg",
+              "label": "animal_raccoon_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_snow_fox_call_1.ogg",
+              "label": "animal_snow_fox_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_snow_fox_happy_1.ogg",
+              "label": "animal_snow_fox_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_snow_fox_refuse_1.ogg",
+              "label": "animal_snow_fox_refuse_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_zebra_baby_1.ogg",
+              "label": "animal_zebra_baby_1"
+            },
+            {
               "file": "../assets/audio/animals/animal_zebra_call_1.ogg",
               "label": "animal_zebra_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_zebra_happy_1.ogg",
+              "label": "animal_zebra_happy_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_zebra_refuse_1.ogg",
+              "label": "animal_zebra_refuse_1"
             }
           ]
         }

@@ -39,6 +39,14 @@
       {
         "source": "**/*.glb",
         "headers": [{ "key": "Content-Type", "value": "model/gltf-binary" }]
+      },
+      {
+        "source": "**/*.ogg",
+        "headers": [{ "key": "Content-Type", "value": "audio/ogg" }]
+      },
+      {
+        "source": "**/*.m4a",
+        "headers": [{ "key": "Content-Type", "value": "audio/mp4" }]
       }
     ]
   }

@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-214** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-223** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-96 answered · 88 open · 10 other (partly answered / proposed / superseded).
+98 answered · 93 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -88,12 +88,17 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-153 — Manifest granularity and the new kind buildings (ART-PIPELINE): APIPE-001 requires a manifest entry with the same id and kind for every … (ART-PIPELINE, ART-ENVIRONMENT, GAME-NIGHT …)
 - Q-154 — Models used by the engine but not listed in any ART-* spec and without their own manifest entry / concept gate: door_wood, glass_door … (ART-ENVIRONMENT, ART-PIPELINE, GAME-NIGHT …)
 - Q-188 — Night progress 🌙 (GAME-NIGHT rule 11, user request 2026-09-28): the request names the day level's animals. (GAME-NIGHT, GAME-HINT)
-- Q-210 — Animal calls source (ART-SOUND, feasibility test 2026-09-30, art/sound/brief.md). (ART-SOUND, GAME-ANIMALS)
 - Q-211 — Audio size budget with animal calls: 20 species x 3 cues = 60 cues at ~1.5 s cost ~16 KB (Vorbis) + ~11 KB (AAC) each = ~1.6 MB on top of … (ART-SOUND, PERF-BUDGETS)
-- Q-212 — Formats: .ogg (Vorbis) plus .m4a (AAC) are both delivered (Safari/iOS cannot play Vorbis before 17.4 / partly). (ART-SOUND, web host)
 - Q-213 — Generated audio terms: Gemini output carries a SynthID watermark and the API terms (commercial use, use in a children's app / store … (ART-SOUND)
 - Q-203 — Female zebra detail (GAME-FAMILY §3, Q-074): zebra_female is the male at 1/1.1 without the forelock/longer lashes of the brief; only size … (GAME-FAMILY, ART-ANIMALS)
 - Q-204 — Baby behaviour (GAME-FAMILY §5): the baby is only drawn (zoo-web, next to the female, her clips, own model, game.babies); it has no Animal … (GAME-FAMILY, ART-ANIMALS)
+- Q-214 — Animal calls, licences (route 1 of Q-210, 2026-09-30): public-domain files (Wikimedia Commons) are manifest licence = "public-domain" … (ART-SOUND)
+- Q-215 — Species without any usable free recording (only CC-BY-SA, which we exclude, or nothing): giraffe (Commons / OpenGameArt have giraffe hums … (ART-SOUND)
+- Q-216 — Stand-ins the user should judge by ear: hippo = camel groan, zebra = horse neigh, monkey = human imitation (OpenGameArt, Stendhal), snow … (ART-SOUND)
+- Q-220 — Footsteps of following animals and the _baby / _step cues (ART-SOUND "Playback"): only the player's steps are played in this version. (ART-SOUND)
+- Q-221 — Stereo pan (ART-SOUND "Playback"): not in this version (the camera yaw would have to reach the host). (ART-SOUND)
+- Q-222 — Background music / ambient loop (not part of ART-SOUND): does the game get a soft loop, and on what terms (volume, toggle shared with the … (ART-SOUND)
+- Q-217 — Clickable external link in the billboard ad of campaign 1 (Math Fighter, https://mathfighter.rcms.ch; user request 2026-09-30: clickable … (GAME-ADS, GAME-ADS-C1, PROD-VISION)
 
 ## Partly answered / other
 
@@ -110,6 +115,8 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-212 — Formats: .ogg (Vorbis) plus .m4a (AAC) are both delivered (Safari/iOS … → Implemented 2026-09-30 (host proposal, user decision): the host picks .ogg when canPlayType allows Vorbis, else .m4a; both stay …
+- Q-210 — Animal calls source (ART-SOUND, feasibility test 2026-09-30 … → 2026-09-30: route 1, real recordings under a free licence (CC0 / public domain), processed until cute; sound effects only, no …
 - Q-202 — Level design rules (GAME-LAYOUT "Level design rules", user request … → 2026-09-30: yes — the pacing numbers stand (first board ≤ 15 s, ≤ 60 s between mission steps, 10–20 min per level).
 - Q-201 — Animals of locked levels (user request 2026-09-30: "when we start all … → 2026-09-30: (a) — animals of a locked level stay hidden and asleep; they are active only when the level is opened (LAYOUT-025 and …
 - Q-200 — Audio (user request 2026-09-29): budget in PERF-BUDGETS (proposal 1.5 … → 2026-09-30: yes to the proposals — audio budget 1.5 MB, a generator API may be used (which one and its licence/cost still to be …

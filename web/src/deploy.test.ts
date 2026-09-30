@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { listAssets } from '../vite.config';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -41,6 +42,27 @@ describe('firebase.json', () => {
   it('PLAT-004 sets MIME types for .wasm and .glb', () => {
     expect(header('**/*.wasm', 'Content-Type')).toBe('application/wasm');
     expect(header('**/*.glb', 'Content-Type')).toBe('model/gltf-binary');
+  });
+
+  it('ASND-018 sets MIME types for .ogg and .m4a, CSP allows own audio only', () => {
+    expect(header('**/*.ogg', 'Content-Type')).toBe('audio/ogg');
+    expect(header('**/*.m4a', 'Content-Type')).toBe('audio/mp4');
+    const csp = header('**', 'Content-Security-Policy') ?? '';
+    const directive = (name: string) =>
+      csp
+        .split(';')
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(name + ' '));
+    expect(directive('media-src')).toMatch(/^media-src 'self'( data: blob:)?$/);
+    expect(directive('connect-src')).toBe("connect-src 'self'");
+  });
+
+  it('ASND-018 the build lists and serves the audio files', () => {
+    const files = listAssets();
+    const audio = files.filter((f) => f.startsWith('audio/'));
+    expect(audio.some((f) => f.endsWith('.ogg'))).toBe(true);
+    expect(audio.some((f) => f.endsWith('.m4a'))).toBe(true);
+    expect(audio.every((f) => /\.(ogg|m4a)$/.test(f))).toBe(true); // CREDITS.md is not served
   });
 
   it('PLAT-005 caches hashed files long, index.html never, assets briefly', () => {

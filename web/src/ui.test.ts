@@ -26,8 +26,8 @@ class MapStore implements KeyValue {
 
 describe('settings persistence (CONT-L10N §6)', () => {
   it('defaults to the given default language (always de, CONT-L10N §5) and klasse1', () => {
-    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo' });
-    expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo' });
+    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true });
+    expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true });
   });
   it('L10N-005: browser en without stored choice starts in de; a chosen en is kept', () => {
     const s = new MapStore();
@@ -39,10 +39,10 @@ describe('settings persistence (CONT-L10N §6)', () => {
   it('round-trips and ignores invalid values', () => {
     const s = new MapStore();
     saveSettings(s, { language: 'en', readingLevel: 'kiga' });
-    expect(loadSettings(s, 'de')).toEqual({ language: 'en', readingLevel: 'kiga', view: 'zoo' });
+    expect(loadSettings(s, 'de')).toEqual({ language: 'en', readingLevel: 'kiga', view: 'zoo', sound: true });
     s.setItem('zoo.language', 'fr');
     s.setItem('zoo.readingLevel', 'klasse9');
-    expect(loadSettings(s, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo' });
+    expect(loadSettings(s, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true });
   });
   it('survives a throwing storage', () => {
     const bad: KeyValue = {
@@ -55,6 +55,21 @@ describe('settings persistence (CONT-L10N §6)', () => {
     };
     expect(loadSettings(bad, 'de').language).toBe('de');
     expect(() => saveSettings(bad, { language: 'de', readingLevel: 'kiga' })).not.toThrow();
+  });
+});
+
+describe('sound setting (ASND-009)', () => {
+  it('ASND-009: on by default, off is stored as 0 and restored, other saves keep it', () => {
+    const s = new MapStore();
+    expect(loadSettings(s, 'de').sound).toBe(true);
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', sound: false });
+    expect(s.getItem('zoo.sound')).toBe('0');
+    expect(loadSettings(s, 'de').sound).toBe(false);
+    saveSettings(s, { language: 'en', readingLevel: 'kiga' }); // no sound field: untouched
+    expect(loadSettings(s, 'de').sound).toBe(false);
+    saveSettings(s, { language: 'en', readingLevel: 'kiga', sound: true });
+    expect(loadSettings(s, 'de').sound).toBe(true);
+    expect(loadSettings(null, 'de').sound).toBe(true);
   });
 });
 

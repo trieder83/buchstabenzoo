@@ -2,6 +2,7 @@
 // asset files, forwards input and shows the HTML overlays. All game logic, what is
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
+import { attachUiTaps, GameAudio, SOUND_EVENT } from './audio';
 import { attachInput, attachLookButton, type StickView } from './input';
 import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
@@ -21,6 +22,8 @@ const LEVELS = [
 export interface ZooDebug {
   app: App;
   ui: Ui;
+  /** Sound playback with the decision log (ART-SOUND "Playback"). */
+  audio: GameAudio;
   slot: SaveSlot;
   frames: number;
   /** Average CPU time of `app.frame()` in ms (exponential moving average). */
@@ -50,9 +53,9 @@ function storage(): Storage | null {
   }
 }
 
-function stickView(): StickView {
-  const stick = document.getElementById('stick')!;
-  const knob = document.getElementById('knob')!;
+function stickView(stickId = 'stick', knobId = 'knob'): StickView {
+  const stick = document.getElementById(stickId)!;
+  const knob = document.getElementById(knobId)!;
   return {
     show(ox, oy, kx, ky) {
       stick.classList.add('active');
@@ -127,14 +130,21 @@ async function main(): Promise<void> {
   attachInput(app, {
     canvas,
     stickView: stickView(),
+    lookView: stickView('look-stick', 'look-knob'),
     onFirstTouch: () => ui.setTouch(),
     onInteract: () => ui.interact(),
     onEscape: () => ui.escape(),
   });
   attachLookButton(document.getElementById('look-btn')!, app);
+  // sound: Web Audio starts after the first gesture, files load lazily (ASND-007)
+  const audio = new GameAudio(index.filter((p) => p.startsWith('audio/')));
+  audio.setEnabled(settings.sound !== false);
+  audio.attach();
+  attachUiTaps(app);
+  window.addEventListener(SOUND_EVENT, (e) => audio.setEnabled((e as CustomEvent<{ on: boolean }>).detail.on));
   canvas.focus();
 
-  const debug: ZooDebug = { app, ui, slot, frames: 0, frameMs: 0, intervalMs: 0 };
+  const debug: ZooDebug = { app, ui, audio, slot, frames: 0, frameMs: 0, intervalMs: 0 };
   window.__zoo = debug;
   let last = performance.now();
   const loop = (now: number) => {
@@ -144,6 +154,7 @@ async function main(): Promise<void> {
     updateTextTextures(app);
     app.frame(dt);
     ui.update();
+    audio.tick(app);
     slot.tick();
     const ms = performance.now() - t0;
     debug.frames += 1;

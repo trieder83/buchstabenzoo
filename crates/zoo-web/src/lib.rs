@@ -3698,7 +3698,7 @@ impl App {
         let clip = vp * p.extend(1.0);
         let place = zoo_core::hints::screen_place(clip, w, hgt, HINT_EDGE_MARGIN_PX);
         format!(
-            "{{\"id\":{},\"kind\":{},\"on\":{},\"x\":{:.1},\"y\":{:.1},\"angle\":{:.1},\"dots\":{},\"left\":{:.2},\"lx\":{:.2},\"lz\":{:.2},\"sx\":{:.2},\"sz\":{:.2},\"animal\":{}}}",
+            "{{\"id\":{},\"kind\":{},\"on\":{},\"x\":{:.1},\"y\":{:.1},\"angle\":{:.1},\"dots\":{},\"left\":{:.2},\"lx\":{:.2},\"lz\":{:.2},\"sx\":{:.2},\"sz\":{:.2},\"animal\":{},\"step\":{}}}",
             js(&h.id),
             js(h.kind.id()),
             place.on_screen,
@@ -3711,7 +3711,8 @@ impl App {
             h.pos.y,
             h.stand.x,
             h.stand.y,
-            js(h.animal.unwrap_or(""))
+            js(h.animal.unwrap_or("")),
+            js(h.kind.step_key())
         )
     }
 

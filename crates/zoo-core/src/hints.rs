@@ -30,6 +30,9 @@ pub const HINT_CYCLE: usize = 3;
 pub const AREA_HINT_AFTER_S: f32 = 60.0;
 /// Rule 4: the hiding-area circle is at least this wide.
 pub const AREA_MIN_DIAMETER_M: f32 = 6.0;
+/// Rule 4a: right after the board was read the search area is this wide (at least), so the
+/// hint answers at once but stays a riddle (Q-195).
+pub const WIDE_AREA_MIN_DIAMETER_M: f32 = 12.0;
 /// Rule 6: the 🧭 button pulses after this long without a useful action (Q-127).
 pub const IDLE_NUDGE_S: f32 = 90.0;
 /// A shown target counts as reached within this distance (rule 2: "until reached").
@@ -86,6 +89,23 @@ impl HintKind {
             HintKind::MoonDoor => "moon_door",
         }
     }
+
+    /// Fluent key of the next-step line shown with the hint (rule 4a, `hint-<step>`).
+    pub fn step_key(self) -> &'static str {
+        match self {
+            HintKind::Board => "hint-read",
+            HintKind::Food => "hint-food",
+            HintKind::Animal => "hint-search",
+            HintKind::Gate => "hint-home",
+            HintKind::PickUp => "hint-pickup",
+            HintKind::Bamboo => "hint-bamboo",
+            HintKind::Water => "hint-water",
+            HintKind::Garden => "hint-garden",
+            HintKind::Treat => "hint-treat",
+            HintKind::Bed => "hint-bed",
+            HintKind::MoonDoor => "hint-moon",
+        }
+    }
 }
 
 /// Priorities of rule 3 (lower = better). Events (1) do not exist yet.
@@ -118,6 +138,9 @@ pub struct Hint {
     /// Stands for a target on the other side of the moon door (ranks after the targets on
     /// this side of the same priority).
     pub via_door: bool,
+    /// Ranks after the other targets of the same priority (the re-read board next to the
+    /// search area, rule 4a).
+    pub after_area: bool,
 }
 
 fn hint(id: String, kind: HintKind, priority: u8, pos: Vec2, stand: Vec2) -> Hint {
@@ -137,6 +160,7 @@ fn hint(id: String, kind: HintKind, priority: u8, pos: Vec2, stand: Vec2) -> Hin
         stand,
         animal: None,
         via_door: false,
+        after_area: false,
     }
 }
 
@@ -155,11 +179,16 @@ fn in_night_zone(g: &Game, p: Vec2) -> bool {
 }
 
 /// Circle of an animal's hiding area (rule 4): centre (the place's spot) and radius — at
-/// least [`AREA_MIN_DIAMETER_M`] wide and 1 m wider than where the animal wanders, so the
-/// edge is never the animal's position.
-pub fn hiding_circle(g: &Game, a: &Animal) -> Option<(Vec2, f32)> {
+/// least [`AREA_MIN_DIAMETER_M`] wide (`wide`: [`WIDE_AREA_MIN_DIAMETER_M`], rule 4a) and 1 m
+/// wider than where the animal wanders, so the edge is never the animal's position.
+pub fn hiding_circle(g: &Game, a: &Animal, wide: bool) -> Option<(Vec2, f32)> {
     let place = g.level.data.hiding_place(&a.hiding_place)?;
-    let r = (AREA_MIN_DIAMETER_M / 2.0).max(place.wander_radius_m) + 1.0;
+    let min_d = if wide {
+        WIDE_AREA_MIN_DIAMETER_M
+    } else {
+        AREA_MIN_DIAMETER_M
+    };
+    let r = (min_d / 2.0).max(place.wander_radius_m) + 1.0;
     Some((cell_center(place.spot_cell()), r))
 }
 
@@ -380,18 +409,10 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
                 }
             }
         } else if container_ready {
-            // right food: the board again, after 60 s the edge of the hiding area (rule 4)
-            if t.search_s(id) < AREA_HINT_AFTER_S {
-                if let Some((pt, stand)) = board(id) {
-                    steps.push(hint(
-                        format!("board:{id}"),
-                        HintKind::Board,
-                        prio,
-                        pt,
-                        stand,
-                    ));
-                }
-            } else if let Some((c, r)) = hiding_circle(g, a) {
+            // right food: the search area at once — wide first, the exact circle after 60 s
+            // (rule 4a, Q-195); the board (read the riddle again) stays the second choice
+            let wide = t.search_s(id) < AREA_HINT_AFTER_S;
+            if let Some((c, r)) = hiding_circle(g, a, wide) {
                 if p.distance(c) > r {
                     let edge = circle_edge(c, r, p);
                     let stand = crate::save::nearest_walkable(g, edge, false);
@@ -403,6 +424,11 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
                         stand,
                     ));
                 }
+            }
+            if let Some((pt, stand)) = board(id) {
+                let mut b = hint(format!("board:{id}"), HintKind::Board, prio, pt, stand);
+                b.after_area = true;
+                steps.push(b);
             }
         }
         for mut h in steps {
@@ -531,6 +557,7 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
         a.priority
             .cmp(&b.priority)
             .then(a.via_door.cmp(&b.via_door))
+            .then(a.after_area.cmp(&b.after_area))
             .then(a.pos.distance(p).total_cmp(&b.pos.distance(p)))
             .then(a.id.cmp(&b.id))
     });

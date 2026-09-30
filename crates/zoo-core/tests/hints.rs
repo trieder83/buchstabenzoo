@@ -9,7 +9,7 @@ use zoo_core::animals::AnimalState;
 use zoo_core::daytime::{Phase, CELEBRATION_S, DUSK_S};
 use zoo_core::hints::{
     self, candidates, night_progress, HintKind, HintTracker, ProgressState, AREA_HINT_AFTER_S,
-    AREA_MIN_DIAMETER_M, HINT_SHOW_S, IDLE_NUDGE_S,
+    AREA_MIN_DIAMETER_M, HINT_SHOW_S, IDLE_NUDGE_S, WIDE_AREA_MIN_DIAMETER_M,
 };
 use zoo_core::level::{cell_center, cell_of};
 use zoo_core::rng::Pcg32;
@@ -330,23 +330,41 @@ fn hint_002_board_read_no_food_then_food_storage() {
 
 // HINT-003
 #[test]
-fn hint_003_board_first_then_hiding_area_edge_after_60_s() {
+fn hint_003_wide_area_first_then_exact_circle_after_60_s() {
     let mut s = Sim::new(night_game(17));
     read_board(&mut s, "zebra");
     let &(_, pos, facing) = s.g.food_boxes.iter().find(|b| b.0 == Food::Grass).unwrap();
     s.walk_to(cell_of(pos + facing * 1.1), 60.0);
     s.g.take_food(Food::Grass).unwrap();
     assert!(s.t.search_s("zebra") < AREA_HINT_AFTER_S);
+    // HINT-015 (rule 4a): no waiting time — the wide search area at once, the board second
+    let h = s.press();
+    assert_eq!(
+        (h.kind, h.id.as_str()),
+        (HintKind::Animal, "area:zebra"),
+        "{h:?}"
+    );
+    let a = s.g.animal("zebra").unwrap();
+    let (c, r_wide) = hints::hiding_circle(&s.g, a, true).unwrap();
+    assert!(2.0 * r_wide >= WIDE_AREA_MIN_DIAMETER_M);
+    assert!(
+        (h.pos.distance(c) - r_wide).abs() < 1e-3,
+        "edge of the wide circle"
+    );
+    assert!(h.pos.distance(a.pos) >= 0.9, "never the animal's position");
+    assert_eq!(h.kind.step_key(), "hint-search");
     let h = s.press();
     assert_eq!((h.kind, h.id.as_str()), (HintKind::Board, "board:zebra"));
+    assert_eq!(h.kind.step_key(), "hint-read");
     s.t.hide();
     s.idle(AREA_HINT_AFTER_S + 0.5 - s.t.search_s("zebra"));
     assert!(s.t.search_s("zebra") >= AREA_HINT_AFTER_S);
     let h = s.press();
     assert_eq!(h.kind, HintKind::Animal, "{h:?}");
     let a = s.g.animal("zebra").unwrap();
-    let (c, r) = hints::hiding_circle(&s.g, a).unwrap();
+    let (c, r) = hints::hiding_circle(&s.g, a, false).unwrap();
     assert!(2.0 * r >= AREA_MIN_DIAMETER_M);
+    assert!(r < r_wide, "the exact circle is smaller than the wide one");
     assert!(
         (h.pos.distance(c) - r).abs() < 1e-3,
         "on the edge of the circle"

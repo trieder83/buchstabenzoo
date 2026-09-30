@@ -273,6 +273,23 @@
         justify-content: center;
         box-shadow: 0 0 16px rgba(255, 244, 201, 0.9);
       }
+      #hint-marker .line,
+      #hint-edge .line {
+        margin-top: 4px;
+        max-width: 220px;
+        padding: 4px 10px;
+        border-radius: 14px;
+        border: 3px solid #3b2314;
+        background: #fff8e0;
+        font-size: 16px;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.15;
+      }
+      #hint-marker .line:empty,
+      #hint-edge .line:empty {
+        display: none;
+      }
       #hint-marker .arrow {
         font-size: 34px;
         line-height: 1;
@@ -721,8 +738,8 @@
     <div id="hud-carry" hidden></div>
     <button id="drop-btn" class="round" type="button" hidden>✋⬇</button>
     <div id="lying-icons"></div>
-    <div id="hint-marker" hidden><div class="bob"><span class="icon"></span><span class="arrow">▼</span></div></div>
-    <div id="hint-edge" hidden><div class="spin"><span>➤</span></div><span class="icon"></span><span class="dots"></span></div>
+    <div id="hint-marker" hidden><div class="bob"><span class="icon"></span><span class="arrow">▼</span><span class="line"></span></div></div>
+    <div id="hint-edge" hidden><div class="spin"><span>➤</span></div><span class="icon"></span><span class="dots"></span><span class="line"></span></div>
     <button id="settings-btn" class="round" type="button">⚙️</button>
     <button id="compass-btn" class="round" type="button">🧭</button>
     <button id="night-progress" type="button" hidden><span class="moon">🌙</span><span class="animals"></span></button>

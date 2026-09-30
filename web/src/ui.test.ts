@@ -140,8 +140,9 @@ describe('put down and lying items (GAME-FEED §8–11)', () => {
 
 describe('GAME-HINT overlay data (HINT-007)', () => {
   it('parses a shown hint and clamps the distance dots to 1…5', () => {
-    const h = parseHint('{"id":"board:zebra","kind":"board","on":false,"x":40,"y":300,"angle":180,"dots":9}');
-    expect(h).toEqual({ id: 'board:zebra', kind: 'board', on: false, x: 40, y: 300, angle: 180, dots: 5 });
+    const h = parseHint('{"id":"board:zebra","kind":"board","on":false,"x":40,"y":300,"angle":180,"dots":9,"step":"hint-read"}');
+    // HINT-016: the next-step key travels with the hint
+    expect(h).toEqual({ id: 'board:zebra', kind: 'board', on: false, x: 40, y: 300, angle: 180, dots: 5, step: 'hint-read' });
     expect(parseHint('')).toBeNull();
     expect(parseHint('{broken')).toBeNull();
     expect(parseHint('{"kind":"board"}')).toBeNull();

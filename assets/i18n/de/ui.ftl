@@ -40,3 +40,15 @@ sign-zoo-entrance = Buchstaben Zoo
 
 ui-hint = Wohin jetzt?
 ui-night-progress = Diese Tiere fehlen noch bis zur Nacht
+
+hint-read = Lies die Tafel
+hint-food = Hol das Futter
+hint-search = Suche das Tier hier
+hint-home = Bring es nach Hause
+hint-pickup = Heb es auf
+hint-bamboo = Schneide Bambus
+hint-water = Hol Wasser
+hint-garden = Ernte im Garten
+hint-treat = Gib einen Leckerbissen
+hint-bed = Zeit zum Schlafen
+hint-moon = Geh durch das Mondtor

@@ -72,6 +72,8 @@ export interface HintView {
   y: number;
   angle: number;
   dots: number;
+  /** Fluent key of the next-step line (`hint-read`, …; GAME-HINT rule 4a). */
+  step: string;
 }
 
 /** Parses the hint JSON; null when no hint is shown or the JSON is broken. */
@@ -88,6 +90,7 @@ export function parseHint(json: string | undefined): HintView | null {
       y: h.y,
       angle: typeof h.angle === 'number' ? h.angle : 90,
       dots: Math.max(1, Math.min(5, Math.round(h.dots ?? 1))),
+      step: typeof h.step === 'string' ? h.step : '',
     };
   } catch {
     return null;
@@ -427,6 +430,7 @@ export class Ui {
   /** GAME-NIGHT rule 11: what is still missing before night falls. */
   readonly nightProgress = document.getElementById('night-progress') as HTMLButtonElement | null;
   private lastHintKind = '';
+  private lastHintStep = '';
   private lastHintDots = -1;
   private lastPulses = 0;
   private lastProgress = '';
@@ -501,6 +505,8 @@ export class Ui {
 
   /** The 🧭 button / tapping the 🌙 progress (GAME-HINT rule 1/8): show the next target. */
   pressHint(): void {
+    // works while a reading panel is open: the panel closes first (GAME-HINT rule 4a)
+    if (this.panelKey) this.closePanel();
     this.app.hint_press?.();
     this.updateHint();
   }
@@ -528,6 +534,14 @@ export class Ui {
       }
     }
     this.hintMarker.dataset.id = h.id;
+    if (h.step !== this.lastHintStep) {
+      this.lastHintStep = h.step;
+      const line = h.step ? this.app.t(h.step) : '';
+      for (const e of [this.hintMarker, this.hintEdge]) {
+        const l = e.querySelector('.line') as HTMLElement | null;
+        if (l) l.textContent = line;
+      }
+    }
     this.hintEdge.dataset.id = h.id;
     this.hintMarker.hidden = !h.on;
     this.hintEdge.hidden = h.on;

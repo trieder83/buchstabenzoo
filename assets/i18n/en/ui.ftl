@@ -38,3 +38,15 @@ sign-zoo-entrance = Letter Zoo
 
 ui-hint = Where next?
 ui-night-progress = These animals are still missing before night
+
+hint-read = Read the board
+hint-food = Get the food
+hint-search = Look for the animal here
+hint-home = Take it home
+hint-pickup = Pick it up
+hint-bamboo = Cut bamboo
+hint-water = Fetch water
+hint-garden = Harvest in the garden
+hint-treat = Give a treat
+hint-bed = Time to sleep
+hint-moon = Go through the moon door

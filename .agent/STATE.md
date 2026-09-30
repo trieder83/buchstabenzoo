@@ -71,3 +71,7 @@ next steps / questions. The main session prunes entries once committed. -->
 - Specs: feeding §7/test table, layout.md, levels 1/2/3/night-1 (element notes + inside-box tables), open-questions Q-194 "Implemented 2026-09-29".
 - Next: spec-manager run (INDEX, glossary); no open questions from me.
 
+
+### 2026-09-30 general — session specs implemented (commits 07a6d78…15748b5)
+- Done: grass 1.45 m/s (PLAY-006, walking tables re-measured), hint rule 4a + step line (HINT-015/016), entrance intro (RESC-029, `?intro=1` for e2e; webdriver skips it), level-start tests (LAYOUT-044/045/046, ANIM-013), garden street + aprons to 4 gates (LAYOUT-L1-044, `loc_river` widened), baby by special food (FAM-008/009; pair flag still off in the data, no baby model → FAM-003/004/005/006/007 open).
+- Not done: sound (ART-SOUND: sound-artist agent must name a generator API first, Q-200; no Web Audio host code yet), read-aloud for hints/intro on `kiga` (Q-008), `ice_cream_kiosk` (level 3) has no street within 2 m (decoration, not covered by rule 8), walking-table text of levels 2/3 in the specs still shows old times (tests hold the new numbers).

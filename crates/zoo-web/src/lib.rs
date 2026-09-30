@@ -3060,6 +3060,11 @@ impl App {
                     self.queue(&animal, &["eat", "happy"], false);
                     self.say(&animal, "garden-treat-yum");
                 }
+                GameEvent::BabyBorn { animal } => {
+                    // no baby model yet (FAM-007, ART-ANIMALS): the celebration is the message
+                    self.queue(&animal, &["happy"], false);
+                    self.say(&animal, "family-baby");
+                }
                 GameEvent::TreatRefused { animal, .. } => {
                     self.queue(&animal, &["refuse"], false);
                     self.say(&animal, "ui-not-interested");

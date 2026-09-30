@@ -513,3 +513,57 @@ fn content_all_animals_all_places_levels_languages() {
     }
     assert!(missing.is_empty(), "missing texts: {missing:?}");
 }
+
+/// Zoo data with the zebra pair switched on (GAME-FAMILY data flag).
+fn zebra_pair_zoo() -> zoo_core::LevelData {
+    let mut zoo = common::zoo();
+    let enc = zoo
+        .elements
+        .iter_mut()
+        .find(|e| e.ty == ElementType::Enclosure && e.animal.as_deref() == Some("zebra"))
+        .unwrap();
+    enc.pair = true;
+    zoo
+}
+
+// FAM-008: a liked special food given to a male + female pair at home makes exactly one baby;
+// a single animal is only happy.
+// FAM-009: ordinary/disliked food changes nothing; the baby is saved and never appears twice.
+#[test]
+fn fam_008_009_special_food_makes_one_baby_for_a_pair() {
+    use zoo_core::garden::Treat;
+    use zoo_core::GameEvent;
+    let mut g = Game::new(zebra_pair_zoo(), 4).unwrap();
+    g.debug_send_home("zebra");
+    g.drain_events();
+    g.garden.basket.carrots = 3;
+    g.garden.basket.potatoes = 1;
+    // a disliked treat: no baby, no penalty
+    assert_eq!(g.give_treat("zebra", Treat::Potato), Some(false));
+    assert!(g.babies.is_empty());
+    // a liked carrot: happy, and one baby
+    assert_eq!(g.give_treat("zebra", Treat::Carrot), Some(true));
+    let ev = g.drain_events();
+    assert_eq!(
+        ev.iter()
+            .filter(|e| matches!(e, GameEvent::BabyBorn { .. }))
+            .count(),
+        1
+    );
+    assert_eq!(g.babies, vec!["zebra".to_string()]);
+    // never twice
+    assert_eq!(g.give_treat("zebra", Treat::Carrot), Some(true));
+    assert!(!g
+        .drain_events()
+        .iter()
+        .any(|e| matches!(e, GameEvent::BabyBorn { .. })));
+    // saved and restored
+    let s = g.to_save();
+    assert_eq!(s.babies, vec!["zebra".to_string()]);
+    // a single animal (no pair): happy, no baby
+    let mut single = common::zoo_game(4);
+    single.debug_send_home("zebra");
+    single.garden.basket.carrots = 1;
+    assert_eq!(single.give_treat("zebra", Treat::Carrot), Some(true));
+    assert!(single.babies.is_empty());
+}

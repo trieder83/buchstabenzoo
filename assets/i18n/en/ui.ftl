@@ -67,3 +67,6 @@ intro-3-klasse3 = Get the food they like from the food storage. When you show it
 intro-next = Next
 intro-go = Let's go
 intro-skip = Skip
+
+# Animal pair got a baby (GAME-FAMILY, FAM-008)
+family-baby = Hooray, a baby!

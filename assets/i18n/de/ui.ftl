@@ -69,3 +69,6 @@ intro-3-klasse3 = Hol im Futterlager das Futter, das sie mögen. Wenn du es ihne
 intro-next = Weiter
 intro-go = Los geht's
 intro-skip = Überspringen
+
+# Animal pair got a baby (GAME-FAMILY, FAM-008)
+family-baby = Juhu, ein Baby!

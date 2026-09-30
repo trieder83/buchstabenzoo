@@ -45,6 +45,9 @@ pub struct SaveState {
     /// game started, so the intro counts as seen.
     #[serde(default = "intro_seen_default")]
     pub intro_seen: bool,
+    /// Species whose pair has its baby (FAM-006/008). Missing = none.
+    #[serde(default)]
+    pub babies: Vec<String>,
     /// The fish bowl (v2).
     #[serde(default)]
     pub bowl: Option<BowlSave>,
@@ -275,6 +278,7 @@ impl Game {
             last_gate: self.last_gate,
             all_home: self.all_home,
             intro_seen: self.intro_seen,
+            babies: self.babies.clone(),
             bowl: self.bowl.as_ref().map(|b| BowlSave {
                 id: b.id.clone(),
                 pos: b.pos.to_array(),
@@ -463,6 +467,7 @@ impl Game {
             an.wander.route = a.wander_route.iter().map(|&c| IVec2::from(c)).collect();
         }
         g.intro_seen = s.intro_seen;
+        g.babies = s.babies.clone();
         // time of day (NIGHT-008): a save made while sleeping wakes up the next morning
         if let Some(d) = &s.daytime {
             let mut d = d.clone();

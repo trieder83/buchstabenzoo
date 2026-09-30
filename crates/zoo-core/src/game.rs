@@ -120,6 +120,11 @@ pub enum GameEvent {
         animal: String,
         treat: crate::garden::Treat,
     },
+    /// A pair at home was given a liked special food: one baby is born (GAME-FAMILY
+    /// "Special food and babies", FAM-008); once per pair.
+    BabyBorn {
+        animal: String,
+    },
     /// It does not like that treat: it sniffs and turns away, the treat stays.
     TreatRefused {
         animal: String,
@@ -527,6 +532,8 @@ pub struct Game {
     /// The intro at the entrance gate was shown (GAME-RESCUE "Intro at the entrance gate",
     /// RESC-029); saved, so a loaded game never repeats it.
     pub intro_seen: bool,
+    /// Species whose pair already has its baby (GAME-FAMILY, FAM-008/009); saved.
+    pub babies: Vec<String>,
     /// Automatic reading panel (GAME-PLAYER §4).
     pub panel: ReadingPanel,
     /// Seed of this playthrough and the RNG after the setup (GAME-SAVE).
@@ -625,6 +632,7 @@ impl GameEvent {
                 | GameEvent::MoonDoor { .. }
                 | GameEvent::Harvested { .. }
                 | GameEvent::TreatEaten { .. }
+                | GameEvent::BabyBorn { .. }
                 | GameEvent::FoodPutBack { .. }
                 | GameEvent::BambooCut { .. }
         )
@@ -761,6 +769,7 @@ impl Game {
             last_gate: None,
             all_home: false,
             intro_seen: false,
+            babies: Vec::new(),
             panel: ReadingPanel::default(),
             seed,
             rng,
@@ -1533,8 +1542,21 @@ impl Game {
         let id = self.animals[i].id().to_owned();
         if accepted {
             self.garden.basket.take(treat);
-            self.events
-                .push(GameEvent::TreatEaten { animal: id, treat });
+            self.events.push(GameEvent::TreatEaten {
+                animal: id.clone(),
+                treat,
+            });
+            // a male + female pair at home that gets a liked special food makes a baby
+            let group = self.group(&id);
+            if group.len() >= 2
+                && group
+                    .iter()
+                    .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
+                && !self.babies.contains(&id)
+            {
+                self.babies.push(id.clone());
+                self.events.push(GameEvent::BabyBorn { animal: id });
+            }
         } else {
             self.events
                 .push(GameEvent::TreatRefused { animal: id, treat });

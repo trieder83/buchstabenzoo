@@ -6,24 +6,24 @@ module: ad-boards
 status: draft
 depends_on: [GAME-ADS, GAME-ADS-C1, CONT-READING]
 test_prefix: ADC2
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Ad campaign 2 — ABC Smash
 
 Own cross-promotion (GAME-ADS rule 6, Q-128): the reading game **ABC Smash**. Same mechanics
 as campaign 1 ([`../campaign-1-mathfighter/campaign.md`](../campaign-1-mathfighter/campaign.md)):
-readable board, link button behind the parental gate (Q-217), no tracking.
+readable board, link button behind the parental gate (Q-217 answered), no tracking; the game knows only the id, slot 2 and the link host `abcsmash.rcms.ch` (Q-241).
 
 | Field | Value |
 |---|---|
 | `id` | `abcsmash` |
 | Slot | campaign 2 of 3 (GAME-ADS rule 2) |
 | Type | own cross-promotion |
-| Tagline (Fluent `ad-abcsmash-tagline`) | de: **Lesen lernen – flüssig und schnell** · en: **Learn to read – fluent and fast** |
+| Tagline (signed manifest, `tagline.de` / `tagline.en`, Q-246) | de: **Lesen lernen – flüssig und schnell** · en: **Learn to read – fluent and fast** |
 | Image text (in the picture, German) | "Schneller lesen — flüssig lesen! auf dem Weg zum ABC-Stern" · logo "ABC Smash" (rocket flying along the planets to the ABC star) |
 | Link | https://abcsmash.rcms.ch — clickable when the child has read the ad in the game (Q-217, behind the parental gate) |
-| Images | `resources/feature-graphic-de-de.png` (1024 × 500, RGB, 573 KB, German; shown for `de`) and `resources/feature-graphic-en-us.png` (English; shown for `en`) — sources `abcshooter/marketing/feature-graphic-{de-de,en-us}.png`. The game ships a compressed copy (proposal: ≤ 512 KB, 1024 px wide, `assets/ads/abcsmash/`, manifest kind `ad`, licence `own`). |
+| Images | sources `resources/feature-graphic-de-de.png` (1024 × 500, RGB, 573 KB, German) and `resources/feature-graphic-en-us.png` (English) from `abcshooter/marketing/`. Served copies (`tools/ads/prepare_images.py`): `ads/img/abcsmash-de.webp` (language `de`) and `ads/img/abcsmash-en.webp` (`en`), 1024 × 500, WebP, ≈ 45 KB each, licence `own`, in the **signed manifest** (GAME-ADS rules 7–8). |
 
 ## Behaviour
 
@@ -37,11 +37,11 @@ readable board, link button behind the parental gate (Q-217), no tracking.
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| ADC2-001 | Given the campaign table, then `abcsmash` is active, appears on ≥ 2 boards and its image exists (`assets/ads/abcsmash/`, licence `own`) and loads. | unit |
+| ADC2-001 | Given the repo, then both served images of `abcsmash` exist in `ads/img/` (≤ 512 KB), the template manifest names them (languages `de`, `en`) and the test-signed fixture lists campaign `abcsmash` (slot 2, link host `abcsmash.rcms.ch`). | unit |
 | ADC2-002 | Given the player stands in front of an ABC Smash board, then a reading panel opens with the image of the current language (`de-de` / `en-us`) (and in `klasse1+` the tagline in the current language); on `kiga` only the picture. | e2e |
 | ADC2-003 | Given the open panel, then its link button (≥ 64 px) targets https://abcsmash.rcms.ch and opens it only after the parental gate, in a new tab, without query parameters (as ADC1-003/004). | e2e |
 | ADC2-004 | Given a session without pressing the link, then no network request to abcsmash.rcms.ch is made. | e2e |
 
 ## Open questions
 
-- Q-217 (link behind a parental gate, shared with campaign 1).
+- Q-217 answered (link behind a parental gate, shared with campaign 1).

@@ -1,10 +1,12 @@
 // Firebase Hosting preview deployment (TECH-PLATFORMS "Preview deployment for playtests").
 // Static checks only: reads firebase.json, the deploy script and the host sources — no network.
+import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { listAssets } from '../vite.config';
+import { listAds, listAssets } from '../vite.config';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (rel: string) => fs.readFileSync(path.join(repoRoot, rel), 'utf8');
@@ -142,5 +144,86 @@ describe('deploy script', () => {
       .filter((l) => !l.trim().startsWith('#'))
       .join('\n');
     expect(commands).not.toMatch(/firebase deploy/);
+  });
+});
+
+describe('ad content hosting (GAME-ADS "External content")', () => {
+  const adsDir = path.join(repoRoot, 'ads');
+
+  it('PLAT-010 ads/** is cached briefly so campaigns can change without an app update', () => {
+    const age = maxAge(header('ads/**', 'Cache-Control'));
+    expect(age).toBeGreaterThan(0);
+    expect(age).toBeLessThanOrEqual(600);
+    expect(header('ads/**', 'Cache-Control')).toContain('must-revalidate');
+    expect(header('ads/**', 'Cache-Control')).not.toContain('immutable');
+  });
+
+  it('PLAT-010 the CSP stays strict: ads are same-origin (connect-src and img-src self)', () => {
+    const csp = header('**', 'Content-Security-Policy') ?? '';
+    const directive = (name: string) =>
+      csp
+        .split(';')
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(name + ' '));
+    expect(directive('connect-src')).toBe("connect-src 'self'");
+    expect(directive('img-src')).toBe("img-src 'self' data: blob:");
+    expect(directive('form-action')).toBe("form-action 'none'");
+    expect(csp).not.toMatch(/https?:/);
+  });
+
+  it('PLAT-011 the served ads are the manifest, its signature and images of at most 512 KB', () => {
+    const files = listAds();
+    expect(files.every((f) => f === 'campaigns.json' || f === 'campaigns.sig' || /^img\/[a-z0-9._-]+\.(png|webp|jpe?g)$/.test(f))).toBe(true);
+    const images = files.filter((f) => f.startsWith('img/'));
+    expect(images.length).toBeGreaterThanOrEqual(4); // ADC1-001, ADC2-001
+    for (const f of images) expect(fs.statSync(path.join(adsDir, f)).size, f).toBeLessThanOrEqual(512 * 1024);
+    // no template, key or note is published
+    expect(files.some((f) => /template|\.key|\.pem|README/i.test(f))).toBe(false);
+  });
+
+  it('PLAT-011 a shipped manifest has its signature and matches its images (size, SHA-256)', () => {
+    const manifest = path.join(adsDir, 'campaigns.json');
+    if (!fs.existsSync(manifest)) return; // no production manifest until the owner signed one
+    expect(fs.existsSync(path.join(adsDir, 'campaigns.sig'))).toBe(true);
+    const m = JSON.parse(fs.readFileSync(manifest, 'utf8')) as { campaigns: { images: { path: string; bytes: number; sha256: string }[] }[] };
+    for (const c of m.campaigns) {
+      for (const im of c.images) {
+        const data = fs.readFileSync(path.join(adsDir, im.path));
+        expect(data.length, im.path).toBe(im.bytes);
+        expect(crypto.createHash('sha256').update(data).digest('hex'), im.path).toBe(im.sha256);
+      }
+    }
+  });
+
+  it('PLAT-011 no private key is tracked except the TEST-ONLY fixture key', () => {
+    let out = '';
+    try {
+      out = execFileSync('git', ['ls-files', '*.key', '*.pem'], { cwd: repoRoot, encoding: 'utf8' });
+    } catch {
+      return; // not a git checkout
+    }
+    const tracked = out.split('\n').filter(Boolean);
+    expect(tracked.filter((f) => f !== 'web/tests/fixtures/ads/TEST-ONLY-private.key' && f !== 'web/tests/fixtures/ads/TEST-ONLY-public.key')).toEqual([]);
+  });
+
+  it('PLAT-012 the release has no test-key override: the compiled keys never contain the test key', () => {
+    const keys = read('web/src/ad-keys.ts');
+    const testPub = read('web/tests/fixtures/ads/TEST-ONLY-public.key').trim();
+    expect(keys).not.toContain(testPub);
+    const pkg = JSON.parse(read('web/package.json')) as { scripts: Record<string, string> };
+    for (const name of ['build', 'wasm', 'preview', 'deploy:preview']) expect(pkg.scripts[name] ?? '').not.toMatch(/VITE_AD_TEST/);
+    const cfg = read('web/vite.config.ts');
+    expect(cfg).toMatch(/__AD_TEST__: JSON\.stringify\(command === 'serve' \|\| process\.env\.VITE_AD_TEST === '1'\)/);
+    // the only place that reads ?adkey= sits behind the build-time switch
+    const ads = read('web/src/ads.ts');
+    expect(ads.match(/adkey/g)?.length).toBe(1);
+    expect(read('web/src/main.ts')).toMatch(/AD_TEST_BUILD \? testKeyParam/);
+  });
+
+  it.skipIf(!fs.existsSync(path.join(repoRoot, 'web', 'dist', 'index.html')))('PLAT-012 a release bundle in web/dist has no ?adkey= code path', () => {
+    const dir = path.join(repoRoot, 'web', 'dist', 'bundle');
+    for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js'))) {
+      expect(fs.readFileSync(path.join(dir, f), 'utf8'), f).not.toContain('adkey');
+    }
   });
 });

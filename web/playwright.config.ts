@@ -23,7 +23,7 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: `npx vite preview --port ${PORT} --strictPort`,
+    command: `npx vite preview --port ${PORT} --strictPort --outDir ${process.env.E2E_DIST ?? 'dist'}`,
     url: `http://localhost:${PORT}/`,
     reuseExistingServer: false,
     timeout: 60_000,

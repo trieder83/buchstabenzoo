@@ -1,4 +1,6 @@
-"""Footstep cues (ART-SOUND): step_path, step_grass, step_sand, step_wood, step_water.
+"""LEGACY (superseded by steps_real.py, user: "not realistic at all"). Kept only for reference;
+CUES is empty so nothing is built or registered from here.
+Old synthesised footstep cues (ART-SOUND): step_path, step_grass, step_sand, step_wood, step_water.
 4 seeded variations each; soft and cartoon-like. Run: python3 tools/sound/steps.py"""
 import numpy as np
 from synthlib import *
@@ -57,13 +59,7 @@ def step_water(rng, v):
     return out
 
 
-CUES = {
-    "step_path": ("steps", step_path, 4),
-    "step_grass": ("steps", step_grass, 4),
-    "step_sand": ("steps", step_sand, 4),
-    "step_wood": ("steps", step_wood, 4),
-    "step_water": ("steps", step_water, 4),
-}
+CUES = {}  # superseded by tools/sound/steps_real.py
 
 if __name__ == "__main__":
     import process

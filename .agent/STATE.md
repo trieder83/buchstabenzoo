@@ -94,3 +94,11 @@ next steps / questions. The main session prunes entries once committed. -->
 ### 2026-09-30 sound playback (ART-SOUND "Playback", uncommitted)
 - Done: `zoo-core/src/sound.rs` (gains, distance law, footfall clock, surface, event→cue, door cue, notice tracker; tests `crates/zoo-core/tests/sound.rs` ASND-010…016), `zoo-web` `poll_sounds()/audio_animals()/ui_tap()/debug_step_surface()`, host `web/src/audio.ts` (+ `audio.test.ts`), sound switch in `ui.ts` (`zoo.sound`), `vite.config.ts` serves `assets/audio`, `firebase.json` audio MIME, `deploy.test.ts` ASND-018, `web/tests/e2e/audio.spec.ts` (ASND-005/006/007/009 green). Q-220…222 new; Q-212 answered.
 - Not done: follower footsteps (Q-220), pan (Q-221), music (Q-222); cues for species without files are skipped silently.
+
+### 2026-09-30 sound-artist - footsteps redone from real recordings
+- `tools/sound/steps_real.py` (+ `register.py`, `runway_gen.py`): path/grass 6 variants (Fantozzi CC0), sand/wood 4 (TinyWorlds CC0), water 4 (Runway eleven_text_to_sound_v2, generated). Old synth `steps.py` legacy (CUES empty). Catalog steps item, brief, CREDITS updated; zoo-assets audio tests + check_audio.py green. Host finds variant count from the file index (no code change).
+- Open: Q-250 (Runway terms), Q-251 (realism needs a human listen). Not listened.
+
+### 2026-10-01 ad boards with signed external content (GAME-ADS, uncommitted)
+- Done: spec (ad-boards.md rules 7-11 + threat model, ADS-001..022, campaigns 1-3, PLAT-010..012, Q-240..Q-247, Q-217 answered); `zoo-core/src/ads.rs` + `scene/ad_board.rs` (+ `[[ad_board]]` in levels 1-3, 4 each, `DecalImage::Ad`), zoo-web `ad_boards_json/ad_near/set_ad_texture`; host `web/src/ads.ts` (Ed25519 via @noble/ed25519 3.2.0, verification, gate logic), `ads-ui.ts` (pictures, panel, gate), `ad-keys.ts` (EMPTY until the owner adds the public key); `tools/ads/{keygen,sign,prepare_images}.py` + README, `ads/img/*.webp`, fixtures `web/tests/fixtures/ads/` (TEST-ONLY key), firebase.json `ads/**`, vite serves `/ads/`, `E2E_DIST=dist-adtest scripts/e2e.sh tests/e2e/ads.spec.ts` (test build with ?adkey=).
+- Open: zoo-level-designer review of the 12 board positions (Q-244); user: keygen + paste key + sign + deploy (tools/ads/README.md), update CLAUDE.md ads/links line.

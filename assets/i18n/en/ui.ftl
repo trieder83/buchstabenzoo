@@ -48,7 +48,7 @@ hint-pickup = Pick it up
 hint-bamboo = Cut bamboo
 hint-water = Fetch water
 hint-garden = Harvest in the garden
-hint-treat = Give a treat
+hint-treat = Walk up to the animal and give it something to eat
 hint-bed = Time to sleep
 hint-moon = Go through the moon door
 
@@ -71,3 +71,13 @@ intro-skip = Skip
 
 # Animal pair got a baby (GAME-FAMILY, FAM-008)
 family-baby = Hooray, a baby!
+
+# Ad billboards (GAME-ADS): placeholders and the reading panel / parental gate (ADS-003, ADS-020)
+ad-placeholder-1 = Your ad 1
+ad-placeholder-2 = Your ad 2
+ad-placeholder-3 = Your ad 3
+ad-link-open = Open
+ad-gate-title = Grown-ups only
+ad-gate-sum = Solve the sum:
+ad-gate-hold = Hold the button for 3 seconds.
+ad-close = Close

@@ -416,11 +416,17 @@ fn fam_002_pair_follows_and_completes_together() {
     let enc = g.level.data.element("enc_koala").unwrap().gate.unwrap();
     g.player.pos = cell_center(IVec2::new(enc.x, enc.z));
     g.update(1.0 / 60.0, Vec2::ZERO);
-    assert_eq!(g.animals[second].state, AnimalState::InEnclosure);
+    // GARD-014: the pair enters together — the partner is called, nobody enters yet
+    assert_eq!(g.animals[second].state, AnimalState::Following);
+    assert!(
+        g.animals[first].waiting,
+        "the late partner still waits far behind"
+    );
     assert!(
         !g.mission("koala").unwrap().complete,
         "one koala is still out"
     );
+    g.animals[first].waiting = true;
     // the waiting one is fetched and brought home
     g.player.pos = cell_center(IVec2::new(enc.x - 1, enc.z));
     g.animals[first].pos = g.player.pos + Vec2::new(-1.0, 0.0);
@@ -429,10 +435,13 @@ fn fam_002_pair_follows_and_completes_together() {
         !g.animals[first].waiting,
         "follows again when the player is back"
     );
+    g.animals[second].pos = g.player.pos + Vec2::new(-1.5, 0.0);
+    g.update(1.0 / 60.0, Vec2::ZERO);
     g.update(1.0 / 60.0, Vec2::ZERO);
     g.player.pos = cell_center(IVec2::new(enc.x, enc.z));
     g.update(1.0 / 60.0, Vec2::ZERO);
     assert_eq!(g.animals[first].state, AnimalState::InEnclosure);
+    assert_eq!(g.animals[second].state, AnimalState::InEnclosure);
     assert!(g.mission("koala").unwrap().complete);
 }
 

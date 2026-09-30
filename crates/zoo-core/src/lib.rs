@@ -1,6 +1,7 @@
 //! Buchstabenzoo game core: pure, deterministic game logic without web dependencies
 //! (TECH-ARCH, ARCH-001). Time is passed in as `dt`; randomness comes from a seed.
 
+pub mod ads;
 pub mod ambient;
 pub mod animals;
 pub mod carrying;

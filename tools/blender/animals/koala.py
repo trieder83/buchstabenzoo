@@ -47,7 +47,9 @@ HEAD_PROFILE = [
 HEAD_N = HEAD_B + HEAD_D * 0.34
 
 # variant knobs (koala_female.py / koala_joey.py): off-white patch size, chin patch height
-PATCH = dict(chest_x=0.11, chest_z=0.48, belly_z=0.22, belly_x=0.11, chin_v=0.22)
+PATCH = dict(chest_x=0.11, chest_z=0.48, belly_z=0.22, belly_x=0.11, chin_v=0.22, eye_patch=0.0)
+EYE_R = (0.04, 0.046)  # variants: bigger eyes
+LASHES = False         # female: heavy upper lid + lash flick
 
 P = {
     "hips": (0, 0.15, 0.36), "spine": (0, 0.0, 0.36), "chest": (0, -0.12, 0.38),
@@ -85,10 +87,16 @@ def build(k):
     def head_col(x, y, z, u, v):
         c = pal.fill(len(x), "grey")
         c[(u > 0.55) & (v < PATCH["chin_v"])] = pal("white")  # chin / smile area
+        if PATCH["eye_patch"] > 0:  # cream patches around the eyes (joey / female concepts)
+            ht = k.tubes["head"]
+            for sg in (1.0, -1.0):
+                e = ht.point(0.60, sg * math.radians(42.0))
+                d = np.hypot(np.hypot(x - e.x, y - e.y) * 0.85, (z - e.z) * 1.15)
+                c[d < PATCH["eye_patch"]] = pal("white")
         return c
     head = k.head(HEAD_B, HEAD_D, HEAD_PROFILE, color=head_col)
-    k.eyes(head, 0.60, 42.0, (0.04, 0.046), depth=0.018)
-    k.eye_swatch(iris="iris", iris_r=0.66, pupil_r=0.40, look=0.08)
+    k.eyes(head, 0.60, 42.0, EYE_R, depth=0.018)
+    k.eye_swatch(iris="iris", iris_r=0.66, pupil_r=0.40, look=0.08, lashes=LASHES)
     # big black oval nose (taller than wide), on the front of the face
     k.add(ellipsoid(HEAD_N + V((0, 0.03, 0.01)), V((0, -1, 0.1)), Z, 0.04, 0.05, 0.062, 0.085, 0.085,
                     rings=5, n=12), "head", cell="nose")

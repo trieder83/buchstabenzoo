@@ -299,6 +299,22 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             .iter()
             .any(|x| matches!(x.state, AnimalState::Following | AnimalState::InBowl));
         if moving {
+            // a partner left far behind (RESC-006): fetch it first, the pair enters together
+            if let Some(w) = group
+                .iter()
+                .find(|x| x.state == AnimalState::Following && x.waiting)
+            {
+                let mut h = hint(
+                    format!("partner:{id}"),
+                    HintKind::Animal,
+                    PRIO_MISSION,
+                    w.pos,
+                    stand_near(g, w.pos, p, 3.0),
+                );
+                h.animal = Some(id);
+                out.push(h);
+                continue;
+            }
             // animal following (or in the carried bowl) → its gate
             let enc = &data.elements[a.enclosure];
             if let Some(gr) = enc.gate {
@@ -454,29 +470,43 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             _ => {}
         }
     }
-    if g.garden.basket.total() > 0 && leading.is_none() {
+    if leading.is_none() {
         let mut seen: HashSet<&'static str> = HashSet::new();
         for a in &g.animals {
-            if a.state != AnimalState::InEnclosure || !g.in_scope(a) || !seen.insert(a.id()) {
+            if a.state != AnimalState::InEnclosure
+                || !g.in_scope(a)
+                || !g.gift_liked(a.id())
+                || !seen.insert(a.id())
+            {
                 continue;
             }
-            let likes = crate::garden::Treat::ALL
-                .into_iter()
-                .any(|tr| g.garden.basket.count(tr) > 0 && crate::garden::likes(a.id(), tr));
-            if !likes {
+            // the member of the group nearest to the player: the child walks up to it (inside
+            // the enclosure) or to its fence, where it waits (GAME-GARDEN §6)
+            let Some(it) = its
+                .iter()
+                .find(|it| it.target == Target::Treat { animal: a.id() })
+            else {
                 continue;
-            }
-            // at its fence, on the side of the player
+            };
             let r = data.elements[a.enclosure].rect;
             let min = Vec2::new(r.x as f32, r.z as f32);
             let max = min + Vec2::new(r.w as f32, r.d as f32);
             let fence = p.clamp(min, max);
-            let stand = stand_near(g, fence, p, 0.9);
+            let (point, stand) = if fence == p {
+                (it.point, stand_near(g, it.point, p, 0.9))
+            } else if let Some(s) = g.feed_spot(a.enclosure) {
+                // the feeding spot next to the gate: there the animals wait (GARD-010)
+                let c = (cell_center(s.cells[0]) + cell_center(s.cells[1])) / 2.0;
+                let spot = c - Vec2::new(s.inward.x as f32, s.inward.y as f32) * 0.5;
+                (spot, crate::save::nearest_walkable(g, s.stand, false))
+            } else {
+                (fence, stand_near(g, fence, p, 0.9))
+            };
             let mut h = hint(
                 format!("treat:{}", a.id()),
                 HintKind::Treat,
                 PRIO_OPTIONAL,
-                fence,
+                point,
                 stand,
             );
             h.animal = Some(a.id());
@@ -603,6 +633,7 @@ pub fn is_useful(e: &GameEvent) -> bool {
                 | GameEvent::NeedsContainer { .. }
                 | GameEvent::ContainerEmpty { .. }
                 | GameEvent::TreatRefused { .. }
+                | GameEvent::FoodRefused { .. }
                 | GameEvent::BasketFull
         )
 }

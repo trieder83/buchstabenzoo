@@ -235,13 +235,16 @@ pub fn cues_for_event(e: &GameEvent) -> Vec<CueRequest> {
         GameEvent::NotInterested { animal: a } | GameEvent::Refuse { animal: a, .. } => {
             vec![plain("ui_refuse"), animal(a, "refuse")]
         }
-        GameEvent::TreatRefused { animal: a, .. } => vec![plain("ui_refuse"), animal(a, "refuse")],
+        GameEvent::TreatRefused { animal: a, .. } | GameEvent::FoodRefused { animal: a, .. } => {
+            vec![plain("ui_refuse"), animal(a, "refuse")]
+        }
         GameEvent::PutDownRefused | GameEvent::BasketFull => vec![plain("ui_refuse")],
         GameEvent::MissionComplete { .. } | GameEvent::LevelComplete { .. } => {
             vec![plain("ui_success")]
         }
         GameEvent::StartedFollowing { animal: a }
         | GameEvent::TreatEaten { animal: a, .. }
+        | GameEvent::FoodEaten { animal: a, .. }
         | GameEvent::BabyBorn { animal: a }
         | GameEvent::InEnclosure { animal: a } => vec![animal(a, "happy")],
         _ => vec![],

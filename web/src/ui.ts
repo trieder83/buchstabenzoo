@@ -115,6 +115,11 @@ export interface NightProgress {
   animals: { id: string; home: boolean }[];
 }
 
+/** Only the animals still missing: a finished animal disappears from the pane (GAME-NIGHT rule 11). */
+export function missingAnimals(p: NightProgress): NightProgress['animals'] {
+  return p.animals.filter((a) => !a.home);
+}
+
 /** Parses the night progress JSON; hidden on errors. */
 export function parseProgress(json: string | undefined): NightProgress {
   try {
@@ -659,8 +664,8 @@ export class Ui {
     moon.textContent = p.state === 'sleep' ? '🛏️' : '🌙';
     const box = this.nightProgress.querySelector('.animals') as HTMLElement;
     box.replaceChildren(
-      ...p.animals.map((a) => {
-        const e = el('span', `pa ${a.home ? 'home' : 'missing'}`, ANIMAL_ICONS[a.id] ?? '🐾');
+      ...missingAnimals(p).map((a) => {
+        const e = el('span', 'pa missing', ANIMAL_ICONS[a.id] ?? '🐾');
         e.dataset.animal = a.id;
         return e;
       }),

@@ -1326,3 +1326,28 @@ id = "l1_burglar_hideout"
 kind = "burglar_hideout"
 rect = [-22, 21, 3, 6]
 notes = "Grass corridor between the west zoo wall and the pond (x -22..-20, z 21..26), reached from the ring over the grass row z 19 or from path_moon; outside loc_pond's rect."
+
+# ---------------------------------------------------------------- ad billboards (GAME-ADS, Q-244)
+# Free-standing boards on open grass beside the paths, facing south (the camera side); pos = board
+# centre (footprint 2.6 x 0.3 m, solid). The campaign of each board is seeded per session.
+# Placed by the implementer under the LAYOUT rules - to be reviewed by zoo-level-designer.
+
+[[ad_board]]
+id = "ad_l1_plaza_ne"
+pos = [7.5, 7.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l1_zebra_path"
+pos = [-9.5, 25.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l1_crossing"
+pos = [5.5, 30.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l1_north"
+pos = [-4.5, 43.5]
+facing = "-z"

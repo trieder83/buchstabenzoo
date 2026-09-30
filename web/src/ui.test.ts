@@ -9,6 +9,7 @@ import {
   parseHint,
   parseLyingIcons,
   parseProgress,
+  missingAnimals,
   saveSettings,
   targetIcon,
   type KeyValue,
@@ -179,6 +180,12 @@ describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
       { id: 'hippo', home: false },
     ]);
     expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [] });
+  });
+  it('NIGHT-022: shows only the animals still missing; none missing = empty list', () => {
+    const p = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"zebra","home":true},{"id":"hippo","home":false},{"id":"panda","home":false}]}');
+    expect(missingAnimals(p).map((a) => a.id)).toEqual(['hippo', 'panda']);
+    const done = parseProgress('{"state":"night_coming","level":"level_1","animals":[{"id":"zebra","home":true}]}');
+    expect(missingAnimals(done)).toEqual([]);
   });
 });
 

@@ -120,6 +120,10 @@ pub struct Element {
     pub animal: Option<String>,
     /// Enclosures: gate cells (part of the enclosure rectangle).
     pub gate: Option<Rect>,
+    /// Enclosures: the feeding spot (cells just inside the fence on the gate side, 1-2 m
+    /// wide) where the animals come to be given a treat; derived next to the gate when
+    /// absent (GAME-GARDEN §6).
+    pub feed_spot: Option<Rect>,
     /// Buildings: door cell.
     pub door: Option<[i32; 2]>,
     /// Hiding places: the cell where the animal waits.
@@ -707,6 +711,9 @@ pub struct LevelData {
     /// Furniture (proposal Q-137).
     #[serde(default, rename = "prop")]
     pub props: Vec<PropData>,
+    /// Ad billboards (GAME-ADS rule 1).
+    #[serde(default, rename = "ad_board")]
+    pub ad_boards: Vec<crate::ads::AdBoardData>,
     /// Vegetable gardens (GAME-GARDEN, proposal Q-102).
     #[serde(default, rename = "garden")]
     pub gardens: Vec<GardenData>,
@@ -883,6 +890,11 @@ impl LevelData {
                 e.part = shift(e.part);
                 e
             }));
+            out.ad_boards
+                .extend(next.ad_boards.into_iter().map(|mut e| {
+                    e.part = shift(e.part);
+                    e
+                }));
             out.lights.extend(next.lights.into_iter().map(|mut e| {
                 e.part = shift(e.part);
                 e

@@ -125,6 +125,17 @@ pub enum GameEvent {
     BabyBorn {
         animal: String,
     },
+    /// An animal at home ate the food the child carries (GAME-GARDEN §6, GARD-010): the food
+    /// stays in the hands.
+    FoodEaten {
+        animal: String,
+        food: Food,
+    },
+    /// It does not like the carried food: it turns away, the food stays in the hands.
+    FoodRefused {
+        animal: String,
+        food: Food,
+    },
     /// It does not like that treat: it sniffs and turns away, the treat stays.
     TreatRefused {
         animal: String,
@@ -268,6 +279,15 @@ pub enum Target {
     },
 }
 
+/// What the child gives to an animal at home.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Gift {
+    /// A garden treat from the basket (leaves the basket when eaten).
+    Treat(crate::garden::Treat),
+    /// The food in the hands (stays in the hands).
+    Food(Food),
+}
+
 impl Target {
     /// Targets with a reading panel (info boards, food boxes) open it by themselves.
     pub fn is_reading(&self) -> bool {
@@ -335,6 +355,12 @@ pub enum Interaction {
     },
     /// A garden sign: the word (Fluent key) and the reading-level sentence key.
     GardenSign { bed: String, key: String },
+    /// Gave the carried food to an animal at home (it stays in the hands).
+    FoodGift {
+        animal: &'static str,
+        food: Food,
+        accepted: bool,
+    },
     /// Gave a treat to an animal at home.
     Treat {
         animal: &'static str,
@@ -347,6 +373,17 @@ pub enum Interaction {
 pub enum InteractError {
     UnknownTarget,
     OutOfRange,
+}
+
+/// The baby of a pair at home (GAME-FAMILY §5, GARD-013): a real member of the group that
+/// follows the female, is called to the feeding spot with the pair (rank 2) and reacts to
+/// treats. Its position is not saved (it is placed next to the female on load).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Baby {
+    pub pos: Vec2,
+    pub facing: Vec2,
+    /// Remaining cells to walk through; empty = resting.
+    pub route: Vec<IVec2>,
 }
 
 /// One animal group (herd size Q-030: modelled as one unit).
@@ -534,6 +571,10 @@ pub struct Game {
     pub intro_seen: bool,
     /// Species whose pair already has its baby (GAME-FAMILY, FAM-008/009); saved.
     pub babies: Vec<String>,
+    /// Where the baby of each pair species is (a real member of the group at home, GARD-013).
+    pub baby_states: BTreeMap<String, Baby>,
+    /// Feeding spot per element index (enclosures with a gate), GAME-GARDEN §6.
+    pub feed_spots: Vec<Option<wander::FeedSpot>>,
     /// Automatic reading panel (GAME-PLAYER §4).
     pub panel: ReadingPanel,
     /// Seed of this playthrough and the RNG after the setup (GAME-SAVE).
@@ -632,6 +673,7 @@ impl GameEvent {
                 | GameEvent::MoonDoor { .. }
                 | GameEvent::Harvested { .. }
                 | GameEvent::TreatEaten { .. }
+                | GameEvent::FoodEaten { .. }
                 | GameEvent::BabyBorn { .. }
                 | GameEvent::FoodPutBack { .. }
                 | GameEvent::BambooCut { .. }
@@ -728,6 +770,13 @@ impl Game {
         let bamboo = crate::carrying::BambooForests::new(data.cut_spots.len());
         let level = Level::new(data);
         player.y = level.ground_height(player.pos);
+        let feed_spots = (0..level.data.elements.len())
+            .map(|e| {
+                (level.data.elements[e].ty == ElementType::Enclosure)
+                    .then(|| wander::feed_spot(&level, e, &wander::home_area(&level, e)))
+                    .flatten()
+            })
+            .collect();
         for a in &mut animals {
             a.area = wander_area_of(&level, a);
             a.facing = rest_facing(&level, a);
@@ -770,6 +819,8 @@ impl Game {
             all_home: false,
             intro_seen: false,
             babies: Vec::new(),
+            baby_states: BTreeMap::new(),
+            feed_spots,
             panel: ReadingPanel::default(),
             seed,
             rng,
@@ -1307,27 +1358,30 @@ impl Game {
                 });
             }
         }
-        // treats: at the fence of an animal at home (GAME-GARDEN §6)
-        if self.garden.basket.total() > 0 && !self.is_leading() {
+        // gifts: at an animal at home, inside its enclosure or at its fence (GAME-GARDEN §6)
+        if !self.is_leading() {
             let p = self.player.pos;
+            let mut seen: Vec<&'static str> = Vec::new();
             for a in &self.animals {
-                if a.state != AnimalState::InEnclosure || !self.in_scope(a) {
+                if a.state != AnimalState::InEnclosure
+                    || !self.in_scope(a)
+                    || seen.contains(&a.id())
+                    || self.gift_for(a.id()).is_none()
+                {
                     continue;
                 }
-                let r = data.elements[a.enclosure].rect;
-                let min = Vec2::new(r.x as f32, r.z as f32);
-                let max = min + Vec2::new(r.w as f32, r.d as f32);
-                let q = p.clamp(min, max);
-                if q == p
-                    || out
-                        .iter()
-                        .any(|it| it.target == Target::Treat { animal: a.id() })
-                {
-                    continue; // (inside: not at the fence)
-                }
+                seen.push(a.id());
+                // the member of the group nearest to the player
+                let near = self
+                    .group(a.id())
+                    .into_iter()
+                    .filter(|&j| self.animals[j].state == AnimalState::InEnclosure)
+                    .map(|j| self.animals[j].pos)
+                    .min_by(|x, y| x.distance(p).total_cmp(&y.distance(p)))
+                    .unwrap_or(a.pos);
                 out.push(Interactable {
                     target: Target::Treat { animal: a.id() },
-                    point: q,
+                    point: near,
                     readable: None,
                 });
             }
@@ -1476,15 +1530,24 @@ impl Game {
                     key: b.sign_key.clone(),
                 })
             }
-            Target::Treat { animal } => {
-                let treat = self.offered_treat()?;
-                let accepted = self.give_treat(animal, treat)?;
-                Some(Interaction::Treat {
-                    animal,
-                    treat,
-                    accepted,
-                })
-            }
+            Target::Treat { animal } => match self.gift_for(animal)? {
+                Gift::Treat(treat) => {
+                    let accepted = self.give_treat(animal, treat)?;
+                    Some(Interaction::Treat {
+                        animal,
+                        treat,
+                        accepted,
+                    })
+                }
+                Gift::Food(food) => {
+                    let accepted = self.give_food(animal)?;
+                    Some(Interaction::FoodGift {
+                        animal,
+                        food,
+                        accepted,
+                    })
+                }
+            },
         }
     }
 
@@ -1555,18 +1618,237 @@ impl Game {
                 && !self.babies.contains(&id)
             {
                 self.babies.push(id.clone());
+                self.spawn_baby(&id);
                 self.events.push(GameEvent::BabyBorn { animal: id });
             }
         } else {
             self.events
                 .push(GameEvent::TreatRefused { animal: id, treat });
         }
-        // it turns to the child at the fence
-        let to = self.player.pos - self.animals[i].pos;
-        if to.length() > 1e-3 {
-            self.animals[i].facing = to.normalize();
-        }
+        self.group_faces_player(self.animals[i].id());
         Some(accepted)
+    }
+
+    /// All members of an animal's group at home turn to the child.
+    fn group_faces_player(&mut self, animal: &str) {
+        let p = self.player.pos;
+        for j in self.group(animal) {
+            let a = &mut self.animals[j];
+            if a.state == AnimalState::InEnclosure {
+                let to = p - a.pos;
+                if to.length() > 1e-3 {
+                    a.facing = to.normalize();
+                }
+            }
+        }
+        if let Some(b) = self.baby_states.get_mut(animal) {
+            b.facing = (p - b.pos).normalize_or(b.facing);
+        }
+    }
+
+    /// What the child can give to an animal at home right now: a liked treat, else the liked
+    /// carried food, else (to be refused) any treat, else the carried food. `None` = nothing
+    /// in the basket or the hands.
+    pub fn gift_for(&self, animal: &str) -> Option<Gift> {
+        use crate::garden::{likes, Treat};
+        let b = &self.garden.basket;
+        let liked = |t: &Treat| b.count(*t) > 0 && likes(animal, *t);
+        let liked_treat = self
+            .treat_choice
+            .filter(liked)
+            .or_else(|| Treat::ALL.into_iter().find(liked));
+        let food = self.carry.food();
+        let food_liked = food.filter(|f| animal_info(animal).is_some_and(|i| i.eats(*f)));
+        liked_treat
+            .map(Gift::Treat)
+            .or(food_liked.map(Gift::Food))
+            .or_else(|| self.offered_treat().map(Gift::Treat))
+            .or(food.map(Gift::Food))
+    }
+
+    /// Whether the child holds something this animal likes (it then comes to the fence).
+    pub fn gift_liked(&self, animal: &str) -> bool {
+        match self.gift_for(animal) {
+            Some(Gift::Treat(t)) => crate::garden::likes(animal, t),
+            Some(Gift::Food(f)) => animal_info(animal).is_some_and(|i| i.eats(f)),
+            None => false,
+        }
+    }
+
+    /// Gives the carried food to an animal at home (GARD-010): it eats it if it is its food
+    /// (both of a pair, hearts), else it refuses. The food stays in the hands (FEED-023); no
+    /// baby (Q-198: only special treats). `None` if the animal is not at home or nothing is
+    /// carried.
+    pub fn give_food(&mut self, animal: &str) -> Option<bool> {
+        let i = self.animal_index(animal)?;
+        let food = self.carry.food()?;
+        if self.animals[i].state != AnimalState::InEnclosure {
+            return None;
+        }
+        let id = self.animals[i].id().to_owned();
+        let accepted = self.animals[i].info.eats(food);
+        self.events.push(if accepted {
+            GameEvent::FoodEaten {
+                animal: id.clone(),
+                food,
+            }
+        } else {
+            GameEvent::FoodRefused {
+                animal: id.clone(),
+                food,
+            }
+        });
+        self.group_faces_player(&id);
+        Some(accepted)
+    }
+
+    /// The feeding spot of an enclosure element (GAME-GARDEN §6).
+    pub fn feed_spot(&self, enclosure: usize) -> Option<&wander::FeedSpot> {
+        self.feed_spots.get(enclosure)?.as_ref()
+    }
+
+    /// Target cells (male, female, baby) of animal `i`'s group while the child calls it with
+    /// something it likes: the feeding spot when she stands near it, else the cells nearest to
+    /// her at the fence. `None` = not called.
+    fn gift_call(&self, i: usize) -> Option<[IVec2; 3]> {
+        let a = &self.animals[i];
+        if a.state != AnimalState::InEnclosure
+            || self.is_leading()
+            || self.animals[i].area.is_empty()
+            || !self.gift_liked(a.id())
+        {
+            return None;
+        }
+        let p = self.player.pos;
+        let r = self.level.data.elements[a.enclosure].rect;
+        let min = Vec2::new(r.x as f32, r.z as f32);
+        let max = min + Vec2::new(r.w as f32, r.d as f32);
+        if p.distance(p.clamp(min, max)) > wander::GIFT_CALL_M {
+            return None;
+        }
+        if let Some(s) = self.feed_spot(a.enclosure) {
+            if p.distance(s.stand) <= wander::FEED_SPOT_CALL_M {
+                return Some([s.cell_for(0), s.cell_for(1), s.cell_for(2)]);
+            }
+        }
+        let mut cells: Vec<IVec2> = a.area.cells().map(|(c, _)| c).collect();
+        cells.sort_by(|x, y| {
+            cell_center(*x)
+                .distance_squared(p)
+                .total_cmp(&cell_center(*y).distance_squared(p))
+        });
+        let first = *cells.first()?;
+        Some([
+            first,
+            *cells.get(1).unwrap_or(&first),
+            *cells.get(2).unwrap_or(&first),
+        ])
+    }
+
+    /// Index of the female (second member) of a pair species at home.
+    fn female_of(&self, species: &str) -> Option<usize> {
+        self.group(species)
+            .into_iter()
+            .find(|&j| self.animals[j].member == 1)
+    }
+
+    /// The cell the baby waits in next to its mother: a neighbouring cell of her area, never
+    /// the cell of a parent and never at the fence (≥ 1 m inside where possible).
+    fn baby_home_cell(&self, female: usize) -> Option<IVec2> {
+        let f = &self.animals[female];
+        let r = self.level.data.elements[f.enclosure].rect;
+        let inner = |c: IVec2| c.x > r.x && c.x < r.x + r.w - 1 && c.y > r.z && c.y < r.z + r.d - 1;
+        let here = cell_of(f.pos);
+        let taken: Vec<IVec2> = self
+            .group(f.id())
+            .into_iter()
+            .map(|j| cell_of(self.animals[j].pos))
+            .collect();
+        f.area
+            .cells()
+            .map(|(c, _)| c)
+            .filter(|c| !taken.contains(c))
+            .min_by(|x, y| {
+                let key = |c: &IVec2| {
+                    let d = cell_center(*c).distance(cell_center(here));
+                    (!inner(*c), (d * 100.0) as i32)
+                };
+                key(x).cmp(&key(y))
+            })
+    }
+
+    /// Places the newborn baby next to its mother (birth and save restore).
+    pub(crate) fn spawn_baby(&mut self, species: &str) {
+        let Some(f) = self.female_of(species) else {
+            return;
+        };
+        let Some(c) = self.baby_home_cell(f) else {
+            return;
+        };
+        let facing = self.animals[f].facing;
+        self.baby_states.insert(
+            species.to_owned(),
+            Baby {
+                pos: cell_center(c),
+                facing,
+                route: Vec::new(),
+            },
+        );
+    }
+
+    /// The baby follows its mother and comes to the feeding spot with the pair (rank 2).
+    fn update_babies(&mut self, dt: f32) {
+        let species: Vec<String> = self.baby_states.keys().cloned().collect();
+        let p = self.player.pos;
+        let dark = self.daytime.is_dark();
+        let night_part: Vec<bool> = self.level.data.parts.iter().map(|pt| pt.night).collect();
+        for id in species {
+            let Some(f) = self.female_of(&id) else {
+                continue;
+            };
+            if self.animals[f].state != AnimalState::InEnclosure
+                || (dark && !night_part[self.animals[f].part])
+            {
+                continue;
+            }
+            let call = self.gift_call(f);
+            let target = match &call {
+                Some(c) => Some(c[2]),
+                None => {
+                    let mother = self.animals[f].pos;
+                    let far = self
+                        .baby_states
+                        .get(&id)
+                        .is_some_and(|b| b.pos.distance(mother) > 2.0);
+                    far.then(|| self.baby_home_cell(f)).flatten()
+                }
+            };
+            let area = &self.animals[f].area;
+            let Some(b) = self.baby_states.get_mut(&id) else {
+                continue;
+            };
+            if let Some(t) = target {
+                let here = cell_of(b.pos);
+                if t != here && b.route.last() != Some(&t) {
+                    b.route = area.route(here, t).unwrap_or_default();
+                }
+            }
+            if b.route.is_empty() {
+                if call.is_some() {
+                    b.facing = (p - b.pos).normalize_or(b.facing);
+                }
+                continue;
+            }
+            let speed = if call.is_some() {
+                wander::GIFT_SPEED
+            } else {
+                wander::WANDER_SPEED
+            };
+            let (_, dir) = wander::follow_route(&mut b.pos, &mut b.route, speed * dt);
+            if dir != Vec2::ZERO {
+                b.facing = dir;
+            }
+        }
     }
 
     /// Whether a gate / door model should stand open now (LAYOUT-031, GAME-LAYOUT "Gates and
@@ -1633,6 +1915,20 @@ impl Game {
         let Some(i) = leader else { return false };
         if self.animals[i].enclosure == enc {
             let id = self.animals[i].id();
+            // a partner that still waits far behind (RESC-006) must catch up first: the pair
+            // enters together, else the mission would stay open (GARD-014)
+            if self
+                .group(id)
+                .into_iter()
+                .any(|j| self.animals[j].state == AnimalState::Following && self.animals[j].waiting)
+            {
+                if announce_refuse {
+                    self.events.push(GameEvent::Waiting {
+                        animal: id.to_owned(),
+                    });
+                }
+                return false;
+            }
             for j in self.group(id) {
                 let a = &self.animals[j];
                 if a.state == AnimalState::Following && !a.waiting {
@@ -1686,6 +1982,7 @@ impl Game {
         self.bamboo.update(dt);
         self.update_followers(dt);
         self.update_wander(dt);
+        self.update_babies(dt);
         self.update_daytime(dt);
         self.update_panel(dt);
         self.time_s += f64::from(dt);
@@ -1985,6 +2282,34 @@ impl Game {
                 let to = p - a.pos;
                 if to.length() <= wander::NOTICE_PLAYER_M {
                     a.facing = to.normalize_or(a.facing);
+                }
+                continue;
+            }
+            if let Some(cells) = self.gift_call(i) {
+                // the child holds something it likes: it comes to the feeding spot (or the
+                // fence nearest to her) and waits there (GARD-010)
+                let a = &mut self.animals[i];
+                let rank = usize::from(a.member).min(2);
+                let b = cells[rank];
+                let here = cell_of(a.pos);
+                let near = a.pos.distance(p);
+                if near > wander::GIFT_WAIT_M && b != here && cell_center(b).distance(a.pos) > 0.05
+                {
+                    if a.wander.route.last() != Some(&b) {
+                        a.wander.route = a.area.route(here, b).unwrap_or_default();
+                    }
+                    a.wander.pause_s = 1.0;
+                    let (_, dir) = wander::follow_route(
+                        &mut a.pos,
+                        &mut a.wander.route,
+                        wander::GIFT_SPEED * dt,
+                    );
+                    if dir != Vec2::ZERO {
+                        a.facing = dir;
+                    }
+                } else {
+                    a.wander.route.clear();
+                    a.facing = (p - a.pos).normalize_or(a.facing);
                 }
                 continue;
             }

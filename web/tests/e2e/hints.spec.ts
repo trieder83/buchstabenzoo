@@ -290,12 +290,13 @@ test.describe('phone portrait (touch)', () => {
     await nextFrames(page, 3);
     expect((await hint(page))?.kind).toBe('board');
     await page.screenshot({ path: shot(info, 'phone_hint_and_progress.png') });
-    // one animal home: one icon filled
+    // one animal home: its icon disappears, only the missing ones stay (NIGHT-022)
     await page.evaluate(() => window.__zoo!.app.debug_send_home('hippo'));
     await nextFrames(page, 3);
     await hideCelebration(page);
-    await expect(prog.locator('.pa.home')).toHaveCount(1);
-    await expect(prog.locator('.pa.home')).toHaveAttribute('data-animal', 'hippo');
+    await expect(prog.locator('.pa')).toHaveCount(2);
+    await expect(prog.locator('.pa[data-animal="hippo"]')).toHaveCount(0);
+    await expect(prog).toHaveAttribute('data-home', '1');
     // HINT-013: tapping the 🌙 progress is the same as 🧭
     await page.evaluate(() => window.__zoo!.app.debug_step(12.5)); // the old hint is gone
     await nextFrames(page, 2);

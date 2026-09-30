@@ -761,3 +761,25 @@ fn hint_014_night_021_following_the_hints_leads_to_the_night() {
     // every level-1 hiding place was played at least once
     assert_eq!(places.len(), 9, "{places:?}");
 }
+
+// HINT-017: the treat hint points at the animal's fence (outside) or at the animal (inside)
+// only while the child holds something the animal likes; carried own food counts too.
+#[test]
+fn hint_017_treat_hint_follows_what_is_liked() {
+    let mut g = common::game(1);
+    assert!(g.debug_send_home("zebra"));
+    let has = |g: &Game| {
+        candidates(g, &HintTracker::default())
+            .iter()
+            .any(|h| h.kind == HintKind::Treat)
+    };
+    assert!(!has(&g), "nothing to give: no hint");
+    g.garden.basket.carrots = 1;
+    assert!(has(&g), "a liked carrot");
+    g.garden.basket.carrots = 0;
+    g.garden.basket.potatoes = 1; // zebras do not like potatoes
+    assert!(!has(&g), "a disliked treat: no hint");
+    let own = g.animal("zebra").unwrap().info.foods[0];
+    g.carry.take(&zoo_core::FoodBox { food: own });
+    assert!(has(&g), "the zebra's own carried food");
+}

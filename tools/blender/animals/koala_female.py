@@ -3,7 +3,7 @@
 Run:  blender -b --factory-startup --python tools/blender/animals/koala_female.py [-- --no-preview]
 
 The adult `koala` (koala.py: same kit, rig, joints and clips) at 1/1.1 (male ~10 %% larger, GAME-FAMILY §3) scale,
-lighter silvery grey and a larger cream chest/belly patch up to the chin (brief).
+lighter silvery grey and a larger cream chest/belly patch up to the chin, cream eye patches and lashes (brief).
 Writes assets/models/animals/koala_female.glb, assets/blender/animals/koala_female.blend,
 assets/textures/animals/koala_female_body.png, art/animals/koala_female/model_preview.png.
 """
@@ -22,7 +22,9 @@ qr = qk.qr
 ASSET = "koala_female"
 SCALE = 1 / 1.1
 koala.COLORS["grey"] = "#AEB3B8"  # lighter, silvery (brief)
-koala.PATCH.update(chest_x=0.15, chest_z=0.53, belly_z=0.26, belly_x=0.15, chin_v=0.40)
+koala.PATCH.update(chest_x=0.15, chest_z=0.53, belly_z=0.26, belly_x=0.15, chin_v=0.40,
+                   eye_patch=0.065)
+koala.LASHES = True  # heavy upper lid + lash flick (concept)
 qr.set_variant(SCALE)
 
 if __name__ == "__main__":

@@ -16,9 +16,16 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
 const assetsRoot = path.join(repoRoot, 'assets');
 const ASSET_DIRS = ['levels', 'models', 'textures', 'i18n', 'audio'];
+// Ad content (GAME-ADS "External content"): the signed manifest + its images live in the repo's
+// `ads/` and are served at `/ads/` (same origin, swapped without a game update, PLAT-010).
+const adsRoot = path.join(repoRoot, 'ads');
 const TYPES: Record<string, string> = {
   '.glb': 'model/gltf-binary',
   '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.sig': 'text/plain; charset=utf-8',
   '.toml': 'text/plain; charset=utf-8',
   '.ftl': 'text/plain; charset=utf-8',
   '.json': 'application/json',
@@ -43,9 +50,34 @@ export function listAssets(root = assetsRoot): string[] {
   return out.sort();
 }
 
+/** Files of `ads/` that are served: manifest, signature, images (not templates or keys). */
+export function listAds(root = adsRoot): string[] {
+  const out: string[] = [];
+  for (const f of ['campaigns.json', 'campaigns.sig']) {
+    if (fs.existsSync(path.join(root, f))) out.push(f);
+  }
+  const img = path.join(root, 'img');
+  if (fs.existsSync(img)) {
+    for (const f of fs.readdirSync(img).sort()) if (/\.(png|webp|jpe?g)$/.test(f)) out.push(`img/${f}`);
+  }
+  return out;
+}
+
 function zooAssets(): Plugin {
   const middleware: Connect.NextHandleFunction = (req, res, next) => {
     const url = decodeURIComponent((req.url ?? '').split('?')[0]);
+    if (url.startsWith('/ads/')) {
+      const rel = url.slice('/ads/'.length);
+      if (!listAds().includes(rel)) {
+        res.statusCode = 404;
+        res.end();
+        return;
+      }
+      res.setHeader('Content-Type', TYPES[path.extname(rel)] ?? 'application/octet-stream');
+      res.setHeader('Cache-Control', 'no-store');
+      fs.createReadStream(path.join(adsRoot, rel)).pipe(res);
+      return;
+    }
     if (!url.startsWith('/assets/')) return next();
     const rel = url.slice('/assets/'.length);
     if (rel === 'index.json') {
@@ -83,15 +115,21 @@ function zooAssets(): Plugin {
         this.emitFile({ type: 'asset', fileName: `assets/${rel}`, source: fs.readFileSync(path.join(assetsRoot, rel)) });
       }
       this.emitFile({ type: 'asset', fileName: 'assets/index.json', source: JSON.stringify(files) });
+      for (const rel of listAds()) {
+        this.emitFile({ type: 'asset', fileName: `ads/${rel}`, source: fs.readFileSync(path.join(adsRoot, rel)) });
+      }
     },
   };
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: './',
+  // `?adkey=` (test public key for the ad signature) exists only in the dev server and in the
+  // e2e test build (`VITE_AD_TEST=1`), never in the release bundle (PLAT-012, Q-245).
+  define: { __AD_TEST__: JSON.stringify(command === 'serve' || process.env.VITE_AD_TEST === '1') },
   appType: 'mpa', // no SPA fallback: unknown paths are 404, never index.html
   plugins: [zooAssets()],
   server: { fs: { allow: [repoRoot] } },
   build: { assetsDir: 'bundle', target: 'es2022' },
   test: { include: ['src/**/*.test.ts'] },
-});
+}));

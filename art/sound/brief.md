@@ -2,7 +2,7 @@
 
 Sound-artist log: where every cue comes from. The sound artist cannot listen; all cues are
 `approved = false` until a human has listened. Manifest block: `python3 tools/sound/register.py`.
-Build: `python3 tools/sound/{steps,doors,pickups,ui,animals}.py` (deterministic, seeded, output to
+Build: `python3 tools/sound/{steps_real,doors,pickups,ui,animals}.py` (deterministic, seeded, output to
 `assets/audio/<group>/<cue>_<n>.{ogg,m4a}`); checks: `python3 tools/sound/check_audio.py`
 and `cargo test -p zoo-assets --test audio` (ASND-001/002/003/008; ASND-004 `--ignored`).
 
@@ -10,17 +10,41 @@ Processing (`tools/sound/process.py`): trim at -50 dB, 5 ms fades, K-weighted (B
 ungated) loudness -16 LUFS, soft limiter, peaks <= -1.2 dBFS, mono 44.1 kHz, Vorbis q2 `.ogg`
 + AAC 48 kbit `.m4a`.
 
-## Group steps (synthesised, `tools/sound/steps.py`, 4 variations each, 0.16-0.30 s)
+## Group steps (REDONE 2026-09-30, `tools/sound/steps_real.py`; the synth version in `steps.py` was "not realistic at all")
 
-| Cue | Recipe (intent: soft, cartoon-like) |
-|---|---|
-| `step_path` | band-passed noise tap + 130 Hz thump |
-| `step_grass` | high-band swish + low body + 3 blade crackles |
-| `step_sand` | soft hiss + low body + ~14 fine grains |
-| `step_wood` | hollow "tok" from 3 damped sines (190/340/610 Hz) + click |
-| `step_water` | band-passed splash + 2-3 rising bloops |
+Real recordings cut at the onset, pitched up +1...+5 semitones by resampling (smaller, lighter, slightly
+quicker step), high-pass 90-110 Hz, low-pass 2.2-5 kHz (soft, not crunchy), faded out within 0.25-0.35 s,
+then `process.normalise`. Variant files `step_<surface>_<n>`; the host finds the count from the file index.
 
-Variations differ by seed, pitch (+-10-20 %) and grain placement. The host adds +-5 % pitch.
+| Cue | Variants | Source | Licence |
+|---|---|---|---|
+| `step_path` | 6 | Fantozzi "Stone" L/R 1-3, https://opengameart.org/content/fantozzis-footsteps-grasssand-stone (Freesound pack 10338) | CC0 |
+| `step_grass` | 6 | Fantozzi "Sand" L/R 1-3, same page (author: "sand sounds like grass too"), low-pass 3.6-4 kHz | CC0 |
+| `step_sand` | 4 | TinyWorlds gravel (x2 pitches) + mud02, https://opengameart.org/content/different-steps-on-wood-stone-leaves-gravel-and-mud; 1x Fantozzi Sand R2 low-passed 2.2 kHz | CC0 |
+| `step_wood` | 4 | TinyWorlds wood01/02/03 (+ wood03 at +5 st), same page; very bassy source (centroid ~180 Hz), high-passed 110 Hz | CC0 |
+| `step_water` | 4 | Runway `eleven_text_to_sound_v2`: 2 takes x 2 pitches | generated (Q-250) |
+
+Runway (docs.dev.runwayml.com: `POST /v1/sound_effect`, model `eleven_text_to_sound_v2`, 1 credit/s;
+header `X-Runway-Version: 2024-11-06`; script `tools/sound/runway_gen.py`, key from `MF_RUNWAY_API_KEY`,
+never stored). 8 calls, raw takes in `.run/sound-src/runway/` (not committed). Prompts:
+
+| Take | Prompt | Duration | Analysis | Used |
+|---|---|---|---|---|
+| grass_a | Soft footstep of a small child in light shoes walking on grass, single step, dry, close microphone, gentle | 1 s | 2 peaks, -30 dB span 0.86 s, centroid 6.3 kHz | no (long, hissy) |
+| path_a | ... walking on a paved stone path, single step, dry, close microphone, gentle | 1 s | one step at 0.44 s, weak (-29 dBFS), centroid 0.7 kHz | no |
+| grass_b | One single soft footstep on lawn grass by a light child, no other sounds, dry, close microphone | 1 s | 5 peaks (several steps), centroid 5.0 kHz | no |
+| path_b | One single soft footstep of a light child on cobblestone street, no other sounds, dry, close microphone | 1 s | 7 peaks, centroid 2.5 kHz | no |
+| grass_c | Single soft footstep of a small child on grass, light shoe, muffled, dry, no echo, close microphone | 0.5 s | 2 peaks, span 0.38 s, centroid 4.3 kHz | no (brighter than the real ones, 2.6 kHz) |
+| path_c | Single soft footstep of a small child on a paved stone path, light shoe, muffled, dry, no echo, close microphone | 0.5 s | 4 peaks, centroid 2.5 kHz | no |
+| water_a | Single soft footstep of a child splashing in shallow water, small gentle splash, dry, close microphone | 0.6 s | 4 peaks, span 0.40 s | yes (step_water 1, 3) |
+| water_b | Gentle small splash of a bare child foot stepping in a shallow puddle, single step, cartoon-soft | 0.6 s | 3 peaks, span 0.46 s | yes (step_water 2, 4) |
+
+Generated footsteps came out multi-hit / hissy (the model does not reliably give one footfall), the
+real recordings were cleaner, so only the water splashes (no CC0 source found) use Runway output.
+Analysis of the delivered files (Welch centroid, -30 dB span): grass 0.23-0.25 s, centroid 2.4-2.8 kHz;
+path 0.21-0.24 s, 2.2-2.5 kHz; sand 0.19-0.29 s, 1.1-2.0 kHz; wood 0.17-0.23 s, ~180 Hz; water
+0.26-0.31 s, 2.1-3.0 kHz. All -16 LUFS, peaks -8...-5 dBFS, no clipping, tail < -24 dB at the end.
+Nobody listened.
 
 ## Group doors (`tools/sound/doors.py`, 0.55-1.2 s)
 

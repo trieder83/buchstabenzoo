@@ -285,6 +285,103 @@ pub fn water_depth(level: &Level, p: Vec2) -> f32 {
     }
 }
 
+/// A child holding something an animal at home likes calls it from this far outside its
+/// fence (GAME-GARDEN §6).
+pub const GIFT_CALL_M: f32 = 3.0;
+/// The called animal waits when it is this close to the child.
+pub const GIFT_WAIT_M: f32 = 1.4;
+
+/// Walking speed of an animal called to the feeding spot (faster than wandering, GARD-010).
+pub const GIFT_SPEED: f32 = 1.0;
+/// A child this close to the feeding spot's stand point calls the group to the spot cells.
+pub const FEED_SPOT_CALL_M: f32 = 2.5;
+
+/// The feeding spot of an enclosure (GAME-GARDEN §6): two fence-side cells next to the gate
+/// where the male, the female (and the baby one cell further in) wait for a treat.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FeedSpot {
+    /// Cells for the male and the female (inside the fence).
+    pub cells: [IVec2; 2],
+    /// Direction from the fence into the enclosure (unit cell step).
+    pub inward: IVec2,
+    /// Where the child stands: 0.9 m outside the fence, in front of the spot.
+    pub stand: Vec2,
+}
+
+impl FeedSpot {
+    /// Target cell of a group rank: 0 male, 1 female, 2 baby (one cell further in).
+    pub fn cell_for(&self, rank: usize) -> IVec2 {
+        match rank {
+            0 => self.cells[0],
+            1 => self.cells[1],
+            _ => self.cells[0] + self.inward,
+        }
+    }
+}
+
+/// The feeding spot of enclosure `enclosure`: its data `feed_spot`, else two cells on the
+/// gate's fence side, one empty cell (≥ 1 m) beyond the gate posts, on either side of the
+/// gate — the nearest pair whose cells belong to `area` and whose outside (stand) cells and
+/// their neighbours are walkable (≥ 1.5 m clear of hedges, water and boards).
+pub fn feed_spot(level: &Level, enclosure: usize, area: &WanderArea) -> Option<FeedSpot> {
+    let enc = &level.data.elements[enclosure];
+    let g = enc.gate?;
+    let r = enc.rect;
+    let inward = if g.w == 1 && g.x == r.x {
+        IVec2::X
+    } else if g.w == 1 && g.x == r.x + r.w - 1 {
+        IVec2::NEG_X
+    } else if g.d == 1 && g.z == r.z {
+        IVec2::Y
+    } else {
+        IVec2::NEG_Y
+    };
+    let tangent = IVec2::new(inward.y.abs(), inward.x.abs()); // along the fence
+    let grid = level.grid();
+    let spot_at = |first: IVec2| -> Option<FeedSpot> {
+        let cells = [first, first + tangent];
+        let ok = cells.iter().all(|&c| {
+            area.contains(c)
+                && (1..=2).all(|k| {
+                    let o = c - inward * k;
+                    [o, o + tangent, o - tangent]
+                        .iter()
+                        .all(|&n| grid.is_walkable(n, false))
+                })
+        });
+        ok.then(|| FeedSpot {
+            cells,
+            inward,
+            stand: (cell_center(cells[0]) + cell_center(cells[1])) / 2.0
+                - Vec2::new(inward.x as f32, inward.y as f32) * 1.4,
+        })
+    };
+    if let Some(f) = enc.feed_spot {
+        let mut it = f.cells();
+        let a = it.next()?;
+        let b = it.next().unwrap_or(a + tangent);
+        let cells = [a, b];
+        return Some(FeedSpot {
+            cells,
+            inward,
+            stand: (cell_center(a) + cell_center(b)) / 2.0
+                - Vec2::new(inward.x as f32, inward.y as f32) * 1.4,
+        });
+    }
+    let gate_cells: Vec<IVec2> = g.cells().collect();
+    let t = |c: IVec2| c.x * tangent.x + c.y * tangent.y;
+    let lo = gate_cells.iter().copied().min_by_key(|&c| t(c))?;
+    let hi = gate_cells.iter().copied().max_by_key(|&c| t(c))?;
+    for gap in 1..=6 {
+        for first in [hi + tangent * (gap + 1), lo - tangent * (gap + 2)] {
+            if let Some(s) = spot_at(first) {
+                return Some(s);
+            }
+        }
+    }
+    None
+}
+
 /// Wander state of one animal (saved, GAME-SAVE / ANIM-011).
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Wander {

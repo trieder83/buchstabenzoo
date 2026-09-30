@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-223** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-252** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-98 answered · 93 open · 10 other (partly answered / proposed / superseded).
+100 answered · 101 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -90,7 +90,6 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-188 — Night progress 🌙 (GAME-NIGHT rule 11, user request 2026-09-28): the request names the day level's animals. (GAME-NIGHT, GAME-HINT)
 - Q-211 — Audio size budget with animal calls: 20 species x 3 cues = 60 cues at ~1.5 s cost ~16 KB (Vorbis) + ~11 KB (AAC) each = ~1.6 MB on top of … (ART-SOUND, PERF-BUDGETS)
 - Q-213 — Generated audio terms: Gemini output carries a SynthID watermark and the API terms (commercial use, use in a children's app / store … (ART-SOUND)
-- Q-203 — Female zebra detail (GAME-FAMILY §3, Q-074): zebra_female is the male at 1/1.1 without the forelock/longer lashes of the brief; only size … (GAME-FAMILY, ART-ANIMALS)
 - Q-204 — Baby behaviour (GAME-FAMILY §5): the baby is only drawn (zoo-web, next to the female, her clips, own model, game.babies); it has no Animal … (GAME-FAMILY, ART-ANIMALS)
 - Q-214 — Animal calls, licences (route 1 of Q-210, 2026-09-30): public-domain files (Wikimedia Commons) are manifest licence = "public-domain" … (ART-SOUND)
 - Q-215 — Species without any usable free recording (only CC-BY-SA, which we exclude, or nothing): giraffe (Commons / OpenGameArt have giraffe hums … (ART-SOUND)
@@ -98,7 +97,16 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-220 — Footsteps of following animals and the _baby / _step cues (ART-SOUND "Playback"): only the player's steps are played in this version. (ART-SOUND)
 - Q-221 — Stereo pan (ART-SOUND "Playback"): not in this version (the camera yaw would have to reach the host). (ART-SOUND)
 - Q-222 — Background music / ambient loop (not part of ART-SOUND): does the game get a soft loop, and on what terms (volume, toggle shared with the … (ART-SOUND)
-- Q-217 — Clickable external link in the billboard ad of campaign 1 (Math Fighter, https://mathfighter.rcms.ch; user request 2026-09-30: clickable … (GAME-ADS, GAME-ADS-C1, PROD-VISION)
+- Q-240 — Ad content is loaded externally and must be unspoofable (user 2026-09-30). (GAME-ADS, TECH-PLATFORMS)
+- Q-241 — Who defines which campaigns and link targets exist? (GAME-ADS)
+- Q-242 — Parental gate (Q-217) details. (GAME-ADS, GAME-ADS-C1)
+- Q-243 — Ad caching / offline. Proposal: no persistent ad cache in the game (only the browser's HTTP cache, ads/ max-age 300 s, everything is … (GAME-ADS, TECH-PLATFORMS)
+- Q-244 — Number and assignment of boards. (GAME-ADS, GAME-LAYOUT)
+- Q-245 — Test hook for the signature key. (GAME-ADS, TECH-PLATFORMS)
+- Q-246 — Taglines come from the signed manifest (per language, ≤ 80 characters, plain text) and not from Fluent: campaigns change without an app … (GAME-ADS, CONT-L10N)
+- Q-247 — Reading panel of a board: opens by itself when the player stands in front of a readable board (like info boards), closes on leaving / ✖ / … (GAME-ADS, GAME-PLAYER)
+- Q-250 — Runway-generated sound (ART-SOUND): step_water_* are outputs of Runway eleven_text_to_sound_v2 (POST /v1/sound_effect, 1 credit/s). (ART-SOUND)
+- Q-251 — Footstep realism (ART-SOUND, redo 2026-09-30): path and grass are cut from CC0 real recordings (Fantozzi stone / "sand", which the author … (ART-SOUND)
 
 ## Partly answered / other
 
@@ -115,6 +123,8 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-217 — Clickable external link in the billboard ad of campaign 1 (Math … → Answered 2026-09-30 (user): option (a). Readable own boards, link button, parental gate, the page opens externally only after the …
+- Q-203 — Female zebra detail (GAME-FAMILY §3, Q-074): zebra_female is the male … → Done in model v2 (2026-09-30): forelock mesh part (zebra.FORELOCK) + painted lashes (zebra.LASHES) in zebra_female.py.
 - Q-212 — Formats: .ogg (Vorbis) plus .m4a (AAC) are both delivered (Safari/iOS … → Implemented 2026-09-30 (host proposal, user decision): the host picks .ogg when canPlayType allows Vorbis, else .m4a; both stay …
 - Q-210 — Animal calls source (ART-SOUND, feasibility test 2026-09-30 … → 2026-09-30: route 1, real recordings under a free licence (CC0 / public domain), processed until cute; sound effects only, no …
 - Q-202 — Level design rules (GAME-LAYOUT "Level design rules", user request … → 2026-09-30: yes — the pacing numbers stand (first board ≤ 15 s, ≤ 60 s between mission steps, 10–20 min per level).

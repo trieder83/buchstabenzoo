@@ -384,7 +384,7 @@ class Kit:
                 self.mb.mark_glow(faces[-12:])  # the pole_end fan (12 = ring vertices)
 
     def eye_swatch(self, iris="iris", pupil="pupil", white="eye_white", ink="ink", iris_r=0.62,
-                   pupil_r=0.36, look=0.12):
+                   pupil_r=0.36, look=0.12, lashes=False):
         P = self.pal
 
         def fn(U, V):
@@ -393,6 +393,9 @@ class Kit:
             rr = np.hypot(x, y)
             inner = rr < 0.86
             c[inner] = P(white)
+            if lashes:  # heavy upper lid + outer lash flick (female variants)
+                c[inner & (y > 0.42) & (rr > 0.50)] = P(ink)
+                c[inner & (np.hypot(x + 0.60, y - 0.52) < 0.30)] = P(ink)
             c[inner & (np.hypot(x - look, y + 0.02) < iris_r)] = P(iris)
             c[inner & (np.hypot(x - look * 1.1, y + 0.02) < pupil_r)] = P(pupil)
             c[np.hypot(x - look + 0.12, y - 0.25) < 0.17] = P(white)

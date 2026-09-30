@@ -69,7 +69,7 @@ SIZES = {
     "zebra_female": {"back": 1.18, "max_height": 2.15},
     "zebra_foal": {"back": 0.58, "max_height": 1.15},
     "koala_female": {"back": 0.55, "max_height": 0.86},
-    "koala_joey": {"back": 0.27, "max_height": 0.43},
+    "koala_joey": {"back": 0.27, "max_height": 0.45},
     "koala": {"back": 0.61, "max_height": 0.95, "height": 0.90},
     "elephant": {"back": 2.33, "max_height": 3.05, "height": 3.00},
     "giraffe": {"back": 2.30, "max_height": 4.55, "height": 4.50},

@@ -18,6 +18,7 @@ use crate::level::{band_run, cell_center, enclosure_fence, Element, Grid, Run, R
 use crate::level::{ElementType, LevelData, Rect};
 use glam::{IVec2, Quat, Vec2, Vec3};
 
+mod ad_board;
 mod models;
 pub use models::*;
 
@@ -192,6 +193,13 @@ pub enum DecalImage {
     /// language changes.
     Text {
         key: String,
+        width_px: u32,
+        height_px: u32,
+    },
+    /// The picture of an ad board (GAME-ADS): the host uploads a placeholder text or a
+    /// verified campaign image as the texture `ad:<board>` (`App::set_ad_texture`).
+    Ad {
+        board: String,
         width_px: u32,
         height_px: u32,
     },
@@ -920,6 +928,14 @@ impl LevelScene {
             }
             for bx in &mut s.boxes[first_box..] {
                 bx.part = p.part as u8;
+            }
+        }
+        // Ad billboards (GAME-ADS): frame, posts, footprint, picture decal.
+        for b in &data.ad_boards {
+            let first_box = s.boxes.len();
+            s.ad_board(b);
+            for bx in &mut s.boxes[first_box..] {
+                bx.part = b.part as u8;
             }
         }
         // Vegetable gardens (GAME-GARDEN, proposal Q-102).

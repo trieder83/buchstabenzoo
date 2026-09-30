@@ -50,7 +50,7 @@ hint-pickup = Heb es auf
 hint-bamboo = Schneide Bambus
 hint-water = Hol Wasser
 hint-garden = Ernte im Garten
-hint-treat = Gib einen Leckerbissen
+hint-treat = Geh zum Tier und gib ihm etwas zu fressen
 hint-bed = Zeit zum Schlafen
 hint-moon = Geh durch das Mondtor
 
@@ -73,3 +73,13 @@ intro-skip = Überspringen
 
 # Animal pair got a baby (GAME-FAMILY, FAM-008)
 family-baby = Juhu, ein Baby!
+
+# Ad billboards (GAME-ADS): placeholders and the reading panel / parental gate (ADS-003, ADS-020)
+ad-placeholder-1 = Deine Werbung 1
+ad-placeholder-2 = Deine Werbung 2
+ad-placeholder-3 = Deine Werbung 3
+ad-link-open = Öffnen
+ad-gate-title = Nur für Erwachsene
+ad-gate-sum = Löse die Aufgabe:
+ad-gate-hold = Halte den Knopf 3 Sekunden gedrückt.
+ad-close = Schließen

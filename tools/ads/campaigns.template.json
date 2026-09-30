@@ -1,0 +1,30 @@
+{
+  "format": "buchstabenzoo-ads/1",
+  "version": 0,
+  "issued": "",
+  "valid_until": "",
+  "campaigns": [
+    {
+      "id": "mathfighter",
+      "slot": 1,
+      "active": true,
+      "link": "https://mathfighter.rcms.ch",
+      "tagline": { "de": "Lerne Mathe in einem lustigen Turnier", "en": "Learn math in a fun tournament" },
+      "images": [
+        { "lang": "*", "path": "img/mathfighter-wide.webp" },
+        { "lang": "*", "path": "img/mathfighter-alt.webp" }
+      ]
+    },
+    {
+      "id": "abcsmash",
+      "slot": 2,
+      "active": true,
+      "link": "https://abcsmash.rcms.ch",
+      "tagline": { "de": "Lesen lernen – flüssig und schnell", "en": "Learn to read – fluent and fast" },
+      "images": [
+        { "lang": "de", "path": "img/abcsmash-de.webp" },
+        { "lang": "en", "path": "img/abcsmash-en.webp" }
+      ]
+    }
+  ]
+}

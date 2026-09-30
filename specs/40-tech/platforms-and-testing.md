@@ -6,7 +6,7 @@ module: platforms-and-testing
 status: draft
 depends_on: [TECH-ARCH]
 test_prefix: PLAT
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Platforms, performance and testing
@@ -51,9 +51,18 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 5. No tracking (CLAUDE.md child-safety, Q-128): Firebase Analytics and every other Firebase
    SDK stay off; the page loads nothing but its own files. A `Content-Security-Policy` with
    `default-src 'self'` / `connect-src 'self'` enforces this in the browser.
-6. Size: the release build `web/dist` stays ≤ 30 MB (PLAT-001); the deploy script refuses
+6. **Ad content** (GAME-ADS "External content"): the signed ad manifest, its signature and images
+   are served from the same origin under `ads/` (`web/dist/ads/`, from the repo's `ads/`):
+   `ads/**` caches `max-age=300, must-revalidate` (a campaign swap reaches players within
+   minutes, without an app update); `ads/*.sig` is `text/plain`. The CSP is unchanged (same origin:
+   `connect-src 'self'`, `img-src 'self' data: blob:`). The Capacitor app fetches from the https
+   origin of the hosted site (not from its own `capacitor://` / `https://localhost` origin; the
+   constant is set when packaging, Q-243). No production manifest ships until the owner signed one
+   (`tools/ads/README.md`); the test-key hook exists only in the dev server and the e2e test build
+   (`VITE_AD_TEST=1` → `web/dist-adtest`), never in the release build (PLAT-012).
+7. Size: the release build `web/dist` stays ≤ 30 MB (PLAT-001); the deploy script refuses
    to deploy a larger build.
-7. Feedback is collected **outside** the game (a form link sent together with the URL); the
+8. Feedback is collected **outside** the game (a form link sent together with the URL); the
    game itself gets no feedback button, link or data upload.
 
 ## Test cases
@@ -69,6 +78,9 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 | PLAT-007 | Given a release build in `web/dist`, then it contains `index.html`, a `.wasm` and `assets/index.json`, and its total size is ≤ 30 MB. | unit (skipped without a build) |
 | PLAT-008 | Given `scripts/deploy-preview.sh`, then it deploys with `hosting:channel:deploy … --expires` (≤ 30 days by default) and never runs a live `firebase deploy`. | unit |
 | PLAT-009 | Given the preview URL on a phone (Android Chrome, iOS Safari), then the game loads over HTTPS and the player can walk; after a redeploy the same URL shows the new build. | manual |
+| PLAT-010 | Given `firebase.json`, then `ads/**` is cached ≤ 10 minutes with `must-revalidate` (not immutable) and the CSP still has `connect-src 'self'`, `img-src 'self' data: blob:`, `form-action 'none'` and no external URL. | unit |
+| PLAT-011 | Given the repo's `ads/`, then only manifest, signature and images of ≤ 512 KB are served (no template / key), a shipped manifest has its signature and matches its images' size and SHA-256, and no private key file is tracked except the TEST-ONLY fixture key. | unit |
+| PLAT-012 | Given the release configuration, then it has no test-key override: `VITE_AD_TEST` is set by no npm script, `ad-keys.ts` does not contain the test key, the `adkey` parameter is read only behind the build-time switch, and a release bundle in `web/dist` does not contain `adkey`. | unit |
 
 ## Open questions
 

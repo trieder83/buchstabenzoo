@@ -100,7 +100,7 @@ settings gear** shows **one next possible target** and where to walk.
   wanders, so the edge is never its position); the target is the point of the circle
   nearest to the child; none while she is inside the circle.
 - **Optional** (rule 3.4): ripe plants while the basket has room; animals at home that
-  like a treat in the basket (at their fence). Not in the game yet and therefore skipped:
+  like a treat in the basket or their own carried food (at the animal or its fence). Not in the game yet and therefore skipped:
   events (priority 1, GAME-EVENTS), golf carts and their key box (GAME-CART), the map board
   (GAME-MAP), ad boards.
 - **Never stuck** (HINT-008): if nothing else is useful, the nearest board in scope (read
@@ -135,6 +135,7 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-011 | Given the panda board read and no bamboo carried, then the food storage and every full-grown cut spot are priority-2 targets (before the board was read no cut spot is offered); given the right food lying on the ground, it is a "pick up" target, a lying wrong food is not (GAME-FEED §13/§16). | unit |
 | HINT-012 | Given dusk after level 1, then the target is the bed; given night, then the open moon door comes first (the night boards are behind it) and the bed is among the targets; through the door, the target is a night board. | unit |
 | HINT-013 | Given the 🌙 night progress indicator tapped, then the hint shows exactly as with 🧭. | e2e |
+| HINT-017 | Given a home animal, then the treat hint (`hint-treat`: "Geh zum Tier und gib ihm etwas zu fressen") exists only while the basket holds a treat it likes or the hands hold its food; it points at its fence (from outside) or at the animal (inside). | unit |
 | HINT-015 | Given any state (new game, board read 1 s ago, board read 70 s ago, animal following, carrying the wrong food), when the hint is pressed, then it returns a target immediately (no waiting time) with a next-step key `hint-<step>` that matches the state (read / take food / search / lead home); 1 s after reading the board the target is the ≥ 12 m search area, after 60 s the ≥ 6 m circle, never the animal's position. | unit |
 | HINT-016 | Given a hint is shown, then the indicator shows the step icon and the line (Fluent, `de` and `en`); on `kiga` the line is read aloud; pressed while a reading panel is open, the panel closes and the hint shows. | e2e |
 | HINT-014 | Given a child who only follows the hints (several seeds, every level-1 hiding place at least once), then all level-1 animals come home, night falls, and the bed is among the top 3 hints and brings the morning. | unit |

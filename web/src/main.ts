@@ -2,6 +2,8 @@
 // asset files, forwards input and shows the HTML overlays. All game logic, what is
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
+import { AdsHost } from './ads-ui';
+import { AD_TEST_BUILD, resolveKeys, testKeyParam } from './ads';
 import { attachUiTaps, GameAudio, SOUND_EVENT } from './audio';
 import { attachInput, attachLookButton, type StickView } from './input';
 import { qualityMode } from './quality';
@@ -25,6 +27,8 @@ export interface ZooDebug {
   /** Sound playback with the decision log (ART-SOUND "Playback"). */
   audio: GameAudio;
   slot: SaveSlot;
+  /** Ad billboards (GAME-ADS): content state for tests. */
+  ads: AdsHost;
   frames: number;
   /** Average CPU time of `app.frame()` in ms (exponential moving average). */
   frameMs: number;
@@ -127,13 +131,17 @@ async function main(): Promise<void> {
     slot.reset();
     window.location.reload();
   }, introEnabled(window.location.search, navigator.webdriver === true));
+  // ad billboards (GAME-ADS): signed external campaigns load after the first frame
+  const ads = new AdsHost(app, { keys: resolveKeys(AD_TEST_BUILD ? testKeyParam(window.location.search) : null), store });
   attachInput(app, {
     canvas,
     stickView: stickView(),
     lookView: stickView('look-stick', 'look-knob'),
     onFirstTouch: () => ui.setTouch(),
     onInteract: () => ui.interact(),
-    onEscape: () => ui.escape(),
+    onEscape: () => {
+      if (!ads.closeIfOpen()) ui.escape();
+    },
   });
   attachLookButton(document.getElementById('look-btn')!, app);
   // sound: Web Audio starts after the first gesture, files load lazily (ASND-007)
@@ -144,7 +152,7 @@ async function main(): Promise<void> {
   window.addEventListener(SOUND_EVENT, (e) => audio.setEnabled((e as CustomEvent<{ on: boolean }>).detail.on));
   canvas.focus();
 
-  const debug: ZooDebug = { app, ui, audio, slot, frames: 0, frameMs: 0, intervalMs: 0 };
+  const debug: ZooDebug = { app, ui, audio, slot, ads, frames: 0, frameMs: 0, intervalMs: 0 };
   window.__zoo = debug;
   let last = performance.now();
   const loop = (now: number) => {
@@ -154,10 +162,12 @@ async function main(): Promise<void> {
     updateTextTextures(app);
     app.frame(dt);
     ui.update();
+    ads.tick();
     audio.tick(app);
     slot.tick();
     const ms = performance.now() - t0;
     debug.frames += 1;
+    if (debug.frames === 1) ads.start();
     debug.frameMs = debug.frames === 1 ? ms : debug.frameMs * 0.95 + ms * 0.05;
     debug.intervalMs = debug.frames === 1 ? dt * 1000 : debug.intervalMs * 0.95 + dt * 1000 * 0.05;
     requestAnimationFrame(loop);

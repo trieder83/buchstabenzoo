@@ -184,15 +184,21 @@ firing §4.8, loop seams, sampling) are the same as ART-RIG.
 - Scripts `tools/blender/animals/{zebra_female,zebra_foal,koala_female,koala_joey}.py` reuse
   `zebra.py` / `koala.py` (same mesh code, 23-joint rig, clips, palette) and scale the whole
   model in `quadruped_rig.set_variant` (mesh, rest skeleton, hips keys). Female = adult / 1.1;
-  baby = 45 % with a 1.3x (zebra) / 1.25x (koala) bigger head and ears; the foal's legs are
-  thinned (x0.78) and its stripes are `#3A3330`; the female koala is silvery `#AEB3B8` with a
-  larger cream chest/belly/chin patch, the joey `#A6ABB0`. 2 040 (zebra) / 1 712 (koala)
-  triangles each, 23 joints, ~208 / ~181 KB.
+  baby = 45 % with a real baby reshape in adult space (model v2, 2026-09-30, `post` in the scripts;
+  skeleton/clips unchanged): **foal** torso x0.88/0.80/0.85 (smaller, round), neck x0.75 long /
+  x1.3 thick, head x1.38 (x0.95 along the muzzle), eyes ~x1.35, legs x0.72 thick with big
+  hooves (so the legs read much longer), 7 bolder stripes `#3A3330`, fluffier mane/tail tuft;
+  **joey** torso x1.15/1.05/1.20 (round, stubby legs), head x1.38, eyes x1.3 with cream eye
+  patches, chubby legs x1.25, `#A6ABB0`. Female zebra: swept black forelock mesh over the
+  forehead + heavy upper lid/lash flick on the eye swatch + slimmer mane (Q-203); female
+  koala: silvery `#AEB3B8`, larger cream chest/belly/chin patch, cream eye patches, lash
+  flick. 2 040 (foal) / 2 100 (zebra_female) / 1 712 (koalas) triangles, 23 joints.
 - Sizes (back / top): zebra_female 1.17 / 2.03 m, zebra_foal 0.58 / 1.09 m, koala_female
-  0.55 / 0.78 m, koala_joey 0.27 / 0.42 m (`check_animal.py` SIZES).
+  0.55 / 0.78 m, koala_joey 0.27 / 0.435 m (`check_animal.py` SIZES).
 - The `walk` speed in `animal_anims.toml` is scaled with the model (1.27 / 0.63 m/s) so the
   planted feet do not slide (AANI-008); playback rate = actual speed / authored speed.
-- Not modelled yet: the female zebra's forelock over the forehead and longer lashes (Q-203).
+- Approximate: lashes are painted (heavy lid + flick), not geometry; the foal/joey mane and ear
+  fluff are smooth lofts, not tufts.
 
 ## Models v1 (hippo, panda, koala, elephant, giraffe, lion, snow_fox)
 

@@ -93,6 +93,13 @@ HEAD_PROFILE = [  # s (m from B), r_lat, r_up (forehead), r_down (jaw)
 EYE_S = 0.30
 EYE_R = (0.090, 0.104)  # along eye-x (towards the nose), eye-y (up)
 
+# variant knobs (zebra_foal.py / zebra_female.py set them before main(); defaults = adult male)
+MANE_W = 0.046     # mane half width (m)
+MANE_H = 1.0       # mane height factor
+TUFT_K = 1.0       # tail tuft radius factor
+FORELOCK = False   # swept forelock over the forehead (female, Q-203)
+LASHES = False     # heavy upper lid + outer flick on the eye swatch (female, Q-203)
+
 # ---- skeleton (ART-ANIMALS rig conventions): joint positions of the zebra
 P = {
     "hips": (0, 0.30, 0.98), "spine": (0, 0.02, 1.00), "chest": (0, -0.26, 1.02),
@@ -206,6 +213,9 @@ def paint_eye(U, V):
     r = np.hypot(x, y)
     inner = r < 0.86
     c[inner] = _rgb("eye_white")
+    if LASHES:  # heavy upper lid and an outer (rear) lash flick
+        c[inner & (y > 0.42) & (r > 0.50)] = _rgb("ink")
+        c[inner & (np.hypot(x + 0.60, y - 0.52) < 0.30)] = _rgb("ink")
     iris = inner & (np.hypot(x - 0.17, y + 0.02) < 0.58)
     c[iris] = _rgb("iris")
     c[inner & (np.hypot(x - 0.19, y + 0.02) < 0.31)] = _rgb("pupil")
@@ -408,17 +418,17 @@ def build_mane(mb, at):
             if s < 1.0 else prof[-1][1]
         pts.append(NECK_A + NECK_AX * (s * NECK_LEN) + NECK_UP * (ru - 0.03))
         nrm.append(NECK_UP)
-        hgt.append(0.16)
+        hgt.append(0.16 * MANE_H)
     for deg in (40.0, 22.0, 4.0, -14.0):
         d = Vector((0, math.sin(math.radians(deg)), math.cos(math.radians(deg))))
         pts.append(HEAD_C + d * 0.235)
         nrm.append(d)
-        hgt.append(0.19 if deg < 10 else 0.17)
+        hgt.append((0.19 if deg < 10 else 0.17) * MANE_H)
     acc = [0.0]
     for a, b in zip(pts, pts[1:]):
         acc.append(acc[-1] + (b - a).length)
     sU = [a / acc[-1] for a in acc]
-    wd = 0.046
+    wd = MANE_W
     prof = [(-1.0, 0.0), (-1.0, 0.55), (-0.6, 1.0), (0.6, 1.0), (1.0, 0.55), (1.0, 0.0)]
     vtab = [0.0, 0.55, 1.0, 1.0, 0.55, 0.0]
     rings = []
@@ -482,11 +492,27 @@ def build_tail(mb, at):
             pole_end=pts[-1] + Vector((0, 0.005, -0.03)))
     # tuft
     black = at.cell_uv("black")
-    tuft = [(0.71, 0.034), (0.64, 0.062), (0.555, 0.072), (0.47, 0.056)]
+    tuft = [(0.71, 0.034), (0.64, 0.062 * TUFT_K), (0.555, 0.072 * TUFT_K), (0.47, 0.056 * TUFT_K)]
     rings = [qr.ring((0, 0.74 + 0.02 * (0.71 - z), z), Vector((0, 1, 0)), X, r, r * 0.9, 8)
              for z, r in tuft]
     mb.loft(rings, lambda i, k, co: black, w_tail, pole_start=Vector((0, 0.735, 0.74)),
             pole_end=Vector((0, 0.755, 0.385)))
+
+
+def build_forelock(mb, at):
+    """Swept black forelock lying on the forehead (female, Q-203): a flat tapered lock from the
+    top of the skull down between the eyes, bending to one side."""
+    black = at.cell_uv("black")
+    rings = []
+    for s, deg, w, t in ((0.12, 2.0, 0.060, 0.050), (0.20, 6.0, 0.085, 0.048), (0.29, 10.0, 0.095, 0.042),
+                         (0.37, 14.0, 0.075, 0.036), (0.44, 17.0, 0.040, 0.026)):
+        th = math.radians(deg)
+        nrm = (HEAD_U * math.cos(th) + X * math.sin(th)).normalized()
+        c = head_surface(s, th) + nrm * (t * 0.55)
+        lat = nrm.cross(HEAD_D).normalized()
+        rings.append(qr.ring(c, nrm, lat, t, w, 6))
+    mb.loft(rings, lambda i, k, co: black, qr.rigid("head"),
+            pole_start=rings[0][0] - HEAD_D * 0.06, pole_end=head_surface(0.49, math.radians(19)) + HEAD_U * 0.02)
 
 
 def build_mesh(mb, at):
@@ -496,6 +522,8 @@ def build_mesh(mb, at):
     build_eyes(mb, at)
     build_ears(mb, at)
     build_mane(mb, at)
+    if FORELOCK:
+        build_forelock(mb, at)
     build_legs(mb, at)
     build_tail(mb, at)
     return length

@@ -156,6 +156,7 @@ window.ART_CATALOG = {
             { file: "animals/zebra_female/side.png", label: "side", required: true },
             { file: "animals/zebra_female/back.png", label: "back", required: true },
             { file: "animals/zebra_female/three_quarter.png", label: "\u00be", required: true },
+            { file: "animals/zebra_female/model_preview.png", label: "3D model preview (v2: baby/female proportions per concept)" },
             { file: "animals/zebra_female/sheet_v2.jpg", label: "sheet v2 (chosen, source)" },
           ],
         },
@@ -172,6 +173,7 @@ window.ART_CATALOG = {
             { file: "animals/zebra_foal/side.png", label: "side", required: true },
             { file: "animals/zebra_foal/back.png", label: "back", required: true },
             { file: "animals/zebra_foal/three_quarter.png", label: "\u00be", required: true },
+            { file: "animals/zebra_foal/model_preview.png", label: "3D model preview (v2: baby/female proportions per concept)" },
             { file: "animals/zebra_foal/sheet_v2.jpg", label: "sheet v2 (chosen, source)" },
           ],
         },
@@ -188,6 +190,7 @@ window.ART_CATALOG = {
             { file: "animals/koala_female/side.png", label: "side", required: true },
             { file: "animals/koala_female/back.png", label: "back", required: true },
             { file: "animals/koala_female/three_quarter.png", label: "\u00be", required: true },
+            { file: "animals/koala_female/model_preview.png", label: "3D model preview (v2: baby/female proportions per concept)" },
             { file: "animals/koala_female/sheet_v5.jpg", label: "sheet v5 (chosen, source)" },
             { file: "animals/koala_female/sheet_v6.jpg", label: "sheet v6 (alternative)" },
           ],
@@ -205,6 +208,7 @@ window.ART_CATALOG = {
             { file: "animals/koala_joey/side.png", label: "side", required: true },
             { file: "animals/koala_joey/back.png", label: "back", required: true },
             { file: "animals/koala_joey/three_quarter.png", label: "\u00be", required: true },
+            { file: "animals/koala_joey/model_preview.png", label: "3D model preview (v2: baby/female proportions per concept)" },
             { file: "animals/koala_joey/sheet_v3.jpg", label: "sheet v3 (chosen, source)" },
             { file: "animals/koala_joey/sheet_v1.jpg", label: "sheet v1 (alternative)" },
           ],
@@ -1010,10 +1014,10 @@ window.ART_CATALOG = {
           "id": "sound_steps",
           "title": "Footsteps",
           "status": "in-review",
-          "description": "Soft steps per surface, 4 variations each (ASND-005). Played once per footfall of the walk clip.",
+          "description": "Soft footsteps per surface (ASND-005): grass and path 6 variations, sand/wood/water 4; cut from real CC0 recordings (water: Runway-generated), pitched up for a child. Played once per footfall of the walk clip.",
           "spec": "ART-SOUND",
           "brief": "sound/brief.md",
-          "notes": "Synthesised by script (tools/sound/*.py), not yet listened to by a human — please review and tell which cues to change (manifest: approved = false).",
+          "notes": "Redone 2026-09-30 (the synthesised steps were not realistic): real CC0 recordings (Fantozzi, TinyWorlds; OpenGameArt), water from Runway sound-effect API; tools/sound/steps_real.py. Not yet listened to by a human — please review and tell which cues to change (manifest: approved = false).",
           "audio": [
             {
               "file": "../assets/audio/steps/step_grass_1.ogg",
@@ -1032,6 +1036,14 @@ window.ART_CATALOG = {
               "label": "step_grass_4"
             },
             {
+              "file": "../assets/audio/steps/step_grass_5.ogg",
+              "label": "step_grass_5"
+            },
+            {
+              "file": "../assets/audio/steps/step_grass_6.ogg",
+              "label": "step_grass_6"
+            },
+            {
               "file": "../assets/audio/steps/step_path_1.ogg",
               "label": "step_path_1"
             },
@@ -1046,6 +1058,14 @@ window.ART_CATALOG = {
             {
               "file": "../assets/audio/steps/step_path_4.ogg",
               "label": "step_path_4"
+            },
+            {
+              "file": "../assets/audio/steps/step_path_5.ogg",
+              "label": "step_path_5"
+            },
+            {
+              "file": "../assets/audio/steps/step_path_6.ogg",
+              "label": "step_path_6"
             },
             {
               "file": "../assets/audio/steps/step_sand_1.ogg",
@@ -1064,22 +1084,6 @@ window.ART_CATALOG = {
               "label": "step_sand_4"
             },
             {
-              "file": "../assets/audio/steps/step_water_1.ogg",
-              "label": "step_water_1"
-            },
-            {
-              "file": "../assets/audio/steps/step_water_2.ogg",
-              "label": "step_water_2"
-            },
-            {
-              "file": "../assets/audio/steps/step_water_3.ogg",
-              "label": "step_water_3"
-            },
-            {
-              "file": "../assets/audio/steps/step_water_4.ogg",
-              "label": "step_water_4"
-            },
-            {
               "file": "../assets/audio/steps/step_wood_1.ogg",
               "label": "step_wood_1"
             },
@@ -1094,6 +1098,22 @@ window.ART_CATALOG = {
             {
               "file": "../assets/audio/steps/step_wood_4.ogg",
               "label": "step_wood_4"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_1.ogg",
+              "label": "step_water_1"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_2.ogg",
+              "label": "step_water_2"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_3.ogg",
+              "label": "step_water_3"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_4.ogg",
+              "label": "step_water_4"
             }
           ]
         },

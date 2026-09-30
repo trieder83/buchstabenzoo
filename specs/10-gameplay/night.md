@@ -98,10 +98,12 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
 
 11. **Night progress (user request 2026-09-28):** the child must always see what is still
     missing before night falls. A small **🌙 progress indicator** (HUD, no reading needed)
-    shows one icon per animal species of the **current day level**: filled = home, empty
-    (faded) = still missing. It is visible during day play. When all animals of the level are
-    home it shows that **night is coming** (all icons filled, the 🌙 glows) through the
-    celebration and dusk. At night it shows the animals of the unfinished night level
+    shows one icon per animal species of the **current day level that is still missing**; an
+    animal that is home **disappears** from the pane (2026-09-30 user report: finished
+    animals confused the child). It is visible during day play. When all animals of the
+    level are home no animal icon is left and it shows only that **night is coming** (the
+    🌙 glows) through the celebration and dusk. Each icon is the animal itself (no text) and
+    tapping it is the 🧭 hint (below). At night it shows the animals of the unfinished night level
     (night zoo); when nothing is missing any more it shows 🛏 (sleep) — also by day while the
     night zoo waits (Q-140). While sleeping and in the morning it is hidden, and when every
     unlocked level is complete by day it is hidden. **Tapping it is the same as the 🧭 hint
@@ -234,8 +236,9 @@ Rules for the implementation that follow from the data:
 | NIGHT-016 | Given night and the player standing next to the bed, when `E` is pressed (desktop) or the touch action button (🛏) is tapped, then sleeping starts; away from the bed neither does anything bed-related. | e2e |
 | NIGHT-017 | Given the bat or the owl (`fly_height` in `animal_anims.toml`), then perched at its hiding place it plays `hang` (bat, data pose) / `perch` at the perch height, following the child it plays `fly` 1.5 m above the ground, at home it stands (`idle`); its `eye_glow` shines only inside the lantern radius and never while `sleep` plays (Q-146). | unit |
 | NIGHT-018 | Given the player's lantern at night, then its visible ground pool (sphere radius, centre 1.4 m above her feet) is 2.5 m ± 0.01 m = the eyeshine radius `LANTERN_RADIUS_M` (Q-142). | unit |
-| NIGHT-019 | Given a new game, then the 🌙 progress shows the three level-1 animals empty; each animal home fills its icon; all home → `night_coming` through the celebration and dusk; at night the `night_1` animals; all of them home → `sleep`; sleeping/morning hidden; the next day the level-2 animals; by day with the night zoo waiting → `sleep` and the hint points at the bed (rule 11). | unit |
-| NIGHT-020 | Given day play on a phone in portrait, then the 🌙 progress is visible (not covering the 🧭 button, the gear or the carried-food HUD), shows one icon per level-1 animal, a mission completed fills one icon, and tapping it shows a hint (HINT-013). | e2e |
+| NIGHT-019 | Given a new game, then the 🌙 progress shows the three level-1 animals empty; each animal home is marked `home` in the JSON (the pane hides it, NIGHT-022); all home → `night_coming` through the celebration and dusk; at night the `night_1` animals; all of them home → `sleep`; sleeping/morning hidden; the next day the level-2 animals; by day with the night zoo waiting → `sleep` and the hint points at the bed (rule 11). | unit |
+| NIGHT-022 | Given the progress JSON with home and missing animals, then the pane shows only the missing ones (home ones are gone); with none missing it shows no animal icon (vitest `missingAnimals`; e2e NIGHT-020 checks the icon disappears). | unit |
+| NIGHT-020 | Given day play on a phone in portrait, then the 🌙 progress is visible (not covering the 🧭 button, the gear or the carried-food HUD), shows one icon per level-1 animal, a mission completed removes that animal's icon, and tapping it shows a hint (HINT-013). | e2e |
 | NIGHT-021 | Given all level-1 missions played to the end (scripted child following the hints, real movement), then the 🌙 shows night coming, dusk turns into night, the moon door opens, the bed works with `E` and the next morning comes (the whole night cycle is reachable end to end). | e2e |
 
 ## Open questions

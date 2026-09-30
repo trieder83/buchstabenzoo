@@ -51,11 +51,28 @@ between missions.
    eucalyptus), lion and snow fox don't take garden treats (proposal: they get their own
    later). Realistic, and the treat list per animal is data.
    The info board facts may mention the favourite treat (reading hint).
-6. **Giving a treat:** at an animal that is **at home** (in its enclosure), standing at the
-   fence/feeding trough, interact with a treat selected → the animal comes over, eats it
-   (`eat`, happy hearts) if it likes it; otherwise it sniffs and turns away (`refuse`), the
-   treat stays in the basket. Treats are **not** used to rescue escaped animals (the rescue
-   still needs the reading-based food box).
+6. **Giving (user report 2026-09-30):** giving works **directly at the animal**: a home animal
+   is an interactable (`Target::Treat`) **at its own position** when the player is within 2 m
+   facing it — inside the enclosure or at the fence (the nearest member of a pair). What is
+   given: a liked treat from the basket, else the food in the hands if the animal eats it,
+   else (refused) any treat / the carried food. Standing at the fence (≤ 3 m outside the
+   rect) with something the animal likes, **the animal walks over and waits there**: when the
+   child stands near the **feeding spot** (below), the group (male, female, baby) goes to its
+   cells at 1 m/s without pausing; elsewhere at the fence it walks to the fence cells nearest
+   to the child. It eats (`eat`, hearts, "Mmh,
+   lecker!") if it likes it — **every member of the pair** reacts and turns to the child; a
+   treat leaves the basket; **carried food stays in the hands** (boxes never run out,
+   FEED-023) and brings no baby. Otherwise it sniffs and turns away (`refuse`, "Hmm, das mag
+   ich nicht.", gentle RESC-005), the treat/food stays. With an empty basket and empty hands
+   (or nothing liked) there is no prompt and no 🧭 hint. Treats are **not** used to rescue
+   escaped animals.
+6a. **Feeding spot** (`feed_spot = [x, z, w, d]` on an enclosure element, cells just inside
+   the fence on the **gate side**, 2 cells wide; derived when absent): one empty cell (≥ 1 m)
+   beyond the gate posts on either side, where the child can stand 0.9 m outside the fence
+   with walkable cells around (≥ 1.5 m clear of hedges, water, boards). The treat hint
+   (`hint-treat`, "Geh zum Tier und gib ihm etwas zu fressen") sends the child to its stand
+   point. The child never walks into an enclosure (the gate is solid unless leading). A
+   visible trough at the spot is not modelled yet (Q-248).
 7. **Baby (GAME-FAMILY "Special food and babies", user request 2026-09-29):** a treat the
    animal likes makes it happy; given to a **male and female pair** at home, it makes them
    have a baby. This replaces the earlier 3-care-feedings / "one treat must be from the garden"
@@ -98,6 +115,11 @@ between missions.
 | GARD-004 | Given an empty spot, after 3 minutes of play time, then the plant is ripe again, passing 3 visible growth stages. | unit |
 | GARD-005 | Given the zebra at home and a carrot in the basket, when the player gives it at the fence, then the zebra eats it and the carrot is removed; given a potato, it refuses and the potato stays. | unit |
 | GARD-006 | Given a treat the pair likes (male and female at home), then giving it makes both happy and one baby appears once (GAME-FAMILY FAM-008); given a single animal, it is only happy. | unit |
+| GARD-010 | Given the zebra at home and a liked carrot, when the player stands inside the enclosure within 2 m facing it (or at the fence after the zebra walked over), then `Target::Treat` is available at the animal, giving takes the carrot and both zebras of the pair turn to the child; with an empty basket and empty hands nothing is available. | unit |
+| GARD-011 | Given the player carries the zebra's own food at home, when she gives it, then the zebra eats (`FoodEaten`), the food stays in the hands and no baby is born; a food it does not eat is refused (`FoodRefused`) and stays. | unit |
+| GARD-012 | Given a pair at home and 4 carrots, when she walks up to them and gives, then both zebras react (eat/hearts), carrots leave the basket and exactly one baby appears. | e2e |
+| GARD-013 | Given every enclosure of an animal that takes treats (zebra, elephant, giraffe, hippo, monkey, panda), then it has a feeding spot on the gate side: both cells in the home area, the stand point outside the fence and walkable, ≥ 1 cell from the gate posts. | unit |
+| GARD-014 | Given a pair at the gate with one partner waiting far behind, when the child presses the gate, then nobody enters (gate press → `Waiting` message), the hint `partner:<animal>` sends her back to fetch it, and once it follows again both enter and the mission completes; afterwards the child standing on the gate cell can walk out. | unit |
 | GARD-007 | Given the player carries a food box item or the fish bowl, then she can still harvest into the basket (separate slot). | unit |
 | GARD-008 | Given a save with basket contents and growing plants, when restored, then both are unchanged. | unit |
 | GARD-009 | Given the garden signs, then their texts come from Fluent per reading level and language (`garden-carrot`, `garden-potato`). | unit |

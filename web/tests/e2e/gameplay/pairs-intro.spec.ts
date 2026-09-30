@@ -68,6 +68,7 @@ test('FAM-002 QA: two zebras follow and both enter the gate; hints stay valid; b
   // carrot to the zebras at the fence
   await goto(page, -8.4, 13.0);
   await turn(page, 'KeyA');
+  await wait(page, 6); // the zebras walk to the fence for the carrot (GARD-010)
   console.log('fence target', (await state(page)).target);
   await page.evaluate(() => window.__zoo!.app.select_treat('carrot'));
   await press(page);

@@ -839,3 +839,28 @@ id = "l2_burglar_hideout"
 kind = "burglar_hideout"
 rect = [71, 37, 3, 5]
 notes = "Grass strip between the elephant enclosure and the east wall (x 71..73, z 37..41); no hiding place, scenery or path."
+
+# ---------------------------------------------------------------- ad billboards (GAME-ADS, Q-244)
+# Free-standing boards on open grass beside the paths, facing south (the camera side); pos = board
+# centre (footprint 2.6 x 0.3 m, solid). The campaign of each board is seeded per session.
+# Placed by the implementer under the LAYOUT rules - to be reviewed by zoo-level-designer.
+
+[[ad_board]]
+id = "ad_l2_ring"
+pos = [57.5, 27.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l2_ring_e"
+pos = [64.5, 27.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l2_mid"
+pos = [50.5, 42.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l2_nw"
+pos = [38.5, 57.5]
+facing = "-z"

@@ -41,8 +41,12 @@ Other species stay single until decided (Q-073).
    putting it into the trough is one **care feeding**.
 5. **Baby:** when the pair at home is given a liked special food ("Special food and babies", Q-198 answered; replaces the former 3-care-feedings rule), the
    next time the player comes to the enclosure a **baby** is there (small celebration, the
-   baby's name via Fluent). One baby per pair in the PoC scope. The baby stays close to the
-   female and wanders with the parents.
+   baby's name via Fluent). One baby per pair in the PoC scope. The baby is a **real member of
+   the group at home** (GARD-013): it keeps to a cell next to the female inside the fence (never
+   at the fence), follows her, is called to the feeding spot with the pair (third place) and
+   reacts to treats. Its position is not saved; on load it is placed next to the female. A pair
+   enters its enclosure **together**: a partner still waiting far behind (RESC-006) is called
+   to catch up first, then both enter (GARD-014).
 6. Wrong food in the trough: the animals don't eat it; gentle feedback (as RESC-005), no
    penalty.
 7. **Saving:** pairs, the baby flag, are part of the save
@@ -107,6 +111,7 @@ stay open until the female and baby models exist (ART-ANIMALS, Q-074).
 | FAM-006 | Given a save with a baby, when restored, then both are unchanged. | unit |
 | FAM-008 | Given a pair (male + female) at home and a carrot given to the zebras, then both are happy (hearts) and exactly one baby appears once; given the same carrot to a single animal (no pair), then it is happy and no baby appears. | unit |
 | FAM-009 | Given a pair at home and ordinary food or a disliked treat, then no baby appears and no penalty; given a saved game after the baby, then it is restored and never appears twice. | unit |
+| FAM-010 | Given a pair, a baby and a child with a liked treat at the feeding spot, then male, female and baby stand on the spot cells (ranks 0, 1, 2), inside the fence, and all three turn to the child (GARD-013, unit). | unit |
 | FAM-007 | Given male and female models side by side from the default camera, then children can tell they are a pair of the same species and spot the difference (manual review). | manual |
 
 ## Open questions

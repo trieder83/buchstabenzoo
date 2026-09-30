@@ -46,6 +46,7 @@ crates/zoo-web/pkg/
 # Node / web shell
 node_modules/
 web/dist/
+web/dist-adtest/
 web/test-results/
 web/playwright-report/
 
@@ -57,3 +58,9 @@ web/playwright-report/
 .firebase/
 .firebaserc
 firebase-debug.log
+
+# Ad signing: the private key never enters the repository (tools/ads/README.md); only the
+# clearly named TEST-ONLY fixture key under web/tests/fixtures/ads/ is tracked.
+*.key
+!web/tests/fixtures/ads/TEST-ONLY-*.key
+*.pem

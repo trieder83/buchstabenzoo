@@ -79,6 +79,13 @@ fn gard_005_treat_at_the_fence_eaten_or_refused() {
         .expect("a place outside the fence");
     g.player.pos = stand;
     g.player.facing = Vec2::Y;
+    // the zebra is interested: it walks to the fence by itself and waits there (GARD-010)
+    for _ in 0..(20.0 / DT) as usize {
+        g.update(DT, Vec2::ZERO);
+        if g.available_target().is_some() {
+            break;
+        }
+    }
     assert_eq!(
         g.available_target(),
         Some(Target::Treat { animal: "zebra" })
@@ -227,4 +234,90 @@ fn q102_following_animals_wait_outside_the_garden() {
         a.pos
     );
     assert!(max_follow > gate.y - 3.0, "it came along to the gate");
+}
+
+/// Puts the player inside the zebra enclosure 1.2 m from the first zebra, facing it.
+fn beside_home_zebra(g: &mut Game) {
+    let z = g.animal("zebra").unwrap().pos;
+    let i = g.animal_index("zebra").unwrap();
+    g.animals[i].wander = Default::default();
+    g.player.pos = z + Vec2::new(0.0, -1.2);
+    g.player.facing = Vec2::Y;
+}
+
+// GARD-010: a home animal can be given something right at the animal (inside the enclosure),
+// not only at the fence; both of a pair look at the child.
+#[test]
+fn gard_010_give_directly_at_the_animal() {
+    let mut g = common::game(1);
+    assert!(g.debug_send_home("zebra"));
+    g.drain_events();
+    g.garden.basket.carrots = 2;
+    beside_home_zebra(&mut g);
+    assert_eq!(
+        g.available_target(),
+        Some(Target::Treat { animal: "zebra" })
+    );
+    let r = g.interact().expect("gives");
+    assert!(matches!(
+        r,
+        Interaction::Treat {
+            animal: "zebra",
+            accepted: true,
+            ..
+        }
+    ));
+    assert_eq!(g.garden.basket.carrots, 1);
+    for j in g.group("zebra") {
+        let a = &g.animals[j];
+        let to = (g.player.pos - a.pos).normalize();
+        assert!(a.facing.dot(to) > 0.99, "every group member turns to her");
+    }
+    // nothing in the basket and nothing in the hands: nothing to give, no prompt
+    g.garden.basket.carrots = 0;
+    assert_eq!(g.available_target(), None);
+}
+
+// GARD-011: the carried food of the animal given at home: it eats, the food stays in the
+// hands, no baby (Q-198); another food is refused gently (RESC-005).
+#[test]
+fn gard_011_carried_food_at_home() {
+    use zoo_core::FoodBox;
+    let mut g = common::game(1);
+    assert!(g.debug_send_home("zebra"));
+    g.drain_events();
+    let own = g.animal("zebra").unwrap().info.foods[0];
+    g.carry.take(&FoodBox { food: own });
+    beside_home_zebra(&mut g);
+    assert_eq!(
+        g.available_target(),
+        Some(Target::Treat { animal: "zebra" })
+    );
+    assert!(matches!(
+        g.interact(),
+        Some(Interaction::FoodGift { accepted: true, .. })
+    ));
+    assert_eq!(g.carry.food(), Some(own), "the food stays in the hands");
+    let ev = g.drain_events();
+    assert!(ev.iter().any(|e| matches!(e, GameEvent::FoodEaten { .. })));
+    assert!(!ev.iter().any(|e| matches!(e, GameEvent::BabyBorn { .. })));
+    // a food the zebra does not eat: refused, stays in the hands
+    let other = zoo_core::ANIMALS
+        .iter()
+        .flat_map(|a| a.foods.iter().copied())
+        .find(|f| !g.animal("zebra").unwrap().info.eats(*f))
+        .unwrap();
+    g.carry.take(&FoodBox { food: other });
+    assert!(matches!(
+        g.interact(),
+        Some(Interaction::FoodGift {
+            accepted: false,
+            ..
+        })
+    ));
+    assert_eq!(g.carry.food(), Some(other));
+    assert!(g
+        .drain_events()
+        .iter()
+        .any(|e| matches!(e, GameEvent::FoodRefused { .. })));
 }

@@ -478,6 +478,9 @@ impl Game {
         }
         g.intro_seen = s.intro_seen;
         g.babies = s.babies.clone();
+        for b in s.babies.clone() {
+            g.spawn_baby(&b);
+        }
         // time of day (NIGHT-008): a save made while sleeping wakes up the next morning
         if let Some(d) = &s.daytime {
             let mut d = d.clone();

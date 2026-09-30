@@ -776,6 +776,8 @@ impl App {
                     }
                     id
                 }
+                // the host uploads the picture (placeholder text / verified campaign image)
+                DecalImage::Ad { board, .. } => zoo_core::ads::texture_id(board),
             };
             // a building's name board hides with its roof (inside, zoo view)
             let region = roof_regions
@@ -1351,6 +1353,65 @@ impl App {
                 .is_ok()
     }
 
+    // ------------------------------------------------------------------ ad boards (GAME-ADS)
+
+    /// The ad boards as JSON `[{"id", "slot", "n", "w", "h", "x", "z", "fx", "fz"}]`: `slot`
+    /// 1…3 is the campaign slot of this session (seeded, ADS-005), `n` the board's ordinal among
+    /// the boards of its slot, `w` × `h` the picture texture the host fills with
+    /// `set_ad_texture`, `x`/`z` its centre and `fx`/`fz` the side it faces (level metres).
+    pub fn ad_boards_json(&self) -> String {
+        let boards = &self.game.level.data.ad_boards;
+        let ids: Vec<&str> = boards.iter().map(|b| b.id.as_str()).collect();
+        let slots = zoo_core::ads::assign_slots(&ids, self.game.to_save().seed);
+        let mut count = [0u32; zoo_core::ads::SLOTS];
+        let rows: Vec<String> = boards
+            .iter()
+            .zip(&slots)
+            .map(|(b, &slot)| {
+                let n = count[slot as usize];
+                count[slot as usize] += 1;
+                format!(
+                    "{{\"id\":{},\"slot\":{},\"n\":{n},\"w\":{},\"h\":{},\"x\":{},\"z\":{},\"fx\":{},\"fz\":{}}}",
+                    js(&b.id),
+                    slot + 1,
+                    zoo_core::ads::TEXTURE_PX.0,
+                    zoo_core::ads::TEXTURE_PX.1,
+                    b.pos[0],
+                    b.pos[1],
+                    b.facing().x,
+                    b.facing().y
+                )
+            })
+            .collect();
+        format!("[{}]", rows.join(","))
+    }
+
+    /// Id of the ad board the player stands in front of (reading range) or empty (ADS-007).
+    pub fn ad_near(&self) -> String {
+        let p = glam::Vec2::new(self.player_x(), self.player_z());
+        let boards = &self.game.level.data.ad_boards;
+        zoo_core::ads::near_board(boards, p)
+            .map(|i| boards[i].id.clone())
+            .unwrap_or_default()
+    }
+
+    /// Uploads the picture of an ad board (RGBA8, top row first, `w` × `h` from
+    /// `ad_boards_json`). Returns false for an unknown board or a wrong size.
+    pub fn set_ad_texture(&mut self, id: &str, width: u32, height: u32, rgba: &[u8]) -> bool {
+        let known = self
+            .game
+            .level
+            .data
+            .ad_boards
+            .iter()
+            .any(|b| b.id == id && zoo_core::ads::TEXTURE_PX == (width, height));
+        known
+            && self
+                .renderer
+                .set_decal_texture_rgba(&zoo_core::ads::texture_id(id), width, height, rgba)
+                .is_ok()
+    }
+
     // ------------------------------------------------------------------ interaction
 
     /// Kind of the available interactable (`info_board`, `food_box`, `animal`, `gate`) or
@@ -1835,8 +1896,9 @@ impl App {
             };
             let (action, t) = a.action.map_or((None, 0.0), |(n, t, _)| (Some(n), t));
             if a.skinned {
-                // the baby (GAME-FAMILY §5, flag `game.babies`) stays at the female's side and
-                // copies her clips, a step behind (own model, own size)
+                // the baby (GAME-FAMILY §5, GARD-013) is a real member of the pair at home: it
+                // is drawn where the game keeps it (next to its mother, at the feeding spot
+                // with the pair) and copies her clips
                 let baby = self
                     .game
                     .animals
@@ -1844,23 +1906,24 @@ impl App {
                     .filter(|ga| ga.member == 1)
                     .and_then(|_| {
                         let m = zoo_core::animals::baby_model(a.id)?;
+                        let st = self.game.baby_states.get(a.id)?;
                         (self.game.babies.iter().any(|b| b == a.id)
                             && self.baby_models.contains(&m))
-                        .then_some(m)
+                        .then_some((m, st.pos, st.facing, !st.route.is_empty()))
                     });
-                if let Some(m) = baby {
+                if let Some((m, bpos, bfacing, walking)) = baby {
                     self.draws.push((
                         m,
                         CharacterDraw {
-                            pos: pos + Vec3::new(0.75, 0.0, 0.45),
-                            yaw: a.yaw,
+                            pos: level_to_world(bpos) + Vec3::Y * (pos.y - level_to_world(a.pos).y),
+                            yaw: facing_to_yaw(bfacing),
                             idle_time: a.idle_time + 0.7,
                             walk_time: a.walk_time + 0.3,
-                            walk_blend: a.walk_blend,
+                            walk_blend: if walking { 1.0 } else { 0.0 },
                             idle_clip: a.rest,
                             walk_clip: a.locomotion,
-                            action: None,
-                            action_blend: 0.0,
+                            action: action.map(|n| (n, t)),
+                            action_blend: if action.is_some() { 1.0 } else { 0.0 },
                             under_water: a.under_water,
                             tilt: Quat::IDENTITY,
                             eye_glow: false,
@@ -2137,6 +2200,7 @@ impl App {
                 && self.renderer.has_decal_texture(&match &d.image {
                     DecalImage::Texture(p) => p.clone(),
                     DecalImage::Text { key, .. } => text_texture_id(key),
+                    DecalImage::Ad { board, .. } => zoo_core::ads::texture_id(board),
                 })
         })
     }
@@ -3047,6 +3111,15 @@ impl App {
                 js(animal),
                 js(treat.id())
             ),
+            Interaction::FoodGift {
+                animal,
+                food,
+                accepted,
+            } => format!(
+                "{{\"kind\":\"treat\",\"animal\":{},\"food\":{},\"accepted\":{accepted}}}",
+                js(animal),
+                js(food.id())
+            ),
             Interaction::MoonDoor { into_night_zoo } => {
                 format!("{{\"kind\":\"moon_door\",\"into_night_zoo\":{into_night_zoo}}}")
             }
@@ -3278,6 +3351,14 @@ impl App {
                     // no baby model yet (FAM-007, ART-ANIMALS): the celebration is the message
                     self.queue(&animal, &["happy"], false);
                     self.say(&animal, "family-baby");
+                }
+                GameEvent::FoodEaten { animal, .. } => {
+                    self.queue(&animal, &["eat", "happy"], false);
+                    self.say(&animal, "garden-treat-yum");
+                }
+                GameEvent::FoodRefused { animal, .. } => {
+                    self.queue(&animal, &["refuse"], false);
+                    self.say(&animal, "ui-not-interested");
                 }
                 GameEvent::TreatRefused { animal, .. } => {
                     self.queue(&animal, &["refuse"], false);
@@ -3986,6 +4067,31 @@ impl App {
             .min_by(|a, b| a.1.distance(p).total_cmp(&b.1.distance(p)))
             .map(|b| vec![b.1.x, b.1.y, b.2.x, b.2.y])
             .unwrap_or_default()
+    }
+
+    /// Debug/e2e: puts `n` treats (`carrot`, `potato`) into the basket (up to its capacity).
+    pub fn debug_give_treats(&mut self, id: &str, n: u32) {
+        let b = &mut self.game.garden.basket;
+        let room = zoo_core::garden::BASKET_CAPACITY.saturating_sub(b.total());
+        match zoo_core::garden::Treat::from_id(id) {
+            Some(zoo_core::garden::Treat::Carrot) => b.carrots += n.min(room),
+            Some(zoo_core::garden::Treat::Potato) => b.potatoes += n.min(room),
+            None => {}
+        }
+    }
+
+    /// Debug/e2e: how many babies were born (GAME-FAMILY §5).
+    pub fn debug_baby_count(&self) -> u32 {
+        self.game.babies.len() as u32
+    }
+
+    /// Debug/e2e: how many drawn animals of a species are playing or queueing a reaction
+    /// (eat / happy / refuse) right now (a pair: both must react, GARD-012).
+    pub fn debug_reacting_views(&self, id: &str) -> u32 {
+        self.animals
+            .iter()
+            .filter(|v| v.id == id && (v.action.is_some() || !v.queue.is_empty()))
+            .count() as u32
     }
 
     /// Debug/e2e: the food an animal eats (what its board says).

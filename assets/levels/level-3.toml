@@ -755,3 +755,28 @@ id = "l3_burglar_hideout"
 kind = "burglar_hideout"
 rect = [8, 87, 3, 5]
 notes = "Grass corner between the monkey enclosure and the north wall (x 8..10, z 87..91); no hiding place, scenery or path."
+
+# ---------------------------------------------------------------- ad billboards (GAME-ADS, Q-244)
+# Free-standing boards on open grass beside the paths, facing south (the camera side); pos = board
+# centre (footprint 2.6 x 0.3 m, solid). The campaign of each board is seeded per session.
+# Placed by the implementer under the LAYOUT rules - to be reviewed by zoo-level-designer.
+
+[[ad_board]]
+id = "ad_l3_west"
+pos = [-15.5, 63.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l3_mid_w"
+pos = [-15.5, 75.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l3_mid"
+pos = [-8.5, 80.5]
+facing = "-z"
+
+[[ad_board]]
+id = "ad_l3_east"
+pos = [9.5, 81.5]
+facing = "-z"

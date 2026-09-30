@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Zoo layout and level boundaries
@@ -134,7 +134,7 @@ exists only at its own place.
 covered by a solid element is walkable. Cells have a `surface`: `path` (cells of `path`
 elements, incl. bridges, jetties, cave floors) or `grass` (all other walkable cells). The
 player walks on grass **slower** than on paths (GAME-PLAYER §6: 1.93 m/s on paths,
-0.98 m/s on grass). Because grass is walkable, all border cells of a level must be solid.
+1.45 m/s on grass since 2026-09-29, Q-197). Because grass is walkable, all border cells of a level must be solid.
 
 **Missions in scope** (Q-069 answered 2026-09-26): `[level] missions = ["zebra", …]` lists
 the missions of a level that are playable; only their animals, info boards and gates are
@@ -184,6 +184,21 @@ The zoo is **one continuous map** split into levels:
   east of level 1 south of level 2 (behind `barrier_east_repair`) is free for a later level
   (Q-023).
 
+**All animals active from the level start (user request 2026-09-30).** When a level starts —
+level 1 at a new game, a later level at the moment it unlocks (its entry barrier opens), a
+night level when its door opens — **every animal of that level is already placed and active
+somewhere on that level**: state `escaped` (GAME-ANIMALS), visible, simulated (idle /
+wandering, perched animals sit and face the player, the goldfish swims), standing on a
+walkable cell inside the chosen hiding place's wander area, and interactable as soon as its
+mission is in scope. Nothing spawns late (not when the player comes near, not when the board is
+read, not after a timer). The hiding places are chosen **once at game start** from the seed
+(RESC-014, RESC-016), also for the locked levels, so an unlocked level never has to
+"place" animals in front of the player. A pair (`pair = true`) is two animals at the same
+place, both active. Every level file therefore needs: an enclosure and ≥ 3 `[[hiding_place]]`
+candidates for **every** animal of `[level] missions` (or of every enclosure when the field is
+absent), and no animal without a mission entry. Locked levels keep their animals hidden and
+asleep (LAYOUT-025) — whether they should already be active from the very start of the game is Q-201.
+
 **Implementation (M5b, 2026-09-26 — proposals Q-088…Q-094 implemented data-driven, still
 open for confirmation):**
 - `LevelData::join` joins `level-1.toml`, `level-2.toml`, `level-3.toml` into one grid (id
@@ -216,6 +231,62 @@ open for confirmation):**
   enterable (see "Enterable buildings").
 - LAYOUT-024 treats background kinds (water bodies shared by one animal's places, the
   level-1 tree areas, walls, hedges and the three-part level-1 rock hill) as non-details.
+
+## Level design rules — how a level is played and how the player is guided (user request 2026-09-30)
+
+Binding rules for every level file (`levels/level-<N>.md`, `assets/levels/*.toml`). They pull
+together what GAME-RESCUE, GAME-HINT, GAME-NIGHT and this spec define; a level that breaks
+one is not done.
+
+**A. How a level is played (the loop of one level)**
+
+1. **Start:** the level is entered (level 1: new game at the entrance gate with the intro,
+   GAME-RESCUE; later levels: walk through the opened barrier). All animals of the level are
+   already active on it (rule 2 of "Joining levels", LAYOUT-044).
+2. **Mission per animal**, in any order (the level is not linear): read the **info board**
+   (location riddle) → take the right **food** from the food storage by reading the box labels →
+   walk to where the riddle points → show the food → the animal follows → lead it through its
+   **gate** into its enclosure (GAME-RESCUE). Every animal has ≥ 3 hiding places, chosen by seed.
+3. **Optional side activities** never block a mission: garden and treats, golf carts, map,
+   events (GAME-GARDEN, GAME-CART, GAME-EVENTS).
+4. **Level complete** when every mission of the level is home: celebration, then dusk →
+   the bed (sleep → next morning) or the moon door to the night zoo (GAME-NIGHT). The next
+   level's barrier opens **the next morning**, never at the moment of the last animal.
+5. **Free play** afterwards: the child may walk back through earlier levels; nothing is lost.
+
+**B. How the player is guided (no text needed to navigate, no time pressure)**
+
+6. **Every level needs a first step within sight of its start:** the spawn (or entry cell) has
+   an info board or the food storage within 15 m, on screen in the zoo view. Level 1: welcome
+   board / intro at the gate, first info board ≤ 15 m.
+7. **The riddle is the guide, the world confirms it:** every hiding place has ≥ 2 riddle
+   details visible from the walk there (landmarks, scenery, `features`), each unique in the
+   joined map (Q-083); a child who understands the riddle beats guessing (LAYOUT-L1-006/007).
+8. **Streets lead:** every board, food storage, gate, garden gate, bed and door is on or at the
+   end of a street (path cells, full speed); streets run under gates and barriers (LAYOUT-040)
+   and form loops, not dead ends; grass is slower (GAME-PLAYER §6) and is where the hiding places lie.
+9. **Landmarks and signs orient:** every enclosure has a readable sign and a visible gate;
+   the food storage is recognisable from the road; barriers are explained by their look (fallen
+   tree, construction fence), never by an invisible wall (LAYOUT-019).
+10. **Barriers limit scope, not hope:** while a barrier is closed the child sees why (and
+    that "something comes later"); no closed area holds a mission of the current level
+    (LAYOUT-002).
+11. **The 🧭 hint always works** (GAME-HINT rule 4a): from the first second it shows the next
+    step (read / take food / search / lead home / bed / moon door) as icon + line; the level
+    data must therefore give every step a hint target: board, storage door, hiding-area
+    circle, gate, bed, door (HINT-008/015). A level without a reachable target for any of these
+    states is invalid.
+12. **Wrong choices are free:** wrong food → "not interested", wrong gate → the animals stop
+    and refuse, no penalty, no fail state, nothing can get lost or stuck (items are boxes
+    that never run out, dropped items can be picked up again — GAME-FEED).
+13. **Reading level scales, the layout does not:** the same map serves `kiga` to `klasse3`;
+    only the texts, riddles (per reading level) and label difficulty change (CONT-READING);
+    `kiga` is guided by pictures and read-aloud.
+14. **Sizes:** first board reachable ≤ 15 s of walking from the start; the longest walk
+    between two mission steps ≤ 60 s on streets; a level takes about 10–20 minutes for a
+    child of the target reading level (proposal — Q-202).
+
+Tests: LAYOUT-046 (guidance checks below) and the per-level tests of rules 6, 7, 8, 10.
 
 ## Enterable buildings (user request 2026-09-28)
 
@@ -564,8 +635,14 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-041 | Given every `building` with a `door` in the joined zoo with `night_1`, then it has an `interior` (enterable); its door cell touches an interior cell and a walkable cell outside; every interior cell is reachable from the door over interior cells; its `door_wood` is an enterable building door that is open while the player is at the door and shut when she is ≥ 3 m away; its roof hides inside (building model or roof region); every stock box inside is solid (Q-194). | unit |
 | LAYOUT-042 | Given the level-1 → level-2 gate opened (fallen tree cleared), when the player stands on `path_ne` west of it looking east, then the open gate is on screen and path pixels run continuously from her feet through the gate into level 2 (review screenshot `level-gate-street.png`). | e2e |
 | LAYOUT-043 | Given the player walks from the ring through the door into the level-1 food storage, then the door opens, she stands on the floor inside, the roof and the "Futter" board are hidden in the zoo view and drawn again in first person (review screenshots `storage-inside-zoo.png`, `storage-inside-fp.png`, the stock boxes along the walls), and she walks back out through the door and takes the grass from its box in the row outside (Q-181 answered). | e2e |
+| LAYOUT-044 | Given each level file (`level-1`, `level-2`, `level-3`, `night-1`) and any seed, when the level starts (new game / barrier opened / moon door opened), then for every animal of the level (every `[level] missions` entry, else every enclosure animal; both members of a pair) exactly one chosen hiding place exists, the animal is in state `escaped`, visible, not asleep, its position is a walkable cell inside that place's wander area, and after 10 s of simulation it has reacted (animation state ≠ frozen, ANIM-008 limits hold); no animal is missing or spawned later (user request 2026-09-30). | unit |
+| LAYOUT-045 | Given the level data, then every enclosure animal of a level is listed in that level's `missions` (or the field is absent) and has ≥ 3 `[[hiding_place]]` candidates, so no animal of an in-scope enclosure is left without a place. | unit |
+| LAYOUT-046 | Given each level file, then (rule 6) an info board or the food storage lies within 15 m of the spawn / entry cell and on screen in the zoo view; (rule 8) every board, storage door, enclosure gate, garden gate, bed and door has a `path` cell within 2 m and is connected to the spawn over `path` cells only; (rule 10) no mission element of the level lies behind a closed barrier; (rule 11) from every seeded game state (new, board read, food carried, following, level done, dusk, night) the hint has a reachable target; (rule 14) the walking distance from the spawn to the first board is ≤ 15 s and between any two mission steps ≤ 60 s on streets. | unit |
 
 ## Open questions
+
+- Q-202 Level pacing numbers of rule 14 (15 s / 60 s / 10–20 min) are proposals.
+- Q-201 Animals of a locked level: asleep and hidden until unlock (as now, LAYOUT-025) or already active from the game start ("all animals active somewhere")?
 
 - Q-006, Q-017, Q-022, Q-023.
 - Answered 2026-09-27 (as recommended): Q-133 moon door / night level data and opening rule, Q-134 night house with indoor enclosures, Q-135 night food storage, Q-136 riddle scope of night levels, Q-137 `[[light]]` / `[[item]]` / `[[prop]]` data shape, Q-138 telescope, Q-139 burglar event spots. Q-118 (answered) lantern placement, Q-110 (answered) 17 m fog margin.

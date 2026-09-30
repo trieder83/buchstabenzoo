@@ -6,7 +6,7 @@ module: rescue-mission
 status: draft
 depends_on: [PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH]
 test_prefix: RESC
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Rescue mission — core loop
@@ -180,7 +180,7 @@ the intro was seen is part of the save (GAME-SAVE); a loaded game never repeats 
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| RESC-001 | Given a new game, then every enclosure is empty and every animal is at one of its hiding places. | unit |
+| RESC-001 | Given a new game, then every enclosure is empty and every animal of level 1 is active (`escaped`, visible, simulated) at one of its hiding places from the first frame; when a later level unlocks, all its animals are likewise already active at their chosen places (LAYOUT-044, user request 2026-09-30). | unit |
 | RESC-002 | Given seed S, then every animal's hiding place is the same on every run. | unit |
 | RESC-003 | Given any animal, hiding place, reading level and language, then a location riddle exists for that hiding place. | unit |
 | RESC-004 | Given the player carries grass and shows it to the zebras, then the zebras' state becomes `following`. | unit |

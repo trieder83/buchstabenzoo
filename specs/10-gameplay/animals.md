@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [GAME-WORLD]
 test_prefix: ANIM
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Animals and enclosures
@@ -43,6 +43,7 @@ escaped ──(shown correct food)──▶ following ──(enters own enclosur
    └──────────(never: animals do not escape again)
 ```
 
+- **Active from the level start (user request 2026-09-30):** every animal of a level is already in `escaped` at its chosen hiding place, visible and simulated when the level starts (GAME-LAYOUT "Joining levels", LAYOUT-044); an animal is never created, revealed or placed later.
 - `escaped`: at its hiding place, plays `idle`/`eat`/`drink`, reacts to the player by looking.
   **Wandering** (user decision 2026-09-26): from time to time (pause 6–15 s, random, seeded)
   the animal walks slowly (≈ 0.5 m/s, `walk` clip) to a new spot **within its hiding area**
@@ -105,6 +106,7 @@ On `kiga` the board shows pictures (habitat, food) plus one word each; read-alou
 | ANIM-010 | Given an animal in its enclosure over 120 s, then it wandered inside the enclosure only and never stood on a gate cell. | unit |
 | ANIM-011 | Given the same seed and inputs, then wandering is identical (deterministic); after save/restore it continues identically (GAME-SAVE). | unit |
 | ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (proposal Q-085). | unit |
+| ANIM-013 | Given a level that has just started (new game, barrier opened), then every one of its animals is `escaped`, visible and simulated from the first frame; no animal appears later (LAYOUT-044). | unit |
 
 ## Open questions
 

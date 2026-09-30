@@ -12,6 +12,25 @@ pub struct AnimalInfo {
     pub hiding_places: &'static [&'static str],
 }
 
+/// Model id of the female (member 1) of a pair species (GAME-FAMILY §3); member 0 is the male
+/// = the adult model of the species.
+pub fn female_model(species: &str) -> Option<&'static str> {
+    match species {
+        "zebra" => Some("zebra_female"),
+        "koala" => Some("koala_female"),
+        _ => None,
+    }
+}
+
+/// Model id of the baby of a pair species (GAME-FAMILY §5), if the species has one.
+pub fn baby_model(species: &str) -> Option<&'static str> {
+    match species {
+        "zebra" => Some("zebra_foal"),
+        "koala" => Some("koala_joey"),
+        _ => None,
+    }
+}
+
 pub const ANIMALS: [AnimalInfo; 13] = [
     AnimalInfo {
         id: "zebra",

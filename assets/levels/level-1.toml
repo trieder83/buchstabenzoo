@@ -336,6 +336,7 @@ animal = "zebra"
 rect = [-20, 7, 11, 12]
 gate = [-10, 12, 1, 2]       # on the east fence, faces path_ring_w
 home_wander_on = ["grass"]   # proposal Q-085: surfaces the animal wanders on when home (GAME-ANIMALS in_enclosure)
+pair = true                 # GAME-FAMILY: zebra_female + zebra_foal exist
 blocks_view = false          # wooden fence, see-through
 notes = "Grass, bushes, stone-arch shelter in the north-west corner. Enclosure sign beside the gate (north), info board south of it (Q-171)."
 

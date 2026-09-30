@@ -484,6 +484,100 @@ seen on the real GPU).
 - No regression in the shipped path (the renderer's outline pass is unchanged). The AA cost
   is to be cut before it ships (PERF-R-016 "Next").
 
+## Run 2026-09-30 — families (2 zebras, 2 koalas, babies), street aprons, intro / hint DOM, audio assets
+
+- **Commit** `9898b1a` **plus uncommitted work** (50 changed / untracked files: female zebra and
+  koala models, joey / foal models, level-1/2 data, street aprons). Measured on the shipped
+  `web/dist` and `crates/zoo-web/pkg` **without a rebuild** (copied into a snapshot tree; the
+  `run.sh` builds were skipped, so there is no `--dev` size and no rustc-output size). Raw data:
+  `tools/perf/baselines/2026-09-30.json`. Only the desktop and phone viewports ran.
+- **What changed since the last run (2026-09-29 / `267dfd9`):** the 4 family models
+  (`zebra_female`, `zebra_foal`, `koala_female`, `koala_joey`, ≈ 2 000 tris each), four street
+  aprons and more path tiles, the intro overlay and hint step line (DOM only), 0.4 MB audio in
+  `assets/audio` (not in `web/dist`, not loaded yet).
+- **Machine:** AMD Ryzen 5 5500U, SwiftShader (**relative only**), **load average 13–14 on
+  12 CPUs (another agent's gameplay QA)**: all times are unreliable (S01 ≈ 640 ms per frame),
+  counts and sizes exact. Compared with the counts of run 2026-09-28 (2) (the newest run with
+  a counts table).
+
+### Sizes and load
+
+| Artefact | raw | gzip | brotli | budget 17 |
+|---|---|---|---|---|
+| WASM release (shipped) | 1 779 KiB (1 821 817 B) | 680 KiB | **514 KiB** | ≤ 2.0 MB raw / ≤ 600 KB brotli: **pass** (was 1 683 / 485 KiB at run 2026-09-27) |
+| … + extra `-Oz` / `-O3` (estimate) | 1 737 / 1 802 KiB | | 512 / 512 KiB | no gain |
+| JS glue | 89 KiB | 16 KiB | 13 KiB | |
+| bundle (JS + WASM) | 1.80 MB | 0.68 MB | 0.52 MB | |
+| **web/dist total** (192 files) | 9.30 MB (was 8.36) | 3.51 MB | 2.74 MB | |
+| · assets/models (136) | 7.01 MB | 2.53 MB | 1.94 MB | |
+
+- Transferred on first load (no HTTP compression): **7.49 MB** (25 % of 30 MB; was 6.61 MB),
+  140 resources; first frame 0.7–0.8 s wall (local, SwiftShader, busy machine; budget 17 is
+  ≤ 5 s on the phone, not measurable here); WASM heap 18.7 MB, JS heap 10.7 MB (budget 18:
+  ≤ 64 / ≤ 32 MB). The `gzip` size (696 KB) is above the brotli budget number: the phone
+  must be served with brotli (hosting Q-012) or the budget is met only on brotli servers.
+
+### Counts (draw calls / triangles), desktop | phone
+
+| Scenario | draw calls desktop | tris desktop | draw calls phone | tris phone |
+|---|---|---|---|---|
+| S01 spawn 14 m | 30 (30) | 93 k (86 k) | 18 (17) | 50 k (42 k) |
+| S02 spawn 20 m | 37 (37) | 104 k (97 k) | 22 (21) | 65 k (46 k) |
+| S03 walking | 30 (30) | 88 k (78 k) | 20 (19) | 50 k (36 k) |
+| S04 look-around | 34 (40) | 120 k (109 k) | 18 (22) | 74 k (52 k) |
+| S05 first person | 32 (39) | 129 k (123 k) | 15 (22) | 95 k (46 k) |
+| S06 house | 29 (30) | 90 k (82 k) | 22 (23) | 40 k (32 k) |
+| S07 garden | 38 (37) | **69 k (50 k)** | **28** (27) | **57 k (31 k)** |
+| S08 pond | 28 (34) | **80 k (56 k)** | 16 (17) | 26 k (22 k) |
+| S09 level-3 spawn 20 m | 35 (41) | **147 k (104 k)** | 22 (25) | 34 k (24 k) |
+| S10 night spawn | 35 (35) | 96 k (89 k) | 20 (19) | 52 k (45 k) |
+| S11 night zoo | 30 (30) | **82 k (63 k)** | 14 (14) | 34 k (34 k) |
+
+(in brackets: run 2026-09-28 (2), a prototype-state count, see the note of that run: the
+merged chunk runs in the final code draw more triangles and fewer draw calls, so part of
+the rise in bold is that run's caveat, part is the added path tiles / aprons and the
+two-model families; this run is the new baseline). Instances: 240 – 2 143 (desktop S09 max),
+budget 3 / 19: **all scenarios pass** (max 38 draw calls ≤ 140, max 147 k tris ≤ 300 k,
+max 2 143 instances ≤ 10 000).
+
+### Timings (SwiftShader, busy machine — not representative)
+
+CPU `frame()` p50 0.4 – 0.6 ms in every scenario (budget 16: ≤ 4 ms on the phone; WASM CPU
+part is small), sim step 0.04 – 0.08 ms; fenced frame 0.26 – 1.4 s (software rendering);
+night S10 / S11 are 2.0 × the day frame under SwiftShader (fragment cost of the lights,
+known, budget 16 needs the phone). GL calls 104 – 192 per frame, `useProgram` 7 – 8,
+uniform calls 9 – 43, uploads 2.4 – 6.5 KB per frame, no texture uploads per frame.
+Water off / ambient off: same draw calls as on (WATER-008 holds); ambient adds 2 draw
+calls (≤ 10).
+
+### Allocations and model budgets
+
+- Native probe: `Game::update` 4.3 µs p50 (5.7 p95), **28.1 heap allocations / 14.4 KB per
+  frame** (was 27.2 / 7.3 KB): still the known non-zero count of budget 14 (PERF-013,
+  events / UI strings), bytes per frame doubled — the families / babies state. Ambient 0
+  allocations. `LevelScene::build` 4.4 ms once.
+- Models: 134 `.glb`, 81 575 triangles in total; the four new family models are within the
+  animal budget (≤ 3 000); only `moon_door` / `moon_door_open` (1 430) are over the prop
+  budget of 500 (known, not new). Textures > 256²: none.
+
+### Findings vs. budgets
+
+| Budget | Measured | Verdict |
+|---|---|---|
+| 1 / 16 frame time | SwiftShader, busy machine | not measurable (phone run pending, Q-013) |
+| 2 download ≤ 30 MB | 7.49 MB uncompressed | pass |
+| 3 draw calls ≤ 140, ≤ 10 000 instances | max 38 / 2 143 | pass |
+| 4 close views < zoo view (CAMV-014 / PERF-004) | first person 32 / look-around 34 vs. 37 at 20 m (desktop); 15 / 18 vs. 22 (phone); e2e `camera_views.spec.ts` green | pass |
+| 5 night ≤ day + 6 | S10 35 vs. S01 30 (+5) | pass (margin 1) |
+| 8 ambient ≤ 10 draws | +2 | pass |
+| 14 allocations | 28 / frame in `Game::update` (pre-existing), 0 in render loop (`perf_rules.spec.ts` green) | unchanged |
+| 17 WASM | 1 779 KiB raw / 514 KiB brotli | pass (89 KiB / 86 KiB headroom left: the next features will eat it) |
+| 19 triangles | max 147 k | pass |
+| 22 / 23 / 25 chunk runs, culling | `perf_rules.spec.ts`, `camera_views.spec.ts`, `m5b.spec.ts`: 21 tests green | pass |
+
+- No budget broken; no code changed. Watch: night margin (+5 of +6 draw calls), triangles
+  in S09 (+41 %, level-3 spawn: more path tiles), WASM headroom, `Game::update` bytes / frame.
+
 ## Test cases
 
 No test cases of its own: the measuring tool and the log format are checked by PERF-015

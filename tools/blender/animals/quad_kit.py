@@ -668,6 +668,7 @@ def run(kit, build, clipset_fn, clip_names, preview):
     for c in cl:
         qr.bake_clip(kit.rig, arm, c)
     hr.reset_pose(arm)
+    qr.apply_variant(arm, mesh)
     bpy.context.scene.frame_set(0)
 
     tris = zb.tri_count(mesh)

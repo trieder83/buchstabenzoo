@@ -26,6 +26,8 @@ Q-002. Animations per animal are provisional until Q-043.
 | `panda` | Panda | adult | `idle`, `walk`, `eat`, `happy`, `refuse` | model v1 |
 | `zebra` | Zebra | adult | `idle`, `walk`, `eat`, `drink`, `happy`, `refuse` | model v1 |
 | `koala` | Koala | adult | `idle`, `walk`, `eat`, `happy`, `refuse` (`climb` later, Q-043) | model v1 |
+| `zebra_female`, `zebra_foal` | Zebra (female, baby) | GAME-FAMILY §3/§5 | as `zebra` | model v1 (2026-09-30) |
+| `koala_female`, `koala_joey` | Koala (female, baby) | GAME-FAMILY §3/§5 | as `koala` (`idle`, `walk`, `eat`, `happy`, `refuse`; the manifest's `climb` was replaced, the game needs `walk`) | model v1 (2026-09-30) |
 | `elephant` | Elefant | adult | `idle`, `walk`, `eat`, `drink`, `happy`, `refuse` | model v1 |
 | `goldfish` | Goldfisch | adult | `swim`, `eat` | concept |
 | `monkey` | Affe | adult, **baby** (baby only if `quest_monkey_baby` stays — Q-040) | `idle`, `walk`, `climb`, `eat`, `happy`; baby: `hide`, `wave` | concept |
@@ -176,6 +178,21 @@ firing §4.8, loop seams, sampling) are the same as ART-RIG.
   | `drink` | 60 | 2.00 s | yes | — | hiding-place idle at the river: head low, lapping |
   | `happy` | 45 | 1.50 s | no | `happy_peak` (15) | small hop with head toss and tail swish (`happy`) |
   | `refuse` | 36 | 1.20 s | no | — | head shake, ears back, lean back (`refuse`, `not_interested`) |
+
+## Family models (GAME-FAMILY, 2026-09-30)
+
+- Scripts `tools/blender/animals/{zebra_female,zebra_foal,koala_female,koala_joey}.py` reuse
+  `zebra.py` / `koala.py` (same mesh code, 23-joint rig, clips, palette) and scale the whole
+  model in `quadruped_rig.set_variant` (mesh, rest skeleton, hips keys). Female = adult / 1.1;
+  baby = 45 % with a 1.3x (zebra) / 1.25x (koala) bigger head and ears; the foal's legs are
+  thinned (x0.78) and its stripes are `#3A3330`; the female koala is silvery `#AEB3B8` with a
+  larger cream chest/belly/chin patch, the joey `#A6ABB0`. 2 040 (zebra) / 1 712 (koala)
+  triangles each, 23 joints, ~208 / ~181 KB.
+- Sizes (back / top): zebra_female 1.17 / 2.03 m, zebra_foal 0.58 / 1.09 m, koala_female
+  0.55 / 0.78 m, koala_joey 0.27 / 0.42 m (`check_animal.py` SIZES).
+- The `walk` speed in `animal_anims.toml` is scaled with the model (1.27 / 0.63 m/s) so the
+  planted feet do not slide (AANI-008); playback rate = actual speed / authored speed.
+- Not modelled yet: the female zebra's forelock over the forehead and longer lashes (Q-203).
 
 ## Models v1 (hippo, panda, koala, elephant, giraffe, lion, snow_fox)
 

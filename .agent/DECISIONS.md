@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-203** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-214** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-96 answered · 82 open · 10 other (partly answered / proposed / superseded).
+96 answered · 88 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -88,6 +88,12 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-153 — Manifest granularity and the new kind buildings (ART-PIPELINE): APIPE-001 requires a manifest entry with the same id and kind for every … (ART-PIPELINE, ART-ENVIRONMENT, GAME-NIGHT …)
 - Q-154 — Models used by the engine but not listed in any ART-* spec and without their own manifest entry / concept gate: door_wood, glass_door … (ART-ENVIRONMENT, ART-PIPELINE, GAME-NIGHT …)
 - Q-188 — Night progress 🌙 (GAME-NIGHT rule 11, user request 2026-09-28): the request names the day level's animals. (GAME-NIGHT, GAME-HINT)
+- Q-210 — Animal calls source (ART-SOUND, feasibility test 2026-09-30, art/sound/brief.md). (ART-SOUND, GAME-ANIMALS)
+- Q-211 — Audio size budget with animal calls: 20 species x 3 cues = 60 cues at ~1.5 s cost ~16 KB (Vorbis) + ~11 KB (AAC) each = ~1.6 MB on top of … (ART-SOUND, PERF-BUDGETS)
+- Q-212 — Formats: .ogg (Vorbis) plus .m4a (AAC) are both delivered (Safari/iOS cannot play Vorbis before 17.4 / partly). (ART-SOUND, web host)
+- Q-213 — Generated audio terms: Gemini output carries a SynthID watermark and the API terms (commercial use, use in a children's app / store … (ART-SOUND)
+- Q-203 — Female zebra detail (GAME-FAMILY §3, Q-074): zebra_female is the male at 1/1.1 without the forelock/longer lashes of the brief; only size … (GAME-FAMILY, ART-ANIMALS)
+- Q-204 — Baby behaviour (GAME-FAMILY §5): the baby is only drawn (zoo-web, next to the female, her clips, own model, game.babies); it has no Animal … (GAME-FAMILY, ART-ANIMALS)
 
 ## Partly answered / other
 

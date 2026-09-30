@@ -71,6 +71,20 @@ No pair logic yet; there is no female zebra model (only `zebra.glb`), so level 1
 zebra (one animal group, as before). Superseded for rules 1–2 by M5b below; FAM-003…006
 stay open until the female and baby models exist (ART-ANIMALS, Q-074).
 
+## Implementation status (2026-09-30, family models)
+
+- Models exist: `zebra_female`, `zebra_foal`, `koala_female`, `koala_joey` (ART-ANIMALS
+  "Family models"). `pair = true` is **on** for `enc_zebra` (level 1) and `enc_koala`
+  (level 2): every game has two zebras and two koalas (FAM-001/002 run on the level data).
+- Member 1 is drawn with the female model (`zoo_core::animals::female_model`, host falls back
+  to the male model if the file is missing). The baby (`game.babies`, rule 5) is drawn with its
+  own model next to the female, copying her clips (`baby_model`); it has no own logic or
+  position yet (Q-204).
+- Saving: the mission entries of a pair are restored by member order (was: both onto member 0).
+- Riddle plural (Q-106) is now consistent with the game.
+- FAM-003…006: care-feeding trough and celebration are not implemented (Q-198 replaced the
+  counting rule; FAM-004/008/009 cover the baby via special food in `zoo-core`).
+
 ## Implementation status (M5b, 2026-09-26)
 
 - Rules 1 and 2 are implemented in `zoo-core` behind level data: an enclosure element with
@@ -78,10 +92,7 @@ stay open until the female and baby models exist (ART-ANIMALS, Q-074).
   the same picked hiding place (the second one on a neighbouring wander cell), follow together when
   either is shown the right food, and complete the mission only when both are home (a
   waiting one must be fetched). Saves keep both (`member`, GAME-SAVE v2).
-- The flag is **off** in the level data (`enc_koala` of level 2 and `enc_zebra` have no
-  `pair`): `assets/models/animals/koala_female.glb` does not exist yet (family variants not
-  approved), so the game has one koala. FAM-001 and FAM-002 are unit-tested with the flag
-  switched on in the test data (two koalas of the same model, LAYOUT-L2-015).
+- (Superseded 2026-09-30: the flag is on in the level data, see above.)
 - Rules 3–8 (look, care feeding, babies) remain open (FAM-003…007).
 
 ## Test cases
@@ -103,5 +114,6 @@ stay open until the female and baby models exist (ART-ANIMALS, Q-074).
 - Q-198 answered 2026-09-30: special food to a pair triggers the baby; see "Special food and babies".
 - Q-073 Which other species come as pairs?
 - Q-074 How male and female differ visually.
-- Q-106 One koala/zebra in the game (pair flag off) while the riddles speak of two.
+- Q-106 answered by the pair flag being on (2026-09-30).
+- Q-203 Female zebra's distinguishing detail (forelock, lashes) not modelled; Q-204 baby behaviour and placement.
 - Q-075 What exactly triggers the baby (number of feedings, sessions vs. real days) and how many babies.

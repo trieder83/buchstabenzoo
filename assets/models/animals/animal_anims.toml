@@ -979,3 +979,167 @@ loop = true
 crossfade_in = 0.40
 events = {}
 used_for = ["sleep"]
+
+# ---- zebra_female: same clips as the adult zebra (GAME-FAMILY)
+[zebra_female.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[zebra_female.walk]
+frames = 20
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 5, footstep_hr = 10, footstep_fr = 15 }
+speed = 1.27
+
+[zebra_female.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[zebra_female.drink]
+frames = 60
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[zebra_female.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[zebra_female.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+# ---- hippo, panda, koala, elephant, giraffe, lion, snow_fox (model v1, quad_kit.py).
+# hippo.swim: floating loop (legs paddle, head up); the game sinks the model to its water
+# line (~0.9 m) so back, eyes and ears stay above the water.
+
+
+# ---- zebra_foal: same clips as the adult zebra (GAME-FAMILY)
+[zebra_foal.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[zebra_foal.walk]
+frames = 20
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 5, footstep_hr = 10, footstep_fr = 15 }
+speed = 0.63
+
+[zebra_foal.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[zebra_foal.drink]
+frames = 60
+loop = true
+crossfade_in = 0.25
+events = {}
+
+[zebra_foal.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[zebra_foal.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+# ---- hippo, panda, koala, elephant, giraffe, lion, snow_fox (model v1, quad_kit.py).
+# hippo.swim: floating loop (legs paddle, head up); the game sinks the model to its water
+# line (~0.9 m) so back, eyes and ears stay above the water.
+
+
+# ---- koala_female: same clips as the adult koala (GAME-FAMILY)
+[koala_female.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[koala_female.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 1.27
+
+[koala_female.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[koala_female.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[koala_female.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+
+# ---- koala_joey: same clips as the adult koala (GAME-FAMILY)
+[koala_joey.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[koala_joey.walk]
+frames = 12
+loop = true
+crossfade_in = 0.15
+events = { footstep_hl = 0, footstep_fl = 3, footstep_hr = 6, footstep_fr = 9 }
+speed = 0.63
+
+[koala_joey.eat]
+frames = 60
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 22 }
+used_for = ["eat"]
+
+[koala_joey.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[koala_joey.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+

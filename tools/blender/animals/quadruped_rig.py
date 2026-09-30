@@ -498,9 +498,50 @@ def apply_pose(rig, arm_obj, pose, frame, prev=None):
         pb.keyframe_insert("rotation_quaternion", frame=frame, group=n)
         out[n] = q
     hb = arm_obj.pose.bones["hips"]
-    hb.location = rig.rest_rot["hips"].inverted() @ pose.hips_offset
+    hb.location = (rig.rest_rot["hips"].inverted() @ pose.hips_offset) * VARIANT["scale"]
     hb.keyframe_insert("location", frame=frame, group="hips")
     return out
+
+
+# ---- size variants (family animals): the model is built and its clips are solved in the
+# adult's space, then the mesh, the rest skeleton and the hips translation keys are scaled
+# uniformly by VARIANT["scale"]; VARIANT["post"](arm, mesh) may reshape the mesh (e.g. a bigger
+# head for a baby). Set with set_variant() BEFORE baking.
+VARIANT = {"scale": 1.0, "post": None}
+
+
+def set_variant(scale, post=None):
+    VARIANT["scale"], VARIANT["post"] = scale, post
+
+
+def reshape(mesh_obj, bones, fn):
+    """Move every vertex whose strongest deform group is one of `bones`: co -> fn(co)."""
+    names = {g.index: g.name for g in mesh_obj.vertex_groups}
+    for v in mesh_obj.data.vertices:
+        if not v.groups:
+            continue
+        top = max(v.groups, key=lambda g: g.weight)
+        if names[top.group] in bones:
+            v.co = fn(v.co.copy())
+
+
+def apply_variant(arm_obj, mesh_obj):
+    s = VARIANT["scale"]
+    if VARIANT["post"]:
+        VARIANT["post"](arm_obj, mesh_obj)  # adult-space reshaping first
+    if s == 1.0:
+        return
+    for v in mesh_obj.data.vertices:
+        v.co *= s
+    mesh_obj.data.update()
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = arm_obj
+    arm_obj.select_set(True)
+    bpy.ops.object.mode_set(mode="EDIT")
+    for eb in arm_obj.data.edit_bones:
+        eb.head = eb.head * s
+        eb.tail = eb.tail * s
+    bpy.ops.object.mode_set(mode="OBJECT")
 
 
 def bake_clip(rig, arm_obj, clip):

@@ -434,6 +434,22 @@ entries, when asked, and measures before and after.
 - **Status:** rejected — no pacing problem found; per-frame allocations and host string
   polling (possible GC hitches on phones) stay in PERF-R-004.
 
+### PERF-R-019 — Headroom watch: WASM size, night draw calls, per-frame bytes in `Game::update`
+
+- **Finding (run 2026-09-30):** all budgets pass, but the margins are small: release WASM
+  1 779 KiB raw of 2 048 (−89 KiB left) and 514 KiB brotli of 600 (gzip 680 KiB — the
+  budget is met only on servers that send brotli); night adds +5 of +6 draw calls (S10 35
+  vs. S01 30); `Game::update` 28 allocations / 14.4 KB per frame (was 7.3 KB — the
+  families / babies state; the count is the known budget-14 exception); S09 triangles
+  147 k (+41 % against the prototype-state run, limit 300 k).
+- **Proposal:** before level 4 / audio: (a) `twiggy` on the WASM for the biggest items
+  (`-Oz` saves only 42 KiB), (b) find the per-frame allocation sites of `Game::update`
+  (`alloc_sites_10_frames` of the probe) and reuse buffers, (c) bake the night props
+  into fewer batches to regain draw-call margin.
+- **Expected gain:** a few 10 KiB of WASM; fewer GC hitches on phones; 1–3 draw calls at night.
+- **Cost/risk:** none for the look.
+- **Status:** open (watch item, not a budget break).
+
 ## Acceptance criteria
 
 - Every entry has finding, proposal, expected gain, cost/risk and a status; `done` entries

@@ -472,8 +472,8 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 ## Implementation status (M5b, 2026-09-26)
 
 - Playable in the joined zoo (GAME-LAYOUT "Joining levels"): the four missions follow the
-  core loop; the koala is **one** animal (`pair` off until `koala_female.glb` exists —
-  GAME-FAMILY; FAM-001/002 and LAYOUT-L2-015 are unit-tested with the flag on). Koalas sit
+  core loop; the koalas are a **pair** (`pair = true` since 2026-09-30, `koala_female.glb`
+  exists — GAME-FAMILY; FAM-001/002 and LAYOUT-L2-015 run on the level data). Koalas sit
   at their `perch_height_m` (Q-094) and climb down when shown eucalyptus.
 - **Barrier timing (Q-091 answered, 2026-09-27):** `barrier_l2_construction` (and the level-1
   `barrier_north_gate`, Q-090) open **the next morning** after the last level-2 mission

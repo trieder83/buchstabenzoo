@@ -42,7 +42,10 @@ fn resc_014_picks_cover_every_candidate_and_spread() {
         for (i, a) in places.iter().enumerate() {
             assert_eq!(a.animal, g.animals[i].id());
             *seen.entry(a.id.clone()).or_default() += 1;
-            for b in &places[i + 1..] {
+            for (j, b) in places.iter().enumerate().skip(i + 1) {
+                if g.animals[i].id() == g.animals[j].id() {
+                    continue; // the two of a pair share one hiding place (GAME-FAMILY §1)
+                }
                 assert_ne!(a.id, b.id);
                 let d = a.spot().distance(b.spot());
                 assert!(

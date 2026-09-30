@@ -667,6 +667,7 @@ def main():
     for c in cl:
         qr.bake_clip(RIG, arm, c)
     qr.hr.reset_pose(arm)
+    qr.apply_variant(arm, mesh)
     bpy.context.scene.frame_set(0)
 
     tris = zb.tri_count(mesh)
@@ -687,12 +688,16 @@ def main():
 
     if "--no-preview" not in args:
         ls = qr.setup_preview(mesh, body_img)
-        qr.render_preview(arm, PREVIEW, ls, center_z=1.05, walk_frame=4)
+        sc = qr.VARIANT["scale"]
+        qr.render_preview(arm, PREVIEW, ls, center_z=1.05 * sc, walk_frame=4, big_scale=3.4 * sc,
+                          close_scale=2.7 * sc, height_m=2.2 * sc)
         if "--debug" in args:
-            qr.render_debug(arm, args[args.index("--debug") + 1], ls, cl, 1.05, HEAD_C)
+            qr.render_debug(arm, args[args.index("--debug") + 1], ls, cl, 1.05 * sc, HEAD_C * sc,
+                            scale=sc)
     if tris > TRI_BUDGET:
         print("OVER BUDGET")
         sys.exit(1)
 
 
-main()
+if __name__ == "__main__":
+    main()

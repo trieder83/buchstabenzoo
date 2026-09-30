@@ -46,6 +46,9 @@ HEAD_PROFILE = [
     (0.325, 0.08, 0.075, 0.07)]
 HEAD_N = HEAD_B + HEAD_D * 0.34
 
+# variant knobs (koala_female.py / koala_joey.py): off-white patch size, chin patch height
+PATCH = dict(chest_x=0.11, chest_z=0.48, belly_z=0.22, belly_x=0.11, chin_v=0.22)
+
 P = {
     "hips": (0, 0.15, 0.36), "spine": (0, 0.0, 0.36), "chest": (0, -0.12, 0.38),
     "neck_1": (0, -0.13, 0.44), "neck_2": (0, -0.14, 0.50), "head": (0, -0.16, 0.57),
@@ -66,8 +69,8 @@ def build(k):
 
     def torso_col(x, y, z, u, v):
         c = pal.fill(len(x), "grey")
-        chest = (y < -0.13) & (np.abs(x) < 0.11) & (z < 0.48)
-        belly = (z < 0.22) & (np.abs(x) < 0.11) & (y < 0.12)
+        chest = (y < -0.13) & (np.abs(x) < PATCH["chest_x"]) & (z < PATCH["chest_z"])
+        belly = (z < PATCH["belly_z"]) & (np.abs(x) < PATCH["belly_x"]) & (y < 0.12)
         c[chest | belly] = pal("white")
         return c
     k.torso(T, color=torso_col, leg_r=0.07)
@@ -81,7 +84,7 @@ def build(k):
 
     def head_col(x, y, z, u, v):
         c = pal.fill(len(x), "grey")
-        c[(u > 0.55) & (v < 0.22)] = pal("white")  # chin / smile area
+        c[(u > 0.55) & (v < PATCH["chin_v"])] = pal("white")  # chin / smile area
         return c
     head = k.head(HEAD_B, HEAD_D, HEAD_PROFILE, color=head_col)
     k.eyes(head, 0.60, 42.0, (0.04, 0.046), depth=0.018)

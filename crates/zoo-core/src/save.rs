@@ -343,9 +343,19 @@ impl Game {
         g.all_home = s.all_home;
         g.last_gate = s.last_gate;
 
-        // missions (by animal id)
+        // missions (by animal id; the n-th entry of an id is the n-th member of its pair)
+        let mut seen: Vec<&str> = Vec::new();
         for m in &s.missions {
-            if let Some(i) = g.animal_index(&m.animal) {
+            let nth = seen.iter().filter(|x| **x == m.animal).count();
+            seen.push(&m.animal);
+            let idx = g
+                .animals
+                .iter()
+                .enumerate()
+                .filter(|(_, a)| a.id() == m.animal)
+                .nth(nth)
+                .map(|(i, _)| i);
+            if let Some(i) = idx {
                 g.missions[i].started = m.started;
                 g.missions[i].complete = m.complete;
             }

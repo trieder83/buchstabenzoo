@@ -47,12 +47,13 @@ fn at_goldfish(g: &mut Game) {
 fn joined_zoo_has_all_ten_animals_and_level_1_is_unchanged() {
     for seed in [1, 17, 99] {
         let g = common::zoo_game(seed);
-        let ids: Vec<&str> = g.animals.iter().map(|a| a.id()).collect();
+        let mut ids: Vec<&str> = g.animals.iter().map(|a| a.id()).collect();
+        ids.dedup(); // the zebras and koalas come as pairs (GAME-FAMILY)
         assert_eq!(ids.len(), 10, "{ids:?}");
         // level 1 keeps its picks and wander timing from the main RNG (determinism of M5a)
         let one = common::game(seed);
-        for a in &one.animals {
-            let b = g.animal(a.id()).unwrap();
+        for (a, b) in one.animals.iter().zip(&g.animals) {
+            assert_eq!((a.id(), a.member), (b.id(), b.member));
             assert_eq!(a.hiding_place, b.hiding_place, "{} seed {seed}", a.id());
             assert_eq!(a.wander.pause_s, b.wander.pause_s);
         }
@@ -129,10 +130,10 @@ fn resc_014_discovery_per_level() {
     for seed in 0..300u64 {
         let g = Game::new(zoo.clone(), seed).unwrap();
         for part in 0..3 {
-            let picks: Vec<Vec2> = g
-                .animals
+            let mut members: Vec<_> = g.animals.iter().filter(|a| a.part == part).collect();
+            members.dedup_by(|a, b| a.id() == b.id()); // a pair shares one hiding place
+            let picks: Vec<Vec2> = members
                 .iter()
-                .filter(|a| a.part == part)
                 .map(|a| zoo.hiding_place(&a.hiding_place).unwrap().spot())
                 .collect();
             for (i, a) in picks.iter().enumerate() {
@@ -384,8 +385,9 @@ fn fam_001_pair_starts_together() {
         assert_eq!((koalas[0].member, koalas[1].member), (0, 1));
         assert!(koalas[0].pos.distance(koalas[1].pos) <= 3.0);
     }
-    // the flag is off in the level data until the female model exists
-    assert_eq!(common::zoo_game(1).group("koala").len(), 1);
+    // the flag is on in the level data since the female models exist
+    assert_eq!(common::zoo_game(1).group("koala").len(), 2);
+    assert_eq!(common::zoo_game(1).group("zebra").len(), 2);
 }
 
 // FAM-002: food shown to one → both follow as one group; the mission completes only when
@@ -561,7 +563,11 @@ fn fam_008_009_special_food_makes_one_baby_for_a_pair() {
     let s = g.to_save();
     assert_eq!(s.babies, vec!["zebra".to_string()]);
     // a single animal (no pair): happy, no baby
-    let mut single = common::zoo_game(4);
+    let mut zoo = common::zoo();
+    for e in &mut zoo.elements {
+        e.pair = false;
+    }
+    let mut single = Game::new(zoo, 4).unwrap();
     single.debug_send_home("zebra");
     single.garden.basket.carrots = 1;
     assert_eq!(single.give_treat("zebra", Treat::Carrot), Some(true));

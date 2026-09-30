@@ -227,6 +227,7 @@ type = "enclosure"
 animal = "koala"
 rect = [27, 33, 8, 10]
 gate = [34, 36, 1, 2]
+pair = true
 blocks_view = false
 notes = "Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter, feeding trough (GAME-FAMILY). No tree taller than the others, no blossoms, no tree house (riddle guards)."
 

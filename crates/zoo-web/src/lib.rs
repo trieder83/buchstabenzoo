@@ -160,6 +160,23 @@ pub fn required_assets(level_tomls: Vec<String>) -> Result<Vec<String>, JsError>
     }
     out.push(format!("models/characters/{PLAYER_MODEL}.glb"));
     out.extend(level_animals(&data).iter().map(|a| animal_model_path(a)));
+    // pairs (GAME-FAMILY): the female and the baby model of each pair enclosure
+    for e in data.elements_of(ElementType::Enclosure).filter(|e| e.pair) {
+        if let Some(a) = e.animal.as_deref() {
+            for m in [
+                zoo_core::animals::female_model(a),
+                zoo_core::animals::baby_model(a),
+            ]
+            .into_iter()
+            .flatten()
+            {
+                let path = animal_model_path(m);
+                if !out.contains(&path) {
+                    out.push(path);
+                }
+            }
+        }
+    }
     out.extend(AMBIENT_MODELS.iter().map(|a| animal_model_path(a)));
     out.push(ANIMAL_ANIMS.to_owned());
     Ok(out)
@@ -179,6 +196,8 @@ struct Keys {
 /// Presentation state of one animal (GAME-RESCUE §11): smoothed position, facing, clips.
 struct AnimalView {
     id: &'static str,
+    /// Renderer model / clip table id: the species, or its female / baby model (GAME-FAMILY).
+    model: &'static str,
     skinned: bool,
     pos: Vec2,
     yaw: f32,
@@ -217,6 +236,7 @@ impl AnimalView {
     fn new(id: &'static str, skinned: bool) -> Self {
         Self {
             id,
+            model: id,
             skinned,
             pos: Vec2::ZERO,
             yaw: 0.0,
@@ -296,6 +316,8 @@ pub struct App {
     anims: AnimTable,
     /// Characters drawn this frame (reused, no per-frame allocation once grown).
     draws: Vec<(&'static str, CharacterDraw)>,
+    /// Baby models that loaded (GAME-FAMILY §5).
+    baby_models: Vec<&'static str>,
     autopilot: Option<Autopilot>,
     /// Next-target hint and idle nudge (GAME-HINT, `zoo_core::hints`).
     hints: zoo_core::hints::HintTracker,
@@ -478,12 +500,37 @@ impl App {
         let mut animals = Vec::new();
         for a in &game.animals {
             let id = a.id();
-            // the second animal of a pair shares the model (GAME-FAMILY)
-            let skinned = match animals.iter().find(|v: &&AnimalView| v.id == id) {
-                Some(v) => v.skinned,
-                None => add_skinned(id, &animal_model_path(id)),
+            // the female of a pair has her own model (GAME-FAMILY §3), else the species'
+            let model = match (a.member, zoo_core::animals::female_model(id)) {
+                (1, Some(f)) => f,
+                _ => id,
             };
-            animals.push(AnimalView::new(id, skinned));
+            let mut load = |m: &'static str, animals: &Vec<AnimalView>| match animals
+                .iter()
+                .find(|v: &&AnimalView| v.model == m)
+            {
+                Some(v) => v.skinned,
+                None => add_skinned(m, &animal_model_path(m)),
+            };
+            let mut skinned = load(model, &animals);
+            let mut model = model;
+            if !skinned && model != id {
+                // no female model in the bundle: she shares the male's
+                model = id;
+                skinned = load(id, &animals);
+            }
+            let mut view = AnimalView::new(id, skinned);
+            view.model = model;
+            animals.push(view);
+        }
+        // babies (GAME-FAMILY §5): the model of every pair species
+        let mut baby_models = Vec::new();
+        for a in game.animals.iter().filter(|a| a.member == 1) {
+            if let Some(b) = zoo_core::animals::baby_model(a.id()) {
+                if !baby_models.contains(&b) && add_skinned(b, &animal_model_path(b)) {
+                    baby_models.push(b);
+                }
+            }
         }
         for m in AMBIENT_MODELS {
             add_skinned(m, &animal_model_path(m));
@@ -872,6 +919,7 @@ impl App {
             animals,
             anims,
             draws: Vec::with_capacity(8),
+            baby_models,
             autopilot: None,
             hints: Default::default(),
             outbox: Vec::new(),
@@ -1736,8 +1784,40 @@ impl App {
             };
             let (action, t) = a.action.map_or((None, 0.0), |(n, t, _)| (Some(n), t));
             if a.skinned {
+                // the baby (GAME-FAMILY §5, flag `game.babies`) stays at the female's side and
+                // copies her clips, a step behind (own model, own size)
+                let baby = self
+                    .game
+                    .animals
+                    .get(i)
+                    .filter(|ga| ga.member == 1)
+                    .and_then(|_| {
+                        let m = zoo_core::animals::baby_model(a.id)?;
+                        (self.game.babies.iter().any(|b| b == a.id)
+                            && self.baby_models.contains(&m))
+                        .then_some(m)
+                    });
+                if let Some(m) = baby {
+                    self.draws.push((
+                        m,
+                        CharacterDraw {
+                            pos: pos + Vec3::new(0.75, 0.0, 0.45),
+                            yaw: a.yaw,
+                            idle_time: a.idle_time + 0.7,
+                            walk_time: a.walk_time + 0.3,
+                            walk_blend: a.walk_blend,
+                            idle_clip: a.rest,
+                            walk_clip: a.locomotion,
+                            action: None,
+                            action_blend: 0.0,
+                            under_water: a.under_water,
+                            tilt: Quat::IDENTITY,
+                            eye_glow: false,
+                        },
+                    ));
+                }
                 self.draws.push((
-                    a.id,
+                    a.model,
                     CharacterDraw {
                         pos,
                         yaw: a.yaw,
@@ -3256,11 +3336,11 @@ impl App {
                 v.locomotion = f.locomotion;
             }
             if v.skinned {
-                if !self.renderer.has_clip(v.id, v.rest) {
+                if !self.renderer.has_clip(v.model, v.rest) {
                     v.rest = "idle";
                 }
-                if !self.renderer.has_clip(v.id, v.locomotion) {
-                    v.locomotion = if self.renderer.has_clip(v.id, "walk") {
+                if !self.renderer.has_clip(v.model, v.locomotion) {
+                    v.locomotion = if self.renderer.has_clip(v.model, "walk") {
                         "walk"
                     } else {
                         "swim"
@@ -3275,7 +3355,7 @@ impl App {
             let authored = if climbing {
                 self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED)
             } else {
-                self.anims.walk_speed(v.id)
+                self.anims.walk_speed(v.model)
             };
             let actual = if climbing {
                 self.anims.climb_speed(v.id).unwrap_or(DESCEND_SPEED)
@@ -3295,7 +3375,7 @@ impl App {
                 if let Some(next) = v.queue.pop_front() {
                     // missing one-shot clips fall back: refuse → idle shake is skipped
                     let dur = if v.skinned {
-                        self.renderer.clip_duration(v.id, next).unwrap_or(0.0)
+                        self.renderer.clip_duration(v.model, next).unwrap_or(0.0)
                     } else {
                         1.0
                     };

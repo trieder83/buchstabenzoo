@@ -164,12 +164,16 @@ fn resc_001_new_game_enclosures_empty_animals_hidden() {
             enc.id
         );
     }
-    assert_eq!(g.animals.len(), 3);
+    assert_eq!(g.animals.len(), 4, "zebra pair (GAME-FAMILY), hippo, panda");
     for a in &g.animals {
         assert_eq!(a.state, AnimalState::Escaped);
         let h = g.level.data.hiding_place(&a.hiding_place).unwrap();
         assert_eq!(h.animal, a.id());
-        assert_eq!(a.pos, h.spot());
+        if a.member == 0 {
+            assert_eq!(a.pos, h.spot());
+        } else {
+            assert!(a.pos.distance(h.spot()) <= 3.0, "the pair waits together");
+        }
     }
 }
 
@@ -328,7 +332,7 @@ fn resc_008_zebra_mission_end_to_end() {
         &zebra(|animal| GameEvent::MissionComplete { animal })
     ));
     assert!(g.mission("zebra").unwrap().complete);
-    assert_eq!(g.enclosure_occupants("enc_zebra"), vec!["zebra"]);
+    assert_eq!(g.enclosure_occupants("enc_zebra"), vec!["zebra", "zebra"]);
     assert!(!ev.contains(&GameEvent::AllAnimalsHome));
     // the gate closes again for the player (no animal led)
     assert!(!g.is_leading());

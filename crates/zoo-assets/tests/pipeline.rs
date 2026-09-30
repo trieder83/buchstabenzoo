@@ -24,7 +24,7 @@ fn manifest_parses_with_unique_ids() {
     for a in &m.assets {
         assert!(ids.insert(&a.id), "duplicate {}", a.id);
         assert!(
-            ["characters", "animals", "props", "environment"].contains(&a.kind.as_str()),
+            ["characters", "animals", "props", "environment", "audio"].contains(&a.kind.as_str()),
             "{}: kind {}",
             a.id,
             a.kind

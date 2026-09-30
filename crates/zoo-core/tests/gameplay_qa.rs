@@ -282,7 +282,11 @@ fn resc_006_follower_walks_around_obstacles() {
 fn resc_017_every_interactable_has_texts() {
     let g = common::game(1);
     let c = common::content();
-    assert_eq!(g.animals.len(), 3, "zebra, hippo and panda are in scope");
+    assert_eq!(
+        g.animals.len(),
+        4,
+        "zebra pair (FAM-001), hippo and panda are in scope"
+    );
     let mut animals: Vec<&str> = g
         .interactables()
         .iter()

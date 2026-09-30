@@ -63,10 +63,10 @@ fn play_006_grass_speed() {
     assert_eq!(level.grid().surface(cell_of(start)), Some(Surface::Grass));
     walk(&level, &mut p, &params, Vec2::X, 1.0);
     let d = p.pos.distance(start);
-    // GAME-PLAYER §6: grass stays 0.98 m/s (factor ≈ 0.51)
+    // GAME-PLAYER §6: grass 1.45 m/s (factor ≈ 0.75), faster than before and slower than paths
     let expected = params.walk_speed * params.grass_speed_factor;
-    assert!((expected - 0.98).abs() < 1e-4, "grass speed {expected}");
-    assert!((d - 0.98).abs() <= 0.98 * 0.05, "moved {d} m");
+    assert!((expected - 1.45).abs() < 1e-4, "grass speed {expected}");
+    assert!((d - 1.45).abs() <= 1.45 * 0.05, "moved {d} m");
 }
 
 // GAME-PLAYER §6 / ART-RIG §4.7 (RIG-016): walk clip playback = speed ÷ 1.4, clamped to
@@ -77,8 +77,8 @@ fn play_005_006_walk_clip_rate_matches_speed() {
     let params = MoveParams::default();
     assert!((walk_clip_rate(params.speed_on(Surface::Path)) - 1.93 / 1.4).abs() < 1e-5);
     assert!((walk_clip_rate(1.93) - 1.38).abs() < 0.005);
-    // grass 0.98 / 1.4 = 0.7 → clamped to 0.8
-    assert!((walk_clip_rate(params.speed_on(Surface::Grass)) - 0.8).abs() < 1e-5);
+    // grass 1.45 / 1.4 ≈ 1.04
+    assert!((walk_clip_rate(params.speed_on(Surface::Grass)) - 1.45 / 1.4).abs() < 1e-5);
     assert!((walk_clip_rate(1.2) - 1.2 / 1.4).abs() < 1e-5);
     assert!((walk_clip_rate(2.2) - 1.4).abs() < 1e-5);
 }

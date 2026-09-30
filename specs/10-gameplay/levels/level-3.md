@@ -309,7 +309,7 @@ through a grate under `wall_l3_west` at z 52–54 (water is not walkable).
 
 ## Walking distances
 
-Fastest walking time, 1.93 m/s paths / 0.98 m/s grass (GAME-PLAYER §6); `house_door` = cell
+Fastest walking time, 1.93 m/s paths / 1.45 m/s grass (GAME-PLAYER §6); `house_door` = cell
 (−8, 60) in front of the house door, `bowl` = interior cell next to the table (−8, 64),
 `storage_door` = (3, 60), `entry_s` = the cells behind the level-1 north gate.
 
@@ -376,7 +376,7 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 | LAYOUT-L3-002 | Given `level-3.toml`, then every border cell is solid except the `[[entry]]` cells, each a path cell edge-adjacent to its barrier in the earlier level; with both barriers closed the flood fill from the level-1 spawn reaches no level-3 cell. | unit |
 | LAYOUT-L3-003 | Given `level-3.toml`, then no two solid elements share a cell, no path cell is under a solid element (level-transition barriers excepted, LAYOUT-040), and the `interior` + `door` cells of `zookeeper_house_3` and `food_storage_3` are walkable with surface `path` while its other cells are solid. | unit |
 | LAYOUT-L3-004 | Given this spec's element table and `level-3.toml`, then both list the same ids, types and rectangles (LAYOUT-005). | unit |
-| LAYOUT-L3-005 | Given the joined levels with 1.93 / 0.98 m/s, then every pair of the walking table and each hiding place → neighbour is ≤ 10 s. | unit |
+| LAYOUT-L3-005 | Given the joined levels with 1.93 / 1.45 m/s, then every pair of the walking table and each hiding place → neighbour is ≤ 10 s. | unit |
 | LAYOUT-L3-006 | Given missions `monkey`, `goldfish`, `snow_fox`, every candidate, the player next to the board or gate, all 8 rotations and 10/14/20 m on 1080×2340, then every wander cell centre (0.5 m, animal height, perch + 1 m) is outside the view frustum. | unit |
 | LAYOUT-L3-007 | Given the hiding places of level 3, then their `features` contain the CONT-MISSIONS details (pirate ship: ship, mast, sail, flag, treasure_chest; carousel: carousel, wooden_horses; trampoline: trampoline; waterfall: falling_water, foam; water wheel: water_wheel, clattering; willow: weeping_willow, hanging_branches; kiosk: freezer_chest, cold_air, cones; sprinkler: sprinkler, cold_drops, rainbow; laundry: white_sheets, washing_line) and every `scenery` id exists. | unit |
 | LAYOUT-L3-008 | Given levels 1–3 joined, then the kinds `waterfall`, `mill_hut`, `willow`, `pirate_ship`, `carousel`, `kiosk`, `washing_line` and the scenery kinds `trampoline`, `wet_lawn`, `bark_mulch` occur exactly once; `slide`/`swings` occur only in level 2; `stream_l3` has no bridge or jetty element next to it. | unit |

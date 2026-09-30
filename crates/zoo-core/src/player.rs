@@ -5,12 +5,12 @@ use glam::Vec2;
 use crate::collision::{Blockers, Colliders, PLAYER_RADIUS_M};
 use crate::level::{cell_of, Grid, Surface};
 
-/// Movement tuning (GAME-PLAYER §6, user decisions 2026-09-26: path 1.93 m/s, grass 0.98 m/s).
+/// Movement tuning (GAME-PLAYER §6, user decisions 2026-09-26: path 1.93 m/s, grass 1.45 m/s, 2026-09-29).
 #[derive(Debug, Clone, Copy)]
 pub struct MoveParams {
     /// Walking speed on `path` cells in m/s (1.93).
     pub walk_speed: f32,
-    /// Grass speed = walk speed × this factor (≈ 0.51 → 0.98 m/s).
+    /// Grass speed = walk speed × this factor (≈ 0.75 → 1.45 m/s).
     pub grass_speed_factor: f32,
     /// Time for the speed to blend from one surface speed to the other (PLAY-007: ≤ 0.2 s).
     pub surface_blend_s: f32,
@@ -28,8 +28,8 @@ impl Default for MoveParams {
 
 /// Path speed (GAME-PLAYER §6): 1.75 m/s + 10 % (user decision 2026-09-26).
 pub const PATH_SPEED: f32 = 1.93;
-/// Grass speed stays 0.98 m/s (GAME-PLAYER §6).
-pub const GRASS_SPEED: f32 = 0.98;
+/// Grass speed 1.45 m/s (GAME-PLAYER §6, user request 2026-09-29; was 0.98).
+pub const GRASS_SPEED: f32 = 1.45;
 
 impl MoveParams {
     pub fn speed_on(&self, s: Surface) -> f32 {
@@ -46,7 +46,7 @@ pub const WALK_CLIP_AUTHORED_SPEED: f32 = 1.4;
 pub const WALK_CLIP_RATE_RANGE: (f32, f32) = (0.8, 1.4);
 
 /// Playback rate of the `walk` clip at a ground speed (GAME-PLAYER §6, ART-RIG §4.7):
-/// `speed ÷ 1.4`, clamped to [0.8, 1.4] — ≈ 1.38 on paths (1.93 m/s), 0.8 on grass.
+/// `speed ÷ 1.4`, clamped to [0.8, 1.4] — ≈ 1.38 on paths (1.93 m/s), ≈ 1.04 on grass (1.45 m/s).
 pub fn walk_clip_rate(speed: f32) -> f32 {
     (speed / WALK_CLIP_AUTHORED_SPEED).clamp(WALK_CLIP_RATE_RANGE.0, WALK_CLIP_RATE_RANGE.1)
 }

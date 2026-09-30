@@ -273,7 +273,7 @@ while the player stands on any walkable cell next to its own info board or gate,
 and, for perches, at perch height + 1 m (koala up to 10 m). All 12 pass; for information all
 12 are also off-screen in 2340×1080 landscape (the ball and the tree house were moved for this).
 
-**Nearest neighbour of each place** (fastest walk, 1.93 m/s path / 0.98 m/s grass, ≤ 10 s):
+**Nearest neighbour of each place** (fastest walk, 1.93 m/s path / 1.45 m/s grass, ≤ 10 s):
 `loc_treehouse` → loc_blossom_tree 7.6 s (FIX-056; was → loc_lookout_tower from the old south-west corner); `loc_fountain` → spawn 2.3 s; `loc_lookout_tower` → board_lion 7.0 s; `loc_train` → board_lion 9.3 s; `loc_playground` → loc_tallest_tree 9.2 s; `loc_tallest_tree` → loc_playground 9.2 s; `loc_blossom_tree` → loc_deckchairs 5.1 s; `loc_stage` → board_giraffe 7.4 s; `loc_deckchairs` → loc_stage 5.4 s; `loc_big_ball` → loc_deckchairs 4.9 s; `loc_sun_rocks` → construction 3.2 s; `loc_log_pile` → construction 3.0 s.
 
 ## Hiding places — riddle details and guards
@@ -318,7 +318,7 @@ cells are solid except `entry_l2_west`.
 
 ## Walking distances
 
-Fastest walking time (8-neighbour, no corner cutting, **1.93 m/s on paths, 0.98 m/s on
+Fastest walking time (8-neighbour, no corner cutting, **1.93 m/s on paths, 1.45 m/s on
 grass** — GAME-PLAYER §6), measured from the spawn, the cell in front of the storage door
 (38, 30), the cells next to each info board, the map board and the barrier, and the cells
 within 2 m of each animal spot.
@@ -452,7 +452,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 | LAYOUT-L2-002 | Given `level-2.toml`, then every border cell of its bounds is solid except the `[[entry]]` cells, which are path cells edge-adjacent to a cell of their barrier in `level-1.toml`; the bounds of levels 1, 2 and 3 are pairwise disjoint. | unit |
 | LAYOUT-L2-003 | Given `level-2.toml`, then no two solid elements share a cell and no path cell is covered by a solid element other than a level-transition barrier (the street runs on under `barrier_l2_construction`, LAYOUT-040). | unit |
 | LAYOUT-L2-004 | Given this spec's element table and `level-2.toml`, then both list the same ids, types and rectangles (instance of LAYOUT-005). | unit |
-| LAYOUT-L2-005 | Given the joined levels 1–2 with path speed 1.93 m/s and grass 0.98 m/s, then each pair of the walking-distance table and each hiding place → neighbour pair is ≤ 10 s. | unit |
+| LAYOUT-L2-005 | Given the joined levels 1–2 with path speed 1.93 m/s and grass 1.45 m/s, then each pair of the walking-distance table and each hiding place → neighbour pair is ≤ 10 s. | unit |
 | LAYOUT-L2-006 | Given missions `koala`, `elephant`, `giraffe`, `lion`, every candidate hiding place, the player on each walkable cell next to the info board or gate, and the camera of GAME-PLAYER §2 at every 45° rotation and 10/14/20 m on 1080×2340, then every wander cell centre at 0.5 m, at the animal's height (koala 0.9, elephant 3.0, giraffe 4.5, lion 1.5 m) and, if `perch_height_m` is set, at perch height + 1 m lies outside the view frustum. | unit |
 | LAYOUT-L2-007 | Given the hiding places of level 2, then their `features` contain the CONT-MISSIONS details (tree house: tree_house, rope_ladder; tallest tree: tallest_tree; blossom tree: pink_blossoms, falling_petals; fountain: water_jet, stone_basin, coins; log pile: stacked_logs, sawdust; ball: giant_ball; tower: wooden_tower, stairs, high_platform; train: train, bell; playground: slide, swings; sun rocks: flat_rocks, full_sun; stage: stage, drums; deckchairs: striped_deckchairs, sunshade) and every `scenery` id exists. | unit |
 | LAYOUT-L2-008 | Given the joined levels 1–2, then each of the element kinds `fountain`, `treehouse`, `giant_tree`, `blossom_tree`, `play_ball`, `log_pile`, `lookout_tower`, `zoo_train`, `slide`, `swings`, `stage`, `deckchairs` and the scenery kinds `flat_rocks`, `petal_carpet` occur exactly once; no tree element other than `tree_giant_e` has `height_m` > 7; `enc_lion` notes contain no rocks. | unit |

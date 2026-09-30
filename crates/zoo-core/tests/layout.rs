@@ -350,59 +350,59 @@ fn layout_l1_005_walking_times_between_neighbours() {
             walkable_adjacent(grid, data.element("enc_zebra").unwrap().gate.unwrap()),
             board("board_panda"),
             18.1,
-            9.7,
+            9.5,
         ),
         (
             "pond -> panda info board",
             pond.clone(),
             board("board_panda"),
             11.8,
-            7.2,
+            6.5,
         ),
         (
             "panda info board -> river",
             board("board_panda"),
             river.clone(),
             10.8,
-            7.2,
+            6.8,
         ),
         (
             "river -> hippo info board",
             river.clone(),
             board("board_hippo"),
             10.4,
-            5.6,
+            5.5,
         ),
         (
             "hippo info board -> cave",
             board("board_hippo"),
             cave.clone(),
             15.2,
-            8.2,
+            8.0,
         ),
         (
             "cave -> food storage door",
             cave.clone(),
             door.clone(),
             10.1,
-            6.1,
+            5.8,
         ),
         (
             "hippo info board -> food storage door",
             board("board_hippo"),
             door.clone(),
             16.2,
-            8.7,
+            8.5,
         ),
         (
             "spawn -> map board",
             spawn.clone(),
             board("map_board"),
             6.4,
-            3.6,
+            3.4,
         ),
     ];
-    // GAME-PLAYER §6 (2026-09-26): path 1.93 m/s, grass 0.98 m/s
+    // GAME-PLAYER §6 (2026-09-26): path 1.93 m/s, grass 1.45 m/s
     let mp = zoo_core::player::MoveParams::default();
     let time = Cost::Time {
         path_speed: mp.speed_on(zoo_core::level::Surface::Path),
@@ -626,7 +626,7 @@ fn layout_l1_013_food_boxes_in_front_of_storage_reachable() {
     }
 }
 
-/// Walking-time cost model of GAME-PLAYER §6 (path 1.93 m/s, grass 0.98 m/s).
+/// Walking-time cost model of GAME-PLAYER §6 (path 1.93 m/s, grass 1.45 m/s).
 fn time_cost() -> Cost {
     let mp = zoo_core::player::MoveParams::default();
     Cost::Time {

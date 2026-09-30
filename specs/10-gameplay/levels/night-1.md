@@ -304,7 +304,7 @@ of this level (e.g. a closed garden gate in `hedge_n1_north`), not designed yet.
 
 ## Walking distances
 
-Fastest walk (8-neighbour, 1.93 m/s on paths, 0.98 m/s on grass; scratch estimates of
+Fastest walk (8-neighbour, 1.93 m/s on paths, 1.45 m/s on grass; scratch estimates of
 2026-09-27 — the LAYOUT-N1-005 test prints the exact values):
 
 | From → to (neighbours) | Fastest time |
@@ -389,7 +389,7 @@ enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox
 | LAYOUT-N1-002 | Given the joined levels with the moon door closed (day), then no cell of `night_1` is reachable from the level-1 spawn; every border cell of `night_1` except (−25, 29) and (−25, 30) is solid. | unit |
 | LAYOUT-N1-003 | Given `night-1.toml`, then no two solid elements share a cell and no path cell lies under a solid element; its bounds are disjoint from levels 1–3. | unit |
 | LAYOUT-N1-004 | Given this spec's element table and `night-1.toml`, then both list the same ids, types and rectangles (LAYOUT-005). | unit |
-| LAYOUT-N1-005 | Given `night-1.toml` with 1.93 m/s on paths and 0.98 m/s on grass, then each pair of the "Walking distances" table is ≤ 10 s. | unit |
+| LAYOUT-N1-005 | Given `night-1.toml` with 1.93 m/s on paths and 1.45 m/s on grass, then each pair of the "Walking distances" table is ≤ 10 s. | unit |
 | LAYOUT-N1-006 | Given missions `hedgehog`, `bat`, `owl`, every candidate, the player on every walkable cell ≤ 2.5 m from the own board or in front of the own gate, and the zoo camera at every 45° rotation and 10, 14, 20 m on 1080×2340, then no wander cell centre (0.5 m, 1.0 m, perch + 1 m) is on screen, and every one is ≥ 22 m (planar, cell centres) from the standing points (CAMV-008, Q-110; 17 m before FIX-056). | unit |
 | LAYOUT-N1-007 | Given the hiding places, then each has ≥ 9 wander cells (counts of the table: 26, 25, 26, 13, 20, 15, 25, 21, 22), a cell ≥ 2 m from the spot, no solid or path cell, lies inside its rect; places of different animals do not overlap; all 27 combinations keep spots ≥ 12 m apart. | unit |
 | LAYOUT-N1-008 | Given the hiding places, then their `features` contain the CONT-MISSIONS details, every `scenery` id exists, each scenery kind and each riddle element kind (`windmill`, `tree_hollow`, `fir_tree`, `hill`, `pond`, `potting_bench`, `tree_crooked`) occurs once in the night levels, and `firefly` props appear only in `firefly_meadow_n1`. | unit |

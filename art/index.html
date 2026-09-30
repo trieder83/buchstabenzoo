@@ -64,6 +64,9 @@
   .lightbox img { max-width: 100%; max-height: calc(100vh - 80px); border-radius: 8px; }
   .lightbox p { color: #eee; text-align: center; margin: 8px 0 0; font-size: 14px; }
   .hidden { display: none; }
+  .sounds { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px 16px; margin-top: 10px; }
+  .snd { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+  .snd audio { width: 100%; height: 34px; }
 </style>
 </head>
 <body>
@@ -91,7 +94,7 @@
   const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const specFile = id => ({
     "ART-DIRECTION": "art-direction.md", "ART-PIPELINE": "asset-pipeline.md", "ART-CHARACTERS": "characters.md",
-    "ART-ANIMALS": "animals.md", "ART-ENVIRONMENT": "environment.md", "ART-RIG": "character-rig-and-animation.md",
+    "ART-ANIMALS": "animals.md", "ART-SOUND": "sound.md", "ART-ENVIRONMENT": "environment.md", "ART-RIG": "character-rig-and-animation.md",
   }[id]);
 
   const counts = {};
@@ -134,6 +137,7 @@
       <p class="desc">${esc(item.description)}</p>
       ${item.notes ? `<p class="notes">${esc(item.notes)}</p>` : ""}
       <div class="gallery ${imgs.length === 1 ? "single" : ""}">${figs}</div>
+      ${(item.audio || []).length ? `<div class="sounds">${item.audio.map(a => `<div class="snd"><span>${esc(a.label)}</span><audio controls preload="none" src="${esc(a.file)}"></audio></div>`).join("")}</div>` : ""}
     </article>`;
   }
 

@@ -3,7 +3,7 @@
 // Paths are relative to art/. Status values: planned | brief | in-review | changes-requested | approved.
 // "approved" must match concept_approved = true in assets/manifest.toml (ART-PIPELINE).
 window.ART_CATALOG = {
-  updated: "2026-09-27",
+  updated: "2026-09-30",
   sections: [
     {
       id: "reference",
@@ -999,6 +999,216 @@ window.ART_CATALOG = {
             { file: "props/kit_landmarks/model_preview.png", label: "3D model preview — night-1 landmarks (kit_landmarks.py)" },
           ],
         },
+      ],
+    },
+    {
+      id: "sound",
+      title: "Sound",
+      intro: "Sound effects for review (ART-SOUND). Press play on each cue. Open this page from a browser; the files are in assets/audio/. All cues are unapproved until a human has listened (approved = false in assets/manifest.toml).",
+      items: [
+        {
+          "id": "sound_steps",
+          "title": "Footsteps",
+          "status": "in-review",
+          "description": "Soft steps per surface, 4 variations each (ASND-005). Played once per footfall of the walk clip.",
+          "spec": "ART-SOUND",
+          "brief": "sound/brief.md",
+          "notes": "Synthesised by script (tools/sound/*.py), not yet listened to by a human — please review and tell which cues to change (manifest: approved = false).",
+          "audio": [
+            {
+              "file": "../assets/audio/steps/step_grass_1.ogg",
+              "label": "step_grass_1"
+            },
+            {
+              "file": "../assets/audio/steps/step_grass_2.ogg",
+              "label": "step_grass_2"
+            },
+            {
+              "file": "../assets/audio/steps/step_grass_3.ogg",
+              "label": "step_grass_3"
+            },
+            {
+              "file": "../assets/audio/steps/step_grass_4.ogg",
+              "label": "step_grass_4"
+            },
+            {
+              "file": "../assets/audio/steps/step_path_1.ogg",
+              "label": "step_path_1"
+            },
+            {
+              "file": "../assets/audio/steps/step_path_2.ogg",
+              "label": "step_path_2"
+            },
+            {
+              "file": "../assets/audio/steps/step_path_3.ogg",
+              "label": "step_path_3"
+            },
+            {
+              "file": "../assets/audio/steps/step_path_4.ogg",
+              "label": "step_path_4"
+            },
+            {
+              "file": "../assets/audio/steps/step_sand_1.ogg",
+              "label": "step_sand_1"
+            },
+            {
+              "file": "../assets/audio/steps/step_sand_2.ogg",
+              "label": "step_sand_2"
+            },
+            {
+              "file": "../assets/audio/steps/step_sand_3.ogg",
+              "label": "step_sand_3"
+            },
+            {
+              "file": "../assets/audio/steps/step_sand_4.ogg",
+              "label": "step_sand_4"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_1.ogg",
+              "label": "step_water_1"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_2.ogg",
+              "label": "step_water_2"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_3.ogg",
+              "label": "step_water_3"
+            },
+            {
+              "file": "../assets/audio/steps/step_water_4.ogg",
+              "label": "step_water_4"
+            },
+            {
+              "file": "../assets/audio/steps/step_wood_1.ogg",
+              "label": "step_wood_1"
+            },
+            {
+              "file": "../assets/audio/steps/step_wood_2.ogg",
+              "label": "step_wood_2"
+            },
+            {
+              "file": "../assets/audio/steps/step_wood_3.ogg",
+              "label": "step_wood_3"
+            },
+            {
+              "file": "../assets/audio/steps/step_wood_4.ogg",
+              "label": "step_wood_4"
+            }
+          ]
+        },
+        {
+          "id": "sound_doors",
+          "title": "Doors and gates",
+          "status": "in-review",
+          "description": "Door, gate, glass door and moon door open/close sounds (ASND-006).",
+          "spec": "ART-SOUND",
+          "brief": "sound/brief.md",
+          "notes": "Synthesised by script (tools/sound/*.py), not yet listened to by a human — please review and tell which cues to change (manifest: approved = false).",
+          "audio": [
+            {
+              "file": "../assets/audio/doors/door_wood_close_1.ogg",
+              "label": "door_wood_close_1"
+            },
+            {
+              "file": "../assets/audio/doors/door_wood_open_1.ogg",
+              "label": "door_wood_open_1"
+            },
+            {
+              "file": "../assets/audio/doors/gate_close_1.ogg",
+              "label": "gate_close_1"
+            },
+            {
+              "file": "../assets/audio/doors/gate_open_1.ogg",
+              "label": "gate_open_1"
+            },
+            {
+              "file": "../assets/audio/doors/glass_door_1.ogg",
+              "label": "glass_door_1"
+            },
+            {
+              "file": "../assets/audio/doors/moon_door_1.ogg",
+              "label": "moon_door_1"
+            }
+          ]
+        },
+        {
+          "id": "sound_pickups",
+          "title": "Pick up / drop",
+          "status": "in-review",
+          "description": "Pick up and drop food and items, harvest, basket (ASND-006).",
+          "spec": "ART-SOUND",
+          "brief": "sound/brief.md",
+          "notes": "Synthesised by script (tools/sound/*.py), not yet listened to by a human — please review and tell which cues to change (manifest: approved = false).",
+          "audio": [
+            {
+              "file": "../assets/audio/pickups/basket_add_1.ogg",
+              "label": "basket_add_1"
+            },
+            {
+              "file": "../assets/audio/pickups/drop_food_1.ogg",
+              "label": "drop_food_1"
+            },
+            {
+              "file": "../assets/audio/pickups/drop_item_1.ogg",
+              "label": "drop_item_1"
+            },
+            {
+              "file": "../assets/audio/pickups/harvest_plant_1.ogg",
+              "label": "harvest_plant_1"
+            },
+            {
+              "file": "../assets/audio/pickups/pickup_food_1.ogg",
+              "label": "pickup_food_1"
+            },
+            {
+              "file": "../assets/audio/pickups/pickup_item_1.ogg",
+              "label": "pickup_item_1"
+            }
+          ]
+        },
+        {
+          "id": "sound_ui",
+          "title": "UI sounds",
+          "status": "in-review",
+          "description": "Tap, refuse (soft, never a buzzer) and success.",
+          "spec": "ART-SOUND",
+          "brief": "sound/brief.md",
+          "notes": "Synthesised by script (tools/sound/*.py), not yet listened to by a human — please review and tell which cues to change (manifest: approved = false).",
+          "audio": [
+            {
+              "file": "../assets/audio/ui/ui_refuse_1.ogg",
+              "label": "ui_refuse_1"
+            },
+            {
+              "file": "../assets/audio/ui/ui_success_1.ogg",
+              "label": "ui_success_1"
+            },
+            {
+              "file": "../assets/audio/ui/ui_tap_1.ogg",
+              "label": "ui_tap_1"
+            }
+          ]
+        },
+        {
+          "id": "sound_animals",
+          "title": "Animal calls (candidates)",
+          "status": "in-review",
+          "description": "Only two candidates so far, made with Gemini TTS (a human voice imitating the animal — probably not usable, Q-210). The other species have no calls yet.",
+          "spec": "ART-SOUND",
+          "brief": "sound/brief.md",
+          "notes": "Generated with Gemini TTS (licence: generated, provider terms to check, Q-213). Listen and decide whether to keep.",
+          "audio": [
+            {
+              "file": "../assets/audio/animals/animal_koala_call_1.ogg",
+              "label": "animal_koala_call_1"
+            },
+            {
+              "file": "../assets/audio/animals/animal_zebra_call_1.ogg",
+              "label": "animal_zebra_call_1"
+            }
+          ]
+        }
       ],
     },
   ],

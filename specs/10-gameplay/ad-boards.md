@@ -20,8 +20,8 @@ request 2026-09-27). Up to **3 campaigns** run at the same time; each campaign i
 
 **Campaign directories (user request 2026-09-30):** each of the 3 campaigns has its own
 directory with its resources and spec: [`ads/campaign-1-mathfighter/`](ads/campaign-1-mathfighter/campaign.md)
-(Math Fighter, images + tagline + link), [`ads/campaign-2/`](ads/campaign-2/campaign.md) and
-[`ads/campaign-3/`](ads/campaign-3/campaign.md) (placeholders until filled).
+(Math Fighter, images + tagline + link), [`ads/campaign-2-abcsmash/`](ads/campaign-2-abcsmash/campaign.md) (ABC Smash, reading game,
+image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (placeholder until filled).
 
 ## Behaviour
 
@@ -40,8 +40,8 @@ directory with its resources and spec: [`ads/campaign-1-mathfighter/`](ads/campa
    They are **not interactable** (no tap, no link, no store, no popup, no video, no sound),
    collect **no data**, need **no network** (images ship with the game), never interrupt play
    and are never placed in the reading panels or the UI. **Exception (user request 2026-09-30,
-   Q-217, pending confirmation):** the own cross-promotion campaign `mathfighter` is readable
-   and offers a link behind a parental gate (`ads/campaign-1-mathfighter/campaign.md`);
+   Q-217, pending confirmation):** the own cross-promotion campaigns `mathfighter` and `abcsmash` are readable
+   and offers a link behind a parental gate (`ads/campaign-1-mathfighter/campaign.md`, `ads/campaign-2-abcsmash/campaign.md`);
    placeholder campaigns and every other board stay fully passive. Content rules: age-appropriate, no
    food/sweets marketing to children, no gambling, no in-app purchase hints (to be confirmed
    legally).
@@ -60,7 +60,7 @@ directory with its resources and spec: [`ads/campaign-1-mathfighter/`](ads/campa
 | ADS-001 | Given a level, then it has 4–6 ad boards, none on enclosures, info boards, hiding places or blocking a riddle sight line (LAYOUT-L*-006 still holds). | unit |
 | ADS-002 | Given the campaign table, then at most 3 are active and each active campaign is shown on ≥ 2 boards. | unit |
 | ADS-003 | Given the placeholder campaigns, then boards show "Deine Werbung 1/2/3" (de) / "Your ad 1/2/3" (en) from Fluent. | e2e |
-| ADS-004 | Given an ad board of a placeholder campaign (or any campaign other than `mathfighter`, rule 4 exception, ADC1-002..005), then it is not interactable and the game makes no network request for ads. | e2e |
+| ADS-004 | Given an ad board of a placeholder campaign (or any campaign other than `mathfighter` / `abcsmash`, rule 4 exception, ADC1-002..005), then it is not interactable and the game makes no network request for ads. | e2e |
 | ADS-005 | Given two play sessions with different seeds, then the campaign-to-board assignment differs, with the same seed it is identical. | unit |
 | ADS-006 | Given the campaign table, then every active campaign is a placeholder or own cross-promotion (e.g. "Math Fighter") unless a legal/child-safety check is recorded for it (rule 6, Q-128). | manual |
 

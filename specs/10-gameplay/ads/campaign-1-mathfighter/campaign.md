@@ -51,7 +51,7 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**.
 | ADC1-003 | Given the open panel, then it has a link button ≥ 64 px with the URL https://mathfighter.rcms.ch; pressing it first shows the parental gate and does **not** open anything yet. | e2e |
 | ADC1-004 | Given the parental gate was passed, then the URL opens in a new browser tab/external browser exactly once (`noopener`), with no query parameters; given the gate was failed or cancelled, nothing opens. | e2e |
 | ADC1-005 | Given the game runs for a session without pressing the link, then no network request to mathfighter.rcms.ch is made (ADS-004 still holds for all other boards). | e2e |
-| ADC1-006 | Given placeholder campaigns 2/3, then their boards stay non-interactable (no panel, no link). | e2e |
+| ADC1-006 | Given placeholder campaign 3 (and any board without a real campaign), then its boards stay non-interactable (no panel, no link). | e2e |
 
 ## Open questions
 

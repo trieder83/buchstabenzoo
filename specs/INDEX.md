@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|---|
 | GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION | 6 | Q-217 | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
 | GAME-ADS-C1 | Ad campaign 1 — Math Fighter | draft | GAME-ADS, CONT-MATH, GAME-CART | 6 | Q-217 | [10-gameplay/ads/campaign-1-mathfighter/campaign.md](10-gameplay/ads/campaign-1-mathfighter/campaign.md) |
-| GAME-ADS-C2 | Ad campaign 2 — placeholder | draft | GAME-ADS | 1 | — | [10-gameplay/ads/campaign-2/campaign.md](10-gameplay/ads/campaign-2/campaign.md) |
+| GAME-ADS-C2 | Ad campaign 2 — ABC Smash | draft | GAME-ADS, GAME-ADS-C1, CONT-READING | 4 | Q-217 | [10-gameplay/ads/campaign-2-abcsmash/campaign.md](10-gameplay/ads/campaign-2-abcsmash/campaign.md) |
 | GAME-ADS-C3 | Ad campaign 3 — placeholder | draft | GAME-ADS | 1 | — | [10-gameplay/ads/campaign-3/campaign.md](10-gameplay/ads/campaign-3/campaign.md) |
 | GAME-AMBIENT | Ambient animals (ducks, frogs, butterflies) | implemented | GAME-LAYOUT, GAME-ANIMALS, ART-ENVIRONMENT, TECH-WATER | 14 | Q-107, Q-108 | [10-gameplay/ambient.md](10-gameplay/ambient.md) |
 | GAME-ANIMALS | Animals and enclosures | draft | GAME-WORLD | 13 | Q-002, Q-004, Q-005, Q-007, Q-030, Q-043, Q-044, Q-070, Q-085, Q-094, Q-097 | [10-gameplay/animals.md](10-gameplay/animals.md) |
@@ -78,4 +78,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 44 specs — draft: 42, review: 0, approved: 0, implemented: 2, deprecated: 0; 578 test cases; questions: answered: 99, open: 93, partly answered: 7, proposed: 2.
+**Summary:** 44 specs — draft: 42, review: 0, approved: 0, implemented: 2, deprecated: 0; 581 test cases; questions: answered: 99, open: 93, partly answered: 7, proposed: 2.

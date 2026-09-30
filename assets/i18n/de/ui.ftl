@@ -52,3 +52,20 @@ hint-garden = Ernte im Garten
 hint-treat = Gib einen Leckerbissen
 hint-bed = Zeit zum Schlafen
 hint-moon = Geh durch das Mondtor
+
+# Intro at the entrance gate (GAME-RESCUE, RESC-029): three pages per reading level
+intro-1-kiga = Tiere weg!
+intro-2-kiga = Finde sie! Bring sie heim!
+intro-3-kiga = Futter zeigen!
+intro-1-klasse1 = Die Tiere sind weg!
+intro-2-klasse1 = Finde alle Tiere. Bring sie heim.
+intro-3-klasse1 = Zeig ihnen ihr Futter.
+intro-1-klasse2 = Die Tiere sind ausgebrochen!
+intro-2-klasse2 = Finde die Tiere und bring sie zurück in das richtige Gehege.
+intro-3-klasse2 = Finde das Futter, das sie mögen – dann folgen sie dir.
+intro-1-klasse3 = Heute Nacht sind alle Tiere aus ihren Gehegen ausgebrochen – jetzt sind die Gehege leer!
+intro-2-klasse3 = Finde die Tiere und bring jedes zurück in das richtige Gehege. Die Rätsel auf den Infotafeln verraten, wo sie sich verstecken.
+intro-3-klasse3 = Hol im Futterlager das Futter, das sie mögen. Wenn du es ihnen zeigst, folgen sie dir bis nach Hause.
+intro-next = Weiter
+intro-go = Los geht's
+intro-skip = Überspringen

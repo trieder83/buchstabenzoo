@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L3
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Level 3 — monkey, goldfish, snow fox (adventure playground and stream)
@@ -175,6 +175,7 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `path_l3_bank` | path (side) | -19, 60, 5, 2 | Short path from the ring to the stream bank at the willow. |
 | `path_l3_mill` | path (side) | -19, 73, 5, 2 | Short path from the ring to the stream bank just north of the mill hut. |
 | `path_l3_ne` | path (side) | 10, 77, 10, 3 | Side path east from the ring towards the ice cream kiosk and the trampoline. |
+| `path_monkey_apron` | path (side) | 1, 80, 2, 2 | Street apron (rule 8): joins `path_l3_ring_n` (z 79) to the entrance of enc_monkey. |
 | `zookeeper_house_3` | building (zookeeper_house) | -11, 61, 7, 6 | door at cell (-8, 61); walkable interior (-10, 62, 5, 4). Enterable zookeeper house (roof cut-away inside, GAME-PLAYER §2): shelves, a table, a bed, and the big empty glass bowl (fish_bowl) on the table. Water tap on the outside wall next to the door. |
 | `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61); enterable, walkable interior (0, 62, 6, 4). Third food storage (proposal Q-089): all 10 food boxes outside in a row in front of the south facade (z 60.66; Q-181 answered): meat x −1.65, melons −0.93, hay −0.21, bananas 0.51, bamboo 1.23, grass 1.95, gap (box edges 2.26 … 4.74: ≥ 0.9 m beside each door post, Q-150, LAYOUT-038), fish food 5.05, berries 5.8, eucalyptus 6.6, leaves 7.4. Inside (Q-194 answered 2026-09-29): 6 more real, labelled food boxes (foods of the level's animals, repeated) on the wall band's plank platform — back (north) wall z 66.44 at x 0.88 (fish food), 1.52 (bananas), 4.28 (berries), 4.92 (fish food); west wall (−0.44, 64.0, bananas); east wall (6.44, 63.2, berries). |
 | `trees_l3_center` | decoration (tree_grove) | -4, 61, 3, 16 | density `dense`.  |

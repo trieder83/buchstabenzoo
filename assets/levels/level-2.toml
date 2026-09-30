@@ -257,6 +257,13 @@ enclosure = "enc_elephant"
 
 # ---------------------------------------------------------------- lion (south)
 [[element]]
+id = "path_lion_apron"
+type = "path"
+kind = "side"
+rect = [46, 22, 2, 2]
+notes = "Street apron (rule 8) between path_l2_ring_s and the lion gate (46..47, 21)."
+
+[[element]]
 id = "enc_lion"
 type = "enclosure"
 animal = "lion"
@@ -273,6 +280,13 @@ rect = [44, 23, 1, 1]
 enclosure = "enc_lion"
 
 # ---------------------------------------------------------------- giraffe (north)
+[[element]]
+id = "path_giraffe_apron"
+type = "path"
+kind = "side"
+rect = [45, 42, 2, 2]
+notes = "Street apron (rule 8) between path_l2_ring_n and the giraffe gate (45..46, 44)."
+
 [[element]]
 id = "enc_giraffe"
 type = "enclosure"

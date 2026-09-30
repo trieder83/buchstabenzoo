@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  introEnabled,
   FOOD_ICONS,
   HINT_ICONS,
   TARGET_ICONS,
@@ -163,5 +164,14 @@ describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
       { id: 'hippo', home: false },
     ]);
     expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [] });
+  });
+});
+
+describe('entrance intro (RESC-029)', () => {
+  it('is shown in a normal new game and skipped by automated tests unless ?intro=1', () => {
+    expect(introEnabled('', false)).toBe(true);
+    expect(introEnabled('', true)).toBe(false);
+    expect(introEnabled('?intro=1', true)).toBe(true);
+    expect(introEnabled('?intro=0', false)).toBe(false);
   });
 });

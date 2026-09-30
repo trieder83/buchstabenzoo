@@ -524,6 +524,9 @@ pub struct Game {
     /// Gate cell the player stood on in the last update (for once-per-entry events).
     pub(crate) last_gate: Option<usize>,
     pub(crate) all_home: bool,
+    /// The intro at the entrance gate was shown (GAME-RESCUE "Intro at the entrance gate",
+    /// RESC-029); saved, so a loaded game never repeats it.
+    pub intro_seen: bool,
     /// Automatic reading panel (GAME-PLAYER §4).
     pub panel: ReadingPanel,
     /// Seed of this playthrough and the RNG after the setup (GAME-SAVE).
@@ -757,6 +760,7 @@ impl Game {
             events: Vec::new(),
             last_gate: None,
             all_home: false,
+            intro_seen: false,
             panel: ReadingPanel::default(),
             seed,
             rng,

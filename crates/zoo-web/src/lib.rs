@@ -3669,6 +3669,21 @@ fn text_texture_id(key: &str) -> String {
 
 #[wasm_bindgen]
 impl App {
+    // -------------------------------------------------------------- intro (GAME-RESCUE)
+
+    /// Whether the intro at the entrance gate still has to be shown (RESC-029): a new game
+    /// that has not seen it; a loaded game never repeats it.
+    pub fn intro_pending(&self) -> bool {
+        !self.game.intro_seen
+    }
+
+    /// The intro was shown or skipped: remember it (saved with the game) and point the
+    /// child at the first step with the hint (RESC-029).
+    pub fn intro_done(&mut self) {
+        self.game.intro_seen = true;
+        self.hint_press();
+    }
+
     // -------------------------------------------------------------- hints (GAME-HINT)
 
     /// The 🧭 hint button / `H` / tapping the 🌙 progress (GAME-HINT rule 2/3, rule 8):

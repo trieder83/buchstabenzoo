@@ -41,6 +41,10 @@ pub struct SaveState {
     pub open_barriers: Vec<String>,
     pub last_gate: Option<usize>,
     pub all_home: bool,
+    /// The entrance intro was shown (RESC-029). A save without the field was made after the
+    /// game started, so the intro counts as seen.
+    #[serde(default = "intro_seen_default")]
+    pub intro_seen: bool,
     /// The fish bowl (v2).
     #[serde(default)]
     pub bowl: Option<BowlSave>,
@@ -57,6 +61,10 @@ pub struct SaveState {
     /// Regrowth of the bamboo cut spots by spot id (FEED-021). Missing = all full grown.
     #[serde(default)]
     pub bamboo: Vec<CutSpotSave>,
+}
+
+fn intro_seen_default() -> bool {
+    true
 }
 
 /// A food lying on the ground (GAME-FEED §10).
@@ -266,6 +274,7 @@ impl Game {
             open_barriers: self.level.open_barrier_ids(),
             last_gate: self.last_gate,
             all_home: self.all_home,
+            intro_seen: self.intro_seen,
             bowl: self.bowl.as_ref().map(|b| BowlSave {
                 id: b.id.clone(),
                 pos: b.pos.to_array(),
@@ -453,6 +462,7 @@ impl Game {
             }
             an.wander.route = a.wander_route.iter().map(|&c| IVec2::from(c)).collect();
         }
+        g.intro_seen = s.intro_seen;
         // time of day (NIGHT-008): a save made while sleeping wakes up the next morning
         if let Some(d) = &s.daytime {
             let mut d = d.clone();

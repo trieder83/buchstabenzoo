@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L2
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Level 2 — koala, elephant, giraffe, lion (behind the fallen tree)
@@ -176,6 +176,8 @@ every type except `path` and `hiding_place`. The level has no legacy `[[element]
 | `path_l2_e` | path (side) | 67, 27, 3, 4 | Short path from path_l2_se north to the giant tree east of the elephant enclosure. |
 | `path_l2_north` | path (side) | 36, 42, 3, 10 | Side path north from the ring to the construction fence (level 3). |
 | `path_l2_nw` | path (side) | 24, 52, 15, 3 | Leads west to barrier_l2_construction and runs on under it (x 24…25) to the level-3 gate and `path_l3_entry`: the construction fence stands on the street (LAYOUT-040). |
+| `path_lion_apron` | path (side) | 46, 22, 2, 2 | Street apron (rule 8): joins `path_l2_ring_s` (z 24) to the entrance of enc_lion. |
+| `path_giraffe_apron` | path (side) | 45, 42, 2, 2 | Street apron (rule 8): joins `path_l2_ring_n` (z 41) to the entrance of enc_giraffe. |
 | `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30); enterable, walkable interior (40, 28, 4, 6). Second food storage (proposal Q-089): all 10 food boxes, row in front of the west facade facing the arriving child (Q-181 answered); 6 more real labelled food boxes inside (Q-194 answered 2026-09-29). |
 | `grove_l2_center` | decoration (tree_grove) | 45, 27, 6, 12 | density `dense`.  |
 | `trees_l2_center_n` | decoration (trees) | 39, 35, 6, 4 | density `dense`.  |

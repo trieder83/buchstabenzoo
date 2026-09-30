@@ -280,6 +280,13 @@ enclosure = "enc_goldfish"
 
 # ---------------------------------------------------------------- monkey (north)
 [[element]]
+id = "path_monkey_apron"
+type = "path"
+kind = "side"
+rect = [1, 80, 2, 2]
+notes = "Street apron (rule 8) between path_l3_ring_n and the monkey gate (1..2, 82)."
+
+[[element]]
 id = "enc_monkey"
 type = "enclosure"
 animal = "monkey"

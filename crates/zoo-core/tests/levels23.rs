@@ -1111,3 +1111,46 @@ fn layout_l2_010_construction_fence_opens_after_level_2() {
     let s3 = g.level.data.parts[2].spawn.cell();
     assert!(reach[g.level.grid().index(s3).unwrap()]);
 }
+
+// LAYOUT-046 (rules 6, 14 — level design rules, user request 2026-09-30, Q-202 answered):
+// from the spawn / entry of every day level the first step — an info board — is reachable
+// within 15 s of walking (all barriers open), and every enclosure gate has a `path` cell
+// within 2 m (rule 8: streets lead to the gates).
+#[test]
+fn layout_046_first_step_within_15_s_and_gates_on_streets() {
+    let zoo = common::zoo();
+    let level = zoo_level(&L3_OPEN);
+    let grid = level.grid();
+    for (k, part) in zoo.parts.iter().enumerate() {
+        let spawn = [part.spawn.cell()];
+        let boards: Vec<IVec2> = zoo
+            .elements
+            .iter()
+            .filter(|e| {
+                e.id.starts_with("board_") && zoo.part_at(IVec2::new(e.rect.x, e.rect.z)) == Some(k)
+            })
+            .flat_map(|e| walkable_adjacent(grid, e.rect))
+            .collect();
+        assert!(!boards.is_empty(), "{}: no info board", part.id);
+        let t = min_cost(grid, &spawn, &boards, time_cost());
+        assert!(
+            t <= 15.0,
+            "{}: first board {t:.1} s from the spawn",
+            part.id
+        );
+    }
+    let mut no_street = Vec::new();
+    for e in zoo.elements.iter().filter(|e| e.animal.is_some()) {
+        let Some(gate) = e.gate else { continue };
+        let near_street = (gate.x - 2..gate.x + gate.w + 2)
+            .flat_map(|x| (gate.z - 2..gate.z + gate.d + 2).map(move |z| IVec2::new(x, z)))
+            .any(|c| grid.surface(c) == Some(zoo_core::level::Surface::Path));
+        if !near_street {
+            no_street.push(e.id.clone());
+        }
+    }
+    assert!(
+        no_street.is_empty(),
+        "gates without a street within 2 m (rule 8): {no_street:?}"
+    );
+}

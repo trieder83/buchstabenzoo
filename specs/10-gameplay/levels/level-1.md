@@ -252,6 +252,7 @@ Solid = every type except `path` and `hiding_place`.
 | `path_cave` | path | 8, 8, 14, 3 | Service path along the rock hill; cave mouth; ends at `barrier_east_repair`. |
 | `path_garden_link` | path (side) | 9, 31, 1, 5 | Street to the garden gate (Q-199, LAYOUT-L1-044): 1 m wide along the river bank from the end of `path_bridge_w` (x 9, z 30) north to z 35, then on into `path_garden_apron`. Crosses no solid element and no barrier; lies inside the `loc_river` rect but the wander area keeps 13 cells. |
 | `path_garden_apron` | path (side) | 7, 35, 2, 1 | The two street cells right outside the garden entrance (cells 7…8 at z 36); joins `path_garden_link` (9, 35) and continues through the gate onto `path_garden` without a grass gap. |
+| `path_panda_apron` | path (side) | -1, 30, 2, 2 | Street apron (rule 8): joins `path_ring_n` (z 29) to the entrance of enc_panda; street cells lie within 2 m of its gate. |
 | `path_garden` | path (garden) | 7, 36, 2, 9 | 2 m path inside the vegetable garden `garden_veg` (GAME-GARDEN), from its gate on the south fence line between the four beds to the tool corner. The garden itself, its fence, beds, plant spots and tools are `[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]` data, not elements (see "Vegetable garden", proposal Q-102). |
 
 ## Hiding places (candidates)

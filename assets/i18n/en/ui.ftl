@@ -50,3 +50,20 @@ hint-garden = Harvest in the garden
 hint-treat = Give a treat
 hint-bed = Time to sleep
 hint-moon = Go through the moon door
+
+# Intro at the entrance gate (GAME-RESCUE, RESC-029): three pages per reading level
+intro-1-kiga = Animals gone!
+intro-2-kiga = Find them! Take them home!
+intro-3-kiga = Show the food!
+intro-1-klasse1 = The animals are gone!
+intro-2-klasse1 = Find all animals. Bring them home.
+intro-3-klasse1 = Show them their food.
+intro-1-klasse2 = The animals have broken out!
+intro-2-klasse2 = Find the animals and bring them back to the right enclosure.
+intro-3-klasse2 = Find the food they like – then they follow you.
+intro-1-klasse3 = Last night all the animals broke out of their enclosures – now the enclosures are empty!
+intro-2-klasse3 = Find the animals and bring each one back to the right enclosure. The riddles on the info boards tell you where they are hiding.
+intro-3-klasse3 = Get the food they like from the food storage. When you show it to them, they follow you all the way home.
+intro-next = Next
+intro-go = Let's go
+intro-skip = Skip

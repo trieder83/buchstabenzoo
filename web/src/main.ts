@@ -6,7 +6,7 @@ import { attachInput, attachLookButton, type StickView } from './input';
 import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
-import { loadSettings, Ui } from './ui';
+import { introEnabled, loadSettings, Ui } from './ui';
 
 /** The day levels, joined into one zoo (GAME-LAYOUT "Joining levels", proposal Q-088). */
 const LEVELS = [
@@ -123,7 +123,7 @@ async function main(): Promise<void> {
     // new game (confirmed in the settings, GAME-SAVE §6): delete the save, restart the level
     slot.reset();
     window.location.reload();
-  });
+  }, introEnabled(window.location.search, navigator.webdriver === true));
   attachInput(app, {
     canvas,
     stickView: stickView(),

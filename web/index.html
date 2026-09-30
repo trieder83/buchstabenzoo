@@ -403,6 +403,68 @@
           flex-direction: row;
         }
       }
+      #intro {
+        position: fixed;
+        inset: 0;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(30, 20, 10, 0.55);
+      }
+      #intro[hidden] {
+        display: none;
+      }
+      #intro .intro-card {
+        position: relative;
+        box-sizing: border-box;
+        width: min(92vw, 720px);
+        padding: 24px 20px 96px;
+        border-radius: 28px;
+        border: 6px solid #3b2314;
+        background: #fff3d6;
+        text-align: center;
+      }
+      #intro .intro-pic {
+        font-size: clamp(56px, 16vw, 110px);
+        line-height: 1.1;
+      }
+      #intro .intro-text {
+        margin: 12px 0 0;
+        font-size: clamp(22px, 5vw, 34px);
+        font-weight: 700;
+        color: #3b2314;
+      }
+      #intro .intro-dots {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 14px;
+      }
+      #intro .intro-dots i {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 3px solid #3b2314;
+        background: #fff;
+      }
+      #intro .intro-dots i.on {
+        background: #ffd65c;
+      }
+      #intro .intro-next,
+      #intro .intro-skip {
+        position: absolute;
+        bottom: 16px;
+        width: 72px;
+        height: 72px;
+        font-size: 36px;
+      }
+      #intro .intro-next {
+        right: 16px;
+      }
+      #intro .intro-skip {
+        left: 16px;
+      }
       #settings {
         position: fixed;
         right: calc(16px + env(safe-area-inset-right));
@@ -745,6 +807,7 @@
     <button id="night-progress" type="button" hidden><span class="moon">🌙</span><span class="animals"></span></button>
     <button id="view-btn" class="round" type="button" aria-pressed="false">👓</button>
     <button id="look-btn" class="round" type="button">👁️</button>
+    <div id="intro" hidden><div class="intro-card"><div class="intro-pic"></div><p class="intro-text"></p><div class="intro-dots"></div><button class="intro-skip round" type="button">✖</button><button class="intro-next round" type="button">➤</button></div></div>
     <div id="settings" hidden></div>
     <button id="hint" type="button" hidden><span class="key">E</span><span class="icon"></span></button>
     <button id="act" class="round" type="button" hidden></button>

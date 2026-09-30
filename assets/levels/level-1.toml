@@ -370,6 +370,13 @@ rect = [-11, 26, 2, 1]
 
 # ---------------------------------------------------------------- panda
 [[element]]
+id = "path_panda_apron"
+type = "path"
+kind = "side"
+rect = [-1, 30, 2, 2]
+notes = "Street apron (rule 8) between path_ring_n and the panda gate (-1..0, 32)."
+
+[[element]]
 id = "enc_panda"
 type = "enclosure"
 animal = "panda"

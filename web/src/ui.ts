@@ -5,6 +5,13 @@
 
 import { dragScroll } from './scroll';
 
+/** The gate intro (RESC-029) is shown in a new game; automated tests skip it unless `?intro=1`. */
+export function introEnabled(search: string, webdriver: boolean): boolean {
+  const q = new URLSearchParams(search).get('intro');
+  if (q !== null) return q !== '0';
+  return !webdriver;
+}
+
 /** The subset of the WASM `App` the UI needs. */
 export interface UiApp {
   t(key: string): string;
@@ -42,6 +49,9 @@ export interface UiApp {
   hint_press?(): string;
   hint_json?(): string;
   hint_pulses?(): number;
+  /** GAME-RESCUE: the entrance intro (RESC-029): still to show / shown or skipped. */
+  intro_pending?(): boolean;
+  intro_done?(): void;
   /** GAME-NIGHT rule 11: the 🌙 night progress as JSON. */
   night_progress_json?(): string;
 }
@@ -450,6 +460,7 @@ export class Ui {
     private readonly app: UiApp,
     private readonly store: KeyValue | null,
     private readonly onNewGame: () => void = () => {},
+    introEnabled = true,
   ) {
     for (const b of [this.act, this.hint]) {
       b.addEventListener('pointerdown', (e) => {
@@ -481,6 +492,7 @@ export class Ui {
     });
     this.buildSettings();
     this.applyLabels();
+    if (introEnabled) this.showIntro();
   }
 
   /** Touch controls on (first touch, PLAY-014). */
@@ -557,6 +569,58 @@ export class Ui {
         this.hintEdge.dataset.dots = String(h.dots);
       }
     }
+  }
+
+  /**
+   * The intro at the entrance gate (GAME-RESCUE, RESC-029): 3 pages — the animals broke out,
+   * find them and bring them back to the right enclosure, find the food they like. One
+   * picture and one short text per page, a big next arrow, skippable; afterwards the 🧭 hint
+   * shows the first step (`intro_done`).
+   */
+  showIntro(): void {
+    const box = document.getElementById('intro');
+    if (!box || !this.app.intro_pending?.()) return;
+    const pics = ['🏚️🐾❓', '🐘➡️🏠', '🥕➡️🐘🚶'];
+    let page = 0;
+    const text = box.querySelector('.intro-text') as HTMLElement;
+    const pic = box.querySelector('.intro-pic') as HTMLElement;
+    const next = box.querySelector('.intro-next') as HTMLButtonElement;
+    const skip = box.querySelector('.intro-skip') as HTMLButtonElement;
+    const dots = box.querySelector('.intro-dots') as HTMLElement;
+    const render = (): void => {
+      pic.textContent = pics[page];
+      text.textContent = this.app.t(`intro-${page + 1}-${this.app.reading_level()}`);
+      next.textContent = page === pics.length - 1 ? '✔' : '➤';
+      next.setAttribute('aria-label', this.app.t(page === pics.length - 1 ? 'intro-go' : 'intro-next'));
+      skip.setAttribute('aria-label', this.app.t('intro-skip'));
+      dots.replaceChildren(...pics.map((_, i) => el('i', i === page ? 'on' : '')));
+      box.dataset.page = String(page + 1);
+    };
+    const finish = (): void => {
+      box.hidden = true;
+      document.removeEventListener('keydown', onKey);
+      this.app.intro_done?.();
+      this.updateHint();
+    };
+    const advance = (): void => {
+      if (page >= pics.length - 1) finish();
+      else {
+        page += 1;
+        render();
+      }
+    };
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter' || e.key === ' ') advance();
+      else if (e.key === 'Escape') finish();
+      else return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    next.onclick = advance;
+    skip.onclick = finish;
+    document.addEventListener('keydown', onKey, true);
+    box.hidden = false;
+    render();
   }
 
   /** Idle nudge (GAME-HINT rule 6): the 🧭 button pulses gently once; no popup. */

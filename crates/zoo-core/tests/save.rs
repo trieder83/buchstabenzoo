@@ -222,3 +222,20 @@ fn save_009_autosave_while_walking_and_on_progress() {
     assert!(ms <= 2.0, "save took {ms:.3} ms");
     assert!(bytes > 0);
 }
+
+// RESC-029: the entrance intro is shown once — a new game has not seen it, the flag is saved,
+// and a save from before the flag existed counts as seen (a loaded game never repeats it).
+#[test]
+fn resc_029_intro_seen_is_saved_and_old_saves_count_as_seen() {
+    let mut g = common::game(3);
+    assert!(!g.intro_seen, "a new game shows the intro");
+    g.intro_seen = true;
+    assert!(g.to_save().intro_seen);
+    assert!(restore(&g).intro_seen);
+    let fresh = common::game(3);
+    assert!(!restore(&fresh).intro_seen, "unseen stays unseen");
+    let mut v: serde_json::Value = serde_json::from_str(&g.to_save().to_json()).unwrap();
+    v.as_object_mut().unwrap().remove("intro_seen");
+    let old = SaveState::from_json(&v.to_string()).unwrap();
+    assert!(old.intro_seen, "an old save has no flag: seen");
+}

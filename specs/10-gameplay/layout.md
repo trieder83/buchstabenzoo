@@ -641,8 +641,7 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 
 ## Open questions
 
-- Q-202 Level pacing numbers of rule 14 (15 s / 60 s / 10–20 min) are proposals.
-- Q-201 Animals of a locked level: asleep and hidden until unlock (as now, LAYOUT-025) or already active from the game start ("all animals active somewhere")?
+- Q-201 answered 2026-09-30: locked levels stay asleep until opened. Q-202 answered 2026-09-30: pacing numbers stand.
 
 - Q-006, Q-017, Q-022, Q-023.
 - Answered 2026-09-27 (as recommended): Q-133 moon door / night level data and opening rule, Q-134 night house with indoor enclosures, Q-135 night food storage, Q-136 riddle scope of night levels, Q-137 `[[light]]` / `[[item]]` / `[[prop]]` data shape, Q-138 telescope, Q-139 burglar event spots. Q-118 (answered) lantern placement, Q-110 (answered) 17 m fog margin.

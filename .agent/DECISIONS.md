@@ -2,7 +2,7 @@
 
 Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-203** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-88 answered · 90 open · 10 other (partly answered / proposed / superseded).
+90 answered · 88 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -94,8 +94,6 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-198 — Baby trigger (user request 2026-09-29): special food (e.g. (GAME-FAMILY, GAME-GARDEN)
 - Q-199 — Street to the vegetable garden gate (user request 2026-09-29): new path element path_garden_link from the nearest street (bridge / … (GAME-LEVEL-1, GAME-GARDEN)
 - Q-200 — Audio (user request 2026-09-29): budget in PERF-BUDGETS (proposal 1.5 MB), whether a sound-generator API may be used and which (licence … (ART-SOUND, PERF-BUDGETS)
-- Q-201 — Animals of locked levels (user request 2026-09-30: "when we start all animals of the level should be active somewhere on the level"). (GAME-LAYOUT, GAME-ANIMALS, GAME-RESCUE)
-- Q-202 — Level design rules (GAME-LAYOUT "Level design rules", user request 2026-09-30): pacing numbers are proposals — first board ≤ 15 s of … (GAME-LAYOUT, GAME-LEVEL-1..3)
 
 ## Partly answered / other
 
@@ -112,6 +110,8 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-202 — Level design rules (GAME-LAYOUT "Level design rules", user request … → 2026-09-30: yes — the pacing numbers stand (first board ≤ 15 s, ≤ 60 s between mission steps, 10–20 min per level).
+- Q-201 — Animals of locked levels (user request 2026-09-30: "when we start all … → 2026-09-30: (a) — animals of a locked level stay hidden and asleep; they are active only when the level is opened (LAYOUT-025 and …
 - Q-194 — Inside boxes of the food storages (Q-181 answered: "keep the food … → 2026-09-29: no — the boxes inside also contain food (real, labelled food boxes that can be taken); foods may be redundant (the …
 - Q-193 — Haze culling in the close views (PERF-R-018; found while checking … → 2026-09-28: yes — switch on haze culling in the close views (fixes CAMV-014).
 - Q-192 — Lighter path tiles (PERF-R-002 b): a trial re-export of kit_ground … → 2026-09-28: yes — keep the current path tiles (no lighter tiles).

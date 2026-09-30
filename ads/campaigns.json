@@ -1,0 +1,68 @@
+{
+  "format": "buchstabenzoo-ads/1",
+  "version": 1,
+  "issued": "2026-09-30T21:02:53Z",
+  "valid_until": "2026-12-29T21:02:53Z",
+  "campaigns": [
+    {
+      "id": "mathfighter",
+      "slot": 1,
+      "active": true,
+      "link": "https://mathfighter.rcms.ch",
+      "tagline": {
+        "de": "Lerne Mathe in einem lustigen Turnier",
+        "en": "Learn math in a fun tournament"
+      },
+      "images": [
+        {
+          "lang": "*",
+          "path": "img/mathfighter-wide.webp",
+          "mime": "image/webp",
+          "bytes": 78740,
+          "width": 1024,
+          "height": 578,
+          "sha256": "4f9e2e63fefc3f7da0858c06355d2dc3d2bc67f8603ec05722417c06a80243e4"
+        },
+        {
+          "lang": "*",
+          "path": "img/mathfighter-alt.webp",
+          "mime": "image/webp",
+          "bytes": 88198,
+          "width": 1024,
+          "height": 578,
+          "sha256": "eae52e6c4fdc9662b7be7e17b89564c4bcdcc8e132af9b2eb6c1b4d4b5813efe"
+        }
+      ]
+    },
+    {
+      "id": "abcsmash",
+      "slot": 2,
+      "active": true,
+      "link": "https://abcsmash.rcms.ch",
+      "tagline": {
+        "de": "Lesen lernen – flüssig und schnell",
+        "en": "Learn to read – fluent and fast"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/abcsmash-de.webp",
+          "mime": "image/webp",
+          "bytes": 44614,
+          "width": 1024,
+          "height": 500,
+          "sha256": "1a79f9368f9d546ddfd84af479702edf23177de14aa7b779fa8a532455104029"
+        },
+        {
+          "lang": "en",
+          "path": "img/abcsmash-en.webp",
+          "mime": "image/webp",
+          "bytes": 44708,
+          "width": 1024,
+          "height": 500,
+          "sha256": "638caab3e9120795c8a1edf69cbe44e70d05ef5e58c80f6201f8836f6a2171f0"
+        }
+      ]
+    }
+  ]
+}

@@ -39,13 +39,13 @@ Other species stay single until decided (Q-073).
 4. **Caring after the rescue** (treats from the vegetable garden also count — GAME-GARDEN): at home, the enclosure has a **feeding trough**. Bringing the
    pair its correct food again (taken from the food storage, read from the box label) and
    putting it into the trough is one **care feeding**.
-5. **Baby:** after **3 care feedings on 3 different play sessions** (proposal — Q-075), the
+5. **Baby:** when the pair at home is given a liked special food ("Special food and babies", Q-198 answered; replaces the former 3-care-feedings rule), the
    next time the player comes to the enclosure a **baby** is there (small celebration, the
    baby's name via Fluent). One baby per pair in the PoC scope. The baby stays close to the
    female and wanders with the parents.
 6. Wrong food in the trough: the animals don't eat it; gentle feedback (as RESC-005), no
    penalty.
-7. **Saving:** pairs, care-feeding count and session ids, and the baby are part of the save
+7. **Saving:** pairs, the baby flag, are part of the save
    (GAME-SAVE).
 8. **Art:** each pair needs a male and a female variant and a baby model (turnaround
    sheets first — ART-PIPELINE). The baby uses the same rig as its parents, scaled (~45 %).
@@ -60,8 +60,7 @@ pair **makes a baby**: a short celebration (hearts between the two), and a **bab
 in the enclosure the next time the child is within view (rule 5 name/model). One baby per pair
 (Q-075). A single animal (no pair) is only happy — no baby. Wrong or ordinary food changes
 nothing. This **replaces the counting rule of rule 5** ("3 care feedings on 3 sessions"):
-happy-making special food is what triggers the baby; the care-feeding count with the correct
-storage food stays only as a happy-reaction (hearts), not as a trigger (Q-198). Babies are a reward
+happy-making special food is what triggers the baby; feeding the correct storage food only gives a happy reaction (hearts), never a baby (Q-198 answered 2026-09-30). Babies are a reward
 for care, never required for the mission or blocking. The species that are pairs stay zebra and
 koala until decided (Q-073); koalas take no garden treats, so they need their own special food
 (eucalyptus treat, Q-100).
@@ -91,17 +90,17 @@ stay open until the female and baby models exist (ART-ANIMALS, Q-074).
 |---|---|---|
 | FAM-001 | Given a new game, then the zebra pair and the koala pair each start at one shared hiding place, both escaped. | unit |
 | FAM-002 | Given the correct food shown to one animal of a pair, then both follow as one group; the mission completes only when both are in the enclosure. | unit |
-| FAM-003 | Given the pair at home, when the correct food is put in the trough, then the care-feeding count increases by one per play session at most. | unit |
-| FAM-004 | Given 3 care feedings on 3 different sessions, when the player next comes within view of the enclosure, then a baby appears once with a celebration; it never appears twice. | unit |
+| FAM-003 | Given the pair at home, when the correct storage food is put in the trough, then both show hearts and no baby appears. | unit |
+| FAM-004 | Given a liked special food given to the pair at home, when the player next comes within view of the enclosure, then a baby appears once with a celebration; it never appears twice. | unit |
 | FAM-005 | Given wrong food in the trough, then it is not eaten and the count does not change. | unit |
-| FAM-006 | Given a save with a baby and care-feeding progress, when restored, then both are unchanged. | unit |
+| FAM-006 | Given a save with a baby, when restored, then both are unchanged. | unit |
 | FAM-008 | Given a pair (male + female) at home and a carrot given to the zebras, then both are happy (hearts) and exactly one baby appears once; given the same carrot to a single animal (no pair), then it is happy and no baby appears. | unit |
 | FAM-009 | Given a pair at home and ordinary food or a disliked treat, then no baby appears and no penalty; given a saved game after the baby, then it is restored and never appears twice. | unit |
 | FAM-007 | Given male and female models side by side from the default camera, then children can tell they are a pair of the same species and spot the difference (manual review). | manual |
 
 ## Open questions
 
-- Q-198 Baby trigger: special food to a pair (user request 2026-09-29) instead of 3 care feedings; see "Special food and babies".
+- Q-198 answered 2026-09-30: special food to a pair triggers the baby; see "Special food and babies".
 - Q-073 Which other species come as pairs?
 - Q-074 How male and female differ visually.
 - Q-106 One koala/zebra in the game (pair flag off) while the riddles speak of two.

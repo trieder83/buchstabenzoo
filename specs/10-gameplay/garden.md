@@ -59,7 +59,7 @@ between missions.
 7. **Baby (GAME-FAMILY "Special food and babies", user request 2026-09-29):** a treat the
    animal likes makes it happy; given to a **male and female pair** at home, it makes them
    have a baby. This replaces the earlier 3-care-feedings / "one treat must be from the garden"
-   proposal (Q-101 obsolete, Q-198).
+   proposal (Q-101 obsolete, Q-198 answered).
 8. **Saving:** basket contents, garden plant states and regrow timers are saved (GAME-SAVE).
 
 ## Assets

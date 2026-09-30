@@ -710,7 +710,7 @@ fn layout_l1_014_024_wander_areas() {
     let level = Level::new(data.clone());
     let grid = level.grid();
     let expected = [
-        ("loc_river", 12),
+        ("loc_river", 13),
         ("loc_meadow", 16),
         ("loc_sand", 22),
         ("loc_pond", 14),
@@ -1179,4 +1179,44 @@ fn layout_026_rivers_have_a_flow_and_consistent_bends() {
         let d = zoo_core::LevelData::from_toml_str(&t).unwrap();
         assert!(zoo_core::water::river_paths(&d).is_err(), "{why}");
     }
+}
+
+// LAYOUT-L1-044: street to the vegetable garden gate, no grass gap (Q-199)
+#[test]
+fn layout_l1_044_street_to_the_garden_gate() {
+    let data = common::level1();
+    let level = Level::new(data.clone());
+    let grid = level.grid();
+    // the gate opening and the cells just outside it are street
+    for c in [(7, 36), (8, 36), (7, 35), (8, 35)] {
+        assert!(grid.has_path(IVec2::new(c.0, c.1)), "no street at {c:?}");
+    }
+    // path-only 4-connected flood fill from the spawn (on the plaza street)
+    let start = data.spawn.cell();
+    assert!(grid.has_path(start), "spawn is not on a street");
+    let mut seen = BTreeSet::new();
+    let mut stack = vec![start];
+    while let Some(c) = stack.pop() {
+        if !seen.insert((c.x, c.y)) {
+            continue;
+        }
+        for d in [IVec2::X, IVec2::NEG_X, IVec2::Y, IVec2::NEG_Y] {
+            let n = c + d;
+            if grid.has_path(n) && grid.is_walkable(n, true) {
+                stack.push(n);
+            }
+        }
+    }
+    for c in [(7, 36), (8, 36), (8, 35), (9, 31)] {
+        assert!(seen.contains(&c), "street chain broken before {c:?}");
+    }
+    // no solid element, hiding-place wander cell or barrier on the link
+    for id in ["path_garden_link", "path_garden_apron"] {
+        let e = data.element(id).unwrap();
+        for c in e.rect.cells() {
+            assert!(grid.is_walkable(c, false), "{id}: blocked cell {c}");
+        }
+    }
+    // the fastest walk from the spawn to the gate cell exists without gates
+    assert!(zoo_core::nav::find_path(grid, start, IVec2::new(7, 36), false).is_some());
 }

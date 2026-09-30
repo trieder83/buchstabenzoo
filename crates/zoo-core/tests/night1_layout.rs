@@ -419,7 +419,7 @@ fn point(level: &Level, name: &str) -> Vec<IVec2> {
     }
 }
 
-// LAYOUT-N1-005: with 1.93 m/s on paths and 0.98 m/s on grass, each pair of the "Walking
+// LAYOUT-N1-005: with 1.93 m/s on paths and 1.45 m/s on grass, each pair of the "Walking
 // distances" table is ≤ 10 s. The measured values are printed next to the spec's scratch
 // estimates (drift is reported, not asserted: the spec calls them estimates).
 #[test]
@@ -430,7 +430,7 @@ fn layout_n1_005_walking_times() {
         "path speed"
     );
     assert!(
-        (mp.speed_on(Surface::Grass) - 0.98).abs() < 0.01,
+        (mp.speed_on(Surface::Grass) - 1.45).abs() < 0.01,
         "grass speed"
     );
     let table: &[(&str, &str, f32)] = &[

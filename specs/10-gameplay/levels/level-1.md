@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS]
 test_prefix: LAYOUT-L1
-updated: 2026-09-28
+updated: 2026-09-30
 ---
 
 # Level 1 — entrance, zebra, hippo, panda
@@ -106,11 +106,11 @@ x axis is labelled below. Generated from `assets/levels/level-1.toml`.
   38 ##,,:t::t::t...===ppppppppppppK==K~~~==::t=:t.%%
   37 ##,,::::::::...===pppppppppppp!==!~~~==:::=::.%%
   36 ##7,::t::t::...===pppppppppppp_nn_~~~==:::=::.%%
-  35 ##,,::::::::...===pppppppppppp....~~~==:t:=t:.%%
-  34 ##,,::::::::...===pppppppppppp....~~~==:::=:*.%%
-  33 ##,,:t::t::t...===pppppppppppp..1.~~~=="""""""%%
-  32 ##..::::::::...===pppppggppppp....~~~==""4""""%%
-  31 ##.............===................~~~=="""""""%%
+  35 ##,,::::::::...===pppppppppppp====~~~==:t:=t:.%%
+  34 ##,,::::::::...===pppppppppppp...=~~~==:::=:*.%%
+  33 ##,,:t::t::t...===pppppppppppp..1=~~~=="""""""%%
+  32 ##..::::::::...===pppppggppppp...=~~~==""4""""%%
+  31 ##.............===...............=~~~=="""""""%%
   30 @@================..i...........==HHH=========XX
   29 @@=============.==================HHH=========XX
   28 ##..............==================HHH=========XX
@@ -250,6 +250,8 @@ Solid = every type except `path` and `hiding_place`.
 | `rock_hill_e` | landmark (rock_hill) | 13, 0, 9, 8 | Rock hill, main mass east of the cave. |
 | `path_cave_floor` | path (cave) | 10, 5, 3, 3 | Cave floor under the rock roof (walkable, dark). |
 | `path_cave` | path | 8, 8, 14, 3 | Service path along the rock hill; cave mouth; ends at `barrier_east_repair`. |
+| `path_garden_link` | path (side) | 9, 31, 1, 5 | Street to the garden gate (Q-199, LAYOUT-L1-044): 1 m wide along the river bank from the end of `path_bridge_w` (x 9, z 30) north to z 35, then on into `path_garden_apron`. Crosses no solid element and no barrier; lies inside the `loc_river` rect but the wander area keeps 13 cells. |
+| `path_garden_apron` | path (side) | 7, 35, 2, 1 | The two street cells right outside the garden entrance (cells 7…8 at z 36); joins `path_garden_link` (9, 35) and continues through the gate onto `path_garden` without a grass gap. |
 | `path_garden` | path (garden) | 7, 36, 2, 9 | 2 m path inside the vegetable garden `garden_veg` (GAME-GARDEN), from its gate on the south fence line between the four beds to the tool corner. The garden itself, its fence, beds, plant spots and tools are `[[garden]]` / `[[garden_bed]]` / `[[plant_spot]]` data, not elements (see "Vegetable garden", proposal Q-102). |
 
 ## Hiding places (candidates)
@@ -261,7 +263,7 @@ The `kiga` board shows the picture of the chosen place (`loc_*` picture id).
 
 | Id | Animal | Area rect (x, z, w, d) | Animal spot | Wander on | Wander cells | Features (riddle details) | Scenery | Spot → own info board | Own board → spot (fastest walk) |
 |---|---|---|---|---|---|---|---|---|---|
-| `loc_river` | zebra | 6, 33, 4, 3 | (8, 33) | grass | 12 | flowing_water, bridge, ducks | `river_n`, `bridge_river` | 28.6 m | 17.9 s |
+| `loc_river` | zebra | 6, 31, 4, 5 | (8, 33) | grass | 13 | flowing_water, bridge, ducks | `river_n`, `bridge_river` | 28.6 m | 17.9 s |
 | `loc_meadow` | zebra | 15, 31, 7, 3 | (17, 32) | grass | 16 | tall_grass, wildflowers, butterflies, big_trees_behind | `tall_grass_ne`, `trees_ne` | 34.1 m | 21.5 s |
 | `loc_sand` | zebra | -1, 42, 7, 4 | (2, 44) | grass | 22 | sand, dry, yellow_ground, no_grass | `sand_n` | 35.7 m | 24.4 s |
 | `loc_pond` | hippo | -19, 19, 4, 10 | (-16, 26) | water | 14 | still_water, water_lilies, frogs | `pond_water`, `jetty_pond` | 25.6 m | 17.9 s |
@@ -279,7 +281,7 @@ M5a, woods open — printed by the LAYOUT-L1-018 test; updated 2026-09-27 for FI
 from every standing point of its own animal — walkable cells ≤ 2.5 m from the own info board
 and the cells around the own gate (GAME-LAYOUT "Sight", CAMV-008; close-view fog end 20.8 m).
 To keep it after the fog grew by 30 % (2026-09-27): `loc_river` is clipped to z 33–35 and its
-spot moved from (8, 32) to (8, 33) (rect was 6, 30, 4, 6; 19 → 12 cells); `loc_pond` is
+spot moved from (8, 32) to (8, 33) (rect was 6, 30, 4, 6; 19 → 12 cells; since the garden street 2026-09-30 the rect is 6, 31, 4, 5 — the street `path_garden_link` takes cells away, 13 wander cells, every cell still ≥ 22 m from the own standing points, CAMV-008); `loc_pond` is
 clipped to the west half of the pond (x −19…−16; rect was −19, 19, 11, 10) and its spot moved
 from the jetty (−13, 22) to the north shore (−16, 26), 2 m from `path_moon` (22 → 14 cells);
 `loc_leaves` moved into the north-east corner (rect was 14, 43, 7, 3, spot (17, 44); 17 → 9
@@ -403,7 +405,7 @@ animal spot. Shortest distance (any surface) given for reference.
 | cave → food storage door | 10.1 m | 5.8 s |
 | hippo info board → food storage door | 16.2 m | 8.5 s |
 | spawn → map board | 6.4 m | 3.4 s |
-| bridge (`path_bridge_w`) → garden gate (inside, cells (7, 36), (8, 36)) | 6.0 m | 5.6 s |
+| bridge (`path_bridge_w`) → garden gate (inside, cells (7, 36), (8, 36)), over the street `path_garden_link` | 7.0 m | ≈ 3.6 s |
 | garden gate → farthest harvest place (`stand` of `potato_w2` / `potato_e2`) | 8.0 m | 4.1 s |
 | spawn → zookeeper-house door (-9, 2) | 9.0 m | ≈ 4.7 s |
 | zookeeper-house door → food storage door | 13 m | ≈ 7.0 s |
@@ -667,7 +669,7 @@ patches there are 3–5 m wide slivers next to `path_north` (x −12…−10, x 
 also the future route to level 3 (`barrier_north_gate`, Q-090). The strip is closed on three
 sides by solid elements, so the garden needs a fence only on the south side, along the
 river bank and towards the sand; it touches no border and no barrier (no shortcut). It lies
-40 m from the entrance, 3 m north of the `loc_river` spot and 6 m (5.6 s) from the bridge.
+40 m from the entrance, 3 m north of the `loc_river` spot and 7 m (≈ 3.6 s, over the street) from the bridge.
 
 ```
        x: 6  7  8  9   (1 char = 1 m, north up)
@@ -682,8 +684,12 @@ river bank and towards the sand; it touches no border and no barrier (no shortcu
   38      K  =  =  K     carrot_e1..e3 (9.5, 38.5 / 39.5 / 40.5)
   37      !  =  =  !   garden signs "Karotten"
   36      _  n  n  _   gate opening x 7.0–9.0 on the line z = 36.0
-  35      .  .  .  .   grass north of the bridge (loc_river rect, z 33–35)
-west of x 6: enc_panda (z ≤ 41) and sand_n (z 42–45); east of x 9: river_n
+  35      =  =  =  =   street cells right outside the gate: path_garden_apron (7..8) + path_garden_link (9)
+  34      .  .  .  =   path_garden_link (x 9), grass (x 6–8) = loc_river wander cells
+  33      .  s  .  =   s = zebra spot (8, 33)
+  32      .  .  .  =
+  31      .  .  .  =   link joins path_bridge_w (x 8–9, z 28–30)
+loc_river rect = x 6–9, z 31–35. West of x 6: enc_panda (z ≤ 41) and sand_n (z 42–45); east of x 9: river_n
 ```
 
 | Part | Data | Notes |
@@ -861,7 +867,7 @@ CONT-MISSIONS) points at "the wall behind the pond". Not in time: they climb out
 | LAYOUT-L1-023 | Given `grove_center` (`dense`), then none of its cells is reachable (LAYOUT-016) and each of its walkable sides has a bush border (LAYOUT-019). | unit |
 | LAYOUT-L1-024 | Given the wander areas of all 9 hiding places computed with the rect clip, then they equal the cell counts of the "Hiding places" table (12, 16, 22, 14, 22, 12, 9, 21, 9 — FIX-056) and contain no tree or bush collider. | unit |
 | LAYOUT-L1-025 | Given the level-1 scene, then the player circle can reach no position that overlaps the cross-section below 1.4 m of any `info_board`, `enclosure_sign` or `map_board` mesh (LAYOUT-017), and the only invisible-wall edges wider than 0.3 m (LAYOUT-019) are the accepted ones listed in "Collision and billboards" (none once Q-087 is implemented). | unit |
-| LAYOUT-L1-026 | Given `level-1.toml` with the garden (fence runs block cell-edge crossings, bed/sign/tool colliders block the cell centres the 0.3 m player circle cannot occupy), then the garden gate cells (7, 36), (8, 36) are reachable from the spawn, the fastest walk from `path_bridge_w` to a gate cell is ≤ 10 s (5.6 s) and from a gate cell to every `stand` cell ≤ 10 s (4.1 s). | unit |
+| LAYOUT-L1-026 | Given `level-1.toml` with the garden (fence runs block cell-edge crossings, bed/sign/tool colliders block the cell centres the 0.3 m player circle cannot occupy), then the garden gate cells (7, 36), (8, 36) are reachable from the spawn, the fastest walk from `path_bridge_w` to a gate cell is ≤ 10 s (≈ 3.6 s) and from a gate cell to every `stand` cell ≤ 10 s (4.1 s). | unit |
 | LAYOUT-L1-027 | Given each `[[plant_spot]]`, then its `pos` lies inside its bed's `rect`, `kind` equals the bed's `plant`, its `stand` cell is a `path_garden` cell that is reachable, not blocked by a collider, edge-adjacent to the bed and ≤ 1.2 m (centre) from `pos` with the plant in front (inside ±75° when facing it); the garden has 6 `carrot` and 4 `potato` spots, all `start_stage = "ripe"`, and ids are unique. | unit |
 | LAYOUT-L1-028 | Given the garden with its gate **closed** (the gate edges blocked like the fence), then no cell of the garden `rect` is reachable from the spawn; with the gate open, every walkable garden cell is; the player circle cannot cross any `fence_runs` line outside the gate opening (scene collision). | unit |
 | LAYOUT-L1-029 | Given the garden, then its `rect` overlaps no `[[hiding_place]]` or `[[scenery]]` rect, no solid element and no path except `path_garden`, touches no barrier and no border cell; every garden collider (fence, beds, signs, props) lies inside the `rect`; all wander areas keep the counts of LAYOUT-L1-024; and the reachable cells with all barriers closed are a subset of those without the garden (no new route past a barrier). | unit |

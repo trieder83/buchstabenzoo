@@ -330,7 +330,7 @@ within 2 m of each animal spot.
 | storage_door → board_koala | 5.1 s |
 | storage_door → board_lion | 5.6 s |
 | board_lion → board_elephant | 7.1 s |
-| board_elephant → board_giraffe | 9.1 s |
+| board_elephant → board_giraffe | 8.8 s |
 | board_giraffe → board_koala | 4.1 s |
 | board_koala → loc_log_pile | 8.9 s |
 

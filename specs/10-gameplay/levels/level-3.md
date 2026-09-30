@@ -321,11 +321,11 @@ Fastest walking time, 1.93 m/s paths / 1.45 m/s grass (GAME-PLAYER §6); `house_
 | storage_door → house_door | 5.7 s |
 | house_door → bowl | 2.1 s |
 | storage_door → board_snow_fox | 3.5 s |
-| board_snow_fox → house_door | 3.0 s |
+| board_snow_fox → house_door | 2.8 s |
 | storage_door → board_goldfish | 7.7 s |
-| board_goldfish → board_monkey | 9.1 s |
+| board_goldfish → board_monkey | 8.8 s |
 | house_door → entry_s | 6.2 s |
-| board_snow_fox → entry_s | 7.0 s |
+| board_snow_fox → entry_s | 6.4 s |
 
 All neighbour pairs are ≤ 10 s. The goldfish round trip board → house (bowl) → tap →
 storage (fish food) → stream → goldfish gate (carrying at 0.9 ×) takes about 60 s (willow), 66 s (water wheel) or 80 s (waterfall) of pure walking — the longest mission of the zoo, intentionally the last one.

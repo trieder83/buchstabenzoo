@@ -596,6 +596,21 @@ rect = [7, 36, 2, 9]
 notes = "2 m garden path from the garden gate (south) between the four beds to the tool corner; inside garden_veg (see [[garden]] at the end of this file)."
 
 
+[[element]]
+id = "path_garden_link"
+type = "path"
+kind = "side"
+rect = [9, 31, 1, 5]
+notes = "Street from the bridge path (path_bridge_w) north along the river bank to the garden gate (Q-199, LAYOUT-L1-044)."
+
+[[element]]
+id = "path_garden_apron"
+type = "path"
+kind = "side"
+rect = [7, 35, 2, 1]
+notes = "Street cells right outside the garden gate (7..8, 36); continues onto path_garden."
+
+
 # ---------------------------------------------------------------- food boxes (GAME-FEED §7)
 # PoC (Q-065): the storage interior is not modelled, so the 10 boxes stand in a row in front
 # of the food storage's south facade, labels facing south (GAME-LEVEL-1 proposal table).
@@ -745,7 +760,7 @@ notes = "Wooden hippo hut (hut_wood, ~4 x 3.5 m); placeholder box until the mode
 [[hiding_place]]
 id = "loc_river"
 animal = "zebra"
-rect = [6, 33, 4, 3]
+rect = [6, 31, 4, 5]
 animal_spot = [8, 33]
 wander_radius_m = 3.0
 wander_on = "grass"

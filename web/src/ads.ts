@@ -8,6 +8,7 @@
 // magic bytes and dimensions. ANY failure → that campaign (or the whole manifest) is dropped
 // and the board keeps its local placeholder — never anything unsigned. Pure functions, no DOM.
 import * as ed from '@noble/ed25519';
+import { sha256 as nobleSha256, sha512 as nobleSha512 } from '@noble/hashes/sha2.js';
 import { AD_PUBLIC_KEYS } from './ad-keys';
 
 /** Build-time switch (vite `define`): true only in the e2e test build (`VITE_AD_TEST=1`). */
@@ -122,8 +123,9 @@ function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
 
 export async function sha256Hex(data: Uint8Array): Promise<string> {
   const subtle = globalThis.crypto?.subtle;
-  if (!subtle) throw new AdError('signature', 'no Web Crypto (insecure context)');
-  const d = new Uint8Array(await subtle.digest('SHA-256', data as BufferSource));
+  // Web Crypto only exists in secure contexts (https, localhost); on plain http (LAN test
+  // server, phone on the Wi-Fi) the pure-JS SHA-256 gives the same result.
+  const d = subtle ? new Uint8Array(await subtle.digest('SHA-256', data as BufferSource)) : nobleSha256(data);
   return [...d].map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
@@ -239,9 +241,12 @@ export async function verifySignature(body: Uint8Array, sigB64: string, keys: re
   const sig = b64decode(sigB64);
   if (!sig || sig.length !== 64) return false;
   const msg = concat(DOMAIN, body);
+  const secure = !!globalThis.crypto?.subtle;
+  if (!secure) ed.hashes.sha512 = nobleSha512; // no Web Crypto (plain http): pure-JS SHA-512
   for (const key of keys) {
     try {
-      if (await ed.verifyAsync(sig, msg, key, { zip215: false })) return true;
+      const ok = secure ? await ed.verifyAsync(sig, msg, key, { zip215: false }) : ed.verify(sig, msg, key, { zip215: false });
+      if (ok) return true;
     } catch {
       /* try the next key */
     }
@@ -445,10 +450,15 @@ export function pickImage(c: VerifiedCampaign, lang: string, n: number): Verifie
 
 export const GATE_HOLD_MS = 3000;
 
-/** A sum the gate asks (two two-digit numbers with a carry, result 40…99) and 4 answers. */
+/** A plus or minus task the gate asks (numbers and result 0…20) and 4 answers. */
 export interface GateQuestion {
   a: number;
   b: number;
+  /** `+` (default) or `-`. */
+  op?: '+' | '-';
+  /** Language task (ABC Smash gate): the line to show; `options` are then indexes into `labels`. */
+  prompt?: string;
+  labels?: string[];
   options: number[];
   answer: number;
 }
@@ -456,24 +466,60 @@ export interface GateQuestion {
 /** `rnd()` returns a float in [0, 1). */
 export function makeGateQuestion(rnd: () => number = Math.random): GateQuestion {
   const int = (lo: number, hi: number) => lo + Math.floor(rnd() * (hi - lo + 1));
+  const op: '+' | '-' = rnd() < 0.5 ? '+' : '-';
   let a = 0;
   let b = 0;
-  do {
-    a = int(14, 59);
-    b = int(14, 59);
-  } while ((a % 10) + (b % 10) < 10 || a + b < 40 || a + b > 99);
-  const answer = a + b;
+  if (op === '+') {
+    a = int(4, 16);
+    b = int(3, 20 - a);
+  } else {
+    a = int(9, 20);
+    b = int(3, a - 2);
+  }
+  const answer = op === '+' ? a + b : a - b;
   const wrong = new Set<number>();
   while (wrong.size < 3) {
-    const w = answer + [-10, -1, 1, 10, -2, 2, 11, -11][int(0, 7)];
-    if (w !== answer && w >= 10) wrong.add(w);
+    const w = answer + [-1, 1, -2, 2, -3, 3, -10, 10][int(0, 7)];
+    if (w !== answer && w >= 0 && w <= 20) wrong.add(w);
   }
   const options = [answer, ...wrong];
   for (let i = options.length - 1; i > 0; i--) {
     const j = int(0, i);
     [options[i], options[j]] = [options[j], options[i]];
   }
-  return { a, b, options, answer };
+  return { a, b, op, options, answer };
+}
+
+/** German nouns with their article (the gate of the reading-game campaign asks it). */
+export const GATE_NOUNS_DE: readonly (readonly [string, 'der' | 'die' | 'das'])[] = [
+  ['Gabel', 'die'], ['Löffel', 'der'], ['Messer', 'das'], ['Tisch', 'der'], ['Lampe', 'die'], ['Haus', 'das'],
+  ['Hund', 'der'], ['Katze', 'die'], ['Buch', 'das'], ['Ball', 'der'], ['Schule', 'die'], ['Auto', 'das'],
+  ['Apfel', 'der'], ['Blume', 'die'], ['Fenster', 'das'], ['Stuhl', 'der'],
+];
+
+/** English plurals with 4 answers (answer first). */
+export const GATE_PLURALS_EN: readonly (readonly [string, string, string, string, string])[] = [
+  ['mouse', 'mice', 'mouses', 'mices', 'mouse'], ['child', 'children', 'childs', 'childes', 'child'],
+  ['foot', 'feet', 'foots', 'feets', 'foot'], ['man', 'men', 'mans', 'manes', 'man'],
+  ['tooth', 'teeth', 'tooths', 'teeths', 'tooth'], ['goose', 'geese', 'gooses', 'geeses', 'goose'],
+];
+
+/** The gate of a language campaign (ABC Smash): the right article (de) / plural (en). */
+export function makeLanguageGateQuestion(lang: string, rnd: () => number = Math.random): GateQuestion {
+  const int = (lo: number, hi: number) => lo + Math.floor(rnd() * (hi - lo + 1));
+  if (lang === 'en') {
+    const [one, right, w1, w2, w3] = GATE_PLURALS_EN[int(0, GATE_PLURALS_EN.length - 1)];
+    const labels = [right, w1, w2, w3];
+    const order = [0, 1, 2, 3];
+    for (let i = 3; i > 0; i--) {
+      const j = int(0, i);
+      [order[i], order[j]] = [order[j], order[i]];
+    }
+    return { a: 0, b: 0, prompt: `one ${one}, two …?`, labels, options: order, answer: 0 };
+  }
+  const [noun, art] = GATE_NOUNS_DE[int(0, GATE_NOUNS_DE.length - 1)];
+  const labels = ['der', 'die', 'das'];
+  return { a: 0, b: 0, prompt: `… ${noun}`, labels, options: [0, 1, 2], answer: labels.indexOf(art) };
 }
 
 export type GateStage = 'sum' | 'hold' | 'failed' | 'open';

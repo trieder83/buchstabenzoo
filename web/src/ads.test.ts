@@ -4,7 +4,7 @@ import * as ed from '@noble/ed25519';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   AD_FORMAT,
   b64decode,
@@ -16,6 +16,9 @@ import {
   loadAds,
   makeGateQuestion,
   ParentalGate,
+  GATE_NOUNS_DE,
+  GATE_PLURALS_EN,
+  makeLanguageGateQuestion,
   parseManifest,
   pickImage,
   resolveKeys,
@@ -92,6 +95,45 @@ function options(s: Served, extra: Partial<LoadOptions> = {}): LoadOptions {
     ...extra,
   };
 }
+
+describe('language gate of the reading campaign (ADS-025)', () => {
+  it('ADS-025 German: a noun with its right article (Gabel → die); English: the right plural; always one right answer', () => {
+    for (let i = 0; i < 100; i++) {
+      const de = makeLanguageGateQuestion('de');
+      expect(de.labels).toEqual(['der', 'die', 'das']);
+      expect(de.options).toEqual([0, 1, 2]);
+      const noun = /… (\S+)/.exec(de.prompt!)![1];
+      const art = GATE_NOUNS_DE.find(([n]) => n === noun)![1];
+      expect(de.labels![de.answer]).toBe(art);
+      const en = makeLanguageGateQuestion('en');
+      expect(new Set(en.options)).toEqual(new Set([0, 1, 2, 3]));
+      expect(en.labels![en.answer]).toBeTruthy();
+      const one = /one (\S+),/.exec(en.prompt!)![1];
+      expect(GATE_PLURALS_EN.find(([s]) => s === one)![1]).toBe(en.labels![en.answer]);
+    }
+    expect(GATE_NOUNS_DE.find(([n]) => n === 'Gabel')![1]).toBe('die');
+    const g = new ParentalGate(makeLanguageGateQuestion('de', () => 0)); // first noun
+    expect(g.answer(g.question.answer)).toBe('hold');
+  });
+});
+
+describe('no Web Crypto (plain http on the LAN, ADS-024)', () => {
+  it('ADS-024 signature and SHA-256 give the same results with the pure-JS fallback', async () => {
+    const body = read('campaigns.json');
+    const sig = fs.readFileSync(path.join(adsDir, 'campaigns.sig'), 'utf8');
+    const withSubtle = await sha256Hex(body);
+    vi.stubGlobal('crypto', {}); // insecure context: no crypto.subtle
+    try {
+      expect(await verifySignature(body, sig, [pub])).toBe(true);
+      const tampered = new Uint8Array(body);
+      tampered[10] ^= 1;
+      expect(await verifySignature(tampered, sig, [pub])).toBe(false);
+      expect(await sha256Hex(body)).toBe(withSubtle);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
 
 describe('signature (ADS-008, ADS-009)', () => {
   it('ADS-008 the manifest signed by tools/ads/sign.py verifies and parses', async () => {
@@ -418,16 +460,20 @@ describe('test key override (ADS-019)', () => {
 });
 
 describe('parental gate (ADS-018)', () => {
-  it('ADS-018 the question is a sum of two-digit numbers with a carry and 4 distinct answers', () => {
-    for (let i = 0; i < 200; i++) {
+  it('ADS-018 the question is a plus or minus task up to 20 with 4 distinct answers', () => {
+    const ops = new Set<string>();
+    for (let i = 0; i < 300; i++) {
       const q = makeGateQuestion();
-      expect(q.a + q.b).toBe(q.answer);
-      expect(q.answer).toBeGreaterThanOrEqual(40);
-      expect(q.answer).toBeLessThanOrEqual(99);
-      expect((q.a % 10) + (q.b % 10)).toBeGreaterThanOrEqual(10);
+      ops.add(q.op ?? '+');
+      expect(q.op === '-' ? q.a - q.b : q.a + q.b).toBe(q.answer);
+      for (const n of [q.a, q.b, q.answer, ...q.options]) {
+        expect(n).toBeGreaterThanOrEqual(0);
+        expect(n).toBeLessThanOrEqual(20);
+      }
       expect(new Set(q.options).size).toBe(4);
       expect(q.options).toContain(q.answer);
     }
+    expect([...ops].sort()).toEqual(['+', '-']);
   });
 
   const gate = () => new ParentalGate({ a: 38, b: 47, options: [85, 75, 84, 95], answer: 85 });

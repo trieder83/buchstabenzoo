@@ -96,8 +96,8 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
     name as text); it closes by ✖ / Esc / walking away and stays closed until the player leaves
     and comes back. It never opens while another reading panel is open; the hint and interact
     button ignore ad boards.
-11. **Parental gate** (Q-242): pressing the link button shows a modal gate: (1) a sum of two
-    two-digit numbers with a carry (result 40…99, e.g. 38 + 47) with 4 number buttons — a wrong
+11. **Parental gate** (Q-242): pressing the link button shows a modal gate: (1) for the maths campaign a **simple plus or
+    minus task up to 20** (user request 2026-10-01: e.g. 9 + 7 or 15 − 6; numbers and result 0…20) with 4 number buttons — a wrong
     answer or ✖ ends the gate; (2) hold the ✋ button **3 s** (progress ring; releasing resets).
     Only then `window.open(url, '_blank', 'noopener,noreferrer')` **once**; no analytics, no query
     parameters, no request to the campaign host by the game (ADC1-005).
@@ -110,7 +110,7 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
 | Someone who can write only `ads/**` on the hosting (leaked upload token, bad content deploy) | delete the content | publish content without the private key; swap images (hash), change links/taglines (signed), add a campaign, point a link elsewhere (compiled allowlist) |
 | Someone who controls the **whole hosting origin** (incl. the game bundle) | replace the game, its compiled key and its code | — the signature cannot help here (same as for any web game); the store apps (Capacitor) carry the key inside the signed binary and run the packaged bundle |
 | Holder of the private key | show any content of a **known campaign id** (images, taglines, `active`) | add a new campaign id or another link host without a game release (Q-241) |
-| A child | tap / hold the gate by accident (needs the right two-digit sum **and** 3 s holding) | — (a grade-2/3 child may solve the sum; Q-242) |
+| A child | tap / hold the gate by accident (needs the right plus/minus task **and** 3 s holding) | — (a grade-1/2 child can solve the task, so the gate only stops accidental taps, not a determined child; Q-242) |
 
 ## Test cases
 
@@ -133,7 +133,9 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
 | ADS-015 | Given a link with http, another host, another campaign's host, user info, port, path, query, fragment or a look-alike host, then the campaign is dropped; a valid one is opened in its canonical form. | unit |
 | ADS-016 | Given a tagline with markup characters, control characters or over 80 characters, then the campaign is dropped; shown texts are set as text only. | unit |
 | ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the 4 s timeout; only same-origin `ads/` URLs are requested. | unit |
-| ADS-018 | Given the parental gate, then holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets. | unit |
+| ADS-024 | Given a browser without Web Crypto (plain http on a LAN IP, e.g. the phone on the dev server http://192.168.x.x:5173), then the signature check and the SHA-256 image hashes use the pure-JS fallback (@noble/hashes) and give exactly the same result (a tampered manifest is still rejected), so the signed ads show there too. | unit |
+| ADS-025 | Given the gate of the reading campaign (ABC Smash), then it asks a language question instead of a sum: German a noun and its right article (e.g. "… Gabel" → der / die / das, answer die), English the right plural (one mouse → mice) with 4 answers; the maths campaign keeps the plus/minus task up to 20. | unit, e2e |
+| ADS-018 | Given the parental gate, then holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets; the task is a plus or minus task with numbers and result in 0…20 and 4 distinct answers; the gate shows no "adults only" claim (title "Zur Webseite" / "To the website"). | unit |
 | ADS-019 | Given `?adkey=` in a build without the test hook, then it is ignored. | unit |
 | ADS-020 | Given a correctly signed test manifest (test build), then the boards show the campaign pictures, the panel shows picture + tagline + link button ≥ 64 px, and the link opens (`noopener`, canonical URL) exactly once, only after the gate. | e2e |
 | ADS-021 | Given a manifest signed with a wrong key (test build) or a tampered image, then the placeholders remain / only that campaign is missing, and no panel opens. | e2e |

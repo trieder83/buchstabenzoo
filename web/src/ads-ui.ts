@@ -6,6 +6,7 @@ import {
   GATE_HOLD_MS,
   loadAds,
   ParentalGate,
+  makeLanguageGateQuestion,
   pickImage,
   type AdContent,
   type KeyValue,
@@ -272,7 +273,7 @@ export class AdsHost {
     const link = el('button', 'ad-link');
     link.type = 'button';
     link.append(el('span', undefined, '🔗'), el('span', 'ad-link-text', new URL(campaign.link).hostname));
-    link.addEventListener('click', () => this.startGate(campaign.link));
+    link.addEventListener('click', () => this.startGate(campaign.link, campaign.id === 'abcsmash'));
     body.append(link);
     this.panel.replaceChildren(body);
     this.panel.hidden = false;
@@ -292,8 +293,9 @@ export class AdsHost {
 
   // ------------------------------------------------------------ parental gate
 
-  private startGate(url: string): void {
-    const gate = new ParentalGate();
+  private startGate(url: string, language = false): void {
+    // the reading-game campaign asks a language question (article / plural), the maths game a sum
+    const gate = new ParentalGate(language ? makeLanguageGateQuestion(this.app.language()) : undefined);
     this.gate = gate;
     const card = el('div');
     card.className = 'ad-gate-card';
@@ -303,11 +305,11 @@ export class AdsHost {
     close.setAttribute('aria-label', this.app.t('ad-close'));
     close.addEventListener('click', () => this.closeGate());
     card.append(close, el('h2', 'ad-gate-title', this.app.t('ad-gate-title')), el('div', undefined, this.app.t('ad-gate-sum')));
-    card.append(el('div', 'ad-gate-question', `${gate.question.a} + ${gate.question.b} = ?`));
+    card.append(el('div', 'ad-gate-question', gate.question.prompt ?? `${gate.question.a} ${gate.question.op === '-' ? '−' : '+'} ${gate.question.b} = ?`));
     const choices = el('div');
     choices.className = 'ad-choices';
     for (const n of gate.question.options) {
-      const b = el('button', undefined, String(n));
+      const b = el('button', undefined, gate.question.labels ? gate.question.labels[n] : String(n));
       b.className = 'ad-choice';
       b.type = 'button';
       b.addEventListener('click', () => {

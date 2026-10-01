@@ -74,6 +74,12 @@ async function start(page: Page, query = ''): Promise<void> {
   });
 }
 
+/** The gate task `a + b` or `a − b` (up to 20) → its result. */
+function gateAnswer(q: string): number {
+  const [, a, op, b] = /(\d+) ([+−]) (\d+)/.exec(q)!;
+  return op === '+' ? Number(a) + Number(b) : Number(a) - Number(b);
+}
+
 const settled = (page: Page) => page.waitForFunction(() => window.__zoo!.ads.state().settled, undefined, { timeout: 30_000 });
 
 async function boards(page: Page): Promise<Board[]> {
@@ -93,9 +99,11 @@ async function standAt(page: Page, b: Board): Promise<void> {
 
 const opens = (page: Page) => page.evaluate(() => (window as unknown as { __opens: unknown[][] }).__opens);
 
-test('ADS-003 ADS-004 placeholders: every board has its picture, no ad request, passive', async ({ page }) => {
+test('ADS-003 ADS-004 placeholders (no manifest available): every board has its picture, passive, no request to the advertiser', async ({ page }) => {
   const requests: string[] = [];
   page.on('request', (r) => requests.push(r.url()));
+  // the production key is compiled in, so the real manifest would load: simulate "offline" (no manifest)
+  await page.route('**/ads/**', (r) => r.abort());
   await start(page);
   const list = await boards(page);
   expect(list.length).toBe(12); // 4 per level (ADS-001)
@@ -118,7 +126,7 @@ test('ADS-003 ADS-004 placeholders: every board has its picture, no ad request, 
   expect(await page.evaluate(() => window.__zoo!.app.ad_near())).toBe(list[0].id);
   await expect(page.locator('#ad-panel')).toBeHidden();
   expect(await page.evaluate(() => window.__zoo!.app.target_kind())).toBe('');
-  expect(requests.filter((u) => /\/ads\/|rcms\.ch/.test(u))).toEqual([]);
+  expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]); // never a request to the advertiser (ADC1-005)
   await page.screenshot({ path: path.join(shots, 'ads-placeholder.png') });
 });
 
@@ -153,8 +161,8 @@ test.describe('signed campaigns (test build)', () => {
     expect(await opens(page)).toEqual([]);
     // the sum: the right answer, then 3 s of holding
     const q = (await page.locator('#ad-gate-question').textContent())!;
-    const [, a, b] = /(\d+) \+ (\d+)/.exec(q)!;
-    await page.locator('.ad-choice', { hasText: new RegExp(`^${Number(a) + Number(b)}$`) }).click();
+    const answer = gateAnswer(q);
+    await page.locator('.ad-choice', { hasText: new RegExp(`^${answer}$`) }).click();
     const hold = page.locator('#ad-hold');
     await expect(hold).toBeVisible();
     const hb = (await hold.boundingBox())!;
@@ -183,8 +191,8 @@ test.describe('signed campaigns (test build)', () => {
     await standAt(page, mf);
     await page.locator('#ad-link').click();
     const q = (await page.locator('#ad-gate-question').textContent())!;
-    const [, a, b] = /(\d+) \+ (\d+)/.exec(q)!;
-    const wrong = page.locator('.ad-choice').filter({ hasNotText: new RegExp(`^${Number(a) + Number(b)}$`) }).first();
+    const answer = gateAnswer(q);
+    const wrong = page.locator('.ad-choice').filter({ hasNotText: new RegExp(`^${answer}$`) }).first();
     await wrong.click();
     await expect(page.locator('#ad-gate')).toBeHidden();
     expect(await opens(page)).toEqual([]);
@@ -217,9 +225,14 @@ test.describe('signed campaigns (test build)', () => {
     await expect(page.locator('#ad-image')).toBeVisible();
     await page.evaluate(() => window.__zoo!.app.set_reading_level('klasse2'));
     await page.locator('#ad-link').click();
+    // ABC Smash asks a language question (ADS-025): the right German article, e.g. "… Gabel" → die
     const q = (await page.locator('#ad-gate-question').textContent())!;
-    const [, a, b] = /(\d+) \+ (\d+)/.exec(q)!;
-    await page.locator('.ad-choice', { hasText: new RegExp(`^${Number(a) + Number(b)}$`) }).click();
+    const plurals: Record<string, string> = { mouse: 'mice', child: 'children', foot: 'feet', man: 'men', tooth: 'teeth', goose: 'geese' };
+    const one = /one (\S+),/.exec(q)?.[1];
+    const noun = one ?? /… (\S+)/.exec(q)![1];
+    const article = one ? plurals[one] : ({ Gabel: 'die', Löffel: 'der', Messer: 'das', Tisch: 'der', Lampe: 'die', Haus: 'das', Hund: 'der', Katze: 'die', Buch: 'das', Ball: 'der', Schule: 'die', Auto: 'das', Apfel: 'der', Blume: 'die', Fenster: 'das', Stuhl: 'der' } as Record<string, string>)[noun];
+    expect(article, `noun ${noun}`).toBeTruthy();
+    await page.locator('.ad-choice', { hasText: new RegExp(`^${article}$`) }).click();
     const hb = (await page.locator('#ad-hold').boundingBox())!;
     await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
     await page.mouse.down();
@@ -264,12 +277,11 @@ test.describe('signed campaigns (test build)', () => {
     expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 2: 'abcsmash' });
   });
 
-  test('ADS-022 without the test key the loaded manifest is not trusted (the compiled key list is empty)', async ({ page }) => {
+  test('ADS-022 without the test key a manifest signed by another key is not trusted (only the compiled production key counts)', async ({ page }) => {
     const requests: string[] = [];
     await serveAds(page, fixtureFiles(), requests);
-    await start(page); // no ?adkey=
+    await start(page); // no ?adkey=: only the compiled production key is trusted
     await settled(page);
     expect(await page.evaluate(() => window.__zoo!.ads.state().loaded)).toBe(false);
-    expect(requests.filter((u) => /\/ads\//.test(u))).toEqual([]); // no key: not even a request
   });
 });

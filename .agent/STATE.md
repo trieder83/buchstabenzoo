@@ -102,3 +102,7 @@ next steps / questions. The main session prunes entries once committed. -->
 ### 2026-10-01 ad boards with signed external content (GAME-ADS, uncommitted)
 - Done: spec (ad-boards.md rules 7-11 + threat model, ADS-001..022, campaigns 1-3, PLAT-010..012, Q-240..Q-247, Q-217 answered); `zoo-core/src/ads.rs` + `scene/ad_board.rs` (+ `[[ad_board]]` in levels 1-3, 4 each, `DecalImage::Ad`), zoo-web `ad_boards_json/ad_near/set_ad_texture`; host `web/src/ads.ts` (Ed25519 via @noble/ed25519 3.2.0, verification, gate logic), `ads-ui.ts` (pictures, panel, gate), `ad-keys.ts` (EMPTY until the owner adds the public key); `tools/ads/{keygen,sign,prepare_images}.py` + README, `ads/img/*.webp`, fixtures `web/tests/fixtures/ads/` (TEST-ONLY key), firebase.json `ads/**`, vite serves `/ads/`, `E2E_DIST=dist-adtest scripts/e2e.sh tests/e2e/ads.spec.ts` (test build with ?adkey=).
 - Open: zoo-level-designer review of the 12 board positions (Q-244); user: keygen + paste key + sign + deploy (tools/ads/README.md), update CLAUDE.md ads/links line.
+
+### 2026-09-30 performance — run (2) 0f0b153
+- Done: full run logged (measurements.md), baseline `tools/perf/baselines/2026-09-30b.json`, PERF-R-020 (JS heap reading 61-64 MB, unverified) added, PERF-R-019 updated. No code changed.
+- Next: re-measure JS heap on a quiet machine (gc()); phone run (Q-013).

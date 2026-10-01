@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-252** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-262** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-100 answered · 101 open · 10 other (partly answered / proposed / superseded).
+102 answered · 101 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -123,6 +123,8 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-261 — Camera auto-align / first-person steering constants (GAME-PLAYER §3 … → 2026-10-01: the navigation rework (smooth look stick, auto-align, first-person steering) was not better — reverted to the …
+- Q-260 — Walking while turning the zoo view with the right-thumb look stick … → 2026-10-01: the navigation rework (smooth look stick, auto-align, first-person steering) was not better — reverted to the …
 - Q-217 — Clickable external link in the billboard ad of campaign 1 (Math … → Answered 2026-09-30 (user): option (a). Readable own boards, link button, parental gate, the page opens externally only after the …
 - Q-203 — Female zebra detail (GAME-FAMILY §3, Q-074): zebra_female is the male … → Done in model v2 (2026-09-30): forelock mesh part (zebra.FORELOCK) + painted lashes (zebra.LASHES) in zebra_female.py.
 - Q-212 — Formats: .ogg (Vorbis) plus .m4a (AAC) are both delivered (Safari/iOS … → Implemented 2026-09-30 (host proposal, user decision): the host picks .ogg when canPlayType allows Vorbis, else .m4a; both stay …

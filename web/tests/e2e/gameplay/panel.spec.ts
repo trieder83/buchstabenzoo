@@ -62,7 +62,6 @@ for (const [orientation, vp] of [
         // M4b fix of F2: riddle + food first, facts in their own scrolling part; the panel now
         // fits except portrait klasse2/klasse3, where the riddle alone needs a smaller font
         // than cap 3 % (shrinks to fit, ADIR-003 relaxed) — open until Q-070 is decided.
-        test.fail(orientation === 'portrait' && (level === 'klasse2' || level === 'klasse3'), 'QA F2 / Q-070: portrait klasse2/3 riddle needs < 3 % cap to fit');
         await startGame(page, lang, level);
         await firstTouch(page);
         await openZebraBoard(page);

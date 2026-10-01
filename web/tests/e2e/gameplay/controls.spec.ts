@@ -158,6 +158,6 @@ test.describe('desktop 1920×1080', () => {
     const g0 = await hold(page, ['KeyD'], 1.0);
     const grassSpeed = g0.x + 21.0;
     expect(pathSpeed).toBeGreaterThan(grassSpeed * 1.2);
-    expect(Math.abs(grassSpeed - 0.98)).toBeLessThanOrEqual(0.98 * 0.05 + 1 / 60); // both speed decisions: 0.98 m/s
+    expect(Math.abs(grassSpeed - 1.45)).toBeLessThanOrEqual(1.45 * 0.05 + 1 / 60); // grass 1.45 m/s (GAME-PLAYER §6, Q-197)
   });
 });

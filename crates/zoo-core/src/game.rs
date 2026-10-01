@@ -1050,9 +1050,23 @@ impl Game {
     /// Both animals of a pair follow (FAM-002). An animal that needs a container (the goldfish)
     /// jumps into the carried, filled bowl instead (RESC-018/019).
     pub fn show_food(&mut self, animal: &str) -> Result<(), InteractError> {
-        let i = self
+        // the member that is still out (a pair may be split: one at home, one outside), else
+        // the first one
+        let first = self
             .animal_index(animal)
             .ok_or(InteractError::UnknownTarget)?;
+        let i = self
+            .group(animal)
+            .into_iter()
+            .filter(|&j| self.animals[j].state == AnimalState::Escaped)
+            .min_by(|&x, &y| {
+                let p = self.player.pos;
+                self.animals[x]
+                    .pos
+                    .distance(p)
+                    .total_cmp(&self.animals[y].pos.distance(p))
+            })
+            .unwrap_or(first);
         if !self.in_scope(&self.animals[i]) {
             return Err(InteractError::UnknownTarget);
         }
@@ -1472,8 +1486,9 @@ impl Game {
             Target::Animal { animal } => {
                 self.show_food(animal).ok()?;
                 let accepted = self
-                    .animal(animal)
-                    .is_some_and(|a| a.state == AnimalState::Following);
+                    .group(animal)
+                    .into_iter()
+                    .any(|j| self.animals[j].state == AnimalState::Following);
                 Some(Interaction::ShowFood {
                     animal,
                     accepted,

@@ -582,3 +582,28 @@ fn fam_008_009_special_food_makes_one_baby_for_a_pair() {
     assert_eq!(single.give_treat("zebra", Treat::Carrot), Some(true));
     assert!(single.babies.is_empty());
 }
+
+// RESC-030: a split pair — one zebra already at home, the other still outside — the outside
+// one still takes the right food and follows (the interaction addressed only the first member,
+// which was at home, so the outside zebra "refused" to eat and follow).
+#[test]
+fn resc_030_split_pair_outside_member_follows_grass() {
+    use zoo_core::Food;
+    let mut g = Game::new(zebra_pair_zoo(), 4).unwrap();
+    let group = g.group("zebra");
+    assert_eq!(group.len(), 2);
+    g.animals[group[0]].state = AnimalState::InEnclosure; // member 0 is home
+    let outside = group[1];
+    // stand next to the outside zebra with grass in the hands, facing it
+    let a = g.animals[outside].pos;
+    g.player.pos = a + glam::Vec2::new(0.0, -1.2);
+    g.player.facing = glam::Vec2::Y;
+    g.carry.take(&zoo_core::food::FoodBox { food: Food::Grass });
+    assert_eq!(
+        g.available_target(),
+        Some(zoo_core::game::Target::Animal { animal: "zebra" })
+    );
+    g.interact().expect("interaction");
+    assert_eq!(g.animals[outside].state, AnimalState::Following);
+    assert_eq!(g.animals[group[0]].state, AnimalState::InEnclosure);
+}

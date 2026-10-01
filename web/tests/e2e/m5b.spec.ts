@@ -206,7 +206,7 @@ test('LAYOUT-L3-014 / RESC-018…021: goldfish with the bowl de klasse1 — will
   expect(await app<string>(page, 'carry_bowl')).toBe('fish');
   expect(await app<string>(page, 'carry_food')).toBe('');
   // out from under the willow onto the lawn: the fish swims in the carried glass bowl
-  await goto(page, -15.5, 63.5);
+  await goto(page, -15.5, 61.0); // QA 2026-10-01: ad_l3_west stands at (-15.5, 63.5) now
   await page.evaluate(() => {
     const a = window.__zoo!.app;
     a.debug_step(0.5);

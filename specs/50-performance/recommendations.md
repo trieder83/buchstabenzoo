@@ -448,7 +448,19 @@ entries, when asked, and measures before and after.
   into fewer batches to regain draw-call margin.
 - **Expected gain:** a few 10 KiB of WASM; fewer GC hitches on phones; 1–3 draw calls at night.
 - **Cost/risk:** none for the look.
+- **Update (run 2026-09-30 (2)):** WASM 1 832 KiB raw (216 KiB left) / 526 KiB brotli (74 left); night +5 of +6; `Game::update` 29.1 allocs / 14.4 KB. Still open.
 - **Status:** open (watch item, not a budget break).
+
+### PERF-R-020 — JS heap 61 - 64 MB in the run 2026-09-30 (2) (budget 18: <= 32 MB)
+
+- **Finding:** `performance.memory.usedJSHeapSize` after the scenarios was 61 - 64 MB at
+  the desktop / phone viewports (10.7 MB in the run before; desktop_half 33 MB in the same
+  run). Reading is coarse and taken at machine load 25, so possibly GC timing; the new
+  suspects are `audio.ts` (decoded buffers only after a gesture: none in the perf run),
+  the signed-ad loader (`@noble/ed25519`, small) and the DOM (look stick, intro).
+- **Proposal:** re-measure on a quiet machine with a forced GC (`--js-flags=--expose-gc`,
+  `gc()` before reading); if still > 32 MB take a heap snapshot.
+- **Status:** open (unverified; not a confirmed break).
 
 ## Acceptance criteria
 

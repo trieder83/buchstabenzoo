@@ -578,6 +578,92 @@ calls (≤ 10).
 - No budget broken; no code changed. Watch: night margin (+5 of +6 draw calls), triangles
   in S09 (+41 %, level-3 spawn: more path tiles), WASM headroom, `Game::update` bytes / frame.
 
+## Run 2026-09-30 (2) — ad boards, baby / feed spots, sound playback, signed-ad loader, look stick
+
+- **Commit** `0f0b153`, clean tree, full `tools/perf/run.sh` (builds + probe + browser). Raw data:
+  `tools/perf/baselines/2026-09-30b.json`. Compared with run 2026-09-30 (`9898b1a` + uncommitted).
+- **Changed since:** 12 ad boards (decal + box, 4 per level), baby as game entity + feed spots,
+  `audio.ts` (lazy audio, 172 files / 1.00 MB in `web/dist/assets/audio`), signed-ad loader
+  (`@noble/ed25519`, no fetch without a manifest), look-stick DOM, rebuilt family models.
+- **Machine:** Ryzen 5 5500U, SwiftShader (**relative only**), **load average 20 - 30 on 12 CPUs**
+  (another agent's e2e / QA): every time is 2 x the previous run and unusable; counts and sizes exact.
+  The run also executed the gameplay e2e of the tool (mission, m5a, hints, gates green; `m5b`
+  LAYOUT-L3-014 goldfish "walk to -15.5, 63.5" failed under the load, not a perf item, reported).
+
+### Sizes and load
+
+| Artefact | now | previous | budget 17 / 2 |
+|---|---|---|---|
+| WASM release shipped | 1 832 KiB raw (1.88 MB) | 1 779 KiB | <= 2.0 MB raw: pass (+53 KiB, +3.0 %) |
+| WASM brotli / gzip | 526 / 696 KiB | 514 / 680 | <= 600 KB brotli: pass (74 KiB headroom, was 86) |
+| JS glue | 94 KiB (14 brotli) | 89 | |
+| web/dist total (368 files) | 10.63 MB | 9.30 MB (192 files) | |
+| · audio (172 files) | 1.00 MB | 0 | lazy, see below |
+| · ads (4) / textures (40) | 0.24 / 0.25 MB | | |
+| transferred on first load | 7.56 MB, 140 resources | 7.49 MB, 140 | <= 30 MB: pass (25 %) |
+
+- **Audio is not fetched before the first frame / gesture**: same 140 resources and +0.07 MB
+  (code, ad textures) as before; the ~1 MB of audio is not in the transfer; e2e ASND-007 green.
+  Worst case after the gesture: all groups prefetched when idle = +1.0 MB (total 8.6 MB, 29 %).
+- First frame 2.9 s desktop / 3.4 s phone wall (was 0.8 / 0.7 s) at load average 25: **load
+  artefact, not comparable** (DOMContentLoaded 138 ms); budget 17 (<= 5 s on the phone) still
+  needs the phone. **JS heap 61 - 64 MB (was 10.7 MB; budget 18: <= 32 MB)** at desktop / phone
+  but 33 MB at desktop_half in the same run: `performance.memory` is coarse and taken after
+  the scenario frames (GC timing under the load); WASM heap 18.7 MB (was 18.7). Unverified
+  regression suspect, see PERF-R-020.
+
+### Counts (draw calls / triangles), desktop | phone (previous in brackets)
+
+| Scenario | dc desktop | tris desktop | dc phone | tris phone |
+|---|---|---|---|---|
+| S01 spawn 14 m | 31 (30) | 93 k (93) | 18 (18) | 50 k (50) |
+| S02 spawn 20 m | 38 (37) | 104 k (104) | 22 (22) | 65 k (65) |
+| S03 walking | 30 (30) | 90 k (88) | 21 (20) | 43 k (50) |
+| S04 look-around | 36 (34) | 120 k (120) | 18 (18) | 74 k (74) |
+| S05 first person | 33 (32) | 129 k (129) | 15 (15) | 95 k (95) |
+| S06 house | 29 (29) | 90 k (90) | 22 (22) | 40 k (40) |
+| S07 garden | 38 (38) | 69 k (69) | 29 (28) | 57 k (57) |
+| S08 pond | 29 (28) | 80 k (80) | 16 (16) | 26 k (26) |
+| S09 level-3 spawn 20 m | 35 (35) | 147 k (147) | 22 (22) | 34 k (34) |
+| S10 night spawn | 36 (35) | 96 k (96) | 20 (20) | 52 k (52) |
+| S11 night zoo | 30 (30) | 82 k (82) | 14 (14) | 34 k (34) |
+
+Ad boards add 0 - 2 draw calls and no measurable triangles (decals merge into the existing
+chunk runs). Max 38 draw calls (<= 140), max 147 k tris (<= 300 k), max 2 149 instances
+(<= 10 000). Night S10 36 vs. S01 31 = +5 (budget +6): pass, margin 1 (unchanged).
+CPU `frame()` p50 0.6 - 1.3 ms under load (was 0.4 - 0.6; the machine load doubles it), sim
+step 0.06 - 0.40 ms; GL calls 104 - 194, `useProgram` 7 - 8, uploads 2.4 - 6.6 KB per frame,
+no texture uploads per frame.
+
+### Allocations
+
+- `Game::update` (native probe): 6.6 µs p50 (was 4.3, load), **29.1 heap allocations /
+  14.4 KB per frame** (was 28.1 / 14.4 KB): +1 allocation per frame, bytes unchanged; the
+  probe's `alloc_sites_10_frames` is empty (no site list). Ambient 0.
+  `LevelScene::build` 10.5 ms once (was 4.4 ms; load-inflated and 12 ad boards).
+- `poll_sounds` returns `String::new()` when the queue is empty (no allocation on a normal
+  frame, code-checked in `zoo-web/src/lib.rs`); `perf_rules.spec.ts` green (render loop 0).
+- Models 134 `.glb`, 81 635 triangles (+60); over the prop budget only `moon_door(_open)` 1 430 (known).
+
+### Findings vs. budgets
+
+| Budget | Measured | Verdict |
+|---|---|---|
+| 1 / 16 frame time | SwiftShader, load 25 | not measurable (phone pending, Q-013) |
+| 2 download <= 30 MB | 7.56 MB (+ 1.0 MB audio lazily) | pass |
+| 3 draw calls / instances | 38 / 2 149 | pass |
+| 4 close views < zoo view (CAMV-014 / PERF-004) | FP 33 / LA 36 vs. 38 at 20 m (desktop), 15 / 18 vs. 22 (phone); `camera_views` + `perf_rules` 14 tests green | pass |
+| 5 night <= day + 6 | +5 | pass (margin 1) |
+| 8 ambient <= 10 draws | +2 | pass |
+| 14 allocations | 29.1 / frame `Game::update` (+1), render loop 0, `poll_sounds` 0 | pass (known exception, slightly up) |
+| 17 WASM | 1 832 KiB raw / 526 KiB brotli | pass (see note) |
+| 18 memory | WASM heap 18.7 MB ok; JS heap 61 - 64 MB at 2 of 3 viewports | **unverified, possible fail** (PERF-R-020) |
+| 19 triangles | max 147 k | pass |
+| audio not before the first frame | 140 resources, ASND-007 green | pass |
+
+- Note on WASM headroom: 2.0 MB = 2 048 KiB, so 216 KiB raw / 74 KiB brotli left.
+- No code changed. Regressions > 10 %: only load-inflated times and the JS-heap reading.
+
 ## Test cases
 
 No test cases of its own: the measuring tool and the log format are checked by PERF-015

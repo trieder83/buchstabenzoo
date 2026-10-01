@@ -24,6 +24,11 @@ language for player-facing text.
 | `food` | Futter | food | Item an animal eats (e.g. bamboo, hay). |
 | `enclosure_item` | Gehegeausstattung | enclosure item | Non-food items an enclosure needs (pool, stone, logs, bridge). |
 | `visitor` | Besucher | visitor | NPC the player can talk to; gives hints. |
+| `coin` | Münze | coin | Zoo money earned from visitors (ice cream 4, animal food 2) and spent in maths tasks (GAME-ECON). Never real money. |
+| `ice_cream_kiosk` | Eisstand | ice cream kiosk | Shop in level 3 where visitors buy ice cream; stock refilled from the fridge. |
+| `food_machine` | Futterautomat | food machine | Vending machine for animal food bags; stock refilled from the storage. |
+| `fridge` | Kühlschrank | fridge | Prop in the storage building holding the ice boxes for the kiosk. |
+| `animal_doctor` | Tierarzt | animal doctor | Visitor NPC who treats a sniffly animal for a fee in coins (GAME-ECON). |
 | `quest` | Aufgabe | quest | A goal with steps, e.g. find the lost monkey baby. |
 | `riddle` | Rätsel | riddle | Reading/logic puzzle, solved by reading a word, sentence or short story. |
 | `reading_level` | Lesestufe | reading level | `kiga`, `klasse1`, `klasse2`, `klasse3` (grades 4–5: Q-035). Write "reading level", never just "level". |

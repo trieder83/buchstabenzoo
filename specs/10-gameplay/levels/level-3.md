@@ -430,3 +430,10 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 - Q-150 answered: the food-box row of `food_storage_3` leaves a gap ≥ 1.2 m in front of the door (meat moved from x 3.4 to −1.4, leaves from 4.2 to 7.4). Q-157 answered (no pocket beside a door: `tap_l3` moved flush on the facade to (−5.5, 60.9), LAYOUT-038).
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).
 - Q-181 answered 2026-09-28: the food boxes stay outside, a few more inside; Q-194 answered 2026-09-29: the inside boxes are real, labelled food boxes too (foods may repeat the outside row).
+
+## Ideas (not decided)
+
+From this level on visitors may come to the zoo, buy ice cream at the `ice_cream_kiosk` (4 coins) and
+animal food from a food machine (2 coins); the child refills them from a fridge in `food_storage_3`
+and spends the coins on maths tasks (buy animal food, pay the animal doctor). See GAME-ECON
+(`specs/10-gameplay/economy.md`), Q-300…Q-307.

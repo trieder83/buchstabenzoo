@@ -13,20 +13,24 @@ updated: 2026-10-01
 
 > **Status: idea collection (user request 2026-10-01).** Nothing here is decided or built;
 > numbers are the user's first ideas, the rest are proposals. Decisions go to
-> `specs/open-questions.md` (Q-300…Q-307).
+> `specs/open-questions.md` (Q-300…Q-307, answered 2026-10-01; see "Decisions").
 
 ## Goal
 
-From **level 3** on the zoo is no longer empty: a few **visitors** come, buy **ice cream** at the ice
+From **level 3** on the zoo is no longer empty: a few **visitors** (families) come, buy **ice cream** at the ice
 cream kiosk and **animal food** from a vending machine. The child keeps both stocked, earns
 **coins**, and spends the coins on **simple maths tasks** that fit the zoo story (buy animal food,
 pay the animal doctor). It adds a calm second loop next to the rescue missions and trains maths
 (CONT-MATH) in a meaningful way. No real money, no time pressure, nothing can be lost.
 
+## Decisions (user, 2026-10-01)
+
+Families of 2–5 visitors by day from level 3 (Q-300) · visitors feed animals at the fence (Q-301) · coins buy animal food, the doctor **and garden seeds**, cap 999 (Q-302) · kiosk 8 scoops, machine 6 bags, one box carried at a time (Q-303) · doctor rare, harmless, never urgent (Q-304) · maths: `mathe1` sums ≤ 20, `mathe2` multiplication, `mathe3` change, `mathe4` bigger sums/units, `mathe5` decimals in money (Q-305) · day only, later levels may add one shop each (Q-306) · art later, after level 3 is stable (Q-307).
+
 ## Behaviour
 
 1. **When:** visitors appear from level 3 on (the level that has the `ice_cream_kiosk`,
-   GAME-LEVEL-3), during the day only, **few at a time** (1–3, proposal Q-300). They walk along the
+   GAME-LEVEL-3), during the day only, ****families of 2–5** (parents + children) at a time (Q-300 answered). They walk along the
    streets (like ambient animals but with a character model), stop at a shop, buy, and leave. They
    never enter enclosures, never block doors or gates, and are not solid for the child (no
    pushing, like GAME-CART rule 41); they are friendly NPCs that can also give a hint (glossary
@@ -50,7 +54,7 @@ pay the animal doctor). It adds a calm second loop next to the rescue missions a
      "refill the ice cream" as an **optional** step (priority 4, GAME-HINT) — it never replaces a
      mission step (never stuck rule, `.claude/agents/zoo-level-designer.md`).
 5. **Coins:** a purse in the HUD (coin icon + number, no text needed); earnings pop up as flying
-   coins; saved with the game (GAME-SAVE). Cap proposal 999 (Q-302). Coins are never taken away
+   coins; saved with the game (GAME-SAVE). Cap 999 (Q-302 answered). Coins are never taken away
    except by a task the child chooses to do.
 6. **Maths with coins** (CONT-MATH, task templates seeded, big number buttons, wrong answer =
    gentle retry and a visual hint, no penalty — CONT-MATH Behaviour 2/3):
@@ -58,6 +62,7 @@ pay the animal doctor). It adds a calm second loop next to the rescue missions a
      buys bags/boxes of special food: "3 bags cost 2 coins each — how many coins?" (`mathe1`: sums ≤ 20;
      `mathe2`: multiplication; `mathe3`+: change, bigger sums, `mathe5`: decimals in money).
      Bought food can be a treat for animals (links to GAME-GARDEN/GAME-FAMILY special food).
+   - **Buy garden seeds:** the shop also sells seeds (Q-302): new plant spots / more garden treats for animals.
    - **Pay the animal doctor:** now and then (rare, harmless, never urgent) an animal at home gets a
      "sniffle" icon; the **animal doctor** (a visitor NPC with a case, comes to the zoo) asks a fee in
      coins; the child pays the exact amount by picking coins (counting / change tasks); then the
@@ -78,7 +83,7 @@ pay the animal doctor). It adds a calm second loop next to the rescue missions a
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| ECON-001 | Given levels 1–2, then no visitors appear; given level 3 unlocked, then ≤ 3 visitors are present at a time during the day and none at night. | unit |
+| ECON-001 | Given levels 1–2, then no visitors appear; given level 3 unlocked, then families of 2–5 visitors are present at a time during the day and none at night. | unit |
 | ECON-002 | Given a visitor buys ice cream with stock > 0, then the purse gains 4 coins and the kiosk stock drops by 1; given stock 0, then the visitor waits ≤ 60 s, leaves, and the purse is unchanged. | unit |
 | ECON-003 | Given a visitor buys animal food from the machine with stock > 0, then the purse gains 2 coins and the stock drops by 1. | unit |
 | ECON-004 | Given the child carries an ice box from the fridge and interacts with the kiosk chest, then the stock is full again and the hands are empty; the fridge never runs out. | unit |
@@ -91,11 +96,4 @@ pay the animal doctor). It adds a calm second loop next to the rescue missions a
 
 ## Open questions
 
-- Q-300 How many visitors, when (daytime schedule), and do they come in groups/families (children + adults)?
-- Q-301 Do visitors feed the animals with the machine's food (animals at the fence eat it, hearts), or is it only coins?
-- Q-302 Coin cap, prices for the maths shop (animal food, doctor fee), and what the coins buy besides food and the doctor (garden seeds? decorations?).
-- Q-303 Stock sizes (kiosk 8, machine 6) and refill carrying rules (one box at a time, also the fish bowl pocket rule).
-- Q-304 The animal doctor: how often, which animals, one fixed visit per level or random; does a sniffly animal change behaviour?
-- Q-305 Which maths levels map to which tasks (change, multiplication, decimals) — CONT-MATH Q-034.
-- Q-306 Does the economy continue in later levels/night, and does level 4 (bears, honey) add shops?
-- Q-307 Art: visitor/doctor/machine/fridge concept sheets (character-artist for people) before any modelling.
+- Q-300…Q-307 answered 2026-10-01 (see "Decisions"). Still open details: concrete coin prices of seeds and the doctor fee; which animals get the sniffle; the fish-bowl pocket rule when carrying a refill box.

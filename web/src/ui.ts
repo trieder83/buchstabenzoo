@@ -69,6 +69,7 @@ export const HINT_ICONS: Record<string, string> = {
   garden: '🥕',
   treat: '🧺',
   bed: '🛏️',
+  help: '👀',
   moon_door: '🌙',
   key_box: '🔑',
   event: '❗',

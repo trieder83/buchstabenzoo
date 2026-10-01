@@ -476,6 +476,19 @@ impl Game {
             }
             an.wander.route = a.wander_route.iter().map(|&c| IVec2::from(c)).collect();
         }
+        // pair members never disagree (NEVER STUCK): the mission is complete only if every
+        // member is complete and at home (a save from before the pair knew one member only)
+        let ids: Vec<&'static str> = g.animals.iter().map(|a| a.id()).collect();
+        for id in ids {
+            let group = g.group(id);
+            let done = group
+                .iter()
+                .all(|&i| g.missions[i].complete && g.animals[i].state == AnimalState::InEnclosure);
+            for &i in &group {
+                g.missions[i].complete = done;
+            }
+        }
+        g.all_home = g.all_home && g.missions.iter().all(|m| m.complete);
         g.intro_seen = s.intro_seen;
         g.babies = s.babies.clone();
         for b in s.babies.clone() {

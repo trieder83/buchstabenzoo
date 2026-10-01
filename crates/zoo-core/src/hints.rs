@@ -68,6 +68,9 @@ pub enum HintKind {
     Treat,
     /// 🛏 the bed.
     Bed,
+    /// 🆘 the missing animal itself (NEVER STUCK: the stall help, or the safety net when a
+    /// mission has no other step).
+    Help,
     /// 🌙 the moon door.
     MoonDoor,
 }
@@ -86,6 +89,7 @@ impl HintKind {
             HintKind::Garden => "garden",
             HintKind::Treat => "treat",
             HintKind::Bed => "bed",
+            HintKind::Help => "help",
             HintKind::MoonDoor => "moon_door",
         }
     }
@@ -103,6 +107,7 @@ impl HintKind {
             HintKind::Garden => "hint-garden",
             HintKind::Treat => "hint-treat",
             HintKind::Bed => "hint-bed",
+            HintKind::Help => "hint-help",
             HintKind::MoonDoor => "hint-moon",
         }
     }
@@ -451,6 +456,41 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             h.animal = Some(id);
             out.push(h);
         }
+    }
+
+    // --- never stuck (rule 3.1b): an open mission always has a hint of priority <= 3; after
+    // a long stall (STALL_HELP_S) the hint points at the missing animal itself
+    let mut helped: HashSet<&'static str> = HashSet::new();
+    for a in &g.animals {
+        let id = a.id();
+        if !g.in_scope(a) || !helped.insert(id) || g.mission(id).is_none_or(|m| m.complete) {
+            continue;
+        }
+        let stalled = g.stall_s() >= crate::game::STALL_HELP_S;
+        let has = out
+            .iter()
+            .any(|h| h.animal == Some(id) && h.priority <= PRIO_UNSTARTED);
+        if has && !stalled {
+            continue;
+        }
+        // the member that is not home (the escaped one first)
+        let Some(m) = g
+            .animals
+            .iter()
+            .filter(|x| x.id() == id && x.state != AnimalState::InEnclosure)
+            .min_by_key(|x| x.state != AnimalState::Escaped)
+        else {
+            continue;
+        };
+        let mut h = hint(
+            format!("help:{id}"),
+            HintKind::Help,
+            if stalled { PRIO_EVENT } else { PRIO_MISSION },
+            m.pos,
+            stand_near(g, m.pos, p, 2.0),
+        );
+        h.animal = Some(id);
+        out.push(h);
     }
 
     // --- optional activities (rule 3.4): ripe plants if the basket has room, treats

@@ -668,7 +668,8 @@ fn resc_032_hint_019_old_single_zebra_save_reopens_the_pair_mission() {
     assert!(np.animals.iter().any(|(id, home)| *id == "zebra" && !*home));
     let c = candidates(&g2, &HintTracker::default());
     assert!(
-        c.first().is_some_and(|h| h.animal == Some("zebra") && h.priority <= 3),
+        c.first()
+            .is_some_and(|h| h.animal == Some("zebra") && h.priority <= 3),
         "first hint {:?}",
         c.first().map(|h| (&h.id, h.priority))
     );

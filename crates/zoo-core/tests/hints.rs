@@ -7,6 +7,7 @@ mod common;
 use glam::{IVec2, Vec2, Vec4};
 use zoo_core::animals::AnimalState;
 use zoo_core::daytime::{Phase, CELEBRATION_S, DUSK_S};
+use zoo_core::game::{STALL_HELP_S, STALL_WALK_S};
 use zoo_core::hints::{
     self, candidates, night_progress, HintKind, HintTracker, ProgressState, AREA_HINT_AFTER_S,
     AREA_MIN_DIAMETER_M, HINT_SHOW_S, IDLE_NUDGE_S, WIDE_AREA_MIN_DIAMETER_M,
@@ -102,9 +103,9 @@ impl Sim {
             let dir = (cell_center(next) - self.g.player.pos).normalize_or_zero();
             self.tick(dir);
             t += DT;
-            if here == target && self.g.player.pos.distance(before) < 1e-4 {
+            if self.g.player.pos.distance(before) < 1e-4 {
                 blocked += DT;
-                if blocked > 0.5 {
+                if blocked > if here == target { 0.5 } else { 3.0 } {
                     break;
                 }
             } else {
@@ -126,9 +127,22 @@ impl Sim {
     }
 
     /// Walks up to a (wandering) escaped animal until it is within interaction range.
+    /// Position of the escaped member of a group nearest to the player (else the first one).
+    fn member_pos(&self, animal: &str) -> Vec2 {
+        let p = self.g.player.pos;
+        self.g
+            .group(animal)
+            .into_iter()
+            .map(|i| &self.g.animals[i])
+            .filter(|x| x.state == AnimalState::Escaped)
+            .map(|x| x.pos)
+            .min_by(|a, b| a.distance(p).total_cmp(&b.distance(p)))
+            .unwrap_or_else(|| self.g.animal(animal).unwrap().pos)
+    }
+
     fn reach_animal(&mut self, animal: &str) {
         for _ in 0..8 {
-            let s = self.g.animal(animal).unwrap().pos;
+            let s = self.member_pos(animal);
             let grid = self.g.level.grid();
             let cell = self
                 .g
@@ -147,35 +161,108 @@ impl Sim {
                 .unwrap();
             self.walk_to(cell, 150.0);
             for _ in 0..120 {
-                let to = self.g.animal(animal).unwrap().pos - self.g.player.pos;
+                let to = self.member_pos(animal) - self.g.player.pos;
                 if to.length() < 1.7 {
                     break;
                 }
                 self.tick(to.normalize());
             }
-            if self
-                .g
-                .animal(animal)
-                .unwrap()
-                .pos
-                .distance(self.g.player.pos)
-                <= 2.0
-            {
+            if self.member_pos(animal).distance(self.g.player.pos) <= 2.0 {
                 return;
             }
             self.idle(1.0);
-            if self
-                .g
-                .animal(animal)
-                .unwrap()
-                .pos
-                .distance(self.g.player.pos)
-                <= 2.0
-            {
+            if self.member_pos(animal).distance(self.g.player.pos) <= 2.0 {
                 return;
             }
         }
         panic!("could not reach the {animal}");
+    }
+}
+
+/// One step of the child following the hint.
+fn follow_one(s: &mut Sim) {
+    let h = s.press();
+    let animal = h.animal;
+    match h.kind {
+        HintKind::Board => {
+            let a = animal.expect("board of a mission");
+            let started = s.g.mission(a).unwrap().started;
+            let right =
+                s.g.carry
+                    .food()
+                    .is_some_and(|f| s.g.animal(a).unwrap().info.eats(f));
+            if started && right {
+                // the child read the riddle: go and find the animal, show the food
+                s.reach_animal(a);
+                s.face(s.member_pos(a));
+                s.g.show_food(a).expect("in range");
+                s.idle(0.2);
+            } else {
+                s.walk_to(cell_of(h.stand), 150.0);
+                s.face(h.pos);
+                s.idle(0.6); // the panel opens by itself and starts the mission
+                assert!(s.g.mission(a).unwrap().started, "board of {a} read");
+                s.g.close_panel();
+            }
+        }
+        HintKind::Food => {
+            // the board said which food: read the box labels, take that one
+            let a = animal.expect("food for a mission");
+            let food = s.g.animal(a).unwrap().info.foods[0];
+            let &(_, pos, facing) =
+                s.g.food_boxes
+                    .iter()
+                    .filter(|b| b.0 == food)
+                    .min_by(|x, y| x.1.distance(h.pos).total_cmp(&y.1.distance(h.pos)))
+                    .expect("a box with the food");
+            s.walk_to(cell_of(pos + facing * 1.1), 150.0);
+            s.g.take_food(food).expect("at the box");
+            s.g.close_panel();
+            s.idle(0.1);
+        }
+        HintKind::Animal => {
+            let a = animal.expect("area of a mission");
+            s.walk_to(cell_of(h.stand), 150.0);
+            s.reach_animal(a);
+            s.face(s.g.animal(a).unwrap().pos);
+            s.g.show_food(a).expect("in range");
+            s.idle(0.2);
+        }
+        HintKind::Help => {
+            // the animal itself: walk up, show the food it likes (the board's food)
+            let a = animal.expect("help for a mission");
+            s.walk_to(cell_of(h.stand), 150.0);
+            s.reach_animal(a);
+            s.face(s.g.animal(a).unwrap().pos);
+            let _ = s.g.show_food(a);
+            s.idle(0.2);
+        }
+        HintKind::Gate => {
+            let a = animal.expect("gate of a mission");
+            s.walk_to(cell_of(h.stand), 150.0);
+            s.idle(2.0);
+            let gate = s.g.level.data.elements[s.g.animal(a).unwrap().enclosure]
+                .gate
+                .unwrap()
+                .cells()
+                .next()
+                .unwrap();
+            s.walk_to(gate, 30.0);
+            s.idle(0.5);
+        }
+        HintKind::PickUp
+        | HintKind::Bamboo
+        | HintKind::Water
+        | HintKind::Bed
+        | HintKind::MoonDoor
+        | HintKind::Garden
+        | HintKind::Treat => {
+            s.walk_to(cell_of(h.stand), 150.0);
+            s.face(h.pos);
+            s.idle(0.1);
+            s.g.interact();
+            s.idle(0.2);
+        }
     }
 }
 
@@ -186,80 +273,7 @@ fn follow_hints(s: &mut Sim, max_steps: usize, until: impl Fn(&Sim) -> bool) {
         if until(s) {
             return;
         }
-        let h = s.press();
-        let animal = h.animal;
-        match h.kind {
-            HintKind::Board => {
-                let a = animal.expect("board of a mission");
-                let started = s.g.mission(a).unwrap().started;
-                let right =
-                    s.g.carry
-                        .food()
-                        .is_some_and(|f| s.g.animal(a).unwrap().info.eats(f));
-                if started && right {
-                    // the child read the riddle: go and find the animal, show the food
-                    s.reach_animal(a);
-                    s.face(s.g.animal(a).unwrap().pos);
-                    s.g.show_food(a).expect("in range");
-                    s.idle(0.2);
-                } else {
-                    s.walk_to(cell_of(h.stand), 150.0);
-                    s.face(h.pos);
-                    s.idle(0.6); // the panel opens by itself and starts the mission
-                    assert!(s.g.mission(a).unwrap().started, "board of {a} read");
-                    s.g.close_panel();
-                }
-            }
-            HintKind::Food => {
-                // the board said which food: read the box labels, take that one
-                let a = animal.expect("food for a mission");
-                let food = s.g.animal(a).unwrap().info.foods[0];
-                let &(_, pos, facing) =
-                    s.g.food_boxes
-                        .iter()
-                        .filter(|b| b.0 == food)
-                        .min_by(|x, y| x.1.distance(h.pos).total_cmp(&y.1.distance(h.pos)))
-                        .expect("a box with the food");
-                s.walk_to(cell_of(pos + facing * 1.1), 150.0);
-                s.g.take_food(food).expect("at the box");
-                s.g.close_panel();
-                s.idle(0.1);
-            }
-            HintKind::Animal => {
-                let a = animal.expect("area of a mission");
-                s.walk_to(cell_of(h.stand), 150.0);
-                s.reach_animal(a);
-                s.face(s.g.animal(a).unwrap().pos);
-                s.g.show_food(a).expect("in range");
-                s.idle(0.2);
-            }
-            HintKind::Gate => {
-                let a = animal.expect("gate of a mission");
-                s.walk_to(cell_of(h.stand), 150.0);
-                s.idle(2.0);
-                let gate = s.g.level.data.elements[s.g.animal(a).unwrap().enclosure]
-                    .gate
-                    .unwrap()
-                    .cells()
-                    .next()
-                    .unwrap();
-                s.walk_to(gate, 30.0);
-                s.idle(0.5);
-            }
-            HintKind::PickUp
-            | HintKind::Bamboo
-            | HintKind::Water
-            | HintKind::Bed
-            | HintKind::MoonDoor
-            | HintKind::Garden
-            | HintKind::Treat => {
-                s.walk_to(cell_of(h.stand), 150.0);
-                s.face(h.pos);
-                s.idle(0.1);
-                s.g.interact();
-                s.idle(0.2);
-            }
-        }
+        follow_one(s);
         assert!(
             step + 1 < max_steps,
             "the hints did not lead there in {max_steps} steps"
@@ -782,4 +796,141 @@ fn hint_017_treat_hint_follows_what_is_liked() {
     let own = g.animal("zebra").unwrap().info.foods[0];
     g.carry.take(&zoo_core::FoodBox { food: own });
     assert!(has(&g), "the zebra's own carried food");
+}
+
+/// A random state with split pairs and disagreeing members (NEVER STUCK).
+fn messy_state(seed: u64) -> Sim {
+    let mut s = random_state(seed);
+    let mut r = Pcg32::new(seed ^ 0x5eed);
+    let g = &mut s.g;
+    for id in ["zebra"] {
+        let group = g.group(id);
+        if group.len() < 2 || g.mission(id).is_some_and(|m| m.complete) {
+            continue;
+        }
+        match r.next_u32() % 4 {
+            0 => {
+                // member 0 home, the partner out; the mission flags disagree
+                g.animals[group[0]].state = AnimalState::InEnclosure;
+                g.missions[group[0]].started = true;
+                g.missions[group[0]].complete = r.next_u32().is_multiple_of(2);
+            }
+            1 => {
+                g.animals[group[1]].state = AnimalState::InEnclosure;
+                g.missions[group[1]].complete = r.next_u32().is_multiple_of(2);
+            }
+            2 => {
+                // an old save knew one zebra only
+                g.animals[group[0]].state = AnimalState::InEnclosure;
+                g.missions[group[0]].started = true;
+                g.missions[group[0]].complete = true;
+                let mut save = g.to_save();
+                save.animals.retain(|a| a.id != id || a.member == 0);
+                save.missions.retain(|m| m.animal != id || m.complete);
+                let p = g.player.pos;
+                *g = Game::from_save(zoo_data(), &save).unwrap();
+                g.player.pos = p;
+            }
+            _ => {}
+        }
+    }
+    g.drain_events();
+    s
+}
+
+// HINT-019 (NEVER STUCK a): while a mission of the zoo is open, a hint of priority <= 3 exists —
+// the optional garden is never the only way forward.
+#[test]
+fn hint_019_open_mission_always_has_a_mission_level_hint() {
+    for seed in 0..1500u64 {
+        let s = messy_state(seed);
+        let day = s.g.daytime.phase == Phase::Day && s.g.daytime.dusk_in.is_none();
+        // (by day the child is never inside the night zoo: its door is closed)
+        let in_night =
+            s.g.level
+                .data
+                .part_at(cell_of(s.g.player.pos))
+                .is_some_and(|k| s.g.level.data.is_night_part(k));
+        if !day || in_night || !s.g.any_mission_open() {
+            continue;
+        }
+        let c = candidates(&s.g, &s.t);
+        assert!(
+            c.first()
+                .is_some_and(|h| h.priority <= hints::PRIO_UNSTARTED),
+            "seed {seed}: first hint {:?} {:?}",
+            c.first().map(|h| (&h.id, h.priority)),
+            s.g.animals
+                .iter()
+                .zip(&s.g.missions)
+                .map(|(a, m)| (a.id(), a.state, a.part, *m))
+                .collect::<Vec<_>>()
+        );
+    }
+}
+
+// HINT-020 (NEVER STUCK c): no mission progress for 120 s -> the hint points at the missing
+// animal itself; after 180 s the escaped animals walk to the player; progress ends it.
+#[test]
+fn hint_020_stall_help_points_at_the_animal_and_it_comes_to_the_player() {
+    let mut s = Sim::new(night_game(4));
+    s.idle(STALL_HELP_S - 5.0);
+    assert!(s.press().kind != HintKind::Help);
+    s.t.hide();
+    s.idle(10.0);
+    let h = s.press();
+    assert_eq!(h.kind, HintKind::Help, "{h:?}");
+    let a = h.animal.unwrap();
+    assert!(
+        h.pos.distance(s.g.animal(a).unwrap().pos) < 0.01,
+        "exact position"
+    );
+    // 60 s later they walk: within another 120 s every escaped animal of a day mission is near
+    s.idle(STALL_WALK_S - STALL_HELP_S + 120.0);
+    let p = s.g.player.pos;
+    for an in
+        s.g.animals
+            .iter()
+            .filter(|x| s.g.in_scope(x) && x.state == AnimalState::Escaped)
+    {
+        assert!(
+            an.pos.distance(p) < 8.0,
+            "{} is {} m away",
+            an.id(),
+            an.pos.distance(p)
+        );
+    }
+    // taking the right food and showing it is progress again: the stall restarts
+    let id = s.g.animals[0].id();
+    let food = s.g.animal(id).unwrap().info.foods[0];
+    s.g.carry.take(&zoo_core::FoodBox { food });
+    s.idle(0.1);
+    assert!(s.g.stall_s() < 1.0);
+}
+
+// HINT-021 (NEVER STUCK): following only the hints always brings every day animal home, also
+// from split pairs, old one-zebra saves and with a save/restore in the middle.
+#[test]
+fn hint_021_never_stuck_follow_hints_from_messy_states_with_save_restore() {
+    for seed in 0..40u64 {
+        let mut s = messy_state(seed);
+        // a fuzz state may be night: wake it up to a plain day
+        let _ = s.g.debug_set_daytime("day");
+        s.g.player.pos = s.g.level.data.spawn.cell().as_vec2() + Vec2::splat(0.5);
+        let mut r = Pcg32::new(seed + 99);
+        let mut steps = 0;
+        while !day_done(&s) {
+            steps += 1;
+            assert!(steps < 60, "seed {seed}: not home after 60 hint steps");
+            s.t.hide();
+            follow_one(&mut s);
+            if r.next_u32().is_multiple_of(3) {
+                // save and restore in the middle
+                let save = s.g.to_save();
+                let p = s.g.player.pos;
+                s.g = Game::from_save(zoo_data(), &save).unwrap();
+                s.g.player.pos = p;
+            }
+        }
+    }
 }

@@ -493,6 +493,13 @@ pub fn pick_hiding_places(
     }
 }
 
+/// NEVER STUCK: seconds without mission progress until the hint points at the missing animal
+/// itself, and until the animal walks to the player (Q-097 proposal).
+pub const STALL_HELP_S: f32 = 120.0;
+pub const STALL_WALK_S: f32 = 180.0;
+const STALL_COME_M: f32 = 5.0;
+const STALL_SPEED: f32 = 1.6;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Mission {
     pub started: bool,
@@ -597,6 +604,12 @@ pub struct Game {
     pub lying: crate::carrying::Lying,
     /// Regrowth of the bamboo cut spots (GAME-FEED §15).
     pub bamboo: crate::carrying::BambooForests,
+    /// NEVER STUCK (GAME-RESCUE "Stall"): seconds of play without mission progress while a
+    /// mission is open, and the progress signature it is measured against.
+    pub(crate) stall_s: f32,
+    stall_sig: u64,
+    /// Route of the escaped animals that walk to the player once the stall lasts too long.
+    stall_routes: Vec<Vec<IVec2>>,
 }
 
 /// A building door opens while the player is this close to the door cell (m).
@@ -817,6 +830,9 @@ impl Game {
             events: Vec::new(),
             last_gate: None,
             all_home: false,
+            stall_s: 0.0,
+            stall_sig: 0,
+            stall_routes: Vec::new(),
             intro_seen: false,
             babies: Vec::new(),
             baby_states: BTreeMap::new(),
@@ -917,8 +933,17 @@ impl Game {
         self.animals.iter().find(|a| a.id() == id)
     }
 
+    /// The mission of an animal's species: started when any member's is, complete only when
+    /// every member's is (NEVER STUCK: members must never disagree).
     pub fn mission(&self, animal: &str) -> Option<Mission> {
-        self.animal_index(animal).map(|i| self.missions[i])
+        let group = self.group(animal);
+        if group.is_empty() {
+            return None;
+        }
+        Some(Mission {
+            started: group.iter().any(|&i| self.missions[i].started),
+            complete: group.iter().all(|&i| self.missions[i].complete),
+        })
     }
 
     /// Whether the player currently leads an animal group (gates passable).
@@ -985,7 +1010,7 @@ impl Game {
         if !self.in_scope(&self.animals[i]) {
             return Err(InteractError::UnknownTarget);
         }
-        if !self.missions[i].started {
+        if !self.mission(animal).is_some_and(|m| m.started) {
             for j in self.group(animal) {
                 self.missions[j].started = true;
             }
@@ -1996,6 +2021,7 @@ impl Game {
         self.garden.update(dt);
         self.bamboo.update(dt);
         self.update_followers(dt);
+        self.update_stall(dt);
         self.update_wander(dt);
         self.update_babies(dt);
         self.update_daytime(dt);
@@ -2154,7 +2180,7 @@ impl Game {
             || !group
                 .iter()
                 .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
-            || self.missions[group[0]].complete
+            || group.iter().all(|&j| self.missions[j].complete)
         {
             return;
         }
@@ -2282,6 +2308,9 @@ impl Game {
         let dark = self.daytime.is_dark();
         for i in 0..self.animals.len() {
             let state = self.animals[i].state;
+            if self.stall_walking(i) {
+                continue; // on its way to the player (NEVER STUCK)
+            }
             if matches!(state, AnimalState::Following | AnimalState::InBowl)
                 || self.animals[i].area.is_empty()
                 || !self.part_unlocked(self.animals[i].part)
@@ -2431,6 +2460,97 @@ impl Game {
         }
         self.complete_group(id);
         true
+    }
+
+    /// Seconds of play without mission progress while a mission is open (NEVER STUCK).
+    pub fn stall_s(&self) -> f32 {
+        self.stall_s
+    }
+
+    /// Whether any mission of an unlocked level is still open.
+    pub fn any_mission_open(&self) -> bool {
+        self.animals
+            .iter()
+            .enumerate()
+            .any(|(i, a)| self.in_scope(a) && !self.missions[i].complete)
+    }
+
+    /// Whether escaped animal `i` currently walks to the player (stall rescue).
+    pub(crate) fn stall_walking(&self, i: usize) -> bool {
+        self.stall_s >= STALL_WALK_S
+            && self.animals[i].state == AnimalState::Escaped
+            && self.in_scope(&self.animals[i])
+            && !self.missions[i].complete
+    }
+
+    fn progress_signature(&self) -> u64 {
+        let mut h: u64 = 1469598103934665603;
+        let mut mix = |v: u64| h = (h ^ v).wrapping_mul(1099511628211);
+        for (a, m) in self.animals.iter().zip(&self.missions) {
+            mix(a.state as u64 + 1);
+            mix(u64::from(a.waiting) + 2 * u64::from(m.started) + 4 * u64::from(m.complete));
+        }
+        mix(self.carry.food().map_or(0, |f| 1 + f as u64));
+        mix(self.lying.foods.len() as u64);
+        mix(self.babies.len() as u64);
+        h
+    }
+
+    /// NEVER STUCK safety net: counts play time without mission progress while a mission is
+    /// open; after [`STALL_WALK_S`] the escaped animals of open missions walk to a cell near
+    /// the player (the hint points at them from [`STALL_HELP_S`]).
+    fn update_stall(&mut self, dt: f32) {
+        let sig = self.progress_signature();
+        if sig != self.stall_sig || !self.any_mission_open() || self.daytime.is_dark() {
+            if sig != self.stall_sig || !self.any_mission_open() {
+                self.stall_s = 0.0;
+            }
+            self.stall_sig = sig;
+            self.stall_routes.clear();
+            return;
+        }
+        self.stall_s += dt;
+        if self.stall_s < STALL_WALK_S {
+            return;
+        }
+        self.stall_routes.resize(self.animals.len(), Vec::new());
+        let p = self.player.pos;
+        for i in 0..self.animals.len() {
+            if !self.stall_walking(i) {
+                continue;
+            }
+            let pos = self.animals[i].pos;
+            if self.stall_routes[i].is_empty() && pos.distance(p) > STALL_COME_M {
+                let from = cell_of(pos);
+                let pc = cell_of(p);
+                let mut cells: Vec<IVec2> = (-6..=6)
+                    .flat_map(|dx| (-6..=6).map(move |dz| pc + IVec2::new(dx, dz)))
+                    .filter(|&c| {
+                        let d = cell_center(c).distance(p);
+                        (3.0..=STALL_COME_M).contains(&d) && self.level.grid().is_walkable(c, false)
+                    })
+                    .collect();
+                cells.sort_by(|a, b| {
+                    cell_center(*a)
+                        .distance(pos)
+                        .total_cmp(&cell_center(*b).distance(pos))
+                        .then(a.x.cmp(&b.x))
+                        .then(a.y.cmp(&b.y))
+                });
+                let route = cells
+                    .into_iter()
+                    .take(12)
+                    .find_map(|c| crate::nav::find_path(self.level.grid(), from, c, false));
+                self.stall_routes[i] = route.unwrap_or_default();
+            }
+            let mut route = std::mem::take(&mut self.stall_routes[i]);
+            let a = &mut self.animals[i];
+            let (_, dir) = wander::follow_route(&mut a.pos, &mut route, STALL_SPEED * dt);
+            if dir != Vec2::ZERO {
+                a.facing = dir;
+            }
+            self.stall_routes[i] = route;
+        }
     }
 
     /// Recomputes the derived wander areas (after a restore).

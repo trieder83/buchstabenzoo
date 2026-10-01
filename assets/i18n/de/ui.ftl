@@ -45,6 +45,7 @@ ui-night-progress = Diese Tiere fehlen noch bis zur Nacht
 hint-read = Lies die Tafel
 hint-food = Hol das Futter
 hint-search = Suche das Tier hier
+hint-help = Hier ist das Tier! Zeig ihm sein Futter
 hint-home = Bring es nach Hause
 hint-pickup = Heb es auf
 hint-bamboo = Schneide Bambus

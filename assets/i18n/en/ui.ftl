@@ -43,6 +43,7 @@ ui-night-progress = These animals are still missing before night
 hint-read = Read the board
 hint-food = Get the food
 hint-search = Look for the animal here
+hint-help = The animal is right here! Show it its food
 hint-home = Take it home
 hint-pickup = Pick it up
 hint-bamboo = Cut bamboo

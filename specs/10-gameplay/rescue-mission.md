@@ -6,7 +6,7 @@ module: rescue-mission
 status: draft
 depends_on: [PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH]
 test_prefix: RESC
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Rescue mission — core loop
@@ -210,6 +210,7 @@ user request 2026-10-01: a child with an old save had never seen the explanation
 | RESC-026 | Given an animal whose picked hiding place has `perch_height_m` (koala, monkey), then it sits at that height beside its spot, does not wander and faces the player; the player shows the right food from the ground within 2 m; when it follows it first comes down (`climb` at its `climb_speed`, else `walk` at 1.8 m/s) (§12, Q-094). | unit, e2e |
 | RESC-027 | Given the player carries the bowl with the fish, when she interacts at another enclosure's gate, then `ui-refuse` and the fish stays in the bowl; when she puts the bowl down (nothing else in range), then the fish stays safe in the bowl and can be picked up again (goldfish bowl implementation note). | unit |
 | RESC-029 | Given a new game after the character choice, then the intro shows 3 pages at the entrance gate (animals broke out / find them and bring them back to the right enclosure / find the food they like so they follow), each in `de` and `en` for every reading level, skippable and never repeated after saving; it ends with the first hint target. | e2e |
+| RESC-032 | NEVER STUCK: given a save with one zebra entry (member 0 complete, home) restored into the zebra pair, then the zebra mission is open again (the 🌙 pane lists it, the first hint is about the zebra), and `Game::mission` is complete only if every member is. | unit |
 | RESC-031 | Given a game whose intro was seen (e.g. a loaded save), when the settings are opened and ❓ is pressed, then the 3 intro pages show again (skippable, finishing does not change the save) and the first-step hint follows. | e2e |
 | RESC-028 | Given the player stands in front of the map board at the entrance, then the reading panel opens with `welcome-<reading_level>` in the current language (kiga: pictures + "Tiere weg!"); at the first start of a new game it is shown once automatically. | e2e |
 

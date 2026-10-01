@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Zoo layout and level boundaries
@@ -285,6 +285,19 @@ one is not done.
 14. **Sizes:** first board reachable ≤ 15 s of walking from the start; the longest walk
     between two mission steps ≤ 60 s on streets; a level takes about 10–20 minutes for a
     child of the target reading level (proposal — Q-202).
+12. **NEVER STUCK (user report 2026-10-01: grey zebra in the 🌙 pane, hint only "collect
+    vegetables", no animal in sight).** Invariants of every level and every reachable state:
+    (a) while a mission of an unlocked level is open, a hint of priority ≤ 3 exists — the
+    optional garden is never the only hint (HINT-019); (b) every open mission's animals are
+    reachable and findable: a pair's members never disagree about "mission complete" (the
+    mission is complete only if every member is complete and at home, also after a save from
+    before the pair existed, RESC-032); (c) **stall safety net:** after 120 s of play without
+    mission progress while a mission is open, the 🧭 hint points straight at the missing animal
+    itself (kind `help`, "Hier ist das Tier! Zeig ihm sein Futter", priority 1, exact position);
+    after 60 s more the escaped animals of open missions walk to a cell 3–5 m from the player
+    (Q-097 proposal, Q-262) — HINT-020; (d) the 🌙 pane never lists an animal the player cannot
+    find: tapping it is the 🧭 hint (HINT-013) and leads to that animal. Test: following only the
+    hints from random, split-pair and restored states always brings every animal home (HINT-021).
 
 Tests: LAYOUT-046 (guidance checks below) and the per-level tests of rules 6, 7, 8, 10.
 

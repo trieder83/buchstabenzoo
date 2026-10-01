@@ -6,7 +6,7 @@ module: hints
 status: draft
 depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN]
 test_prefix: HINT
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Next-target hint
@@ -135,10 +135,24 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-011 | Given the panda board read and no bamboo carried, then the food storage and every full-grown cut spot are priority-2 targets (before the board was read no cut spot is offered); given the right food lying on the ground, it is a "pick up" target, a lying wrong food is not (GAME-FEED §13/§16). | unit |
 | HINT-012 | Given dusk after level 1, then the target is the bed; given night, then the open moon door comes first (the night boards are behind it) and the bed is among the targets; through the door, the target is a night board. | unit |
 | HINT-013 | Given the 🌙 night progress indicator tapped, then the hint shows exactly as with 🧭. | e2e |
+| HINT-019 | NEVER STUCK (a): given random day states incl. split pairs and members that disagree about "complete" (an old one-zebra save), while a mission of the zoo is open, then the first hint has priority <= 3 (never only the optional garden). | unit |
+| HINT-020 | NEVER STUCK (c): given 120 s without mission progress while a mission is open, then the hint is `help` (icon 👀, `hint-help`, priority 1) at the missing animal's exact position; after 180 s the escaped animals of open missions walk to < 8 m of the player; progress (food taken, following, home...) restarts the timer. | unit |
+| HINT-021 | NEVER STUCK: given random / split-pair / old-save states and a save+restore in the middle, a child who only follows the hints (incl. pair partner steps and `help`) brings all level-1 animals home within 60 hint steps. | unit |
 | HINT-017 | Given a home animal, then the treat hint (`hint-treat`: "Geh zum Tier und gib ihm etwas zu fressen") exists only while the basket holds a treat it likes or the hands hold its food; it points at its fence (from outside) or at the animal (inside). | unit |
 | HINT-015 | Given any state (new game, board read 1 s ago, board read 70 s ago, animal following, carrying the wrong food), when the hint is pressed, then it returns a target immediately (no waiting time) with a next-step key `hint-<step>` that matches the state (read / take food / search / lead home); 1 s after reading the board the target is the ≥ 12 m search area, after 60 s the ≥ 6 m circle, never the animal's position. | unit |
 | HINT-016 | Given a hint is shown, then the indicator shows the step icon and the line (Fluent, `de` and `en`); on `kiga` the line is read aloud; pressed while a reading panel is open, the panel closes and the hint shows. | e2e |
 | HINT-014 | Given a child who only follows the hints (several seeds, every level-1 hiding place at least once), then all level-1 animals come home, night falls, and the bed is among the top 3 hints and brings the morning. | unit |
+
+## NEVER STUCK (rule 3.1b, 2026-10-01)
+
+Whenever a mission of an unlocked level is open there is a hint of priority <= 3 (the mission
+step; if the mission has no usable step, `help` at the animal not at home). The mission state of
+a species is that of the whole group: started when any member's is, complete only when all are
+(`Game::mission`). After 120 s without mission progress (`STALL_HELP_S`; progress = an animal
+changing state, a mission started/complete, food taken/put down, a lying food) the hint is the
+`help` target (priority 1) at the escaped member's exact position; after 180 s (`STALL_WALK_S`)
+escaped animals of open missions walk to the player (Q-262). The timer is not saved and does not
+run in the dark.
 
 ## Open questions
 

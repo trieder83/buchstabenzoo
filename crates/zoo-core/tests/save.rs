@@ -92,11 +92,12 @@ fn save_001_completed_mission_restores_without_celebration() {
     let mut g = common::game(3);
     let enc = g.animal("zebra").unwrap().enclosure;
     let rect = g.level.data.elements[enc].rect;
-    let i = g.animal_index("zebra").unwrap();
-    g.animals[i].state = AnimalState::InEnclosure;
-    g.animals[i].pos = cell_center(glam::IVec2::new(rect.x + 2, rect.z + 2));
-    g.missions[i].started = true;
-    g.missions[i].complete = true;
+    for i in g.group("zebra") {
+        g.animals[i].state = AnimalState::InEnclosure;
+        g.animals[i].pos = cell_center(glam::IVec2::new(rect.x + 2, rect.z + 2));
+        g.missions[i].started = true;
+        g.missions[i].complete = true;
+    }
     let mut r = restore(&g);
     assert!(r.mission("zebra").unwrap().complete);
     assert_eq!(r.animal("zebra").unwrap().state, AnimalState::InEnclosure);
@@ -106,7 +107,7 @@ fn save_001_completed_mission_restores_without_celebration() {
         ev.is_empty(),
         "no events (celebration) after restore: {ev:?}"
     );
-    assert!(r.to_save().missions[i].celebrated);
+    assert!(r.to_save().missions[g.animal_index("zebra").unwrap()].celebrated);
 }
 
 // SAVE-005

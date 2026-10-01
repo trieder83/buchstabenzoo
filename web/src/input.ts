@@ -28,12 +28,6 @@ export interface InputSink {
 
 /** Joystick radius in CSS px (full deflection). */
 export const STICK_RADIUS = 60;
-/** Right-thumb look stick (GAME-PLAYER §3, PLAY-037): while held past the swipe threshold the
- * camera takes another 45° step this often (s) ... */
-export const LOOK_REPEAT_S = 0.6;
-/** ... and in the close views the view turns at this many CSS px of drag per second at full
- * deflection (same units as a finger drag). */
-export const LOOK_RATE_PX_S = 420;
 /** Dead zone as a fraction of the radius (GAME-PLAYER §3). */
 export const DEAD_ZONE = 0.1;
 /** Minimum horizontal swipe for one camera step (GAME-PLAYER §3). */
@@ -86,12 +80,9 @@ export interface StickView {
 
 interface Swipe {
   startX: number;
-  startY: number;
   x: number;
   y: number;
   fired: boolean;
-  /** Seconds until the held look stick repeats its 45° step. */
-  repeatIn: number;
 }
 
 /**
@@ -108,7 +99,6 @@ export class TouchGestures {
     private readonly sink: InputSink,
     private readonly view: StickView,
     private readonly radius = STICK_RADIUS,
-    private readonly lookView: StickView = { show() {}, hide() {} },
   ) {}
 
   /** Number of pointers currently tracked. */
@@ -125,11 +115,8 @@ export class TouchGestures {
       this.view.show(x, y, x, y);
       return;
     }
-    this.right.set(id, { startX: x, startY: y, x, y, fired: false, repeatIn: 0 });
-    if (this.right.size === 1) {
-      this.lookView.show(x, y, x, y); // floating look stick under the right thumb (PLAY-037)
-    } else if (this.right.size === 2) {
-      this.lookView.hide();
+    this.right.set(id, { startX: x, x, y, fired: false });
+    if (this.right.size === 2) {
       this.pinchDist = this.rightDistance();
       for (const s of this.right.values()) s.fired = true; // a pinch is not a swipe
     }
@@ -148,6 +135,7 @@ export class TouchGestures {
     }
     const s = this.right.get(id);
     if (!s) return;
+    if (this.right.size === 1) this.sink.look_drag(x - s.x, y - s.y); // close views
     s.x = x;
     s.y = y;
     if (this.right.size >= 2) {
@@ -156,52 +144,13 @@ export class TouchGestures {
       this.pinchDist = d;
       return;
     }
-    const k = this.lookDeflection(s);
-    this.lookView.show(s.startX, s.startY, s.startX + k[0], s.startY + k[1]);
     if (!s.fired) {
       const steps = swipeSteps(x - s.startX);
       if (steps !== 0) {
         this.sink.rotate(steps);
-        s.fired = true; // one step per swipe; holding the stick repeats it in `tick`
-        s.repeatIn = LOOK_REPEAT_S;
+        s.fired = true; // one step per swipe; re-armed by lifting the finger
       }
     }
-  }
-
-  /** Turns the held-stick step repeat off (tests). */
-  stopRepeat(): void {
-    for (const s of this.right.values()) s.repeatIn = Infinity;
-  }
-
-  /** Knob offset of a look stick, clamped to the radius (CSS px). */
-  private lookDeflection(s: Swipe): [number, number] {
-    const dx = s.x - s.startX;
-    const dy = s.y - s.startY;
-    const len = Math.hypot(dx, dy);
-    const k = len > this.radius ? this.radius / len : 1;
-    return [dx * k, dy * k];
-  }
-
-  /**
-   * Per-frame update of the right-thumb look stick (PLAY-037): a held stick past the swipe
-   * threshold repeats its 45° step every [`LOOK_REPEAT_S`] (zoo view), and turns a close
-   * view continuously with the deflection. The game ignores whichever does not apply.
-   */
-  tick(dt: number): void {
-    if (this.right.size !== 1) return;
-    const s = [...this.right.values()][0];
-    const dx = s.x - s.startX;
-    const steps = swipeSteps(dx);
-    if (s.fired && steps !== 0) {
-      s.repeatIn -= dt;
-      if (s.repeatIn <= 0) {
-        this.sink.rotate(steps);
-        s.repeatIn = LOOK_REPEAT_S; // at most one step per frame, even after a long frame
-      }
-    }
-    const [sx, sy] = stickVector(dx, s.y - s.startY, this.radius);
-    const turn = Math.min(dt, 0.1); // a long frame must not jerk a close view
-    if (sx !== 0 || sy !== 0) this.sink.look_drag(sx * LOOK_RATE_PX_S * turn, -sy * LOOK_RATE_PX_S * turn);
   }
 
   up(id: number): void {
@@ -212,7 +161,6 @@ export class TouchGestures {
       return;
     }
     this.right.delete(id);
-    if (this.right.size === 0) this.lookView.hide();
     if (this.right.size < 2) this.pinchDist = 0;
   }
 
@@ -220,7 +168,6 @@ export class TouchGestures {
   reset(): void {
     if (this.stickId !== null) this.up(this.stickId);
     this.right.clear();
-    this.lookView.hide();
     this.pinchDist = 0;
   }
 
@@ -325,8 +272,6 @@ export function attachLookButton(button: HTMLElement, sink: InputSink): LookButt
 export interface InputOptions {
   canvas: HTMLElement;
   stickView: StickView;
-  /** The floating look stick under the right thumb (PLAY-037). */
-  lookView?: StickView;
   /** Called once, on the first touch input (shows the touch controls, PLAY-014). */
   onFirstTouch: () => void;
   /** Interact key pressed (E / Space / Enter). */
@@ -362,18 +307,7 @@ export function attachInput(sink: InputSink, opts: InputOptions): TouchGestures 
     if (sink.key(e.code, false)) e.preventDefault();
   });
 
-  const gestures = new TouchGestures(sink, opts.stickView, STICK_RADIUS, opts.lookView);
-  // the look stick repeats / turns per frame while held (PLAY-037)
-  let lastTick = performance.now();
-  // `?lookrepeat=0` switches the held-stick repeat off (e2e on slow software-GL frames)
-  const repeat = new URLSearchParams(window.location.search).get('lookrepeat') !== '0';
-  const tick = (now: number): void => {
-    if (!repeat) gestures.stopRepeat();
-    gestures.tick(Math.min(0.1, (now - lastTick) / 1000)); // slow frames must not skip ahead
-    lastTick = now;
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+  const gestures = new TouchGestures(sink, opts.stickView);
   const mice = new MouseGestures(sink);
   let touchSeen = false;
   const releaseAll = () => {

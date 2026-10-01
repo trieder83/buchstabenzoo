@@ -57,9 +57,9 @@ function storage(): Storage | null {
   }
 }
 
-function stickView(stickId = 'stick', knobId = 'knob'): StickView {
-  const stick = document.getElementById(stickId)!;
-  const knob = document.getElementById(knobId)!;
+function stickView(): StickView {
+  const stick = document.getElementById('stick')!;
+  const knob = document.getElementById('knob')!;
   return {
     show(ox, oy, kx, ky) {
       stick.classList.add('active');
@@ -136,7 +136,6 @@ async function main(): Promise<void> {
   attachInput(app, {
     canvas,
     stickView: stickView(),
-    lookView: stickView('look-stick', 'look-knob'),
     onFirstTouch: () => ui.setTouch(),
     onInteract: () => ui.interact(),
     onEscape: () => {

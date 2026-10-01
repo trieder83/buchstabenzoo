@@ -12,13 +12,13 @@ async function touch(cdp: CDPSession, type: 'touchStart' | 'touchMove' | 'touchE
   await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
 }
 
-async function open(page: Page, query = '') {
+async function open(page: Page) {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text());
   });
-  await page.goto(START_URL + query);
+  await page.goto(START_URL);
   await waitFrames(page, 3);
   return errors;
 }
@@ -148,7 +148,7 @@ test.describe('touch device', () => {
   });
 
   test('PLAY-016: one swipe ≥ 40 px in the right half rotates exactly one 45° step', async ({ page }) => {
-    await open(page, '&lookrepeat=0'); // one step per flick, however slow the frames are
+    await open(page);
     const cdp = await page.context().newCDPSession(page);
     const y0 = await camYaw(page);
     // 30 px: nothing
@@ -169,27 +169,8 @@ test.describe('touch device', () => {
     expect(await camYaw(page)).toBeCloseTo(y0, 3);
   });
 
-  test('PLAY-037: the right-thumb look stick appears under the thumb and repeats the 45° step while held', async ({ page }) => {
-    await open(page);
-    const cdp = await page.context().newCDPSession(page);
-    const y0 = await camYaw(page);
-    await touch(cdp, 'touchStart', [{ x: 400, y: 600, id: 1 }]);
-    await touch(cdp, 'touchMove', [{ x: 460, y: 600, id: 1 }]); // pushed to the rim
-    await expect(page.locator('#look-stick')).toHaveClass(/active/);
-    const box = await page.locator('#look-stick').boundingBox();
-    expect(Math.abs(box!.x + box!.width / 2 - 400)).toBeLessThan(2); // centred under the thumb
-    // held: one step at once + repeats every 0.6 s of (capped) frame time — poll, frames can be slow
-    await expect.poll(async () => Math.abs((await camYaw(page)) - y0) / 45, { timeout: 30_000 }).toBeGreaterThanOrEqual(2);
-    await touch(cdp, 'touchEnd', []);
-    await nextFrames(page, 3);
-    await expect(page.locator('#look-stick')).not.toHaveClass(/active/);
-    const steps = Math.abs((await camYaw(page)) - y0) / 45;
-    expect(steps).toBeGreaterThanOrEqual(2);
-    expect(Math.abs(steps - Math.round(steps))).toBeLessThan(0.01); // always whole 45° steps
-  });
-
   test('PLAY-017: walking with the left thumb while the right thumb swipes', async ({ page }) => {
-    await open(page, '&lookrepeat=0'); // one step per flick, however slow the frames are
+    await open(page);
     const cdp = await page.context().newCDPSession(page);
     const y0 = await camYaw(page);
     const left = { x: 130, y: 900, id: 1 };
@@ -200,10 +181,7 @@ test.describe('touch device', () => {
     await touch(cdp, 'touchMove', [{ ...left, y: 840 }, { x: 420, y: 500, id: 2 }]);
     await nextFrames(page, 3);
     expect(await page.evaluate(() => window.__zoo!.app.player_speed())).toBeGreaterThan(0.5);
-    // at least the swipe's step (a slow frame may already have repeated it, PLAY-037): whole 45° steps
-    const turned = Math.abs((await camYaw(page)) - y0) / 45;
-    expect(turned).toBeGreaterThanOrEqual(1 - 1e-3);
-    expect(Math.abs(turned - Math.round(turned))).toBeLessThan(0.01);
+    expect(Math.abs((await camYaw(page)) - y0)).toBeCloseTo(45, 3);
     await touch(cdp, 'touchEnd', [{ x: 420, y: 500, id: 2 }]); // right thumb lifts (CDP lists the ended point), left keeps walking
     await nextFrames(page, 3);
     expect(await page.evaluate(() => window.__zoo!.app.player_speed())).toBeGreaterThan(0.5);

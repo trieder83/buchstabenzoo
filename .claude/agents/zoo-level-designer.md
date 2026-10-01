@@ -59,3 +59,27 @@ Never invent game-design decisions silently. If something is undecided (e.g. Q-0
 Q-022, Q-023), make a clearly marked **proposal** in the spec and add/extend an entry in
 `specs/open-questions.md`. List all questions in your final report so the caller can ask the
 user. Bump `updated:` on every spec you change.
+
+## Never stuck (user instruction 2026-10-01, binding for every level and feature)
+
+The child must **never get stuck**. After every level or interaction change check, and
+guarantee with tests, the invariants in GAME-LAYOUT "Level design rules" and GAME-HINT:
+
+- From **any reachable game state** the 🧭 hint has at least one target of priority ≤ 3
+  (a mission step: board → food → search area → gate, or the bed / moon door at dusk and night)
+  while any mission is incomplete; optional activities (garden, treats) may **never** be the only
+  hint. The 🌙 progress pane lists exactly the missing animals and tapping it leads to them.
+- Every incomplete mission's animal is **reachable and findable**: hiding places reachable over
+  walkable cells, no state where an animal (or one member of a pair, or the baby) is outside the
+  game's view, rules or hints. Never assume one animal per species: pairs/groups have members that
+  can be in different states; code that looks up a group by its first member (`Game::animal(id)`,
+  `animal_index`) is a bug class — check it.
+- A **safety net** exists for the unforeseen: after a stall (no mission progress for ~120 s) the
+  hint points straight at the missing animal; after a further ~60 s the missing animal comes
+  towards the player. Deterministic, tested, with de/en hint texts.
+- A **fuzz test** plays many seeded random legal action sequences (pairs, split pairs, treats,
+  babies, save/restore in the middle, wrong food, wrong gates) and follows only the hints; it must
+  always reach "all animals of the level home" (and then dusk → bed / moon door).
+- Whenever a new mechanic can leave an animal or item in a new state (feeding, babies, events,
+  carts, new levels), extend the fuzz test and the invariants **in the same change**, and report
+  explicitly whether the child can still get stuck.

@@ -174,7 +174,9 @@ for later). Keys `intro-<n>-<reading_level>` (de/en); `kiga` gets pictures and r
 Rules: `klasse1` sentences ≤ 5 words (READ-002); the word is *Gehege* / *enclosure*, never
 *Käfig* / *cage* (glossary; the request said "cage", the glossary wins). The intro ends by
 pointing at the first target with the 🧭 hint (GAME-HINT) so the first step is clear. Whether
-the intro was seen is part of the save (GAME-SAVE); a loaded game never repeats it.
+the intro was seen is part of the save (GAME-SAVE); a loaded game never repeats it by itself, but the
+child (or a parent) can **replay it any time** with the ❓ button in the settings menu (≥ 72 px,
+user request 2026-10-01: a child with an old save had never seen the explanation). RESC-031.
 
 ## Test cases
 
@@ -208,6 +210,7 @@ the intro was seen is part of the save (GAME-SAVE); a loaded game never repeats 
 | RESC-026 | Given an animal whose picked hiding place has `perch_height_m` (koala, monkey), then it sits at that height beside its spot, does not wander and faces the player; the player shows the right food from the ground within 2 m; when it follows it first comes down (`climb` at its `climb_speed`, else `walk` at 1.8 m/s) (§12, Q-094). | unit, e2e |
 | RESC-027 | Given the player carries the bowl with the fish, when she interacts at another enclosure's gate, then `ui-refuse` and the fish stays in the bowl; when she puts the bowl down (nothing else in range), then the fish stays safe in the bowl and can be picked up again (goldfish bowl implementation note). | unit |
 | RESC-029 | Given a new game after the character choice, then the intro shows 3 pages at the entrance gate (animals broke out / find them and bring them back to the right enclosure / find the food they like so they follow), each in `de` and `en` for every reading level, skippable and never repeated after saving; it ends with the first hint target. | e2e |
+| RESC-031 | Given a game whose intro was seen (e.g. a loaded save), when the settings are opened and ❓ is pressed, then the 3 intro pages show again (skippable, finishing does not change the save) and the first-step hint follows. | e2e |
 | RESC-028 | Given the player stands in front of the map board at the entrance, then the reading panel opens with `welcome-<reading_level>` in the current language (kiga: pictures + "Tiere weg!"); at the first start of a new game it is shown once automatically. | e2e |
 
 ## Open questions

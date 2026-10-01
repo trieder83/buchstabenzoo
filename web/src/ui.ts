@@ -593,9 +593,9 @@ export class Ui {
    * picture and one short text per page, a big next arrow, skippable; afterwards the 🧭 hint
    * shows the first step (`intro_done`).
    */
-  showIntro(): void {
+  showIntro(force = false): void {
     const box = document.getElementById('intro');
-    if (!box || !this.app.intro_pending?.()) return;
+    if (!box || (!force && !this.app.intro_pending?.())) return;
     const pics = ['🏚️🐾❓', '🐘➡️🏠', '🥕➡️🐘🚶'];
     let page = 0;
     const text = box.querySelector('.intro-text') as HTMLElement;
@@ -1048,6 +1048,14 @@ export class Ui {
     soundBtn.id = 'sound-toggle';
     soundBtn.addEventListener('click', () => this.setSound(!this.sound));
     soundRow.append(soundBtn);
+    // Explain the game again (RESC-029 replay): ❓ shows the 3 intro pages
+    const introBtn = el('button', 'choice', '❓');
+    introBtn.id = 'intro-replay';
+    introBtn.addEventListener('click', () => {
+      this.settings.hidden = true;
+      this.showIntro(true);
+    });
+    soundRow.append(introBtn);
     this.settings.replaceChildren(langRow, levelRow, soundRow, gameRow);
     this.markSound();
   }
@@ -1093,7 +1101,7 @@ export class Ui {
 
   private markSettings(): void {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
-      if (b.id === 'sound-toggle') continue;
+      if (b.id === 'sound-toggle' || b.id === 'intro-replay') continue;
       const on = b.dataset.lang === this.app.language() || b.dataset.level === this.app.reading_level();
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
@@ -1113,6 +1121,7 @@ export class Ui {
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
     this.settings.querySelector('#sound-toggle')?.setAttribute('aria-label', this.app.t('ui-sound'));
+    this.settings.querySelector('#intro-replay')?.setAttribute('aria-label', this.app.t('ui-replay-intro'));
     this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));
     this.settings.querySelector('#new-game-yes')?.setAttribute('aria-label', this.app.t('ui-yes'));
     this.settings.querySelector('#new-game-no')?.setAttribute('aria-label', this.app.t('ui-no'));

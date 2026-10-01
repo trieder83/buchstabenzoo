@@ -607,3 +607,70 @@ fn resc_030_split_pair_outside_member_follows_grass() {
     assert_eq!(g.animals[outside].state, AnimalState::Following);
     assert_eq!(g.animals[group[0]].state, AnimalState::InEnclosure);
 }
+
+// RESC-031 / HINT-018: a split zebra pair (member 0 home, member 1 still out) must not leave the
+// child stuck: the 🧭 hint leads to the missing zebra's next step (board / food / search area /
+// gate), never only to optional garden work, and the night pane still lists the zebra.
+#[test]
+fn resc_031_hint_018_split_pair_is_never_a_dead_end() {
+    use zoo_core::hints::{candidates, night_progress, HintTracker};
+    for seed in 0..10u64 {
+        for read_board in [false, true] {
+            let mut g = Game::new(zebra_pair_zoo(), seed).unwrap();
+            for a in ["hippo", "panda"] {
+                g.debug_send_home(a);
+            }
+            let group = g.group("zebra");
+            g.animals[group[0]].state = AnimalState::InEnclosure;
+            if read_board {
+                g.player.pos = g.level.data.spawn.cell().as_vec2() + glam::Vec2::splat(0.5);
+                let _ = g.read_info_board("zebra");
+            }
+            g.drain_events();
+            let t = HintTracker::default();
+            let c = candidates(&g, &t);
+            assert!(!c.is_empty(), "seed {seed}: no hint at all");
+            let first = &c[0];
+            assert!(
+                first.animal == Some("zebra"),
+                "seed {seed} read={read_board}: first hint {:?} is not about the missing zebra",
+                first.id
+            );
+            let np = night_progress(&g);
+            assert!(np.animals.iter().any(|(id, home)| *id == "zebra" && !*home));
+        }
+    }
+}
+
+// RESC-032 / HINT-019 (NEVER STUCK): a pair whose members disagree about "mission complete"
+// (a save from before the zebras became a pair: one zebra entry, complete) is an open mission
+// again: the 🌙 pane lists it, the 🧭 hint leads to the missing partner.
+#[test]
+fn resc_032_hint_019_old_single_zebra_save_reopens_the_pair_mission() {
+    use zoo_core::hints::{candidates, night_progress, HintTracker};
+    let mut g = Game::new(zebra_pair_zoo(), 3).unwrap();
+    for a in ["hippo", "panda"] {
+        g.debug_send_home(a);
+    }
+    let group = g.group("zebra");
+    g.animals[group[0]].state = AnimalState::InEnclosure;
+    g.missions[group[0]].started = true;
+    g.missions[group[0]].complete = true;
+    let mut save = g.to_save();
+    // the old save knew one zebra only
+    save.animals.retain(|a| a.id != "zebra" || a.member == 0);
+    save.missions.retain(|m| m.animal != "zebra" || m.complete);
+    save.missions.truncate(save.missions.len());
+    let zebra_missions = save.missions.iter().filter(|m| m.animal == "zebra").count();
+    assert_eq!(zebra_missions, 1);
+    let g2 = Game::from_save(zebra_pair_zoo(), &save).unwrap();
+    let np = night_progress(&g2);
+    assert!(np.animals.iter().any(|(id, home)| *id == "zebra" && !*home));
+    let c = candidates(&g2, &HintTracker::default());
+    assert!(
+        c.first().is_some_and(|h| h.animal == Some("zebra") && h.priority <= 3),
+        "first hint {:?}",
+        c.first().map(|h| (&h.id, h.priority))
+    );
+    assert!(g2.mission("zebra").is_some_and(|m| !m.complete));
+}

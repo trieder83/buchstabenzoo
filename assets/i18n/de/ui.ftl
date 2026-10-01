@@ -83,3 +83,5 @@ ad-gate-title = Zur Webseite
 ad-gate-sum = Löse die Aufgabe:
 ad-gate-hold = Halte den Knopf 3 Sekunden gedrückt.
 ad-close = Schließen
+
+ui-replay-intro = Spiel erklären

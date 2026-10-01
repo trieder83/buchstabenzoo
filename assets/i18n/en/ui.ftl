@@ -81,3 +81,5 @@ ad-gate-title = To the website
 ad-gate-sum = Solve the sum:
 ad-gate-hold = Hold the button for 3 seconds.
 ad-close = Close
+
+ui-replay-intro = Explain the game

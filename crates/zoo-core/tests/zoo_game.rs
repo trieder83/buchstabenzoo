@@ -730,3 +730,59 @@ fn night_029_half_done_pairs_are_marked_and_finished_ones_leave_the_strip() {
         "hippo done"
     );
 }
+
+// RESC-033 / HINT-022 (user report 2026-10-03): male, female (and baby) of the zebras are all in the
+// enclosure, but the compass still lists the zebra and the hint leads to a place with no animal.
+// Cause: the mission flags of the two members disagree although every member is home (an old
+// save, a restore, a missed completion). Rule: a species whose members are ALL home is done —
+// the game reconciles the flags by itself and never offers a target for it.
+#[test]
+fn resc_033_hint_022_all_members_home_means_done_never_a_target() {
+    use zoo_core::hints::{candidates, night_progress, partial_animals, HintTracker};
+    for seed in 0..6u64 {
+        let mut g = common::zoo_game(seed);
+        // both zebras are in the enclosure, but the flags disagree (member 1 not complete)
+        let group = g.group("zebra");
+        assert_eq!(group.len(), 2);
+        for &i in &group {
+            g.animals[i].state = zoo_core::AnimalState::InEnclosure;
+        }
+        g.missions[group[0]].complete = true;
+        g.missions[group[1]].complete = false;
+        g.player.pos = zoo_core::level::cell_center(g.level.data.spawn.cell());
+        // even BEFORE the flags are reconciled the finished zebra is neither listed nor a target
+        let before = candidates(&g, &HintTracker::default());
+        assert!(
+            before.iter().all(|h| h.animal != Some("zebra")),
+            "seed {seed}: hint for the finished zebra before reconcile: {:?}",
+            before.iter().map(|h| &h.id).collect::<Vec<_>>()
+        );
+        assert!(night_progress(&g)
+            .animals
+            .iter()
+            .all(|(id, home)| *id != "zebra" || *home));
+        for _ in 0..(2 * 60) {
+            g.update(1.0 / 60.0, glam::Vec2::ZERO);
+        }
+        assert!(
+            g.mission("zebra").unwrap().complete,
+            "seed {seed}: reconciled"
+        );
+        let p = night_progress(&g);
+        assert!(
+            p.animals.iter().all(|(id, home)| *id != "zebra" || *home),
+            "seed {seed}: zebra still listed: {:?}",
+            p.animals
+        );
+        assert!(partial_animals(&g).is_empty());
+        let c = candidates(&g, &HintTracker::default());
+        assert!(
+            c.iter().all(|h| h.animal != Some("zebra")),
+            "seed {seed}: a hint for the finished zebra: {:?}",
+            c.iter()
+                .filter(|h| h.animal == Some("zebra"))
+                .map(|h| &h.id)
+                .collect::<Vec<_>>()
+        );
+    }
+}

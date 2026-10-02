@@ -629,6 +629,8 @@ pub struct Game {
     /// mission is open, and the progress signature it is measured against.
     pub(crate) stall_s: f32,
     stall_sig: u64,
+    /// Time until the mission flags are reconciled with the animals' states again (s).
+    reconcile_s: f32,
     /// Route of the escaped animals that walk to the player once the stall lasts too long.
     stall_routes: Vec<Vec<IVec2>>,
 }
@@ -864,6 +866,7 @@ impl Game {
             all_home: false,
             stall_s: 0.0,
             stall_sig: 0,
+            reconcile_s: 0.0,
             stall_routes: Vec::new(),
             intro_seen: false,
             babies: Vec::new(),
@@ -2162,6 +2165,14 @@ impl Game {
             dt,
             leading,
         );
+        // a species whose members are ALL at home is done, whatever the mission flags say (an
+        // old save, a restore, a missed completion): the compass and the hints must never offer
+        // a target for it (RESC-033, user report 2026-10-03)
+        self.reconcile_s -= dt;
+        if self.reconcile_s <= 0.0 {
+            self.reconcile_s = 1.0;
+            self.reconcile_missions();
+        }
         // feet on the surface under her, smoothly (GAME-PLAYER 8, PLAY-035/036)
         let ground = self.level.ground_height(self.player.pos);
         self.player.y = crate::ground::follow(self.player.y, ground, dt);
@@ -2357,6 +2368,31 @@ impl Game {
     /// species is home; a level whose missions are all complete opens its exit barrier and
     /// the entry barriers of the next level **the next morning** (GAME-NIGHT, Q-091); a day
     /// level brings nightfall after its celebration (NIGHT-001).
+    /// Completes the mission of every species whose members are all in their enclosure but whose
+    /// flags disagree (RESC-033). Runs about once a second, allocation-free unless it has work.
+    fn reconcile_missions(&mut self) {
+        let n = self.animals.len();
+        for i in 0..n {
+            let id = self.animals[i].id();
+            let all_home = self
+                .animals
+                .iter()
+                .filter(|a| a.id() == id)
+                .all(|a| a.state == AnimalState::InEnclosure);
+            if !all_home {
+                continue;
+            }
+            let incomplete = self
+                .animals
+                .iter()
+                .zip(&self.missions)
+                .any(|(a, m)| a.id() == id && !m.complete);
+            if incomplete {
+                self.complete_group(id);
+            }
+        }
+    }
+
     fn complete_group(&mut self, animal: &str) {
         let group = self.group(animal);
         if group.is_empty()

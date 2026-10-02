@@ -332,7 +332,9 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             continue;
         }
         let Some(m) = g.mission(id) else { continue };
-        if m.complete {
+        // done: flagged complete, or ALL members are at home whatever the flags say (RESC-033:
+        // never a target for a finished species)
+        if m.complete || all_home(g, id) {
             continue;
         }
         let prio = if focus.is_none() || focus == Some(id) {
@@ -1003,6 +1005,14 @@ pub struct NightProgress {
     pub animals: Vec<(&'static str, bool)>,
 }
 
+/// Whether every animal of the species is in its enclosure.
+fn all_home(g: &Game, id: &str) -> bool {
+    g.animals
+        .iter()
+        .filter(|a| a.id() == id)
+        .all(|a| a.state == AnimalState::InEnclosure)
+}
+
 fn level_animals(g: &Game, k: usize) -> Vec<(&'static str, bool)> {
     let mut out: Vec<(&'static str, bool)> = Vec::new();
     for (a, m) in g.animals.iter().zip(&g.missions) {
@@ -1013,6 +1023,10 @@ fn level_animals(g: &Game, k: usize) -> Vec<(&'static str, bool)> {
             Some(e) => e.1 &= m.complete,
             None => out.push((a.id(), m.complete)),
         }
+    }
+    // a species whose members are all home is done, whatever the flags say (RESC-033)
+    for e in out.iter_mut() {
+        e.1 = e.1 || all_home(g, e.0);
     }
     out
 }

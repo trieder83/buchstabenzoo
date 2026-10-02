@@ -33,7 +33,7 @@ pub const PITCH_VARIATION: f32 = 0.05;
 
 /// Final gain of the night cricket bed (ASND-022): no master / group factor on top, the file is
 /// −22 LUFS so the bed plays at about −40 LUFS; "not too loud" (user request 2026-10-01).
-pub const AMBIENT_GAIN: f32 = 0.12;
+pub const AMBIENT_GAIN: f32 = 0.05;
 /// The bed fades in and out over this long (s).
 pub const AMBIENT_FADE_S: f32 = 3.0;
 

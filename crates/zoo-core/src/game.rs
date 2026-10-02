@@ -2715,10 +2715,15 @@ impl Game {
         let Some(i) = self.animal_index(animal) else {
             return false;
         };
-        if self.animals[i].state == AnimalState::InEnclosure {
+        let id = self.animals[i].id();
+        // the whole group (a pair may be split: one at home, the partner out)
+        if self
+            .group(id)
+            .iter()
+            .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
+        {
             return false;
         }
-        let id = self.animals[i].id();
         for j in self.group(id) {
             if self.animals[j].state != AnimalState::InEnclosure {
                 self.enter_enclosure(j, true);

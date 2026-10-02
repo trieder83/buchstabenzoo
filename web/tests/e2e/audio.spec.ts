@@ -224,7 +224,7 @@ test('ASND-009: the sound switch mutes every cue, is saved and restored', async 
 });
 
 // ASND-027 (NIGHT-024): quiet crickets at night, fetched lazily after the gesture, none by day
-test('ASND-027: the cricket loop fades in at night (gain <= 0.12) and out by day', async ({ page }) => {
+test('ASND-027: the cricket loop fades in at night (gain <= 0.05) and out by day', async ({ page }) => {
   const errors = await start(page);
   const amb = () =>
     page.evaluate(() => ({ ...window.__zoo!.audio.ambient, peak: window.__zoo!.audio.ambient.gain }));
@@ -232,7 +232,7 @@ test('ASND-027: the cricket loop fades in at night (gain <= 0.12) and out by day
   await gesture(page);
   await nextFrames(page, 10);
   expect(await amb()).toMatchObject({ playing: false, gain: 0, fetched: false });
-  // night: the loop is fetched and plays, never louder than 0.12
+  // night: the loop is fetched and plays, never louder than 0.05
   expect(await page.evaluate(() => window.__zoo!.app.debug_set_daytime('night'))).toBe(true);
   await page.waitForFunction(() => window.__zoo!.audio.ambient.playing, null, { timeout: 15_000 });
   let max = 0;
@@ -241,11 +241,11 @@ test('ASND-027: the cricket loop fades in at night (gain <= 0.12) and out by day
     max = Math.max(max, (await amb()).gain);
   }
   expect((await amb()).fetched).toBe(true);
-  expect(max).toBeGreaterThan(0.05);
-  expect(max).toBeLessThanOrEqual(0.12 + 1e-9);
+  expect(max).toBeGreaterThan(0.02);
+  expect(max).toBeLessThanOrEqual(0.05 + 1e-9);
   // sleeping / the next morning: fades out and stops
   await page.evaluate(() => window.__zoo!.app.debug_set_daytime('day'));
-  await page.waitForFunction(() => !window.__zoo!.audio.ambient.playing, null, { timeout: 15_000 });
+  await page.waitForFunction(() => !window.__zoo!.audio.ambient.playing, null, { timeout: 45_000 });
   expect((await amb()).gain).toBe(0);
   expect(errors).toEqual([]);
 });

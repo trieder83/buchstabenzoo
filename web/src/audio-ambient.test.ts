@@ -78,28 +78,28 @@ function setup(over: Partial<AudioEnv> = {}) {
 const live = (ctx: Ctx) => ctx.sources.filter((s) => s.started && !s.stopped).length;
 
 describe('night cricket bed', () => {
-  it('ASND-023 fades in linearly to 0.12 in 3 s, never above, and out again, releasing the source', async () => {
-    expect(AMBIENT_GAIN_MAX).toBe(0.12);
+  it('ASND-023 fades in linearly to 0.05 in 3 s, never above, and out again, releasing the source', async () => {
+    expect(AMBIENT_GAIN_MAX).toBe(0.05);
     expect(AMBIENT_FADE_S).toBe(3);
     const { audio, ctx, phase, run } = setup();
     audio.unlock();
-    phase.target = 0.12;
+    phase.target = 0.05;
     await run(0.5); // load
     await run(1.5);
     const mid = audio.ambient.gain;
     expect(mid).toBeGreaterThan(0.02);
-    expect(mid).toBeLessThan(0.12);
+    expect(mid).toBeLessThan(0.05);
     expect(ctx.sources[0].loop).toBe(true);
     await run(3.2);
     expect(audio.ambient).toMatchObject({ playing: true, fetched: true });
-    expect(audio.ambient.gain).toBeCloseTo(0.12, 6);
+    expect(audio.ambient.gain).toBeCloseTo(0.05, 6);
     phase.target = 10; // a wrong host value is clamped
     await run(1);
-    expect(audio.ambient.gain).toBeLessThanOrEqual(0.12);
+    expect(audio.ambient.gain).toBeLessThanOrEqual(0.05);
     phase.target = 0;
     await run(1.5);
     expect(audio.ambient.gain).toBeGreaterThan(0);
-    expect(audio.ambient.gain).toBeLessThan(0.12);
+    expect(audio.ambient.gain).toBeLessThan(0.05);
     await run(2);
     expect(audio.ambient).toMatchObject({ playing: false, gain: 0 });
     expect(ctx.sources[0].stopped).toBe(true);
@@ -110,11 +110,11 @@ describe('night cricket bed', () => {
     audio.unlock();
     let last = 0;
     for (let i = 0; i < 8; i++) {
-      phase.target = i % 2 === 0 ? 0.12 : 0;
+      phase.target = i % 2 === 0 ? 0.05 : 0;
       for (let f = 0; f < 12; f++) {
         await run(0.1);
         const g = audio.ambient.gain;
-        expect(Math.abs(g - last)).toBeLessThanOrEqual(0.12 / 30 + 1e-9); // <= 1 frame of the fade
+        expect(Math.abs(g - last)).toBeLessThanOrEqual(0.05 / 30 + 1e-9); // <= 1 frame of the fade
         expect(live(ctx)).toBeLessThanOrEqual(1);
         last = g;
       }
@@ -123,7 +123,7 @@ describe('night cricket bed', () => {
     await run(4);
     await run(4);
     expect(live(ctx)).toBe(0);
-    phase.target = 0.12;
+    phase.target = 0.05;
     await run(4);
     expect(live(ctx)).toBe(1);
     expect(urls.filter((u) => u.includes('ambient_crickets')).length).toBe(1);
@@ -132,19 +132,19 @@ describe('night cricket bed', () => {
   it('ASND-025 mute fades out (setting untouched), unmute fades in; a hidden tab is silent and suspends', async () => {
     const { audio, ctx, clock, phase, run } = setup();
     audio.unlock();
-    phase.target = 0.12;
+    phase.target = 0.05;
     await run(4.5);
-    expect(audio.ambient.gain).toBeCloseTo(0.12, 6);
+    expect(audio.ambient.gain).toBeCloseTo(0.05, 6);
     audio.setEnabled(false);
     await run(1);
-    expect(audio.ambient.gain).toBeLessThan(0.12);
+    expect(audio.ambient.gain).toBeLessThan(0.05);
     expect(audio.ambient.gain).toBeGreaterThan(0);
     await run(3);
     expect(audio.ambient.gain).toBe(0);
     expect(audio.ambient.playing).toBe(false);
     audio.setEnabled(true);
     await run(4);
-    expect(audio.ambient.gain).toBeCloseTo(0.12, 6);
+    expect(audio.ambient.gain).toBeCloseTo(0.05, 6);
     clock.hidden = true;
     await run(0.2);
     expect(audio.ambient.gain).toBe(0);
@@ -153,7 +153,7 @@ describe('night cricket bed', () => {
     await run(0.5);
     expect(ctx.resumed).toBeGreaterThan(0);
     expect(audio.ambient.gain).toBeGreaterThan(0);
-    expect(audio.ambient.gain).toBeLessThan(0.12);
+    expect(audio.ambient.gain).toBeLessThan(0.05);
     // an overlay (title / intro) keeps it silent
     clock.blocked = true;
     await run(4);
@@ -164,7 +164,7 @@ describe('night cricket bed', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const a = setup();
-    a.phase.target = 0.12; // night, but no gesture yet
+    a.phase.target = 0.05; // night, but no gesture yet
     await a.run(1);
     expect(a.urls).toEqual([]);
     expect(a.audio.ambient.fetched).toBe(false);
@@ -182,11 +182,11 @@ describe('night cricket bed', () => {
     // no Web Audio / failing fetch
     const n = setup({ createContext: () => null });
     n.audio.unlock();
-    n.phase.target = 0.12;
+    n.phase.target = 0.05;
     await expect(n.run(1)).resolves.toBeUndefined();
     const f = setup({ fetch: () => Promise.reject(new Error('offline')) });
     f.audio.unlock();
-    f.phase.target = 0.12;
+    f.phase.target = 0.05;
     await f.run(2);
     expect(f.audio.ambient.playing).toBe(false);
     expect(() => f.audio.tick({ poll_sounds: () => '', ambient_target: () => { throw new Error('wasm'); } })).not.toThrow();

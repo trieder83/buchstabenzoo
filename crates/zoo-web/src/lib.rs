@@ -4200,14 +4200,19 @@ impl App {
             .iter()
             .map(|(id, home)| format!("{{\"id\":{},\"home\":{}}}", js(id), home))
             .collect();
+        let partial: Vec<String> = zoo_core::hints::partial_animals(&self.game)
+            .iter()
+            .map(|id| js(id))
+            .collect();
         let (badge, animal) = zoo_core::hints::compass_badge(&self.game, &self.hints)
             .map(|(k, a)| (k, a.unwrap_or("")))
             .unwrap_or(("", ""));
         format!(
-            "{{\"state\":{},\"level\":{},\"animals\":[{}],\"badge\":{},\"badge_animal\":{}}}",
+            "{{\"state\":{},\"level\":{},\"animals\":[{}],\"partial\":[{}],\"badge\":{},\"badge_animal\":{}}}",
             js(p.state.id()),
             js(&p.level),
             animals.join(","),
+            partial.join(","),
             js(badge),
             js(animal)
         )

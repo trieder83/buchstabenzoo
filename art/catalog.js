@@ -1733,11 +1733,11 @@ window.ART_CATALOG = {
         {
           "id": "sound_ambient",
           "title": "Night crickets (ambient loop)",
-          "status": "in-review",
+          "status": "approved",
           "description": "Quiet looping cricket chorus that fades in at dusk / night and out at morning (ASND-020..). 21.8 s, seamless loop, -22 LUFS; the game plays it at gain <= 0.12.",
           "spec": "ART-SOUND",
           "brief": "sound/brief.md",
-          "notes": "CC0 recording by Ted Kerr (OpenGameArt), cleaned and looped by tools/sound/crickets.py. Nobody has listened yet: please check that it is pleasant and not too loud (manifest: approved = false). Played in the game at about 1/3 of this file's volume or less.",
+          "notes": "CC0 recording by Ted Kerr (OpenGameArt), cleaned and looped by tools/sound/crickets.py. Approved by the user 2026-10-02, but it must not be loud: it plays at gain 0.05 (about 1/20 of the file's volume), as a background bed.",
           "audio": [
             {
               "file": "../assets/audio/ambient/ambient_crickets_1.ogg",
@@ -1771,7 +1771,7 @@ window.ART_CATALOG = {
         {
           "id": "sound_animals",
           "title": "Animal calls (real recordings, processed)",
-          "status": "in-review",
+          "status": "approved",
           "description": "Calls / happy / refuse (+ baby for zebra and koala) cut from free recordings (CC0 / public domain; koala, kiwi, raccoon CC-BY) and pitched, filtered and faded to sound friendly. Goldfish is synthesised. Nobody has listened yet. Stand-ins: hippo (camel groan), zebra (horse neigh), monkey (human imitation), snow fox (fennec). Missing: giraffe, badger, porcupine, slow loris, tarsier (Q-215).",
           "spec": "ART-SOUND",
           "brief": "sound/brief.md",

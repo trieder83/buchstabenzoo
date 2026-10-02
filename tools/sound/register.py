@@ -19,12 +19,17 @@ def q(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
+# cues the user approved after listening (the generator keeps them approved)
+APPROVED = {"ambient_crickets"}  # user, 2026-10-02: approved, but not too loud (gain 0.05)
+APPROVED_GROUPS = {"animals"}  # user, 2026-10-02: "the animal sounds are good, use them"
+
+
 def entry(cue, group, variants, extra):
     lines = ["[[asset]]", f"id = {q(cue)}", 'kind = "audio"', 'spec = "ART-SOUND"',
              "concept_approved = false", f"group = {q(group)}", f"variants = {variants}",
              f"files = {q(f'assets/audio/{group}/{cue}_<n>.ogg')}"]
     lines += extra
-    lines.append("approved = false")
+    lines.append("approved = true" if cue in APPROVED or group in APPROVED_GROUPS else "approved = false")
     return "\n".join(lines)
 
 
@@ -69,7 +74,7 @@ def main():
             'licence = "CC0"', 'source = "real-recording"',
             f"origin_url = {q('https://opengameart.org/content/crickets-ambient-noise-loopable')}",
             'author = "Ted Kerr"', 'retrieved = "2026-10-01"', 'script = "tools/sound/crickets.py"',
-            'note = "seamless 21.8 s night loop (ambient, ASND-020), -22 LUFS, plays at gain <= 0.12"']))
+            'note = "seamless 21.8 s night loop (ambient, ASND-020), -22 LUFS, plays at gain <= 0.05"']))
     text = open(MANIFEST, encoding="utf-8").read()
     text = re.sub(re.escape(BEGIN) + r".*?" + re.escape(END) + r"\n?", "", text, flags=re.S).rstrip() + "\n"
     text += "\n" + BEGIN + "\n\n" + "\n\n".join(blocks) + "\n\n" + END + "\n"

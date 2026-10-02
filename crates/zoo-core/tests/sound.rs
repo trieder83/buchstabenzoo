@@ -260,7 +260,7 @@ fn asnd_016_distance_gain() {
 #[test]
 fn asnd_022_ambient_target_follows_the_phase() {
     use zoo_core::daytime::Phase;
-    const { assert!(AMBIENT_GAIN > 0.0 && AMBIENT_GAIN <= 0.12) };
+    const { assert!(AMBIENT_GAIN > 0.0 && AMBIENT_GAIN <= 0.05) };
     assert_eq!(AMBIENT_FADE_S, 3.0);
     for p in Phase::ALL {
         let t = ambient_target(p);

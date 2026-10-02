@@ -35,7 +35,7 @@
 | GAME-LEVEL-3 | Level 3 — monkey, goldfish, snow fox (adventure playground and stream) | draft | GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER | 20 | Q-043, Q-065, Q-095, Q-102, Q-280, Q-320 | [10-gameplay/levels/level-3.md](10-gameplay/levels/level-3.md) |
 | GAME-LEVEL-NIGHT-1 | Night level 1 — the moonlit forest garden (hedgehog, bat, owl) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1 | 13 | Q-043, Q-147, Q-149, Q-151, Q-154, Q-280, Q-281 | [10-gameplay/levels/night-1.md](10-gameplay/levels/night-1.md) |
 | GAME-MAP | Zoo map with explored areas | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE | 9 | Q-053, Q-054, Q-055 | [10-gameplay/map.md](10-gameplay/map.md) |
-| GAME-NIGHT | Nightfall and the night zoo | draft | GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION | 27 | Q-031, Q-147, Q-153, Q-154 | [10-gameplay/night.md](10-gameplay/night.md) |
+| GAME-NIGHT | Nightfall and the night zoo | draft | GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION | 28 | Q-031, Q-147, Q-153, Q-154 | [10-gameplay/night.md](10-gameplay/night.md) |
 | GAME-PLAYER | Player character, camera and controls | draft | PROD-VISION, CONT-READING | 36 | Q-001, Q-024, Q-025, Q-028, Q-048, Q-051, Q-064, Q-065, Q-070, Q-097 | [10-gameplay/player.md](10-gameplay/player.md) |
 | GAME-QUESTS | Quests and riddles | draft | GAME-WORLD, GAME-RESCUE, CONT-READING | 5 | Q-015, Q-020, Q-040 | [10-gameplay/quests/overview.md](10-gameplay/quests/overview.md) |
 | GAME-RESCUE | Rescue mission — core loop | implemented | PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH | 32 | Q-008, Q-020, Q-030, Q-031, Q-034, Q-039, Q-040, Q-041, Q-097 | [10-gameplay/rescue-mission.md](10-gameplay/rescue-mission.md) |
@@ -79,4 +79,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 45 specs — draft: 42, review: 0, approved: 0, implemented: 3, deprecated: 0; 676 test cases; questions: answered: 141, open: 87, partly answered: 7, proposed: 2.
+**Summary:** 45 specs — draft: 42, review: 0, approved: 0, implemented: 3, deprecated: 0; 677 test cases; questions: answered: 141, open: 87, partly answered: 7, proposed: 2.

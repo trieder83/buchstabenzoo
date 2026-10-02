@@ -658,6 +658,298 @@ spec = "GAME-LEVEL-1"
 concept_approved = false
 animations = []
 
+
+# Female + baby of every other pair species (Q-280, Q-308): concept sheets first, NOT modelled; the game draws the adult model scaled meanwhile
+
+[[asset]]
+id = "hippo_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
+
+[[asset]]
+id = "hippo_calf"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
+
+[[asset]]
+id = "panda_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "panda_cub"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "elephant_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "elephant_calf"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "giraffe_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "giraffe_calf"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "lion_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "lion_cub"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "monkey_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "monkey_baby"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "snow_fox_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "snow_fox_kit"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "goldfish_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["swim", "eat"]
+
+[[asset]]
+id = "goldfish_fry"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["swim", "eat"]
+
+[[asset]]
+id = "hedgehog_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "hedgehog_hoglet"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "bat_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "bat_pup"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "owl_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "owl_owlet"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+# Landmark concept sheets (2026-10-02, art/props/kit_landmarks_l2|l3) — models follow after approval
+
+[[asset]]
+id = "landmark_zoo_train"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_stage"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_treehouse"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_giant_tree"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_blossom_tree"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_log_pile"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_play_ball"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_lookout_tower"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_playground"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_deckchairs"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_fountain"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_pirate_ship"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_carousel"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_washing_line"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_willow"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_mill_hut"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_waterfall"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_ice_cream_kiosk"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_stream_kit"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
 # BEGIN audio (generated by tools/sound/register.py - do not edit by hand)
 
 [[asset]]
@@ -952,7 +1244,7 @@ author = "Tamil Wikipedia user (Own work, 2011)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.05-1.45 s, pitch +3 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_elephant_happy"
@@ -969,7 +1261,7 @@ author = "Tamil Wikipedia user (Own work, 2011)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.05-0.65 s, pitch +6 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_elephant_refuse"
@@ -986,7 +1278,7 @@ author = "Tamil Wikipedia user (Own work, 2011)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.05-0.4 s, pitch -2 st, low-pass 3500 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_zebra_call"
@@ -1004,7 +1296,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.1-1.9 s, pitch +2 st, low-pass 7000 Hz"
 note = "real horse neigh (zebras are equids); no free zebra recording"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_zebra_happy"
@@ -1022,7 +1314,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.2-0.85 s, pitch +5 st, low-pass 7000 Hz"
 note = "real horse neigh (zebras are equids); no free zebra recording"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_zebra_refuse"
@@ -1040,7 +1332,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "1.1-1.45 s, pitch -1 st, low-pass 3500 Hz"
 note = "real horse neigh (zebras are equids); no free zebra recording"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_zebra_baby"
@@ -1058,7 +1350,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-1.4 s, pitch +2 st, low-pass 8000 Hz"
 note = "foal whinny from the CC0 baby animals pack"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_lion_call"
@@ -1075,7 +1367,7 @@ author = "Tamil Wikipedia uploader (lion in a zoo)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.55-2.25 s, pitch +4 st, low-pass 2800 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_lion_happy"
@@ -1092,7 +1384,7 @@ author = "Tamil Wikipedia uploader (lion in a zoo)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.65-1.25 s, pitch +6 st, low-pass 2400 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_lion_refuse"
@@ -1109,7 +1401,7 @@ author = "Tamil Wikipedia uploader (lion in a zoo)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.65-1.0 s, pitch +3 st, low-pass 2000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_panda_call"
@@ -1126,7 +1418,7 @@ author = "own work, Wikimedia Commons uploader (2009)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.14-2.2 s, pitch +1 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_panda_happy"
@@ -1143,7 +1435,7 @@ author = "own work, Wikimedia Commons uploader (2009)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "1.0-1.9 s, pitch +3 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_panda_refuse"
@@ -1160,7 +1452,7 @@ author = "own work, Wikimedia Commons uploader (2009)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.14-0.5 s, pitch -1 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_monkey_call"
@@ -1178,7 +1470,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-1.3 s, pitch +2 st, low-pass 9000 Hz"
 note = "human imitation of a monkey, not a recording of a monkey"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_monkey_happy"
@@ -1196,7 +1488,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-1.0 s, pitch +3 st, low-pass 9000 Hz"
 note = "human imitation of a monkey, not a recording of a monkey"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_monkey_refuse"
@@ -1214,7 +1506,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-0.45 s, pitch -2 st, low-pass 6000 Hz"
 note = "human imitation of a monkey, not a recording of a monkey"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_hippo_call"
@@ -1232,7 +1524,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.15-1.45 s, pitch -2 st, low-pass 3000 Hz"
 note = "stand-in: camel groan, no free hippo recording found"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_hippo_happy"
@@ -1250,7 +1542,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.15-0.75 s, pitch +1 st, low-pass 3000 Hz"
 note = "stand-in: camel groan, no free hippo recording found"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_hippo_refuse"
@@ -1268,7 +1560,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.15-0.5 s, pitch -4 st, low-pass 2500 Hz"
 note = "stand-in: camel groan, no free hippo recording found"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_snow_fox_call"
@@ -1286,7 +1578,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "12.78-13.95 s, pitch -3 st, low-pass 7000 Hz"
 note = "derived from the fennec recording (no free snow fox recording)"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_snow_fox_happy"
@@ -1304,7 +1596,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.74-1.25 s, pitch -1 st, low-pass 7000 Hz"
 note = "derived from the fennec recording (no free snow fox recording)"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_snow_fox_refuse"
@@ -1322,7 +1614,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "9.08-9.48 s, pitch -4 st, low-pass 5000 Hz"
 note = "derived from the fennec recording (no free snow fox recording)"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_fennec_call"
@@ -1339,7 +1631,7 @@ author = "Eosin-Y (2007)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "4.52-5.68 s, pitch +2 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_fennec_happy"
@@ -1356,7 +1648,7 @@ author = "Eosin-Y (2007)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "12.78-13.4 s, pitch +4 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_fennec_refuse"
@@ -1373,7 +1665,7 @@ author = "Eosin-Y (2007)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "9.08-9.48 s, pitch +0 st, low-pass 5000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_bat_call"
@@ -1390,7 +1682,7 @@ author = "AntumDeluge (from a recording by polymorpheva)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "1.0-1.75 s, pitch -3 st, low-pass 5000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_bat_happy"
@@ -1407,7 +1699,7 @@ author = "AntumDeluge (from a recording by polymorpheva)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.1-0.5 s, pitch -1 st, low-pass 5000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_bat_refuse"
@@ -1424,7 +1716,7 @@ author = "AntumDeluge (from a recording by polymorpheva)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-0.25 s, pitch -3 st, low-pass 4000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_owl_call"
@@ -1441,7 +1733,7 @@ author = "Rabe19 (Own work, 2013, little owl)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "8.0-9.8 s, pitch -2 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_owl_happy"
@@ -1458,7 +1750,7 @@ author = "Rabe19 (Own work, 2013, little owl)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "1.3-2.05 s, pitch +0 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_owl_refuse"
@@ -1475,7 +1767,7 @@ author = "Rabe19 (Own work, 2013, little owl)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "2.52-2.72 s, pitch -3 st, low-pass 5000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_hedgehog_call"
@@ -1492,7 +1784,7 @@ author = "Ullus (Own work, 2013, eared hedgehog)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "13.6-14.35 s, pitch +3 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_hedgehog_happy"
@@ -1509,7 +1801,7 @@ author = "Ullus (Own work, 2013, eared hedgehog)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "6.7-7.05 s, pitch +5 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_hedgehog_refuse"
@@ -1526,7 +1818,7 @@ author = "Ullus (Own work, 2013, eared hedgehog)"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "9.72-10.12 s, pitch +0 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_koala_call"
@@ -1543,7 +1835,7 @@ author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "19.5-20.5 s, pitch +5 st, low-pass 3500 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_koala_happy"
@@ -1560,7 +1852,7 @@ author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "20.75-21.45 s, pitch +8 st, low-pass 4000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_koala_refuse"
@@ -1577,7 +1869,7 @@ author = "Charlton, Ellis, McKinnon, Brumm, Nilsson, Fitch, PLoS ONE 2011 (CC BY
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "22.1-22.5 s, pitch +3 st, low-pass 3000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_koala_baby"
@@ -1595,7 +1887,7 @@ retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "20.75-21.35 s, pitch +12 st, low-pass 6000 Hz"
 note = "derived: koala bellow piece pitched up 12 semitones"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_kiwi_call"
@@ -1612,7 +1904,7 @@ author = "Department of Conservation (New Zealand), CC BY 4.0"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "5.3-6.42 s, pitch +2 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_kiwi_happy"
@@ -1629,7 +1921,7 @@ author = "Department of Conservation (New Zealand), CC BY 4.0"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "5.3-5.85 s, pitch +5 st, low-pass 8000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_kiwi_refuse"
@@ -1646,7 +1938,7 @@ author = "Department of Conservation (New Zealand), CC BY 4.0"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "6.42-6.72 s, pitch -2 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_raccoon_call"
@@ -1663,7 +1955,7 @@ author = "jnargus (video), cut by AntumDeluge, CC BY 3.0 or later"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-0.98 s, pitch +3 st, low-pass 9000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_raccoon_happy"
@@ -1680,7 +1972,7 @@ author = "jnargus (video), cut by AntumDeluge, CC BY 3.0 or later"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-0.6 s, pitch +2 st, low-pass 9000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_raccoon_refuse"
@@ -1697,7 +1989,7 @@ author = "jnargus (video), cut by AntumDeluge, CC BY 3.0 or later"
 retrieved = "2026-09-30"
 script = "tools/sound/animals.py"
 cut = "0.0-0.3 s, pitch -2 st, low-pass 6000 Hz"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_goldfish_call"
@@ -1710,7 +2002,7 @@ files = "assets/audio/animals/animal_goldfish_call_<n>.ogg"
 licence = "own"
 source = "synthesised"
 script = "tools/sound/animals.py"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_goldfish_happy"
@@ -1723,7 +2015,7 @@ files = "assets/audio/animals/animal_goldfish_happy_<n>.ogg"
 licence = "own"
 source = "synthesised"
 script = "tools/sound/animals.py"
-approved = false
+approved = true
 
 [[asset]]
 id = "animal_goldfish_refuse"
@@ -1736,7 +2028,7 @@ files = "assets/audio/animals/animal_goldfish_refuse_<n>.ogg"
 licence = "own"
 source = "synthesised"
 script = "tools/sound/animals.py"
-approved = false
+approved = true
 
 [[asset]]
 id = "ambient_crickets"
@@ -1752,298 +2044,7 @@ origin_url = "https://opengameart.org/content/crickets-ambient-noise-loopable"
 author = "Ted Kerr"
 retrieved = "2026-10-01"
 script = "tools/sound/crickets.py"
-note = "seamless 21.8 s night loop (ambient, ASND-020), -22 LUFS, plays at gain <= 0.12"
-approved = false
+note = "seamless 21.8 s night loop (ambient, ASND-020), -22 LUFS, plays at gain <= 0.05"
+approved = true
 
 # END audio
-
-# Female + baby of every other pair species (Q-280, Q-308): concept sheets first, NOT modelled; the game draws the adult model scaled meanwhile
-
-[[asset]]
-id = "hippo_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
-
-[[asset]]
-id = "hippo_calf"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
-
-[[asset]]
-id = "panda_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "panda_cub"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "elephant_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
-
-[[asset]]
-id = "elephant_calf"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
-
-[[asset]]
-id = "giraffe_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "giraffe_calf"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "lion_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
-
-[[asset]]
-id = "lion_cub"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
-
-[[asset]]
-id = "monkey_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy"]
-
-[[asset]]
-id = "monkey_baby"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy"]
-
-[[asset]]
-id = "snow_fox_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
-
-[[asset]]
-id = "snow_fox_kit"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
-
-[[asset]]
-id = "goldfish_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["swim", "eat"]
-
-[[asset]]
-id = "goldfish_fry"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["swim", "eat"]
-
-[[asset]]
-id = "hedgehog_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "hedgehog_hoglet"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "bat_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "bat_pup"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "owl_female"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-[[asset]]
-id = "owl_owlet"
-kind = "animals"
-spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
-
-# Landmark concept sheets (2026-10-02, art/props/kit_landmarks_l2|l3) — models follow after approval
-
-[[asset]]
-id = "landmark_zoo_train"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_stage"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_treehouse"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_giant_tree"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_blossom_tree"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_log_pile"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_play_ball"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_lookout_tower"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_playground"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_deckchairs"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_fountain"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_pirate_ship"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_carousel"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_washing_line"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_willow"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_mill_hut"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_waterfall"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_ice_cream_kiosk"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []
-
-[[asset]]
-id = "landmark_stream_kit"
-kind = "props"
-spec = "ART-ENVIRONMENT"
-concept_approved = false
-animations = []

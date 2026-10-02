@@ -137,7 +137,7 @@ audio device), `fetched` the audio URLs requested so far.
   review page `art/index.html` section "Sound". `tools/sound/check_audio.py` has a group-aware exception: group
   `ambient` is checked against these limits, not against the one-shot limits of ASND-003.
 - **Who decides what (core vs host).** `zoo-core::sound::ambient_target(phase)` is the target gain of the bed:
-  `AMBIENT_GAIN` = **0.12** in `dusk` and `night`, **0** in `day`, `sleeping`, `morning`. It is the **final**
+  `AMBIENT_GAIN` = **0.05** in `dusk` and `night`, **0** in `day`, `sleeping`, `morning`. It is the **final**
   gain (no master / group factor on top: master 0.35 would make the bed inaudible on phones; the file is
   −22 LUFS, so the bed plays at about −40 LUFS, ~9 dB below a footstep at −31 LUFS). `App.ambient_target()`
   (zoo-web) hands it to the host, polled per frame like `poll_sounds()`. The night zoo (`night_1`, phase
@@ -145,7 +145,7 @@ audio device), `fetched` the audio URLs requested so far.
 - **Host (`web/src/audio.ts`).** An own channel: `AudioBufferSourceNode` with `loop = true` → its own `GainNode` →
   destination. The gain follows the target **linearly in 3 s** (full swing; `gain` is advanced per frame from
   the frame clock, no per-frame allocation, no `setTargetAtTime` pile-up). The effective target is
-  `AMBIENT_GAIN_MAX` (0.12, clamp of the host as a safety net) × sound switch (off → 0, fades out in 3 s, the saved
+  `AMBIENT_GAIN_MAX` (0.05, clamp of the host as a safety net) × sound switch (off → 0, fades out in 3 s, the saved
   setting is not touched) × tab visible (hidden → 0 at once and `AudioContext.suspend()`; visible again →
   `resume()` and fade in) × not on the title / intro overlay.
   - **Lazy:** the file is fetched only the first time the target is > 0 **after the first gesture** (never before
@@ -179,12 +179,12 @@ audio device), `fetched` the audio URLs requested so far.
 | ASND-019 | Given no `AudioContext`, a failing `fetch` or `decodeAudioData`, then `Audio.play` / `prefetch` never throw and nothing is logged to the console. | vitest |
 | ASND-020 | Given the `ambient_crickets` entry, then it has licence `CC0`/`public-domain` with `origin_url`, group `ambient`, `approved`, and both files exist; the group-aware checker accepts it (20–40 s, −24…−20 LUFS, peak ≤ −1 dBFS, ogg ≤ 150 KB) and does not apply the 1.5 s one-shot limit; the review page lists it. | unit |
 | ASND-021 | Given the decoded loop, then its spectral peak is 3–6 kHz, the loop point has no click (jump ≤ the largest normal sample step) and the level within ±50 ms of the seam is within ±3 dB of the file level. | unit (checker) |
-| ASND-022 | Given the phases, then `ambient_target` is 0.12 in dusk and night and 0 in day, sleeping, morning; `AMBIENT_GAIN` ≤ 0.12, fade 3 s; the host constant `AMBIENT_GAIN_MAX` of `audio.ts` equals it. | unit |
-| ASND-023 | Given the ambient channel and a target 0.12, then the gain rises linearly to 0.12 in 3 s, never above 0.12; target 0 fades it out in 3 s and then releases the source; one source node at a time. | vitest |
+| ASND-022 | Given the phases, then `ambient_target` is 0.05 in dusk and night and 0 in day, sleeping, morning; `AMBIENT_GAIN` ≤ 0.05, fade 3 s; the host constant `AMBIENT_GAIN_MAX` of `audio.ts` equals it. | unit |
+| ASND-023 | Given the ambient channel and a target 0.05, then the gain rises linearly to 0.05 in 3 s, never above 0.05; target 0 fades it out in 3 s and then releases the source; one source node at a time. | vitest |
 | ASND-024 | Given repeated night / day flips (also mid-fade), then the gain follows without jumps, the file is fetched once and there is never more than one running source. | vitest |
 | ASND-025 | Given the sound switch off (target > 0), then the bed fades to silence and the saved setting is unchanged; switching on fades it back in; a hidden tab silences it at once and suspends the context, visible again resumes it. | vitest |
 | ASND-026 | Given no gesture yet / no `AudioContext` / failing fetch or decode, then nothing is fetched, nothing throws and nothing is logged to the console; the first fetch happens only after the first gesture and only when the target is > 0. | vitest |
-| ASND-027 | Given a game forced to night, then after the first gesture the loop is fetched and plays with gain ≤ 0.12 (`__zoo.audio.ambient`); by day it has faded out and stopped; the page logs no console error. | e2e |
+| ASND-027 | Given a game forced to night, then after the first gesture the loop is fetched and plays with gain ≤ 0.05 (`__zoo.audio.ambient`); by day it has faded out and stopped; the page logs no console error. | e2e |
 
 ## Open questions
 

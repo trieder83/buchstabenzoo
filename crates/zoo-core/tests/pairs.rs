@@ -310,6 +310,20 @@ fn fam_026_every_pair_follows_and_enters_together() {
                 .collect::<Vec<_>>()
         );
         assert!(g.mission(id).unwrap().complete, "{id}: mission complete");
+        // every member's mission flag too: the compass strip lists a species as long as ONE member
+        // of it is not complete (user report 2026-10-02: finished animals were still listed)
+        assert!(
+            group.iter().all(|&i| g.missions[i].complete),
+            "{id}: member missions {:?}",
+            group
+                .iter()
+                .map(|&i| g.missions[i].complete)
+                .collect::<Vec<_>>()
+        );
+        let np = zoo_core::hints::night_progress(&g);
+        if let Some((_, home)) = np.animals.iter().find(|(a, _)| *a == id) {
+            assert!(*home, "{id}: still listed as missing after both entered");
+        }
     }
 }
 

@@ -197,7 +197,10 @@ describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
       { id: 'zebra', home: true },
       { id: 'hippo', home: false },
     ]);
-    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [], badge: '', badgeAnimal: '' });
+    // a pair with one animal home and its partner out is marked (½), see GAME-NIGHT rule 11
+    const half = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"hippo","home":false}],"partial":["hippo","x",3],"badge":"animal","badge_animal":"hippo"}');
+    expect(half.partial).toEqual(['hippo', 'x']);
+    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [], partial: [], badge: '', badgeAnimal: '' });
   });
   it('NIGHT-022: shows only the animals still missing; none missing = empty list', () => {
     const p = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"zebra","home":true},{"id":"hippo","home":false},{"id":"panda","home":false}]}');

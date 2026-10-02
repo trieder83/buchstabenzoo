@@ -123,6 +123,8 @@ export interface NightProgress {
   state: string;
   level: string;
   animals: { id: string; home: boolean }[];
+  /** Species with one member home and its partner still out (shown as ½). */
+  partial: string[];
   /** Kind of the next task (the best hint candidate), `night_coming`, or '' for none. */
   badge: string;
   badgeAnimal: string;
@@ -174,11 +176,12 @@ export function parseProgress(json: string | undefined): NightProgress {
       state: typeof p.state === 'string' ? p.state : 'hidden',
       level: String(p.level ?? ''),
       animals,
+      partial: Array.isArray(p.partial) ? p.partial.filter((x): x is string => typeof x === 'string') : [],
       badge: typeof p.badge === 'string' ? p.badge : '',
       badgeAnimal: typeof p.badge_animal === 'string' ? p.badge_animal : '',
     };
   } catch {
-    return { state: 'hidden', level: '', animals: [], badge: '', badgeAnimal: '' };
+    return { state: 'hidden', level: '', animals: [], partial: [], badge: '', badgeAnimal: '' };
   }
 }
 
@@ -772,6 +775,10 @@ export class Ui {
         const e = el('span', 'pa', ANIMAL_ICONS[id] ?? '🐾');
         e.dataset.animal = id;
         e.classList.toggle('hl', id === this.hintAnimal);
+        if (p.partial.includes(id)) {
+          e.classList.add('half'); // one of the pair is home, the partner is still out
+          e.append(el('span', 'half-tag', '½'));
+        }
         return e;
       });
       if (v.more > 0) icons.push(el('span', 'pa more', `+${v.more}`));

@@ -19,7 +19,7 @@ export const PREFETCH_GROUPS = ['steps', 'ui', 'doors', 'pickups'] as const;
 export const STALE_MS = 1500;
 
 /** Safety clamp of the ambient gain; equals `zoo_core::sound::AMBIENT_GAIN` (ASND-022). */
-export const AMBIENT_GAIN_MAX = 0.12;
+export const AMBIENT_GAIN_MAX = 0.05;
 /** Fade in / out time of the ambient bed in seconds (full swing, ASND-023). */
 export const AMBIENT_FADE_S = 3;
 /** Cue id and group of the night cricket loop. */
@@ -66,7 +66,7 @@ export interface LogEntry {
 export interface AudioApp {
   poll_sounds(): string;
   audio_animals?(): string;
-  /** Target gain of the ambient bed (0 by day, 0.12 at dusk / night). */
+  /** Target gain of the ambient bed (0 by day, 0.05 at dusk / night). */
   ambient_target?(): number;
   ui_tap?(): void;
 }
@@ -275,7 +275,7 @@ export class GameAudio {
   }
 
   /**
-   * The night cricket bed (ASND-023..026): moves the gain linearly towards the target (0.12 at
+   * The night cricket bed (ASND-023..026): moves the gain linearly towards the target (0.05 at
    * dusk / night, from zoo-core) in `AMBIENT_FADE_S`, silences it at once in a hidden tab,
    * fetches the file lazily (first target > 0 after the first gesture) and keeps one source.
    */

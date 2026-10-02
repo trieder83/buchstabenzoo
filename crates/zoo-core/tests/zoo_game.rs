@@ -703,3 +703,30 @@ fn night_026_progress_strip_shows_the_current_levels_animals() {
     let ids: Vec<&str> = p.animals.iter().map(|(id, _)| *id).collect();
     assert!(ids.contains(&"zebra") && !ids.contains(&"koala"), "{ids:?}");
 }
+
+// NIGHT-029 (user report 2026-10-02: 'finished animals are still listed under the compass'): a
+// species is listed while ONE member is out; when one member is home and its partner is not, the
+// strip marks it as ½ done (`partial_animals`), and when both are home it is neither listed nor partial.
+#[test]
+fn night_029_half_done_pairs_are_marked_and_finished_ones_leave_the_strip() {
+    use zoo_core::hints::{night_progress, partial_animals};
+    let mut g = common::zoo_game(6);
+    let group = g.group("hippo");
+    assert_eq!(group.len(), 2);
+    assert!(partial_animals(&g).is_empty());
+    g.animals[group[0]].state = zoo_core::AnimalState::InEnclosure;
+    assert_eq!(partial_animals(&g), vec!["hippo"]);
+    let p = night_progress(&g);
+    assert!(
+        p.animals.iter().any(|(id, home)| *id == "hippo" && !*home),
+        "{:?}",
+        p.animals
+    );
+    g.debug_send_home("hippo");
+    assert!(partial_animals(&g).is_empty());
+    let p = night_progress(&g);
+    assert!(
+        p.animals.iter().any(|(id, home)| *id == "hippo" && *home),
+        "hippo done"
+    );
+}

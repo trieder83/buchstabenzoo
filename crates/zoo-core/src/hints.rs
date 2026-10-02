@@ -1017,6 +1017,28 @@ fn level_animals(g: &Game, k: usize) -> Vec<(&'static str, bool)> {
     out
 }
 
+/// Species of which one member is already home but its partner is still out ("½ done"): the
+/// compass strip marks them, so a child who sees one animal in its enclosure knows why the
+/// species is still listed (user report 2026-10-02).
+pub fn partial_animals(g: &Game) -> Vec<&'static str> {
+    let mut out: Vec<&'static str> = Vec::new();
+    for a in &g.animals {
+        let id = a.id();
+        if out.contains(&id) || !g.in_scope(a) {
+            continue;
+        }
+        let group = g.group(id);
+        let home = group
+            .iter()
+            .filter(|&&i| g.animals[i].state == AnimalState::InEnclosure)
+            .count();
+        if home > 0 && home < group.len() {
+            out.push(id);
+        }
+    }
+    out
+}
+
 /// The strip data of the current level (GAME-NIGHT rule 11, NIGHT-019/026).
 pub fn night_progress(g: &Game) -> NightProgress {
     let data = &g.level.data;

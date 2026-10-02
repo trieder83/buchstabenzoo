@@ -6,7 +6,7 @@ module: measurements
 status: draft
 depends_on: [PERF-BUDGETS]
 test_prefix: PERFLOG
-updated: 2026-09-28
+updated: 2026-10-02
 ---
 
 # Performance measurement log
@@ -663,6 +663,95 @@ no texture uploads per frame.
 
 - Note on WASM headroom: 2.0 MB = 2 048 KiB, so 216 KiB raw / 74 KiB brotli left.
 - No code changed. Regressions > 10 %: only load-inflated times and the JS-heap reading.
+
+## Run 2026-10-02 — every animal a pair (26 animals), playful baby, level-3 fruit garden, zookeeper_house_2, crickets, welcome board
+
+- **Commit** `afd42e4` + **147 uncommitted files** (diff sha1 `6c8001e59f`), full `tools/perf/run.sh`.
+  Raw data: `tools/perf/baselines/2026-10-02.json`. Compared with `2026-09-30b.json`
+  (the tool's own bold flags compare with the older `2026-09-30.json`: ignore them).
+- **Changed since:** pairs for all 13 species (adult-model fallback, scale 0.92 + tint), baby
+  entity (`baby.rs`, hop), level-3 fruit garden (6 plant models, 4 trees), `zookeeper_house_2`,
+  crickets audio, welcome board panel, ad boards + 3rd campaign, audio 1.20 MB (174 files).
+- **Machine:** Ryzen 5 5500U, SwiftShader (**relative only**), **load average 23 - 37 on 12 CPUs**
+  (QA e2e in parallel): every time is 2 x the previous run and unusable; counts, sizes and
+  allocations exact.
+
+### Sizes and load
+
+| Artefact | now | previous | budget |
+|---|---|---|---|
+| WASM release shipped | 1 868 KiB raw (1.91 MB) | 1 832 KiB | <= 2.0 MB: pass (+36 KiB, +2 %; 180 KiB left of 2 048) |
+| WASM brotli / gzip | 537 / 712 KiB (550 000 B brotli) | 526 / 696 | <= 600 KB brotli: pass (63 KiB left) |
+| JS glue | 95 KiB (14 brotli) | 94 | |
+| web/dist (380 files) | 11.07 MB | 10.63 MB (368) | models 7.06 MB, audio 1.20 MB, ads 0.37 MB |
+| transferred on first load | 7.68 MB, 148 resources | 7.56 MB, 140 | <= 30 MB: pass (26 %) |
+
+- Audio still lazy: +0.12 MB transferred, +8 resources (ad textures / models); the audio
+  files are not in the first-load transfer. Worst case with all groups prefetched after the
+  gesture: 8.9 MB (30 %).
+- First frame 5.5 s desktop / 1.4 s phone / 2.5 s half: **load artefact** (load 25 - 37), not
+  comparable. **JS heap 29.8 MB desktop (pass), 40.2 MB phone and desktop_half (> 32 MB)**,
+  was 61 - 64 MB: the value is coarse (same 40.15 MB in two viewports = a GC plateau) and
+  not re-measured with a forced GC (machine never quiet): PERF-R-020 stays open. WASM heap 19.4 MB (was 18.7).
+
+### Counts (draw calls / triangles), desktop | phone (previous 2026-09-30b in brackets)
+
+| Scenario | dc desktop | tris desktop | dc phone | tris phone |
+|---|---|---|---|---|
+| S01 spawn 14 m | **33** (31) | 95 k (93) | 18 (18) | 50 k (50) |
+| S02 spawn 20 m | **40** (38) | 106 k (104) | 22 (22) | 65 k (65) |
+| S03 walking | 30 (30) | 88 k (90) | 20 (21) | 50 k (43) |
+| S04 look-around | **38** (36) | 122 k (120) | 18 (18) | 74 k (74) |
+| S05 first person | 33 (33) | 129 k (129) | 15 (15) | 95 k (95) |
+| S06 house | 29 (29) | 90 k (90) | 22 (22) | 40 k (40) |
+| S07 garden | 38 (38) | 69 k (69) | 29 (29) | 57 k (57) |
+| S08 pond | **31** (29) | 82 k (80) | **18** (16) | 28 k (26) |
+| S09 level-3 spawn 20 m | 35 (35) | 147 k (147) | 22 (22) | 34 k (34) |
+| S10 night spawn | **38** (36) | 98 k (96) | 20 (20) | 52 k (52) |
+| S11 night zoo | 30 (30) | 82 k (82) | 14 (14) | 34 k (34) |
+
+- Max 40 draw calls (<= 140), max 147 k tris (<= 300 k), max 2 145 instances (<= 10 000).
+  Level 3 (S09) did not change at all (fruit garden is outside the spawn view / merged).
+- +2 draw calls in S01/S02/S04/S08/S10 (desktop; +2 in S08 phone) = > 5 % but < 10 %, in
+  scenes with animals in view: consistent with the second pair member being visible with
+  its own `CharacterDraw` (one draw per skinned character) rather than the fallback tint
+  adding a draw (not verified per draw; the tint is a uniform). Per-character cost stays
+  linear: 26 animals in the joined zoo would add at most ~26 draws if all were in view.
+- Night S10 38 vs. S01 33 = **+5** (budget +6): pass, margin 1 (unchanged).
+- CAMV-014 / PERF-004: FP 33 / LA 38 vs. 40 at 20 m (desktop), 15 / 18 vs. 22 (phone): pass;
+  `perf_rules` ran green inside the tool's gameplay checks (not re-run separately).
+- GL calls 104 - 207, `useProgram` 7 - 8, uploads 2.4 - 7.9 KB per frame, no texture uploads
+  per frame. CPU `frame()` p50 0.6 - 2.9 ms (load; sim step 0.08 - 0.93 ms): not comparable.
+
+### Allocations
+
+- `Game::update` (native probe, joined zoo, 1 140 frames): **32.0 heap allocations / 14.5 KB
+  per frame** (was 29.1 / 14.4 KB): +3 allocations (+10 %), bytes unchanged. Time 15.6 µs p50
+  (was 4.3 / 6.6: the probe also ran at load 25 and now includes 26 animals, baby and pair
+  spacing, so not comparable). Ambient 0 allocations. `LevelScene::build` 13.9 ms once.
+- The +3 allocations are small (bytes flat): budget 14 holds as a known exception; sites are
+  not listed by the probe (`alloc_sites_10_frames` empty). Render loop 0 (`perf_rules`).
+- Models 140 `.glb`, 82 321 triangles (+686); over budget only `moon_door(_open)` 1 430 (known).
+  New plant models 58 - 180 tris: within the prop budget.
+
+### Findings vs. budgets
+
+| Budget | Measured | Verdict |
+|---|---|---|
+| 1 / 16 frame time | SwiftShader, load 25 - 37 | not measurable (phone pending, Q-013) |
+| 2 download <= 30 MB | 7.68 MB (+ 1.2 MB audio lazily) | pass |
+| 3 draw calls <= 140 / instances | 40 / 2 145 (S09 35) | pass |
+| 4 close views < zoo view | FP 33 / LA 38 vs. 40; 15 / 18 vs. 22 | pass |
+| 5 night <= day + 6 | +5 | pass (margin 1, at risk) |
+| 8 ambient <= 10 draws | +2 | pass |
+| 14 allocations | 32.0 / 14.5 KB `Game::update` (+3), render loop 0 | pass (known exception, creeping) |
+| 17 WASM | 1 868 KiB raw / 537 KiB brotli | pass (headroom 180 / 63 KiB) |
+| 18 memory | WASM heap 19.4 MB ok; JS heap 29.8 / 40.2 / 40.2 MB | **desktop pass, phone unverified** (PERF-R-020) |
+| 19 triangles | max 147 k | pass |
+| audio not before the first frame | 148 resources, 7.68 MB | pass |
+
+- At risk: night <= day + 6 (margin 1), WASM brotli (63 KiB left, +11 KiB this round), JS heap.
+- No code changed. Regressions > 10 %: only load-inflated times; `Game::update` allocations +10 %.
 
 ## Test cases
 

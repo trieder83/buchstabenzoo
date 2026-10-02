@@ -412,6 +412,29 @@ impl Colliders {
         self.candidates(p, r, &mut buf);
         buf.iter().any(|&i| self.shape(i).overlaps(p, r))
     }
+
+    /// A position for a circle of radius `r` near `p` that overlaps no prop shape: `p` pushed
+    /// out of every shape it overlaps (a few passes, so it leaves corners too).
+    pub fn push_out_all(&self, p: Vec2, r: f32) -> Vec2 {
+        let mut q = p;
+        let mut buf = Vec::new();
+        for _ in 0..6 {
+            buf.clear();
+            self.candidates(q, r, &mut buf);
+            let mut moved = false;
+            for &i in &buf {
+                let d = self.shape(i).push_out(q, r);
+                if d != Vec2::ZERO {
+                    q += d;
+                    moved = true;
+                }
+            }
+            if !moved {
+                break;
+            }
+        }
+        q
+    }
 }
 
 /// Everything solid for a circle at `p`: blocked cells (from `walkable`) and prop shapes.

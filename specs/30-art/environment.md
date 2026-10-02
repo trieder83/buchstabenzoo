@@ -6,10 +6,13 @@ module: environment
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS]
 test_prefix: AENV
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Environment — mockups and models
+
+**Contents:** Goal · Mockups required (before modelling) · Hiding places (must appear in a mockup) · Modular props (modelled once, reused) · Night art (GAME-NIGHT) · Behaviour · Test cases · Open questions
+
 
 ## Goal
 
@@ -30,7 +33,7 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_hippo` | Hippo enclosure | square tiled pool (no lilies/frogs — must not look like `loc_pond`), stones, wooden hut (cf. `art/props/kit_enclosure_buildings/sheet_zebra_hippo_v3.jpg`) |
 | `env_panda` | Panda enclosure | cut bamboo on a feeding rack (no growing bamboo clumps — Q-081 answered, must not look like `loc_bamboo`), wooden platform and shelter — no stone cave (must not look like `loc_cave`) |
 | `env_zebra` | Zebra enclosure | bushes, grass, leaves, stone-arch shelter — no water (riddle points to the river) |
-| `env_koala` | Koala enclosure, level 2 (GAME-LEVEL-2, west) | eucalyptus trees of normal height, climbing trunk, small wooden shelter, feeding trough; the koala pair — **no** tree taller than the others, no blossoms, no tree house (riddle guards) |
+| `env_koala` | Koala enclosure, level 2 (GAME-LEVEL-2, west) | eucalyptus trees of normal height, climbing trunk, small wooden shelter; the koala pair — **no** tree taller than the others, no blossoms, no tree house (riddle guards) |
 | `env_elephant` | Elephant enclosure, level 2 (east) | tiled bathing pool `elephant_pool` with a ramp (like the hippo pool), hay rack, one boulder — **no** jet or coins in the water, no logs, no ball (riddle guards; Q-005 bridge not used) |
 | `env_goldfish` | Goldfish pond enclosure, level 3 (east) | round pond `goldfish_pond` with a low stone rim, water plants, low wooden fence, flat stone step (the gate where the bowl is put down) — no waterfall, wheel or willow |
 | `env_monkey` | Monkey enclosure, level 3 (north) | climbing frame of logs and ropes, hanging tyres, wooden monkey house, banana basket, hiding spots for the baby — no ship, carousel or trampoline |
@@ -54,6 +57,7 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_level3_overview` | Whole level 3 (GAME-LEVEL-3) | bird's-eye `overview.png` + orthographic `top_down.png` matching the level-3 ASCII map |
 | `env_zookeeper_house` | Zookeeper house of level 3 (`zookeeper_house_3`) | closed house + roof cut-away with the big empty glass fish bowl on the table, bed, shelves; water tap with a small basin next to the door; food storage 3 next door |
 | `env_zookeeper_house_1` | Zookeeper house of level 1 (`zookeeper_house_1`, west of the entrance plaza — GAME-LEVEL-1, GAME-NIGHT, GAME-CART) | closed house + roof cut-away: child-size bed with the blue star blanket, night table with bedside lamp, window, rug, toy chest, desk with one blank sheet (the "Math Fighter" note), key box with a 3-wheel lock outside by the door; plus a night view of the bedroom corner — no fish bowl, no bamboo at the house |
+| `env_zookeeper_house_2` | Zookeeper house of level 2 (`zookeeper_house_2`, south-west corner on `path_l2_sw` — GAME-LEVEL-2, GAME-NIGHT; user request 2026-10-01: every bed indoors) | closed house + roof cut-away: same model and room as the level-1 house with the child-size bed, night table with bedside lamp, moon window, rug, toy chest; no desk, no key box |
 | `env_night1_overview` | Whole night level 1 (GAME-LEVEL-NIGHT-1), layout-true (the approved `env_night_overview` is the mood image) | at night, camera yaw west: open moon door at the bottom, plaza with string lights, food hut, night house with three lit boards, lantern-lit loop around an old-tree grove, and all 9 night hiding places with their clues (twig heap, flowerpots with white flowers, mushroom ring, hill with a big stone, fir, windmill, firefly meadow, pond mirroring the moon, knothole tree); + orthographic `top_down.png` |
 | `env_garden` | Vegetable garden `garden_veg`, level 1 (north, between the panda enclosure and the river — GAME-LEVEL-1, GAME-GARDEN) | low picket fence with a small open gate, 2 m path, two carrot beds and two potato beds (clearly different from above), a picture stake sign per bed, empty wheelbarrow and watering can at the hedge, the girl pulling a carrot — dry soil (not `loc_mud`), no rake, butterflies, wildflowers or water spray (riddle guards) |
 | `loc_treehouse` | Koala hiding place, level 2 (east wall, east of the music stage — FIX-056) | old oak with a wooden tree house (roof, round window) at 3.5 m and a rope ladder; the koala pair on the porch |
@@ -190,9 +194,8 @@ Concept sheets (2026-09-26, in review — `art/props/`): `kit_buildings` (`entra
 `zookeeper_house` closed + roof-removed cutaway), `food_storage_building` (closed + cutaway),
 `kit_enclosure_buildings` (`stone_arch_shelter`, `hut_wood` + cutaway, `pool_tiled`,
 `panda_shelter`, `panda_platform`, `bamboo_feeding_rack`), `rock_hill_cave` (closed +
-cutaway), `kit_furniture` (`bench`, `feeding_trough` for GAME-FAMILY care feeding — empty and
-filled). New ids proposed there, not yet placed in `level-1.toml`: `zookeeper_house`,
-`bamboo_feeding_rack`, `feeding_trough`.
+cutaway), `kit_furniture` (`bench`, `feeding_trough` — dropped 2026-10-01, no trough, Q-248). New ids proposed there, not yet placed in `level-1.toml`: `zookeeper_house`,
+`bamboo_feeding_rack`.
 
 ## Night art (GAME-NIGHT)
 

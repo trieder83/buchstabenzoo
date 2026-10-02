@@ -113,3 +113,15 @@ Not found under a free licence (Q-215): giraffe (hums exist but CC BY-SA), badge
 slow loris, tarsier. Also excluded: OGA barn owl and toucan (CC BY-SA), dolphin (BY-SA), Commons
 hedgehog "sleeping" (BY-SA). The Gemini feasibility test above is kept as history; its two
 candidate files are gone (replaced by `animal_zebra_call_1`, `animal_koala_call_1` from recordings).
+
+## Group ambient (`tools/sound/crickets.py`, 2026-10-01, user request: quiet crickets at night)
+
+Cue `ambient_crickets` (1 variant, 21.8 s, mono, loop). Source search: Wikimedia Commons cricket
+recordings are CC BY / CC BY-SA (not allowed or credit needed) or only Lingua Libre spoken words;
+OpenGameArt "Crickets Ambient Noise - loopable" (Ted Kerr, **CC0**, 11.5 s stereo mp3,
+https://opengameart.org/content/crickets-ambient-noise-loopable) is clean (energy 3-5 kHz, nothing else).
+No Runway / Freesound call was needed. Processing: mono, high-pass 1 kHz, 2 passes of the source (second
+rotated 37 % and resampled +3 %) joined with 0.8 s equal-power crossfades, wrap-around crossfade at the
+loop point, -22 LUFS (ungated K-weighted), low-pass 9 kHz, Vorbis q0 / AAC 32 kbit.
+Analysis: spectral peak 3.3 kHz, peak -9.2 dBFS, loop jump 0.22 x the largest normal sample step, level
+at the seam +1.2 dB vs the file. ogg 119 KB, m4a 93 KB. Nobody listened (approved = false).

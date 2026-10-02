@@ -75,8 +75,10 @@ fn apipe_007_catalog_approved_iff_manifest_approved() {
 #[test]
 fn apipe_010_prompts_copy_style_blocks_verbatim() {
     let style = StyleBlocks::from_style_md(&read("art/style/style.md")).expect("3 style blocks");
+    // the ad banners (art/ads/) are separate marketing pictures with their own look, not game art
     let briefs = find_files(&root().join("art"), &|p| {
         p.file_name().is_some_and(|n| n == "brief.md")
+            && !p.components().any(|c| c.as_os_str() == "ads")
     });
     assert!(!briefs.is_empty());
     let mut checked = 0;

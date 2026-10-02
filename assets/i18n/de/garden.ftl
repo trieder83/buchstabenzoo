@@ -15,6 +15,16 @@ garden-potato-klasse1 = Hier wachsen Kartoffeln.
 garden-potato-klasse2 = Hier wachsen Kartoffeln. Sie liegen unter der Erde.
 garden-potato-klasse3 = In diesem Beet wachsen Kartoffeln. Die Knollen liegen unter der Erde. Oben wachsen Blätter und kleine weiße Blüten.
 
+## Fruit garden of level 3 (GARD-019, Q-320): one sign per bed
+garden-apple = Äpfel
+garden-orange = Orangen
+garden-apple-klasse1 = Hier wachsen Äpfel.
+garden-apple-klasse2 = Hier wachsen Äpfel. Pflück einen Apfel vom Baum!
+garden-apple-klasse3 = An diesen kleinen Bäumen wachsen Äpfel. Die reifen Äpfel sind rot. Pflück sie vorsichtig vom Baum!
+garden-orange-klasse1 = Hier wachsen Orangen.
+garden-orange-klasse2 = Hier wachsen Orangen. Pflück eine Orange vom Baum!
+garden-orange-klasse3 = An diesen kleinen Bäumen wachsen Orangen. Die reifen Orangen sind orange. Pflück sie vorsichtig vom Baum!
+
 ## Harvest and treats (GAME-GARDEN §3–§6): short feedback bubbles
 garden-basket-full = Der Korb ist voll!
 garden-treat-yum = Mmh, lecker!

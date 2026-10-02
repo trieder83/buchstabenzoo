@@ -31,6 +31,7 @@ const SCHEME = 'https:';
 export const KNOWN_CAMPAIGNS: Readonly<Record<string, { slot: number; host: string }>> = {
   mathfighter: { slot: 1, host: 'mathfighter.rcms.ch' },
   abcsmash: { slot: 2, host: 'abcsmash.rcms.ch' },
+  edugamegalaxy: { slot: 3, host: 'edugamegalaxy.rcms.ch' },
 };
 
 export type AdErrorCode =

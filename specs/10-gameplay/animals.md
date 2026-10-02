@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [GAME-WORLD]
 test_prefix: ANIM
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Animals and enclosures
@@ -59,7 +59,7 @@ escaped ──(shown correct food)──▶ following ──(enters own enclosur
   the game RNG; targets prefer cells whose 8 neighbours belong to the same part of the area
   (an animal does not rest with its head through a fence or over the pool rim). Facing,
   pause and route are saved (ANIM-011).
-  *Exception — perches (proposal Q-094, implemented M5b):* an animal whose hiding place has
+  *Exception — perches (Q-094 confirmed 2026-10-01, implemented M5b):* an animal whose hiding place has
   `perch_height_m` sits up there and does not wander (ANIM-008 applies to ground hiding
   places only; GAME-RESCUE §12, RESC-026).
 - `following`: follows the player (GAME-RESCUE §6).
@@ -68,7 +68,7 @@ escaped ──(shown correct food)──▶ following ──(enters own enclosur
   gate cells) — the zoo looks alive. Final state. *Where* it may walk is level data: the
   enclosure's `home_wander_on` surfaces (`grass`, `water` = its pool) and its
   `[[enclosure_feature]]` pool with the entry ramp (GAME-LAYOUT "Enclosure features and
-  wandering at home", proposal Q-085). The hippo wanders in and out of `hippo_pool` over the
+  wandering at home", Q-085 confirmed 2026-10-01). The hippo wanders in and out of `hippo_pool` over the
   ramp and spends most of its time in the water (GAME-LEVEL-1 "Hippo enclosure pool").
 
 ## Info board
@@ -90,6 +90,14 @@ level and language, CONT-READING, CONT-L10N) contains:
 
 On `kiga` the board shows pictures (habitat, food) plus one word each; read-aloud on tap (Q-007).
 
+## Pairs (GAME-FAMILY, Q-308 / Q-280, 2026-10-01)
+
+Every species of the game lives as a **male + female pair** (two animals, member 0 / 1, one
+shared hiding place, one mission per species that completes when **both** are home): the table
+above lists species, not individual animals. Rules for room, spacing and look: GAME-FAMILY
+"Pairs for every species". The goldfish pair is carried in one bowl; the night animals are pairs
+too.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -105,7 +113,7 @@ On `kiga` the board shows pictures (habitat, food) plus one word each; read-alou
 | ANIM-009 | Given the player within 3 m of an escaped animal, then it stops wandering and faces the player. | unit |
 | ANIM-010 | Given an animal in its enclosure over 120 s, then it wandered inside the enclosure only and never stood on a gate cell. | unit |
 | ANIM-011 | Given the same seed and inputs, then wandering is identical (deterministic); after save/restore it continues identically (GAME-SAVE). | unit |
-| ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (proposal Q-085). | unit |
+| ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (Q-085, confirmed 2026-10-01). | unit |
 | ANIM-013 | Given a level that has just started (new game, barrier opened), then every one of its animals is `escaped`, visible and simulated from the first frame; no animal appears later (LAYOUT-044). | unit |
 
 ## Open questions

@@ -1738,4 +1738,312 @@ source = "synthesised"
 script = "tools/sound/animals.py"
 approved = false
 
+[[asset]]
+id = "ambient_crickets"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "ambient"
+variants = 1
+files = "assets/audio/ambient/ambient_crickets_<n>.ogg"
+licence = "CC0"
+source = "real-recording"
+origin_url = "https://opengameart.org/content/crickets-ambient-noise-loopable"
+author = "Ted Kerr"
+retrieved = "2026-10-01"
+script = "tools/sound/crickets.py"
+note = "seamless 21.8 s night loop (ambient, ASND-020), -22 LUFS, plays at gain <= 0.12"
+approved = false
+
 # END audio
+
+# Female + baby of every other pair species (Q-280, Q-308): concept sheets first, NOT modelled; the game draws the adult model scaled meanwhile
+
+[[asset]]
+id = "hippo_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
+
+[[asset]]
+id = "hippo_calf"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "swim", "happy", "refuse"]
+
+[[asset]]
+id = "panda_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "panda_cub"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "elephant_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "elephant_calf"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "giraffe_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "giraffe_calf"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "lion_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "lion_cub"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "monkey_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "monkey_baby"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy"]
+
+[[asset]]
+id = "snow_fox_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "snow_fox_kit"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "drink", "happy", "refuse"]
+
+[[asset]]
+id = "goldfish_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["swim", "eat"]
+
+[[asset]]
+id = "goldfish_fry"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["swim", "eat"]
+
+[[asset]]
+id = "hedgehog_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "hedgehog_hoglet"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "bat_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "bat_pup"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "owl_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "owl_owlet"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+# Landmark concept sheets (2026-10-02, art/props/kit_landmarks_l2|l3) — models follow after approval
+
+[[asset]]
+id = "landmark_zoo_train"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_stage"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_treehouse"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_giant_tree"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_blossom_tree"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_log_pile"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_play_ball"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_lookout_tower"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_playground"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_deckchairs"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_fountain"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_pirate_ship"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_carousel"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_washing_line"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_willow"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_mill_hut"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_waterfall"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_ice_cream_kiosk"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []
+
+[[asset]]
+id = "landmark_stream_kit"
+kind = "props"
+spec = "ART-ENVIRONMENT"
+concept_approved = false
+animations = []

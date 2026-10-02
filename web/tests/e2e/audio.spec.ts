@@ -190,7 +190,14 @@ test('ASND-009: the sound switch mutes every cue, is saved and restored', async 
   expect(await page.evaluate(() => window.localStorage.getItem('zoo.sound'))).toBe('0');
   expect(await page.evaluate(() => window.__zoo!.audio.enabled)).toBe(false);
   // a cue decision is logged as muted; nothing more is fetched, even after the idle prefetch time
-  const fetchedBefore = await page.evaluate(() => window.__zoo!.audio.fetched.length);
+  // (a group that was already downloading when the switch was pressed may still finish: wait until the count is stable)
+  let fetchedBefore = await page.evaluate(() => window.__zoo!.audio.fetched.length);
+  for (let i = 0; i < 20; i++) {
+    await page.waitForTimeout(1500);
+    const n = await page.evaluate(() => window.__zoo!.audio.fetched.length);
+    if (n === fetchedBefore) break;
+    fetchedBefore = n;
+  }
   await clear(page);
   await goto(page, 2.5, 4.5);
   await page.evaluate(() => {
@@ -213,5 +220,32 @@ test('ASND-009: the sound switch mutes every cue, is saved and restored', async 
   await expect(page.locator('#sound-toggle')).toHaveText('🔊');
   expect(await page.evaluate(() => window.localStorage.getItem('zoo.sound'))).toBe('1');
   expect(await page.evaluate(() => window.__zoo!.audio.enabled)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+// ASND-027 (NIGHT-024): quiet crickets at night, fetched lazily after the gesture, none by day
+test('ASND-027: the cricket loop fades in at night (gain <= 0.12) and out by day', async ({ page }) => {
+  const errors = await start(page);
+  const amb = () =>
+    page.evaluate(() => ({ ...window.__zoo!.audio.ambient, peak: window.__zoo!.audio.ambient.gain }));
+  // day: nothing, even after the gesture and the idle prefetch
+  await gesture(page);
+  await nextFrames(page, 10);
+  expect(await amb()).toMatchObject({ playing: false, gain: 0, fetched: false });
+  // night: the loop is fetched and plays, never louder than 0.12
+  expect(await page.evaluate(() => window.__zoo!.app.debug_set_daytime('night'))).toBe(true);
+  await page.waitForFunction(() => window.__zoo!.audio.ambient.playing, null, { timeout: 15_000 });
+  let max = 0;
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(400);
+    max = Math.max(max, (await amb()).gain);
+  }
+  expect((await amb()).fetched).toBe(true);
+  expect(max).toBeGreaterThan(0.05);
+  expect(max).toBeLessThanOrEqual(0.12 + 1e-9);
+  // sleeping / the next morning: fades out and stops
+  await page.evaluate(() => window.__zoo!.app.debug_set_daytime('day'));
+  await page.waitForFunction(() => !window.__zoo!.audio.ambient.playing, null, { timeout: 15_000 });
+  expect((await amb()).gain).toBe(0);
   expect(errors).toEqual([]);
 });

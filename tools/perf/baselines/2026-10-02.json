@@ -1,0 +1,4557 @@
+{
+  "meta": {
+    "commit": "afd42e4",
+    "dirty_files": 147,
+    "diff_sha1": "6c8001e59f",
+    "date": "2026-10-02T17:57:05+02:00",
+    "host": "Linux 6.8.0-138-generic x86_64",
+    "cpu": "AMD Ryzen 5 5500U with Radeon Graphics",
+    "loadavg": "3.39 7.79 7.62",
+    "cpus": 12,
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "wasm_pack": "wasm-pack 0.15.0"
+  },
+  "sizes": {
+    "wasm": {
+      "dev": {
+        "bytes": 13582423,
+        "gzip": 2116476,
+        "brotli": 1315711
+      },
+      "release_rustc": {
+        "bytes": 4103225,
+        "gzip": 955774,
+        "brotli": 693768
+      },
+      "release": {
+        "bytes": 1913152,
+        "gzip": 729340,
+        "brotli": 549921
+      },
+      "release_js_glue": {
+        "bytes": 97090,
+        "gzip": 16990,
+        "brotli": 14600
+      },
+      "release_plus-Oz": {
+        "bytes": 1869217,
+        "gzip": 728598,
+        "brotli": 548818
+      },
+      "release_plus-O3": {
+        "bytes": 1937290,
+        "gzip": 730302,
+        "brotli": 548843
+      }
+    },
+    "dist": {
+      "total": {
+        "files": 380,
+        "bytes": 11610499,
+        "gzip": 5317150,
+        "brotli": 4477598
+      },
+      "groups": {
+        "ads": {
+          "files": 8,
+          "bytes": 386140,
+          "gzip": 384505,
+          "brotli": 384194
+        },
+        "assets/audio": {
+          "files": 174,
+          "bytes": 1256371,
+          "gzip": 1173324,
+          "brotli": 1150505
+        },
+        "assets/i18n": {
+          "files": 8,
+          "bytes": 116959,
+          "gzip": 37381,
+          "brotli": 33228
+        },
+        "assets": {
+          "files": 1,
+          "bytes": 12529,
+          "gzip": 1791,
+          "brotli": 1602
+        },
+        "assets/levels": {
+          "files": 4,
+          "bytes": 121599,
+          "gzip": 35163,
+          "brotli": 30288
+        },
+        "assets/models": {
+          "files": 142,
+          "bytes": 7406379,
+          "gzip": 2673919,
+          "brotli": 2052371
+        },
+        "assets/textures": {
+          "files": 40,
+          "bytes": 265871,
+          "gzip": 242313,
+          "brotli": 240946
+        },
+        "bundle": {
+          "files": 2,
+          "bytes": 2018979,
+          "gzip": 763406,
+          "brotli": 579970
+        },
+        "root": {
+          "files": 1,
+          "bytes": 25672,
+          "gzip": 5348,
+          "brotli": 4494
+        }
+      },
+      "biggest": [
+        {
+          "path": "bundle/zoo_web_bg-VDopHOEb.wasm",
+          "bytes": 1913152,
+          "gzip": 729340,
+          "brotli": 549921
+        },
+        {
+          "path": "assets/models/animals/hedgehog.glb",
+          "bytes": 264824,
+          "gzip": 106574,
+          "brotli": 81800
+        },
+        {
+          "path": "assets/models/animals/monkey.glb",
+          "bytes": 253344,
+          "gzip": 103106,
+          "brotli": 79940
+        },
+        {
+          "path": "assets/models/animals/porcupine.glb",
+          "bytes": 249428,
+          "gzip": 98440,
+          "brotli": 76200
+        },
+        {
+          "path": "assets/models/animals/elephant.glb",
+          "bytes": 225780,
+          "gzip": 93981,
+          "brotli": 73708
+        },
+        {
+          "path": "assets/models/animals/fennec.glb",
+          "bytes": 223148,
+          "gzip": 89978,
+          "brotli": 68344
+        },
+        {
+          "path": "assets/models/animals/raccoon.glb",
+          "bytes": 221940,
+          "gzip": 91942,
+          "brotli": 70219
+        },
+        {
+          "path": "assets/models/animals/lion.glb",
+          "bytes": 219256,
+          "gzip": 86396,
+          "brotli": 65379
+        },
+        {
+          "path": "assets/models/characters/player_girl.glb",
+          "bytes": 219076,
+          "gzip": 79104,
+          "brotli": 61221
+        },
+        {
+          "path": "assets/models/animals/zebra_female.glb",
+          "bytes": 215248,
+          "gzip": 79903,
+          "brotli": 59135
+        },
+        {
+          "path": "assets/models/animals/hippo.glb",
+          "bytes": 214692,
+          "gzip": 89960,
+          "brotli": 69742
+        },
+        {
+          "path": "assets/models/animals/zebra.glb",
+          "bytes": 213312,
+          "gzip": 78877,
+          "brotli": 58688
+        },
+        {
+          "path": "assets/models/animals/zebra_foal.glb",
+          "bytes": 213268,
+          "gzip": 79662,
+          "brotli": 59196
+        },
+        {
+          "path": "assets/models/animals/snow_fox.glb",
+          "bytes": 211916,
+          "gzip": 83837,
+          "brotli": 63597
+        },
+        {
+          "path": "assets/models/animals/slow_loris.glb",
+          "bytes": 206448,
+          "gzip": 76840,
+          "brotli": 56842
+        }
+      ]
+    }
+  },
+  "probe": {
+    "anim": [
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/badger.glb",
+        "pose_us": 10.05427375
+      },
+      {
+        "channels": 160,
+        "clips": [
+          "eat",
+          "fly",
+          "hang",
+          "happy",
+          "idle",
+          "perch",
+          "refuse",
+          "sleep"
+        ],
+        "joints": 20,
+        "nodes": 22,
+        "path": "models/animals/bat.glb",
+        "pose_us": 6.10476675
+      },
+      {
+        "channels": 80,
+        "clips": [
+          "dip",
+          "flap",
+          "idle",
+          "preen",
+          "swim"
+        ],
+        "joints": 16,
+        "nodes": 18,
+        "path": "models/animals/duck.glb",
+        "pose_us": 5.53975
+      },
+      {
+        "channels": 80,
+        "clips": [
+          "dip",
+          "flap",
+          "idle",
+          "preen",
+          "swim"
+        ],
+        "joints": 16,
+        "nodes": 18,
+        "path": "models/animals/duckling.glb",
+        "pose_us": 4.229452
+      },
+      {
+        "channels": 156,
+        "clips": [
+          "drink",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 26,
+        "nodes": 28,
+        "path": "models/animals/elephant.glb",
+        "pose_us": 8.539555250000001
+      },
+      {
+        "channels": 144,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 24,
+        "nodes": 26,
+        "path": "models/animals/fennec.glb",
+        "pose_us": 9.384882750000001
+      },
+      {
+        "channels": 44,
+        "clips": [
+          "croak",
+          "hop",
+          "idle",
+          "swim"
+        ],
+        "joints": 11,
+        "nodes": 13,
+        "path": "models/animals/frog.glb",
+        "pose_us": 3.2729345000000003
+      },
+      {
+        "channels": 115,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/giraffe.glb",
+        "pose_us": 10.979569
+      },
+      {
+        "channels": 65,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "swim"
+        ],
+        "joints": 13,
+        "nodes": 15,
+        "path": "models/animals/goldfish.glb",
+        "pose_us": 6.62551175
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/hedgehog.glb",
+        "pose_us": 9.6512315
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "swim",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/hippo.glb",
+        "pose_us": 11.554204250000002
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/kiwi.glb",
+        "pose_us": 7.36082625
+      },
+      {
+        "channels": 115,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/koala.glb",
+        "pose_us": 9.353908500000001
+      },
+      {
+        "channels": 115,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/koala_female.glb",
+        "pose_us": 8.237352999999999
+      },
+      {
+        "channels": 115,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/koala_joey.glb",
+        "pose_us": 9.31329075
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "drink",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/lion.glb",
+        "pose_us": 9.6834455
+      },
+      {
+        "channels": 161,
+        "clips": [
+          "climb",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk",
+          "wave"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/monkey.glb",
+        "pose_us": 9.96312975
+      },
+      {
+        "channels": 128,
+        "clips": [
+          "eat",
+          "fly",
+          "happy",
+          "idle",
+          "look",
+          "perch",
+          "refuse",
+          "sleep"
+        ],
+        "joints": 16,
+        "nodes": 18,
+        "path": "models/animals/owl.glb",
+        "pose_us": 5.2265742500000005
+      },
+      {
+        "channels": 115,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/panda.glb",
+        "pose_us": 10.023507500000001
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/porcupine.glb",
+        "pose_us": 9.7231915
+      },
+      {
+        "channels": 144,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 24,
+        "nodes": 26,
+        "path": "models/animals/raccoon.glb",
+        "pose_us": 9.517501
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "sleep",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/slow_loris.glb",
+        "pose_us": 10.014966249999999
+      },
+      {
+        "channels": 144,
+        "clips": [
+          "drink",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 24,
+        "nodes": 26,
+        "path": "models/animals/snow_fox.glb",
+        "pose_us": 10.316069
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "eat",
+          "happy",
+          "hop",
+          "idle",
+          "refuse",
+          "sleep"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/tarsier.glb",
+        "pose_us": 10.543556
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "drink",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/zebra.glb",
+        "pose_us": 9.743295
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "drink",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/zebra_female.glb",
+        "pose_us": 11.4978815
+      },
+      {
+        "channels": 138,
+        "clips": [
+          "drink",
+          "eat",
+          "happy",
+          "idle",
+          "refuse",
+          "walk"
+        ],
+        "joints": 23,
+        "nodes": 25,
+        "path": "models/animals/zebra_foal.glb",
+        "pose_us": 8.037148250000001
+      },
+      {
+        "channels": 180,
+        "clips": [
+          "carry",
+          "cheer",
+          "give",
+          "idle",
+          "pick_up",
+          "run",
+          "talk",
+          "walk",
+          "wave"
+        ],
+        "joints": 20,
+        "nodes": 26,
+        "path": "models/characters/player_girl.glb",
+        "pose_us": 7.20436475
+      }
+    ],
+    "game": {
+      "alloc_sites_10_frames": [],
+      "ambient_allocs_per_frame": 0,
+      "ambient_poses": 10,
+      "ambient_us": {
+        "max": 251.28,
+        "mean": 6.768848245614031,
+        "p50": 6.463,
+        "p95": 6.883
+      },
+      "butterflies": 4,
+      "frames": 1140,
+      "game_alloc_bytes_per_frame": 14495.17543859649,
+      "game_allocs_max": 44,
+      "game_allocs_per_frame": 31.95175438596491,
+      "game_update_us": {
+        "max": 84.021,
+        "mean": 16.23658596491227,
+        "p50": 15.56,
+        "p95": 17.804000000000002
+      },
+      "scene_build_ms": 13.938035
+    },
+    "models": [
+      {
+        "bytes": 206124,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/badger.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1592,
+        "vertices": 920
+      },
+      {
+        "bytes": 171936,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/bat.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1560,
+        "vertices": 893
+      },
+      {
+        "bytes": 125716,
+        "kind": "animals",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/animals/duck.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 986,
+        "vertices": 540
+      },
+      {
+        "bytes": 124716,
+        "kind": "animals",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/animals/duckling.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 925,
+        "vertices": 527
+      },
+      {
+        "bytes": 225780,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/elephant.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1792,
+        "vertices": 1012
+      },
+      {
+        "bytes": 223148,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/fennec.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1784,
+        "vertices": 1016
+      },
+      {
+        "bytes": 73356,
+        "kind": "animals",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/animals/frog.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 948,
+        "vertices": 542
+      },
+      {
+        "bytes": 200456,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/giraffe.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2004,
+        "vertices": 1146
+      },
+      {
+        "bytes": 133284,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/goldfish.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1480,
+        "vertices": 858
+      },
+      {
+        "bytes": 264824,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/hedgehog.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2759,
+        "vertices": 1891
+      },
+      {
+        "bytes": 214692,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/hippo.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1796,
+        "vertices": 1040
+      },
+      {
+        "bytes": 121068,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/kiwi.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1116,
+        "vertices": 628
+      },
+      {
+        "bytes": 185540,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/koala.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1712,
+        "vertices": 960
+      },
+      {
+        "bytes": 185644,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/koala_female.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1712,
+        "vertices": 960
+      },
+      {
+        "bytes": 185912,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/koala_joey.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1712,
+        "vertices": 960
+      },
+      {
+        "bytes": 219256,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/lion.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2308,
+        "vertices": 1262
+      },
+      {
+        "bytes": 253344,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/monkey.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2486,
+        "vertices": 1415
+      },
+      {
+        "bytes": 170116,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/owl.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2322,
+        "vertices": 1289
+      },
+      {
+        "bytes": 188012,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/panda.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1756,
+        "vertices": 962
+      },
+      {
+        "bytes": 249428,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/porcupine.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2341,
+        "vertices": 1587
+      },
+      {
+        "bytes": 221940,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/raccoon.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1668,
+        "vertices": 976
+      },
+      {
+        "bytes": 206448,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/slow_loris.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1504,
+        "vertices": 850
+      },
+      {
+        "bytes": 211916,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/snow_fox.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1924,
+        "vertices": 1104
+      },
+      {
+        "bytes": 189184,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/tarsier.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 1472,
+        "vertices": 838
+      },
+      {
+        "bytes": 213312,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/zebra.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2040,
+        "vertices": 1130
+      },
+      {
+        "bytes": 215248,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/zebra_female.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2100,
+        "vertices": 1162
+      },
+      {
+        "bytes": 213268,
+        "kind": "animals",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/animals/zebra_foal.glb",
+        "skinned": true,
+        "texture": "256x256",
+        "triangles": 2040,
+        "vertices": 1130
+      },
+      {
+        "bytes": 32720,
+        "kind": "buildings",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/buildings/entrance_arch.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 692,
+        "vertices": 778
+      },
+      {
+        "bytes": 92280,
+        "kind": "buildings",
+        "materials": 2,
+        "parts": 4,
+        "path": "models/buildings/food_hut.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 1308,
+        "vertices": 2473
+      },
+      {
+        "bytes": 85544,
+        "kind": "buildings",
+        "materials": 2,
+        "parts": 4,
+        "path": "models/buildings/food_storage.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 1238,
+        "vertices": 2276
+      },
+      {
+        "bytes": 182908,
+        "kind": "buildings",
+        "materials": 5,
+        "parts": 9,
+        "path": "models/buildings/night_house.glb",
+        "skinned": false,
+        "texture": null,
+        "triangles": 3196,
+        "vertices": 4814
+      },
+      {
+        "bytes": 89476,
+        "kind": "buildings",
+        "materials": 2,
+        "parts": 4,
+        "path": "models/buildings/zookeeper_house.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 1388,
+        "vertices": 2368
+      },
+      {
+        "bytes": 219076,
+        "kind": "characters",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/characters/player_girl.glb",
+        "skinned": true,
+        "texture": "64x64",
+        "triangles": 2156,
+        "vertices": 1326
+      },
+      {
+        "bytes": 12232,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/apple_tree_ripe.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 180,
+        "vertices": 260
+      },
+      {
+        "bytes": 5904,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/apple_tree_sprout.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 58,
+        "vertices": 85
+      },
+      {
+        "bytes": 7628,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/apple_tree_young.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 105,
+        "vertices": 130
+      },
+      {
+        "bytes": 29132,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/bamboo.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 385,
+        "vertices": 763
+      },
+      {
+        "bytes": 16756,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/basket.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 264,
+        "vertices": 386
+      },
+      {
+        "bytes": 18504,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/bed.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 416,
+        "vertices": 414
+      },
+      {
+        "bytes": 8276,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/bedside_lamp.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 122,
+        "vertices": 117
+      },
+      {
+        "bytes": 9992,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/board_lamp.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 124,
+        "vertices": 170
+      },
+      {
+        "bytes": 26600,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/bridge_wood.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 404,
+        "vertices": 680
+      },
+      {
+        "bytes": 21260,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/brush_pile.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 235,
+        "vertices": 532
+      },
+      {
+        "bytes": 8884,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/bush.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 260,
+        "vertices": 154
+      },
+      {
+        "bytes": 4356,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/carrot.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 24,
+        "vertices": 44
+      },
+      {
+        "bytes": 11248,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/carrot_plant_ripe.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 154,
+        "vertices": 234
+      },
+      {
+        "bytes": 6608,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/carrot_plant_sprout.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 68,
+        "vertices": 105
+      },
+      {
+        "bytes": 8008,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/carrot_plant_young.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 88,
+        "vertices": 145
+      },
+      {
+        "bytes": 10616,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/cart_key.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 166,
+        "vertices": 210
+      },
+      {
+        "bytes": 13576,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/crooked_tree.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 181,
+        "vertices": 299
+      },
+      {
+        "bytes": 13268,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/desk.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 236,
+        "vertices": 279
+      },
+      {
+        "bytes": 19104,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/door_wood.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 312,
+        "vertices": 422
+      },
+      {
+        "bytes": 10704,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/duck.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 254,
+        "vertices": 212
+      },
+      {
+        "bytes": 13712,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/enclosure_sign.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 378,
+        "vertices": 282
+      },
+      {
+        "bytes": 15168,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/fallen_tree.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 323,
+        "vertices": 338
+      },
+      {
+        "bytes": 8396,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/fence_wood.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 168,
+        "vertices": 156
+      },
+      {
+        "bytes": 7428,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/fence_wood_1m.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 134,
+        "vertices": 132
+      },
+      {
+        "bytes": 11492,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/fence_wood_corner.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 234,
+        "vertices": 240
+      },
+      {
+        "bytes": 6064,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/fence_wood_end.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 140,
+        "vertices": 89
+      },
+      {
+        "bytes": 14860,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/fir_tree.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 271,
+        "vertices": 326
+      },
+      {
+        "bytes": 24576,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/flower_bed.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 350,
+        "vertices": 628
+      },
+      {
+        "bytes": 16756,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/flower_pots.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 225,
+        "vertices": 393
+      },
+      {
+        "bytes": 12768,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/food_box.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 148,
+        "vertices": 296
+      },
+      {
+        "bytes": 33504,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/food_box_stack.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 444,
+        "vertices": 888
+      },
+      {
+        "bytes": 10844,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/frog.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 223,
+        "vertices": 222
+      },
+      {
+        "bytes": 12316,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/garden_bed.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 145,
+        "vertices": 270
+      },
+      {
+        "bytes": 13120,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/garden_fence.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 190,
+        "vertices": 286
+      },
+      {
+        "bytes": 9184,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/garden_fence_1m.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 120,
+        "vertices": 176
+      },
+      {
+        "bytes": 27448,
+        "kind": "props",
+        "materials": 1,
+        "parts": 3,
+        "path": "models/props/garden_gate.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 492,
+        "vertices": 626
+      },
+      {
+        "bytes": 5492,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/garden_sign.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 52,
+        "vertices": 48
+      },
+      {
+        "bytes": 11932,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/gate_wood.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 248,
+        "vertices": 252
+      },
+      {
+        "bytes": 24436,
+        "kind": "props",
+        "materials": 1,
+        "parts": 3,
+        "path": "models/props/gate_zoo.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 408,
+        "vertices": 548
+      },
+      {
+        "bytes": 22408,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/gate_zoo_closed.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 408,
+        "vertices": 548
+      },
+      {
+        "bytes": 18476,
+        "kind": "props",
+        "materials": 2,
+        "parts": 4,
+        "path": "models/props/glass_door.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 284,
+        "vertices": 392
+      },
+      {
+        "bytes": 4864,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/grass_tile.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 28,
+        "vertices": 74
+      },
+      {
+        "bytes": 5296,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/grass_tuft.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 34,
+        "vertices": 84
+      },
+      {
+        "bytes": 14120,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/hand_lantern.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 230,
+        "vertices": 277
+      },
+      {
+        "bytes": 9880,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/hedge.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 284,
+        "vertices": 182
+      },
+      {
+        "bytes": 6868,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/hedge_1m.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 154,
+        "vertices": 112
+      },
+      {
+        "bytes": 9568,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/hedge_corner.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 230,
+        "vertices": 182
+      },
+      {
+        "bytes": 16984,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/hollow_tree.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 291,
+        "vertices": 385
+      },
+      {
+        "bytes": 14376,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/info_board.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 400,
+        "vertices": 300
+      },
+      {
+        "bytes": 18532,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/jetty_wood.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 236,
+        "vertices": 460
+      },
+      {
+        "bytes": 20056,
+        "kind": "props",
+        "materials": 1,
+        "parts": 2,
+        "path": "models/props/key_box.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 332,
+        "vertices": 448
+      },
+      {
+        "bytes": 16604,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/lantern_post.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 256,
+        "vertices": 352
+      },
+      {
+        "bytes": 11992,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/lily_pad.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 205,
+        "vertices": 261
+      },
+      {
+        "bytes": 13428,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/map_board.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 364,
+        "vertices": 276
+      },
+      {
+        "bytes": 82528,
+        "kind": "props",
+        "materials": 4,
+        "parts": 6,
+        "path": "models/props/moon_door.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 1430,
+        "vertices": 2078
+      },
+      {
+        "bytes": 82536,
+        "kind": "props",
+        "materials": 4,
+        "parts": 6,
+        "path": "models/props/moon_door_open.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 1430,
+        "vertices": 2078
+      },
+      {
+        "bytes": 25088,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/mushroom_patch.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 381,
+        "vertices": 624
+      },
+      {
+        "bytes": 13244,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/night_table.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 256,
+        "vertices": 275
+      },
+      {
+        "bytes": 4372,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/note_paper.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 10,
+        "vertices": 20
+      },
+      {
+        "bytes": 18600,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/old_tree.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 289,
+        "vertices": 439
+      },
+      {
+        "bytes": 12140,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/orange_tree_ripe.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 180,
+        "vertices": 257
+      },
+      {
+        "bytes": 5908,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/orange_tree_sprout.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 58,
+        "vertices": 85
+      },
+      {
+        "bytes": 7532,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/orange_tree_young.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 105,
+        "vertices": 127
+      },
+      {
+        "bytes": 6928,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/path_edge.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 158,
+        "vertices": 112
+      },
+      {
+        "bytes": 9168,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/path_tile_cross.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 198,
+        "vertices": 176
+      },
+      {
+        "bytes": 6524,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/path_tile_curve.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 110,
+        "vertices": 110
+      },
+      {
+        "bytes": 5052,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/path_tile_end.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 63,
+        "vertices": 73
+      },
+      {
+        "bytes": 5680,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/path_tile_straight.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 86,
+        "vertices": 88
+      },
+      {
+        "bytes": 8056,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/path_tile_t.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 164,
+        "vertices": 148
+      },
+      {
+        "bytes": 9212,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/plaza_tile.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 186,
+        "vertices": 180
+      },
+      {
+        "bytes": 7484,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/potato.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 90,
+        "vertices": 129
+      },
+      {
+        "bytes": 11944,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/potato_plant_ripe.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 158,
+        "vertices": 255
+      },
+      {
+        "bytes": 5904,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/potato_plant_sprout.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 58,
+        "vertices": 85
+      },
+      {
+        "bytes": 8700,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/potato_plant_young.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 98,
+        "vertices": 165
+      },
+      {
+        "bytes": 33676,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/potting_bench.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 495,
+        "vertices": 871
+      },
+      {
+        "bytes": 15196,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/reed.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 175,
+        "vertices": 367
+      },
+      {
+        "bytes": 7640,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/repair_sign.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 119,
+        "vertices": 141
+      },
+      {
+        "bytes": 14072,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/road_block.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 216,
+        "vertices": 324
+      },
+      {
+        "bytes": 5112,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/rock.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 75,
+        "vertices": 71
+      },
+      {
+        "bytes": 10308,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/rock_hill.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 115,
+        "vertices": 209
+      },
+      {
+        "bytes": 13020,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/rug_round.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 260,
+        "vertices": 270
+      },
+      {
+        "bytes": 3020,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/sand_tile.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 10,
+        "vertices": 20
+      },
+      {
+        "bytes": 19900,
+        "kind": "props",
+        "materials": 4,
+        "parts": 4,
+        "path": "models/props/string_lights.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 380,
+        "vertices": 392
+      },
+      {
+        "bytes": 6728,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/string_post.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 96,
+        "vertices": 104
+      },
+      {
+        "bytes": 10488,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/telescope.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 148,
+        "vertices": 212
+      },
+      {
+        "bytes": 23044,
+        "kind": "props",
+        "materials": 1,
+        "parts": 2,
+        "path": "models/props/toy_chest.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 406,
+        "vertices": 529
+      },
+      {
+        "bytes": 6072,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/traffic_cone.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 98,
+        "vertices": 96
+      },
+      {
+        "bytes": 14596,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/tree_eucalyptus.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 376,
+        "vertices": 310
+      },
+      {
+        "bytes": 12252,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/tree_grove.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 366,
+        "vertices": 239
+      },
+      {
+        "bytes": 14800,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/tree_round.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 380,
+        "vertices": 316
+      },
+      {
+        "bytes": 11592,
+        "kind": "props",
+        "materials": 1,
+        "parts": 2,
+        "path": "models/props/turnstile.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 160,
+        "vertices": 218
+      },
+      {
+        "bytes": 14952,
+        "kind": "props",
+        "materials": 2,
+        "parts": 2,
+        "path": "models/props/wall_lamp.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 216,
+        "vertices": 308
+      },
+      {
+        "bytes": 2448,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_pond.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 2,
+        "vertices": 4
+      },
+      {
+        "bytes": 5320,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_pond_corner.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 51,
+        "vertices": 83
+      },
+      {
+        "bytes": 4108,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_pond_edge.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 21,
+        "vertices": 51
+      },
+      {
+        "bytes": 4112,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_river_bank.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 21,
+        "vertices": 51
+      },
+      {
+        "bytes": 5320,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_river_curve.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 51,
+        "vertices": 83
+      },
+      {
+        "bytes": 3508,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_river_inner.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 22,
+        "vertices": 32
+      },
+      {
+        "bytes": 2468,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/water_river_straight.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 2,
+        "vertices": 4
+      },
+      {
+        "bytes": 10096,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/watering_can.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 134,
+        "vertices": 202
+      },
+      {
+        "bytes": 8840,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/wheelbarrow.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 96,
+        "vertices": 170
+      },
+      {
+        "bytes": 30896,
+        "kind": "props",
+        "materials": 1,
+        "parts": 2,
+        "path": "models/props/windmill.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 480,
+        "vertices": 761
+      },
+      {
+        "bytes": 21080,
+        "kind": "props",
+        "materials": 2,
+        "parts": 3,
+        "path": "models/props/window_moon.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 318,
+        "vertices": 458
+      },
+      {
+        "bytes": 18148,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/zoo_wall.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 308,
+        "vertices": 436
+      },
+      {
+        "bytes": 14700,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/zoo_wall_1m.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 244,
+        "vertices": 340
+      },
+      {
+        "bytes": 19240,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/zoo_wall_corner.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 328,
+        "vertices": 466
+      },
+      {
+        "bytes": 18276,
+        "kind": "props",
+        "materials": 1,
+        "parts": 1,
+        "path": "models/props/zookeeper_cart.glb",
+        "skinned": false,
+        "texture": "256x256",
+        "triangles": 362,
+        "vertices": 428
+      }
+    ]
+  },
+  "browser": {
+    "viewports": {
+      "desktop": {
+        "viewport": {
+          "id": "desktop",
+          "width": 1920,
+          "height": 1080,
+          "dpr": 1,
+          "scenarios": "all"
+        },
+        "load": {
+          "first_frame_ms": null,
+          "dom_content_loaded_ms": 332.9000000001397,
+          "resources": 148,
+          "transfer_bytes": 8049599,
+          "decoded_bytes": 8096828,
+          "wasm_memory_bytes": 20381696,
+          "js_heap_used_bytes": 31200000,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+          "first_frame_wall_ms": 5471
+        },
+        "scenarios": {
+          "S01": {
+            "desc": "level-1 spawn, zoo view, default zoom (14 m)",
+            "cpu_ms": {
+              "p50": 0.9000000001396984,
+              "p95": 4.600000000093132,
+              "max": 7.400000000139698,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 1054.5999999998603,
+              "p95": 1691.3000000000466,
+              "max": 35729.39999999991,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 1107.6999999999534,
+              "p95": 1711,
+              "max": 35764.39999999991,
+              "n": 17
+            },
+            "draw_calls": 33,
+            "instances": 889,
+            "triangles": 94948,
+            "culled_batches": 167,
+            "decals": 2,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 167,
+              "draws": 33,
+              "use_program": 8,
+              "bind_texture": 17,
+              "bind_vao": 29,
+              "uniform_calls": 17,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 908.3000000000466,
+              "fullscreen_pass_ms": 223.5,
+              "sim_step_ms": 0.30666666666511444,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x450 12600t (450 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x12 1320t (12 of 26 in 1 draws)",
+                "path_edge@1 x123 19434t (123 of 382 in 1 draws)",
+                "path_tile_t@1 x91 14924t (91 of 298 in 1 draws)",
+                "path_tile_cross@1 x61 12078t (61 of 151 in 1 draws)",
+                "zoo_wall@1 x8 2464t (8 of 42 in 1 draws)",
+                "zoo_wall_1m@1 x1 244t (1 of 4 in 1 draws)",
+                "map_board@1 x1 364t",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x7 1176t (7 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x6 60t (6 of 78 in 1 draws)"
+              ]
+            }
+          },
+          "S02": {
+            "desc": "level-1 spawn, zoo view, max zoom-out (20 m)",
+            "cpu_ms": {
+              "p50": 2.699999999953434,
+              "p95": 6.800000000046566,
+              "max": 8.399999999906868,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 1536.1999999999534,
+              "p95": 1749.3999999999069,
+              "max": 25475,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 1534.6999999999534,
+              "p95": 1751.1999999999534,
+              "max": 25485,
+              "n": 17
+            },
+            "draw_calls": 40,
+            "instances": 1049,
+            "triangles": 105558,
+            "culled_batches": 161,
+            "decals": 2,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 20,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 181,
+              "draws": 40,
+              "use_program": 8,
+              "bind_texture": 17,
+              "bind_vao": 36,
+              "uniform_calls": 17,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 1296,
+              "fullscreen_pass_ms": 394.30000000004657,
+              "sim_step_ms": 0.5799999999968956,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "note_paper@1 x1 8t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x569 15932t (569 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x14 1540t (14 of 26 in 1 draws)",
+                "path_edge@1 x123 19434t (123 of 382 in 1 draws)",
+                "path_tile_t@1 x91 14924t (91 of 298 in 1 draws)",
+                "path_tile_cross@1 x66 13068t (66 of 151 in 1 draws)",
+                "path_tile_straight@1 x2 172t (2 of 13 in 1 draws)",
+                "zoo_wall@1 x12 3696t (12 of 42 in 1 draws)",
+                "zoo_wall_1m@1 x1 244t (1 of 4 in 1 draws)",
+                "hedge@1 x8 2272t (8 of 45 in 1 draws)",
+                "map_board@1 x1 364t",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x17 2856t (17 of 50 in 1 draws)",
+                "fence_wood_1m@1 x1 134t (1 of 6 in 1 draws)",
+                "gate_wood@1 x2 496t (2 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x11 110t (11 of 78 in 1 draws)",
+                "__box@10 x1 10t"
+              ]
+            }
+          },
+          "S03": {
+            "desc": "walking (autopilot) from the level-1 spawn north along the ring path",
+            "cpu_ms": {
+              "p50": 1.4000000001396984,
+              "p95": 6.699999999953434,
+              "max": 11,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 2109.8000000000466,
+              "p95": 2378.5,
+              "max": 25957.399999999907,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 2133.8000000000466,
+              "p95": 2379.7000000001863,
+              "max": 25964.399999999907,
+              "n": 16
+            },
+            "draw_calls": 30,
+            "instances": 810,
+            "triangles": 88142,
+            "culled_batches": 164,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -2.2750136852264404,
+              5.275014400482178
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 149,
+              "draws": 30,
+              "use_program": 8,
+              "bind_texture": 9,
+              "bind_vao": 30,
+              "uniform_calls": 15,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 1727.3999999999069,
+              "fullscreen_pass_ms": 432.30000000004657,
+              "sim_step_ms": 0.2199999999953434,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x382 10696t (382 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x14 1540t (14 of 26 in 1 draws)",
+                "path_edge@1 x110 17380t (110 of 382 in 1 draws)",
+                "path_tile_t@1 x78 12792t (78 of 298 in 1 draws)",
+                "path_tile_cross@1 x55 10890t (55 of 151 in 1 draws)",
+                "path_tile_straight@1 x2 172t (2 of 13 in 1 draws)",
+                "hedge@1 x8 2272t (8 of 45 in 1 draws)",
+                "map_board@1 x1 364t",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "grass_tuft@1 x1 34t (1 of 64 in 1 draws)",
+                "fence_wood_corner@1 x1 234t (1 of 12 in 1 draws)",
+                "fence_wood@1 x10 1680t (10 of 50 in 1 draws)",
+                "fence_wood_1m@1 x1 134t (1 of 6 in 1 draws)",
+                "gate_wood@1 x2 496t (2 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x6 60t (6 of 78 in 1 draws)",
+                "__box@10 x1 10t"
+              ]
+            }
+          },
+          "S04": {
+            "desc": "look-around on the level-1 ring path (-2.5, 20.5) looking north",
+            "cpu_ms": {
+              "p50": 1.2999999998137355,
+              "p95": 5.7000000001862645,
+              "max": 6.100000000093132,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 2151.4000000001397,
+              "p95": 2469.5,
+              "max": 41842.5,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 2154.6999999999534,
+              "p95": 2474.2999999998137,
+              "max": 41854.59999999986,
+              "n": 17
+            },
+            "draw_calls": 38,
+            "instances": 1168,
+            "triangles": 121723,
+            "culled_batches": 164,
+            "decals": 3,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "look_around",
+            "camera_distance": 14,
+            "player": [
+              -2.5,
+              20.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 174,
+              "draws": 38,
+              "use_program": 7,
+              "bind_texture": 20,
+              "bind_vao": 32,
+              "uniform_calls": 17,
+              "tex_sub_image": 4,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 8112,
+              "scene_pass_ms": 1609.1999999997206,
+              "fullscreen_pass_ms": 343.70000000018626,
+              "sim_step_ms": 0.35,
+              "draw_list": [
+                "food_storage@1 x1 1238t",
+                "garden_gate@1 x1 492t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "__bake:garden_veg@1 x1 2380t",
+                "grass_tile@1 x596 16688t (596 of 1580 in 1 draws)",
+                "path_tile_curve@1 x5 550t (5 of 26 in 1 draws)",
+                "path_edge@1 x188 29704t (188 of 382 in 1 draws)",
+                "path_tile_t@1 x168 27552t (168 of 298 in 1 draws)",
+                "path_tile_cross@1 x72 14256t (72 of 151 in 1 draws)",
+                "path_tile_straight@1 x4 344t (4 of 13 in 1 draws)",
+                "tree_grove@1 x16 5856t (16 of 16 in 1 draws)",
+                "bush@1 x26 6760t (26 of 31 in 1 draws)",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x12 2016t (12 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "enclosure_sign@1 x1 378t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "reed@1 x1 175t (1 of 4 in 1 draws)",
+                "jetty_wood@1 x1 236t",
+                "tree_round@1 x8 3040t (8 of 14 in 1 draws)",
+                "__box@1 x7 70t (7 of 78 in 1 draws)",
+                "water_pond_edge@1 x7 147t (7 of 45 in 1 draws)",
+                "water_pond_corner@1 x1 51t (1 of 8 in 1 draws)",
+                "water_river_bank@1 x16 336t (16 of 66 in 1 draws)",
+                "water_river_straight@1 x8 16t (8 of 33 in 1 draws)"
+              ]
+            }
+          },
+          "S05": {
+            "desc": "first person on the level-1 ring path (-2.5, 20.5) looking north",
+            "cpu_ms": {
+              "p50": 2.8999999999068677,
+              "p95": 10.700000000186265,
+              "max": 10.800000000279397,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 2931.1999999997206,
+              "p95": 3191.7999999998137,
+              "max": 46585.80000000028,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 2934.5999999996275,
+              "p95": 3202.2999999998137,
+              "max": 46591.200000000186,
+              "n": 17
+            },
+            "draw_calls": 33,
+            "instances": 1429,
+            "triangles": 128770,
+            "culled_batches": 167,
+            "decals": 4,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "first_person",
+            "camera_distance": 14,
+            "player": [
+              -2.5,
+              20.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 165,
+              "draws": 33,
+              "use_program": 8,
+              "bind_texture": 16,
+              "bind_vao": 28,
+              "uniform_calls": 16,
+              "tex_sub_image": 2,
+              "tex_image": 0,
+              "buffer_sub_data": 10,
+              "buffer_data": 0,
+              "upload_bytes": 5360,
+              "scene_pass_ms": 1506.5,
+              "fullscreen_pass_ms": 406.3000000002794,
+              "sim_step_ms": 0.3100000000093132,
+              "draw_list": [
+                "garden_sign@1 x2 100t (2 of 4 in 1 draws)",
+                "garden_gate@1 x1 492t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "__bake:garden_veg@1 x1 2380t",
+                "grass_tile@1 x809 22652t (809 of 1580 in 1 draws)",
+                "path_tile_curve@1 x6 660t (6 of 26 in 1 draws)",
+                "path_edge@1 x217 34286t (217 of 382 in 1 draws)",
+                "path_tile_t@1 x184 30176t (184 of 298 in 1 draws)",
+                "path_tile_cross@1 x62 12276t (62 of 151 in 1 draws)",
+                "path_tile_straight@1 x3 258t (3 of 13 in 1 draws)",
+                "tree_grove@1 x16 5856t (16 of 16 in 1 draws)",
+                "bush@1 x26 6760t (26 of 31 in 1 draws)",
+                "fence_wood_corner@1 x3 702t (3 of 12 in 1 draws)",
+                "fence_wood@1 x17 2856t (17 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "enclosure_sign@1 x1 378t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "tree_round@1 x8 3040t (8 of 14 in 1 draws)",
+                "carrot_plant_ripe@1 x2 308t (2 of 6 in 1 draws)",
+                "__box@1 x21 210t (21 of 78 in 1 draws)",
+                "water_river_bank@1 x16 336t (16 of 66 in 1 draws)",
+                "water_river_straight@1 x8 16t (8 of 33 in 1 draws)"
+              ]
+            }
+          },
+          "S06": {
+            "desc": "inside zookeeper_house_1 (roof hidden), zoo view",
+            "cpu_ms": {
+              "p50": 0.900000000372529,
+              "p95": 1.2000000001862645,
+              "max": 1.6000000000931323,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 1084.6999999997206,
+              "p95": 1164.7000000001863,
+              "max": 27035.799999999814,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 1099.8000000002794,
+              "p95": 1165.5,
+              "max": 27037.600000000093,
+              "n": 16
+            },
+            "draw_calls": 29,
+            "instances": 874,
+            "triangles": 89558,
+            "culled_batches": 165,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -11.5,
+              2.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 145,
+              "draws": 29,
+              "use_program": 8,
+              "bind_texture": 9,
+              "bind_vao": 29,
+              "uniform_calls": 13,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 690.7000000001863,
+              "fullscreen_pass_ms": 215.1999999997206,
+              "sim_step_ms": 0.13999999999068677,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "note_paper@1 x1 8t",
+                "window_moon@1 x1 318t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x482 13496t (482 of 1580 in 1 draws)",
+                "plaza_tile@1 x40 7440t (40 of 80 in 1 draws)",
+                "path_tile_curve@1 x12 1320t (12 of 26 in 1 draws)",
+                "path_edge@1 x110 17380t (110 of 382 in 1 draws)",
+                "path_tile_t@1 x78 12792t (78 of 298 in 1 draws)",
+                "path_tile_cross@1 x55 10890t (55 of 151 in 1 draws)",
+                "path_tile_straight@1 x1 86t (1 of 13 in 1 draws)",
+                "zoo_wall@1 x28 8624t (28 of 42 in 1 draws)",
+                "bamboo@1 x12 4620t",
+                "map_board@1 x1 364t",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x11 1848t (11 of 50 in 1 draws)",
+                "fence_wood_1m@1 x1 134t (1 of 6 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x7 1036t (7 of 16 in 1 draws)"
+              ]
+            }
+          },
+          "S07": {
+            "desc": "vegetable garden garden_veg (level 1)",
+            "cpu_ms": {
+              "p50": 1.8999999999068677,
+              "p95": 7.300000000279397,
+              "max": 10.200000000186265,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 1208.2000000001863,
+              "p95": 1501.3000000002794,
+              "max": 13415.100000000093,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 1216.8999999999069,
+              "p95": 1503,
+              "max": 13452.299999999814,
+              "n": 16
+            },
+            "draw_calls": 38,
+            "instances": 898,
+            "triangles": 68986,
+            "culled_batches": 165,
+            "decals": 5,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              7.5,
+              36.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 180,
+              "draws": 38,
+              "use_program": 8,
+              "bind_texture": 20,
+              "bind_vao": 31,
+              "uniform_calls": 20,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 831.7000000001863,
+              "fullscreen_pass_ms": 271.1999999997206,
+              "sim_step_ms": 0.26666666666666666,
+              "draw_list": [
+                "garden_sign@1 x4 200t (4 of 4 in 1 draws)",
+                "garden_gate@1 x1 492t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "__bake:garden_veg@1 x1 2380t",
+                "grass_tile@1 x469 13132t (469 of 1580 in 1 draws)",
+                "path_tile_curve@1 x6 660t (6 of 26 in 1 draws)",
+                "path_edge@1 x157 24806t (157 of 382 in 1 draws)",
+                "path_tile_t@1 x53 8692t (53 of 298 in 1 draws)",
+                "path_tile_straight@1 x3 258t (3 of 13 in 1 draws)",
+                "sand_tile@1 x28 280t (28 of 28 in 1 draws)",
+                "hedge@1 x6 1704t (6 of 45 in 1 draws)",
+                "bush@1 x2 520t (2 of 31 in 1 draws)",
+                "rock@1 x3 225t (3 of 7 in 1 draws)",
+                "grass_tuft@1 x6 204t (6 of 64 in 1 draws)",
+                "fence_wood_corner@1 x3 702t (3 of 12 in 1 draws)",
+                "fence_wood@1 x15 2520t (15 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "enclosure_sign@1 x1 378t (1 of 3 in 1 draws)",
+                "tree_round@1 x6 2280t (6 of 14 in 1 draws)",
+                "carrot_plant_ripe@1 x6 924t (6 of 6 in 1 draws)",
+                "potato_plant_ripe@1 x4 632t (4 of 4 in 1 draws)",
+                "__box@1 x53 530t (53 of 78 in 1 draws)",
+                "water_river_bank@1 x31 651t (31 of 66 in 1 draws)",
+                "water_river_straight@1 x15 30t (15 of 33 in 1 draws)"
+              ]
+            }
+          },
+          "S08": {
+            "desc": "pond with ducks (level 1), water animation + ambient on",
+            "cpu_ms": {
+              "p50": 1.099999999627471,
+              "p95": 4.899999999906868,
+              "max": 9.200000000186265,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 1129.1999999997206,
+              "p95": 1220.7000000001863,
+              "max": 20458.80000000028,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 1130.1000000000931,
+              "p95": 1221.5,
+              "max": 20461.30000000028,
+              "n": 17
+            },
+            "draw_calls": 31,
+            "instances": 1306,
+            "triangles": 81958,
+            "culled_batches": 168,
+            "decals": 1,
+            "crowd_draw_calls": 2,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -16.5,
+              19.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 159,
+              "draws": 31,
+              "use_program": 7,
+              "bind_texture": 17,
+              "bind_vao": 28,
+              "uniform_calls": 16,
+              "tex_sub_image": 4,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 8048,
+              "scene_pass_ms": 856.7999999998137,
+              "fullscreen_pass_ms": 288.5,
+              "sim_step_ms": 0.27999999999689557,
+              "draw_list": [
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x579 16212t (579 of 1580 in 1 draws)",
+                "path_edge@1 x87 13746t (87 of 382 in 1 draws)",
+                "path_tile_t@1 x83 13612t (83 of 298 in 1 draws)",
+                "path_tile_cross@1 x34 6732t (34 of 151 in 1 draws)",
+                "grass_tile@4 x327 9156t (327 of 1809 in 1 draws)",
+                "zoo_wall@1 x11 3388t (11 of 42 in 1 draws)",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x20 3360t (20 of 50 in 1 draws)",
+                "fence_wood_1m@1 x1 134t (1 of 6 in 1 draws)",
+                "enclosure_sign@1 x1 378t (1 of 3 in 1 draws)",
+                "lily_pad@1 x6 1230t (6 of 6 in 1 draws)",
+                "reed@1 x4 700t (4 of 4 in 1 draws)",
+                "jetty_wood@1 x1 236t",
+                "hedge@4 x11 3124t (11 of 90 in 1 draws)",
+                "__box@1 x4 40t (4 of 78 in 1 draws)",
+                "__box@4 x1 10t (1 of 20 in 1 draws)",
+                "water_pond@1 x63 126t (63 of 64 in 1 draws)",
+                "water_pond_edge@1 x39 819t (39 of 45 in 1 draws)",
+                "water_pond_corner@1 x7 357t (7 of 8 in 1 draws)"
+              ]
+            },
+            "water_off": {
+              "cpu_ms": {
+                "p50": 1,
+                "p95": 3.400000000372529,
+                "max": 5.899999999906868,
+                "n": 17
+              },
+              "frame_ms": {
+                "p50": 959.5999999996275,
+                "p95": 1048,
+                "max": 10282.299999999814,
+                "n": 17
+              },
+              "interval_ms": {
+                "p50": 980.5,
+                "p95": 1050.2000000001863,
+                "max": 10288.19999999972,
+                "n": 16
+              },
+              "draw_calls": 31,
+              "instances": 1306,
+              "triangles": 81958,
+              "culled_batches": 168,
+              "decals": 1,
+              "crowd_draw_calls": 2,
+              "lights": [
+                0,
+                0,
+                92
+              ],
+              "view": "zoo",
+              "camera_distance": 14,
+              "player": [
+                -16.5,
+                19.5
+              ],
+              "canvas": [
+                1920,
+                1080
+              ],
+              "daytime": "day"
+            },
+            "ambient_off": {
+              "cpu_ms": {
+                "p50": 1.2000000001862645,
+                "p95": 4.600000000093132,
+                "max": 7,
+                "n": 17
+              },
+              "frame_ms": {
+                "p50": 927.1999999997206,
+                "p95": 1091,
+                "max": 10110.700000000186,
+                "n": 17
+              },
+              "interval_ms": {
+                "p50": 930.2999999998137,
+                "p95": 1093.7000000001863,
+                "max": 10121,
+                "n": 16
+              },
+              "draw_calls": 29,
+              "instances": 1302,
+              "triangles": 80038,
+              "culled_batches": 168,
+              "decals": 1,
+              "crowd_draw_calls": 0,
+              "lights": [
+                0,
+                0,
+                92
+              ],
+              "view": "zoo",
+              "camera_distance": 14,
+              "player": [
+                -16.5,
+                19.5
+              ],
+              "canvas": [
+                1920,
+                1080
+              ],
+              "daytime": "day"
+            }
+          },
+          "S09": {
+            "desc": "level-3 spawn, max zoom-out (joined zoo worst case, levels locked)",
+            "cpu_ms": {
+              "p50": 0.900000000372529,
+              "p95": 4.300000000279397,
+              "max": 7.5,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 1128.1000000000931,
+              "p95": 1451,
+              "max": 18086.400000000373,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 1130.9000000003725,
+              "p95": 1455.7999999998137,
+              "max": 18091.5,
+              "n": 16
+            },
+            "draw_calls": 35,
+            "instances": 2145,
+            "triangles": 146571,
+            "culled_batches": 158,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 20,
+            "player": [
+              20.5,
+              53.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 150,
+              "draws": 35,
+              "use_program": 7,
+              "bind_texture": 8,
+              "bind_vao": 35,
+              "uniform_calls": 14,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 925.6000000000931,
+              "fullscreen_pass_ms": 298.6999999997206,
+              "sim_step_ms": 0.9299999999968956,
+              "draw_list": [
+                "food_storage@3 x1 1238t",
+                "gate_zoo@3 x1 408t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x90 2520t (90 of 1580 in 1 draws)",
+                "grass_tile@2 x747 20916t (747 of 2034 in 1 draws)",
+                "path_edge@2 x38 6004t (38 of 346 in 1 draws)",
+                "path_tile_t@2 x36 5904t (36 of 294 in 1 draws)",
+                "path_tile_cross@2 x20 3960t (20 of 193 in 1 draws)",
+                "grass_tile@3 x528 14784t (528 of 1588 in 1 draws)",
+                "path_tile_t@3 x147 24108t (147 of 258 in 1 draws)",
+                "path_edge@3 x173 27334t (173 of 314 in 1 draws)",
+                "path_tile_cross@3 x96 19008t (96 of 163 in 1 draws)",
+                "path_tile_curve@3 x2 220t (2 of 19 in 1 draws)",
+                "hedge@1 x8 2272t (8 of 45 in 1 draws)",
+                "hedge_1m@1 x2 308t (2 of 5 in 1 draws)",
+                "hedge@2 x15 4260t (15 of 45 in 1 draws)",
+                "hedge_1m@2 x2 308t (2 of 2 in 1 draws)",
+                "hedge@3 x14 3976t (14 of 40 in 1 draws)",
+                "map_board@3 x1 364t",
+                "fence_wood_corner@3 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@3 x10 1680t (10 of 41 in 1 draws)",
+                "fence_wood_1m@3 x1 134t (1 of 8 in 1 draws)",
+                "enclosure_sign@3 x1 378t (1 of 3 in 1 draws)",
+                "food_box@3 x8 1184t (8 of 16 in 1 draws)",
+                "__box@3 x21 210t (21 of 119 in 1 draws)",
+                "__box@2 x102 1020t (102 of 214 in 1 draws)",
+                "__box@9 x10 100t",
+                "water_river_curve@1 x2 102t (2 of 5 in 1 draws)",
+                "water_river_bank@1 x15 315t (15 of 66 in 1 draws)",
+                "water_pond_corner@3 x4 204t (4 of 4 in 1 draws)",
+                "water_pond_edge@3 x24 504t (24 of 24 in 1 draws)"
+              ]
+            }
+          },
+          "S10": {
+            "desc": "night at the level-1 spawn (lamps, glow, lantern)",
+            "cpu_ms": {
+              "p50": 1.3000000002793968,
+              "p95": 5.599999999627471,
+              "max": 5.600000000093132,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 2459.399999999907,
+              "p95": 2692,
+              "max": 37808.30000000028,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 2464.100000000093,
+              "p95": 2695.6999999997206,
+              "max": 37813.30000000028,
+              "n": 16
+            },
+            "draw_calls": 38,
+            "instances": 900,
+            "triangles": 98046,
+            "culled_batches": 163,
+            "decals": 2,
+            "crowd_draw_calls": 0,
+            "lights": [
+              9,
+              6,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "night",
+            "census": {
+              "gl_calls": 207,
+              "draws": 38,
+              "use_program": 8,
+              "bind_texture": 17,
+              "bind_vao": 34,
+              "uniform_calls": 47,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6704,
+              "scene_pass_ms": 2106.2000000001863,
+              "fullscreen_pass_ms": 279.29999999981374,
+              "sim_step_ms": 0.3,
+              "draw_list": [
+                "hand_lantern@0 x1 230t",
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "string_lights@16 x6 2280t (6 of 6 in 1 draws)",
+                "lantern_post@16 x1 256t (1 of 11 in 1 draws)",
+                "board_lamp@16 x1 124t (1 of 4 in 1 draws)",
+                "__dyn_box@0 x20 200t",
+                "__dyn_glow@0 x4 40t",
+                "grass_tile@1 x450 12600t (450 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x12 1320t (12 of 26 in 1 draws)",
+                "path_edge@1 x123 19434t (123 of 382 in 1 draws)",
+                "path_tile_t@1 x91 14924t (91 of 298 in 1 draws)",
+                "path_tile_cross@1 x61 12078t (61 of 151 in 1 draws)",
+                "zoo_wall@1 x8 2464t (8 of 42 in 1 draws)",
+                "zoo_wall_1m@1 x1 244t (1 of 4 in 1 draws)",
+                "map_board@1 x1 364t",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x7 1176t (7 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x6 60t (6 of 78 in 1 draws)",
+                "string_post@16 x2 192t (2 of 2 in 1 draws)"
+              ]
+            }
+          },
+          "S11": {
+            "desc": "night zoo night_1 behind the moon door (-34.5, 29.5)",
+            "cpu_ms": {
+              "p50": 1.2999999998137355,
+              "p95": 7.7000000001862645,
+              "max": 8,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 2560.5,
+              "p95": 2715.7000000001863,
+              "max": 45245.39999999991,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 2564.100000000093,
+              "p95": 2719.600000000093,
+              "max": 45253,
+              "n": 16
+            },
+            "draw_calls": 30,
+            "instances": 790,
+            "triangles": 82280,
+            "culled_batches": 166,
+            "decals": 1,
+            "crowd_draw_calls": 0,
+            "lights": [
+              9,
+              14,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -34.5,
+              29.5
+            ],
+            "canvas": [
+              1920,
+              1080
+            ],
+            "daytime": "night",
+            "census": {
+              "gl_calls": 174,
+              "draws": 30,
+              "use_program": 8,
+              "bind_texture": 10,
+              "bind_vao": 29,
+              "uniform_calls": 40,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 2269.899999999907,
+              "fullscreen_pass_ms": 275.89999999990687,
+              "sim_step_ms": 0.39666666666356226,
+              "draw_list": [
+                "hand_lantern@0 x1 230t",
+                "food_hut@4 x1 1308t",
+                "door_wood@4 x1 312t (1 of 2 in 1 draws)",
+                "night_house@4 x1 3124t",
+                "lantern_post@19 x1 256t (1 of 12 in 1 draws)",
+                "string_lights@19 x6 2280t (6 of 6 in 1 draws)",
+                "wall_lamp@19 x1 216t (1 of 2 in 1 draws)",
+                "board_lamp@19 x1 124t (1 of 4 in 1 draws)",
+                "__dyn_box@0 x20 200t",
+                "__dyn_glow@0 x4 40t",
+                "grass_tile@1 x64 1792t (64 of 1580 in 1 draws)",
+                "grass_tile@4 x348 9744t (348 of 1809 in 1 draws)",
+                "path_tile_curve@4 x4 440t (4 of 15 in 1 draws)",
+                "path_edge@4 x95 15010t (95 of 258 in 1 draws)",
+                "path_tile_t@4 x77 12628t (77 of 224 in 1 draws)",
+                "path_tile_cross@4 x43 8514t (43 of 131 in 1 draws)",
+                "plaza_tile@4 x99 18414t (99 of 99 in 1 draws)",
+                "path_tile_straight@4 x1 86t (1 of 2 in 1 draws)",
+                "zoo_wall@1 x4 1232t (4 of 42 in 1 draws)",
+                "hedge@4 x11 3124t (11 of 90 in 1 draws)",
+                "map_board@4 x1 364t",
+                "food_box@4 x4 592t (4 of 6 in 1 draws)",
+                "__box@1 x1 10t (1 of 78 in 1 draws)",
+                "__box@4 x1 10t (1 of 20 in 1 draws)",
+                "__box@14 x1 10t"
+              ]
+            }
+          }
+        },
+        "errors": [],
+        "loadavg_start": [
+          18.9,
+          15.52,
+          11.44
+        ],
+        "cpus": 12,
+        "load_after": {
+          "first_frame_ms": null,
+          "dom_content_loaded_ms": 332.9000000001397,
+          "resources": 154,
+          "transfer_bytes": 8434705,
+          "decoded_bytes": 8480134,
+          "wasm_memory_bytes": 20381696,
+          "js_heap_used_bytes": 31200000,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+        },
+        "loadavg_end": [
+          25.14,
+          26.21,
+          21.68
+        ]
+      },
+      "phone": {
+        "viewport": {
+          "id": "phone",
+          "width": 360,
+          "height": 780,
+          "dpr": 3,
+          "scenarios": "all"
+        },
+        "load": {
+          "first_frame_ms": null,
+          "dom_content_loaded_ms": 58.60000000009313,
+          "resources": 148,
+          "transfer_bytes": 8049599,
+          "decoded_bytes": 8096828,
+          "wasm_memory_bytes": 20381696,
+          "js_heap_used_bytes": 42100000,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+          "first_frame_wall_ms": 1434
+        },
+        "scenarios": {
+          "S01": {
+            "desc": "level-1 spawn, zoo view, default zoom (14 m)",
+            "cpu_ms": {
+              "p50": 1.8000000002793968,
+              "p95": 7.400000000372529,
+              "max": 8.299999999813735,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 832.5,
+              "p95": 999.8000000002794,
+              "max": 15429.19999999972,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 834.8999999999069,
+              "p95": 1031.8000000002794,
+              "max": 15469.69999999972,
+              "n": 16
+            },
+            "draw_calls": 18,
+            "instances": 313,
+            "triangles": 49916,
+            "culled_batches": 177,
+            "decals": 1,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 122,
+              "draws": 18,
+              "use_program": 8,
+              "bind_texture": 10,
+              "bind_vao": 17,
+              "uniform_calls": 12,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 624.5,
+              "fullscreen_pass_ms": 205,
+              "sim_step_ms": 0.6433333333271245,
+              "draw_list": [
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "door_wood@1 x1 312t (1 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x32 896t (32 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x3 330t (3 of 26 in 1 draws)",
+                "path_edge@1 x59 9322t (59 of 382 in 1 draws)",
+                "path_tile_t@1 x47 7708t (47 of 298 in 1 draws)",
+                "path_tile_cross@1 x50 9900t (50 of 151 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)"
+              ]
+            }
+          },
+          "S02": {
+            "desc": "level-1 spawn, zoo view, max zoom-out (20 m)",
+            "cpu_ms": {
+              "p50": 0.8000000002793968,
+              "p95": 4.100000000093132,
+              "max": 4.600000000093132,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 713.2000000001863,
+              "p95": 746.5,
+              "max": 19165.900000000373,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 714.7000000001863,
+              "p95": 747.3000000002794,
+              "max": 19167.400000000373,
+              "n": 16
+            },
+            "draw_calls": 22,
+            "instances": 768,
+            "triangles": 64956,
+            "culled_batches": 173,
+            "decals": 1,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 20,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 130,
+              "draws": 22,
+              "use_program": 8,
+              "bind_texture": 10,
+              "bind_vao": 21,
+              "uniform_calls": 12,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 545.5,
+              "fullscreen_pass_ms": 157.79999999981374,
+              "sim_step_ms": 0.16666666666666666,
+              "draw_list": [
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "door_wood@1 x1 312t (1 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x475 13300t (475 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x5 550t (5 of 26 in 1 draws)",
+                "path_edge@1 x59 9322t (59 of 382 in 1 draws)",
+                "path_tile_t@1 x47 7708t (47 of 298 in 1 draws)",
+                "path_tile_cross@1 x50 9900t (50 of 151 in 1 draws)",
+                "path_tile_straight@1 x1 86t (1 of 13 in 1 draws)",
+                "zoo_wall@1 x2 616t (2 of 42 in 1 draws)",
+                "hedge@1 x6 1704t (6 of 45 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@10 x1 10t"
+              ]
+            }
+          },
+          "S03": {
+            "desc": "walking (autopilot) from the level-1 spawn north along the ring path",
+            "cpu_ms": {
+              "p50": 1,
+              "p95": 4.199999999720603,
+              "max": 5.300000000279397,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 763.8000000002794,
+              "p95": 878,
+              "max": 6897.299999999814,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 779.1000000000931,
+              "p95": 881.5,
+              "max": 6898.799999999814,
+              "n": 16
+            },
+            "draw_calls": 20,
+            "instances": 294,
+            "triangles": 49590,
+            "culled_batches": 174,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -2.1841235160827637,
+              5.18412446975708
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 128,
+              "draws": 20,
+              "use_program": 8,
+              "bind_texture": 9,
+              "bind_vao": 20,
+              "uniform_calls": 14,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 348.70000000018626,
+              "fullscreen_pass_ms": 98.70000000018626,
+              "sim_step_ms": 0.11333333333022892,
+              "draw_list": [
+                "entrance_arch@1 x1 690t",
+                "door_wood@1 x1 312t (1 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x296 8288t (296 of 1580 in 1 draws)",
+                "plaza_tile@1 x40 7440t (40 of 80 in 1 draws)",
+                "path_tile_curve@1 x3 330t (3 of 26 in 1 draws)",
+                "path_edge@1 x81 12798t (81 of 382 in 1 draws)",
+                "path_tile_t@1 x41 6724t (41 of 298 in 1 draws)",
+                "path_tile_cross@1 x23 4554t (23 of 151 in 1 draws)",
+                "hedge@1 x3 852t (3 of 45 in 1 draws)",
+                "food_box@1 x7 1036t (7 of 16 in 1 draws)",
+                "__box@10 x1 10t"
+              ]
+            }
+          },
+          "S04": {
+            "desc": "look-around on the level-1 ring path (-2.5, 20.5) looking north",
+            "cpu_ms": {
+              "p50": 0.7999999998137355,
+              "p95": 2.1000000000931323,
+              "max": 2.3999999999068677,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 769.5,
+              "p95": 899.3000000002794,
+              "max": 12724.399999999907,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 770.6999999997206,
+              "p95": 901.2000000001863,
+              "max": 12725.200000000186,
+              "n": 16
+            },
+            "draw_calls": 18,
+            "instances": 844,
+            "triangles": 74456,
+            "culled_batches": 175,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "look_around",
+            "camera_distance": 14,
+            "player": [
+              -2.5,
+              20.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 113,
+              "draws": 18,
+              "use_program": 7,
+              "bind_texture": 8,
+              "bind_vao": 18,
+              "uniform_calls": 11,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 604.1000000000931,
+              "fullscreen_pass_ms": 218.39999999990687,
+              "sim_step_ms": 0.21666666666666667,
+              "draw_list": [
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "__bake:garden_veg@1 x1 2380t",
+                "grass_tile@1 x537 15036t (537 of 1580 in 1 draws)",
+                "path_tile_curve@1 x2 220t (2 of 26 in 1 draws)",
+                "path_edge@1 x90 14220t (90 of 382 in 1 draws)",
+                "path_tile_t@1 x82 13448t (82 of 298 in 1 draws)",
+                "path_tile_cross@1 x54 10692t (54 of 151 in 1 draws)",
+                "tree_grove@1 x16 5856t (16 of 16 in 1 draws)",
+                "bush@1 x26 6760t (26 of 31 in 1 draws)",
+                "fence_wood_corner@1 x1 234t (1 of 12 in 1 draws)",
+                "fence_wood@1 x8 1344t (8 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)"
+              ]
+            }
+          },
+          "S05": {
+            "desc": "first person on the level-1 ring path (-2.5, 20.5) looking north",
+            "cpu_ms": {
+              "p50": 0.6000000000931323,
+              "p95": 1.7000000001862645,
+              "max": 1.7000000001862645,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 719.1000000000931,
+              "p95": 850.7000000001863,
+              "max": 9798.299999999814,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 722.7000000001863,
+              "p95": 852.2999999998137,
+              "max": 9801.5,
+              "n": 16
+            },
+            "draw_calls": 15,
+            "instances": 1224,
+            "triangles": 95116,
+            "culled_batches": 176,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "first_person",
+            "camera_distance": 14,
+            "player": [
+              -2.5,
+              20.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 104,
+              "draws": 15,
+              "use_program": 7,
+              "bind_texture": 5,
+              "bind_vao": 16,
+              "uniform_calls": 9,
+              "tex_sub_image": 0,
+              "tex_image": 0,
+              "buffer_sub_data": 10,
+              "buffer_data": 0,
+              "upload_bytes": 2416,
+              "scene_pass_ms": 387,
+              "fullscreen_pass_ms": 179,
+              "sim_step_ms": 0.39666666666356226,
+              "draw_list": [
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "__bake:garden_veg@1 x1 2380t",
+                "grass_tile@1 x809 22652t (809 of 1580 in 1 draws)",
+                "path_tile_curve@1 x1 110t (1 of 26 in 1 draws)",
+                "path_edge@1 x154 24332t (154 of 382 in 1 draws)",
+                "path_tile_t@1 x123 20172t (123 of 298 in 1 draws)",
+                "path_tile_cross@1 x62 12276t (62 of 151 in 1 draws)",
+                "tree_grove@1 x14 5124t (14 of 16 in 1 draws)",
+                "bush@1 x14 3640t (14 of 31 in 1 draws)",
+                "fence_wood_corner@1 x3 702t (3 of 12 in 1 draws)",
+                "fence_wood@1 x17 2856t (17 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)"
+              ]
+            }
+          },
+          "S06": {
+            "desc": "inside zookeeper_house_1 (roof hidden), zoo view",
+            "cpu_ms": {
+              "p50": 0.7000000001862645,
+              "p95": 3.8999999999068677,
+              "max": 4,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 635.8999999999069,
+              "p95": 693.5,
+              "max": 9549.399999999907,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 637.8999999999069,
+              "p95": 694.5,
+              "max": 9553.19999999972,
+              "n": 16
+            },
+            "draw_calls": 22,
+            "instances": 619,
+            "triangles": 40196,
+            "culled_batches": 172,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -11.5,
+              2.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 130,
+              "draws": 22,
+              "use_program": 8,
+              "bind_texture": 9,
+              "bind_vao": 22,
+              "uniform_calls": 12,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 495.29999999981374,
+              "fullscreen_pass_ms": 136.8000000002794,
+              "sim_step_ms": 0.2,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "zookeeper_house@1 x1 1388t",
+                "note_paper@1 x1 8t",
+                "window_moon@1 x1 318t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x466 13048t (466 of 1580 in 1 draws)",
+                "path_tile_curve@1 x6 660t (6 of 26 in 1 draws)",
+                "path_edge@1 x82 12956t (82 of 382 in 1 draws)",
+                "path_tile_t@1 x15 2460t (15 of 298 in 1 draws)",
+                "path_tile_cross@1 x3 594t (3 of 151 in 1 draws)",
+                "zoo_wall@1 x4 1232t (4 of 42 in 1 draws)",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "fence_wood_corner@1 x1 234t (1 of 12 in 1 draws)",
+                "fence_wood@1 x10 1680t (10 of 50 in 1 draws)",
+                "fence_wood_1m@1 x1 134t (1 of 6 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)"
+              ]
+            }
+          },
+          "S07": {
+            "desc": "vegetable garden garden_veg (level 1)",
+            "cpu_ms": {
+              "p50": 0.8999999999068677,
+              "p95": 2.599999999627471,
+              "max": 3.400000000372529,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 512.3000000002794,
+              "p95": 641.5,
+              "max": 9830.100000000093,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 514.6999999997206,
+              "p95": 638.8999999999069,
+              "max": 9830.900000000373,
+              "n": 16
+            },
+            "draw_calls": 29,
+            "instances": 666,
+            "triangles": 57353,
+            "culled_batches": 173,
+            "decals": 4,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              7.5,
+              36.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 161,
+              "draws": 29,
+              "use_program": 8,
+              "bind_texture": 19,
+              "bind_vao": 23,
+              "uniform_calls": 19,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 387.5,
+              "fullscreen_pass_ms": 144.39999999990687,
+              "sim_step_ms": 0.2,
+              "draw_list": [
+                "garden_sign@1 x4 200t (4 of 4 in 1 draws)",
+                "garden_gate@1 x1 492t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "__bake:garden_veg@1 x1 2380t",
+                "grass_tile@1 x360 10080t (360 of 1580 in 1 draws)",
+                "path_tile_curve@1 x6 660t (6 of 26 in 1 draws)",
+                "path_edge@1 x150 23700t (150 of 382 in 1 draws)",
+                "path_tile_t@1 x53 8692t (53 of 298 in 1 draws)",
+                "path_tile_straight@1 x3 258t (3 of 13 in 1 draws)",
+                "sand_tile@1 x24 240t (24 of 28 in 1 draws)",
+                "fence_wood_corner@1 x3 702t (3 of 12 in 1 draws)",
+                "fence_wood@1 x9 1512t (9 of 50 in 1 draws)",
+                "carrot_plant_ripe@1 x6 924t (6 of 6 in 1 draws)",
+                "potato_plant_ripe@1 x4 632t (4 of 4 in 1 draws)",
+                "__box@1 x3 30t (3 of 78 in 1 draws)",
+                "water_river_bank@1 x15 315t (15 of 66 in 1 draws)"
+              ]
+            }
+          },
+          "S08": {
+            "desc": "pond with ducks (level 1), water animation + ambient on",
+            "cpu_ms": {
+              "p50": 0.8999999999068677,
+              "p95": 3.3999999999068677,
+              "max": 3.6999999997206032,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 568.5,
+              "p95": 624.5,
+              "max": 8670.69999999972,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 569.3999999999069,
+              "p95": 625.1999999997206,
+              "max": 8673.799999999814,
+              "n": 16
+            },
+            "draw_calls": 18,
+            "instances": 702,
+            "triangles": 27654,
+            "culled_batches": 180,
+            "decals": 0,
+            "crowd_draw_calls": 2,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -16.5,
+              19.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 131,
+              "draws": 18,
+              "use_program": 7,
+              "bind_texture": 16,
+              "bind_vao": 16,
+              "uniform_calls": 14,
+              "tex_sub_image": 4,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 8048,
+              "scene_pass_ms": 325.5,
+              "fullscreen_pass_ms": 95.09999999962747,
+              "sim_step_ms": 0.08333333333333333,
+              "draw_list": [
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x554 15512t (554 of 1580 in 1 draws)",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "fence_wood@1 x6 1008t (6 of 50 in 1 draws)",
+                "lily_pad@1 x6 1230t (6 of 6 in 1 draws)",
+                "reed@1 x3 525t (3 of 4 in 1 draws)",
+                "water_pond@1 x63 126t (63 of 64 in 1 draws)",
+                "water_pond_edge@1 x39 819t (39 of 45 in 1 draws)",
+                "water_pond_corner@1 x6 306t (6 of 8 in 1 draws)"
+              ]
+            },
+            "water_off": {
+              "cpu_ms": {
+                "p50": 0.7999999998137355,
+                "p95": 0.8999999999068677,
+                "max": 2.5,
+                "n": 17
+              },
+              "frame_ms": {
+                "p50": 361.39999999990687,
+                "p95": 400.79999999981374,
+                "max": 3712.600000000093,
+                "n": 17
+              },
+              "interval_ms": {
+                "p50": 364,
+                "p95": 403,
+                "max": 3713.7999999998137,
+                "n": 16
+              },
+              "draw_calls": 18,
+              "instances": 702,
+              "triangles": 27654,
+              "culled_batches": 180,
+              "decals": 0,
+              "crowd_draw_calls": 2,
+              "lights": [
+                0,
+                0,
+                92
+              ],
+              "view": "zoo",
+              "camera_distance": 14,
+              "player": [
+                -16.5,
+                19.5
+              ],
+              "canvas": [
+                720,
+                1560
+              ],
+              "daytime": "day"
+            },
+            "ambient_off": {
+              "cpu_ms": {
+                "p50": 1,
+                "p95": 2.900000000372529,
+                "max": 4.599999999627471,
+                "n": 17
+              },
+              "frame_ms": {
+                "p50": 395.90000000037253,
+                "p95": 430.60000000009313,
+                "max": 2696.600000000093,
+                "n": 17
+              },
+              "interval_ms": {
+                "p50": 397,
+                "p95": 431.60000000009313,
+                "max": 2700.399999999907,
+                "n": 16
+              },
+              "draw_calls": 16,
+              "instances": 698,
+              "triangles": 25734,
+              "culled_batches": 180,
+              "decals": 0,
+              "crowd_draw_calls": 0,
+              "lights": [
+                0,
+                0,
+                92
+              ],
+              "view": "zoo",
+              "camera_distance": 14,
+              "player": [
+                -16.5,
+                19.5
+              ],
+              "canvas": [
+                720,
+                1560
+              ],
+              "daytime": "day"
+            }
+          },
+          "S09": {
+            "desc": "level-3 spawn, max zoom-out (joined zoo worst case, levels locked)",
+            "cpu_ms": {
+              "p50": 0.6999999997206032,
+              "p95": 1.3999999999068677,
+              "max": 1.5,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 561.7000000001863,
+              "p95": 603.1000000000931,
+              "max": 7811.799999999814,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 562.3000000002794,
+              "p95": 603.7999999998137,
+              "max": 7814.899999999907,
+              "n": 16
+            },
+            "draw_calls": 22,
+            "instances": 740,
+            "triangles": 34040,
+            "culled_batches": 171,
+            "decals": 0,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 20,
+            "player": [
+              20.5,
+              53.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 121,
+              "draws": 22,
+              "use_program": 7,
+              "bind_texture": 8,
+              "bind_vao": 22,
+              "uniform_calls": 11,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 387.70000000018626,
+              "fullscreen_pass_ms": 151.5,
+              "sim_step_ms": 0.5099999999937912,
+              "draw_list": [
+                "gate_zoo@3 x1 408t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x61 1708t (61 of 1580 in 1 draws)",
+                "grass_tile@2 x48 1344t (48 of 2034 in 1 draws)",
+                "grass_tile@3 x490 13720t (490 of 1588 in 1 draws)",
+                "path_tile_t@3 x16 2624t (16 of 258 in 1 draws)",
+                "path_edge@3 x16 2528t (16 of 314 in 1 draws)",
+                "path_tile_cross@3 x8 1584t (8 of 163 in 1 draws)",
+                "hedge@1 x6 1704t (6 of 45 in 1 draws)",
+                "hedge_1m@1 x2 308t (2 of 5 in 1 draws)",
+                "hedge@3 x10 2840t (10 of 40 in 1 draws)",
+                "map_board@3 x1 364t",
+                "fence_wood_corner@3 x1 234t (1 of 12 in 1 draws)",
+                "fence_wood@3 x8 1344t (8 of 41 in 1 draws)",
+                "fence_wood_1m@3 x1 134t (1 of 8 in 1 draws)",
+                "__box@3 x21 210t (21 of 119 in 1 draws)",
+                "water_pond_corner@3 x2 102t (2 of 4 in 1 draws)",
+                "water_pond_edge@3 x24 504t (24 of 24 in 1 draws)"
+              ]
+            }
+          },
+          "S10": {
+            "desc": "night at the level-1 spawn (lamps, glow, lantern)",
+            "cpu_ms": {
+              "p50": 0.8000000002793968,
+              "p95": 5.2000000001862645,
+              "max": 5.300000000279397,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 1006.4000000003725,
+              "p95": 1131.8000000002794,
+              "max": 16689.5,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 1010,
+              "p95": 1133.8000000002794,
+              "max": 16691,
+              "n": 16
+            },
+            "draw_calls": 20,
+            "instances": 320,
+            "triangles": 52442,
+            "culled_batches": 176,
+            "decals": 1,
+            "crowd_draw_calls": 0,
+            "lights": [
+              9,
+              6,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "night",
+            "census": {
+              "gl_calls": 139,
+              "draws": 20,
+              "use_program": 8,
+              "bind_texture": 10,
+              "bind_vao": 19,
+              "uniform_calls": 25,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3760,
+              "scene_pass_ms": 871.7000000001863,
+              "fullscreen_pass_ms": 141,
+              "sim_step_ms": 0.23666666666977107,
+              "draw_list": [
+                "hand_lantern@0 x1 230t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "door_wood@1 x1 312t (1 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "string_lights@16 x6 2280t (6 of 6 in 1 draws)",
+                "__dyn_box@0 x20 200t",
+                "__dyn_glow@0 x3 30t",
+                "grass_tile@1 x32 896t (32 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x3 330t (3 of 26 in 1 draws)",
+                "path_edge@1 x59 9322t (59 of 382 in 1 draws)",
+                "path_tile_t@1 x47 7708t (47 of 298 in 1 draws)",
+                "path_tile_cross@1 x50 9900t (50 of 151 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)"
+              ]
+            }
+          },
+          "S11": {
+            "desc": "night zoo night_1 behind the moon door (-34.5, 29.5)",
+            "cpu_ms": {
+              "p50": 0.7999999998137355,
+              "p95": 3.1000000000931323,
+              "max": 4.199999999720603,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 939.1000000000931,
+              "p95": 1099.3000000002794,
+              "max": 15108.19999999972,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 969.6000000000931,
+              "p95": 1114,
+              "max": 15111.19999999972,
+              "n": 16
+            },
+            "draw_calls": 14,
+            "instances": 240,
+            "triangles": 33662,
+            "culled_batches": 181,
+            "decals": 0,
+            "crowd_draw_calls": 0,
+            "lights": [
+              9,
+              14,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              -34.5,
+              29.5
+            ],
+            "canvas": [
+              720,
+              1560
+            ],
+            "daytime": "night",
+            "census": {
+              "gl_calls": 123,
+              "draws": 14,
+              "use_program": 8,
+              "bind_texture": 9,
+              "bind_vao": 14,
+              "uniform_calls": 21,
+              "tex_sub_image": 1,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 3696,
+              "scene_pass_ms": 852.6000000000931,
+              "fullscreen_pass_ms": 142.6999999997206,
+              "sim_step_ms": 0.2033333333209157,
+              "draw_list": [
+                "hand_lantern@0 x1 230t",
+                "night_house@4 x1 3124t",
+                "string_lights@19 x6 2280t (6 of 6 in 1 draws)",
+                "__dyn_box@0 x20 200t",
+                "__dyn_glow@0 x2 20t",
+                "grass_tile@4 x82 2296t (82 of 1809 in 1 draws)",
+                "path_edge@4 x12 1896t (12 of 258 in 1 draws)",
+                "path_tile_t@4 x6 984t (6 of 224 in 1 draws)",
+                "path_tile_cross@4 x10 1980t (10 of 131 in 1 draws)",
+                "plaza_tile@4 x99 18414t (99 of 99 in 1 draws)"
+              ]
+            }
+          }
+        },
+        "errors": [],
+        "loadavg_start": [
+          25.48,
+          26.21,
+          21.78
+        ],
+        "cpus": 12,
+        "load_after": {
+          "first_frame_ms": null,
+          "dom_content_loaded_ms": 58.60000000009313,
+          "resources": 154,
+          "transfer_bytes": 8434705,
+          "decoded_bytes": 8480134,
+          "wasm_memory_bytes": 20381696,
+          "js_heap_used_bytes": 42100000,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+        },
+        "loadavg_end": [
+          23.93,
+          24.79,
+          22.49
+        ]
+      },
+      "desktop_half": {
+        "viewport": {
+          "id": "desktop_half",
+          "width": 960,
+          "height": 540,
+          "dpr": 1,
+          "scenarios": [
+            "S01",
+            "S02",
+            "S10"
+          ]
+        },
+        "load": {
+          "first_frame_ms": null,
+          "dom_content_loaded_ms": 153.09999999962747,
+          "resources": 148,
+          "transfer_bytes": 8049599,
+          "decoded_bytes": 8096828,
+          "wasm_memory_bytes": 20381696,
+          "js_heap_used_bytes": 42100000,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+          "first_frame_wall_ms": 2486
+        },
+        "scenarios": {
+          "S01": {
+            "desc": "level-1 spawn, zoo view, default zoom (14 m)",
+            "cpu_ms": {
+              "p50": 1.400000000372529,
+              "p95": 4.100000000093132,
+              "max": 4.300000000279397,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 405.79999999981374,
+              "p95": 528.8999999999069,
+              "max": 9168.30000000028,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 422.40000000037253,
+              "p95": 562.2000000001863,
+              "max": 9202.600000000093,
+              "n": 17
+            },
+            "draw_calls": 33,
+            "instances": 889,
+            "triangles": 94948,
+            "culled_batches": 167,
+            "decals": 2,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              960,
+              540
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 167,
+              "draws": 33,
+              "use_program": 8,
+              "bind_texture": 17,
+              "bind_vao": 29,
+              "uniform_calls": 17,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 353.90000000037253,
+              "fullscreen_pass_ms": 87.5,
+              "sim_step_ms": 0.24666666666356227,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x450 12600t (450 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x12 1320t (12 of 26 in 1 draws)",
+                "path_edge@1 x123 19434t (123 of 382 in 1 draws)",
+                "path_tile_t@1 x91 14924t (91 of 298 in 1 draws)",
+                "path_tile_cross@1 x61 12078t (61 of 151 in 1 draws)",
+                "zoo_wall@1 x8 2464t (8 of 42 in 1 draws)",
+                "zoo_wall_1m@1 x1 244t (1 of 4 in 1 draws)",
+                "map_board@1 x1 364t",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x7 1176t (7 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x6 60t (6 of 78 in 1 draws)"
+              ]
+            }
+          },
+          "S02": {
+            "desc": "level-1 spawn, zoo view, max zoom-out (20 m)",
+            "cpu_ms": {
+              "p50": 1.1999999997206032,
+              "p95": 4.300000000279397,
+              "max": 4.5,
+              "n": 18
+            },
+            "frame_ms": {
+              "p50": 425.6999999997206,
+              "p95": 588.8999999999069,
+              "max": 4577.600000000093,
+              "n": 18
+            },
+            "interval_ms": {
+              "p50": 426.29999999981374,
+              "p95": 591.3000000002794,
+              "max": 4579.300000000279,
+              "n": 17
+            },
+            "draw_calls": 40,
+            "instances": 1049,
+            "triangles": 105558,
+            "culled_batches": 161,
+            "decals": 2,
+            "crowd_draw_calls": 1,
+            "lights": [
+              0,
+              0,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 20,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              960,
+              540
+            ],
+            "daytime": "day",
+            "census": {
+              "gl_calls": 181,
+              "draws": 40,
+              "use_program": 8,
+              "bind_texture": 17,
+              "bind_vao": 36,
+              "uniform_calls": 17,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 359.8000000002794,
+              "fullscreen_pass_ms": 61.200000000186265,
+              "sim_step_ms": 0.3066666666728755,
+              "draw_list": [
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "note_paper@1 x1 8t",
+                "__dyn_box@0 x20 200t",
+                "__butterfly@0 x4 24t",
+                "grass_tile@1 x569 15932t (569 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x14 1540t (14 of 26 in 1 draws)",
+                "path_edge@1 x123 19434t (123 of 382 in 1 draws)",
+                "path_tile_t@1 x91 14924t (91 of 298 in 1 draws)",
+                "path_tile_cross@1 x66 13068t (66 of 151 in 1 draws)",
+                "path_tile_straight@1 x2 172t (2 of 13 in 1 draws)",
+                "zoo_wall@1 x12 3696t (12 of 42 in 1 draws)",
+                "zoo_wall_1m@1 x1 244t (1 of 4 in 1 draws)",
+                "hedge@1 x8 2272t (8 of 45 in 1 draws)",
+                "map_board@1 x1 364t",
+                "bush@1 x1 260t (1 of 31 in 1 draws)",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x17 2856t (17 of 50 in 1 draws)",
+                "fence_wood_1m@1 x1 134t (1 of 6 in 1 draws)",
+                "gate_wood@1 x2 496t (2 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x11 110t (11 of 78 in 1 draws)",
+                "__box@10 x1 10t"
+              ]
+            }
+          },
+          "S10": {
+            "desc": "night at the level-1 spawn (lamps, glow, lantern)",
+            "cpu_ms": {
+              "p50": 1.1000000000931323,
+              "p95": 3.3999999999068677,
+              "max": 3.5,
+              "n": 17
+            },
+            "frame_ms": {
+              "p50": 685.4000000003725,
+              "p95": 777.3999999999069,
+              "max": 10552,
+              "n": 17
+            },
+            "interval_ms": {
+              "p50": 687.6000000000931,
+              "p95": 781.3999999999069,
+              "max": 10554.899999999907,
+              "n": 16
+            },
+            "draw_calls": 38,
+            "instances": 900,
+            "triangles": 98046,
+            "culled_batches": 163,
+            "decals": 2,
+            "crowd_draw_calls": 0,
+            "lights": [
+              9,
+              6,
+              92
+            ],
+            "view": "zoo",
+            "camera_distance": 14,
+            "player": [
+              0.5,
+              2.5
+            ],
+            "canvas": [
+              960,
+              540
+            ],
+            "daytime": "night",
+            "census": {
+              "gl_calls": 207,
+              "draws": 38,
+              "use_program": 8,
+              "bind_texture": 17,
+              "bind_vao": 34,
+              "uniform_calls": 47,
+              "tex_sub_image": 3,
+              "tex_image": 0,
+              "buffer_sub_data": 8,
+              "buffer_data": 0,
+              "upload_bytes": 6640,
+              "scene_pass_ms": 633.8000000002794,
+              "fullscreen_pass_ms": 62.10000000009313,
+              "sim_step_ms": 0.2133333333302289,
+              "draw_list": [
+                "hand_lantern@0 x1 230t",
+                "__bake:zookeeper_house_1@1 x1 2194t",
+                "entrance_arch@1 x1 690t",
+                "turnstile@1 x3 480t (3 of 3 in 1 draws)",
+                "zookeeper_house@1 x1 1388t",
+                "door_wood@1 x2 624t (2 of 2 in 1 draws)",
+                "food_storage@1 x1 1238t",
+                "string_lights@16 x6 2280t (6 of 6 in 1 draws)",
+                "lantern_post@16 x1 256t (1 of 11 in 1 draws)",
+                "board_lamp@16 x1 124t (1 of 4 in 1 draws)",
+                "__dyn_box@0 x20 200t",
+                "__dyn_glow@0 x3 30t",
+                "grass_tile@1 x450 12600t (450 of 1580 in 1 draws)",
+                "plaza_tile@1 x80 14880t (80 of 80 in 1 draws)",
+                "path_tile_curve@1 x12 1320t (12 of 26 in 1 draws)",
+                "path_edge@1 x123 19434t (123 of 382 in 1 draws)",
+                "path_tile_t@1 x91 14924t (91 of 298 in 1 draws)",
+                "path_tile_cross@1 x61 12078t (61 of 151 in 1 draws)",
+                "zoo_wall@1 x8 2464t (8 of 42 in 1 draws)",
+                "zoo_wall_1m@1 x1 244t (1 of 4 in 1 draws)",
+                "map_board@1 x1 364t",
+                "fence_wood_corner@1 x2 468t (2 of 12 in 1 draws)",
+                "fence_wood@1 x7 1176t (7 of 50 in 1 draws)",
+                "gate_wood@1 x1 248t (1 of 3 in 1 draws)",
+                "info_board@1 x1 400t (1 of 3 in 1 draws)",
+                "food_box@1 x12 1776t (12 of 16 in 1 draws)",
+                "__box@1 x6 60t (6 of 78 in 1 draws)",
+                "string_post@16 x2 192t (2 of 2 in 1 draws)"
+              ]
+            }
+          }
+        },
+        "errors": [],
+        "loadavg_start": [
+          23.77,
+          24.74,
+          22.49
+        ],
+        "cpus": 12,
+        "load_after": {
+          "first_frame_ms": null,
+          "dom_content_loaded_ms": 153.09999999962747,
+          "resources": 154,
+          "transfer_bytes": 8434705,
+          "decoded_bytes": 8480134,
+          "wasm_memory_bytes": 20381696,
+          "js_heap_used_bytes": 42100000,
+          "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36"
+        },
+        "loadavg_end": [
+          25.05,
+          24.86,
+          22.68
+        ]
+      }
+    },
+    "frames_per_sample": 16
+  }
+}

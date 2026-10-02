@@ -321,3 +321,299 @@ fn gard_011_carried_food_at_home() {
         .iter()
         .any(|e| matches!(e, GameEvent::FoodRefused { .. })));
 }
+
+// ------------------------------------------------------------------ fruit garden of level 3
+// (user request 2026-10-01, Q-320…Q-324): apples and oranges, GARD-015…GARD-023.
+
+/// The joined zoo with the day levels open (the barriers open the next morning).
+fn open_zoo(seed: u64) -> Game {
+    let mut g = common::zoo_game(seed);
+    for a in [
+        "zebra", "hippo", "panda", "koala", "elephant", "giraffe", "lion",
+    ] {
+        assert!(g.debug_send_home(a), "{a}");
+    }
+    g.debug_next_morning();
+    g.drain_events();
+    assert!(g.level_unlocked("level_3"));
+    g
+}
+
+fn rect_overlap(a: zoo_core::Rect, b: zoo_core::Rect) -> bool {
+    a.x < b.x + b.w && b.x < a.x + a.w && a.z < b.z + b.d && b.z < a.z + a.d
+}
+
+// GARD-018 / LAYOUT-L3-030: the fruit garden of level 3, its data and its place in the zoo.
+#[test]
+fn gard_018_fruit_garden_layout_and_reachability() {
+    use zoo_core::level::{ElementType, Level};
+    use zoo_core::nav::flood_fill;
+    let data = common::zoo();
+    let garden = data
+        .gardens
+        .iter()
+        .find(|g| g.id == "garden_fruit")
+        .expect("garden_fruit");
+    let spots: Vec<_> = data
+        .plant_spots
+        .iter()
+        .filter(|s| s.garden == "garden_fruit")
+        .collect();
+    assert_eq!(spots.iter().filter(|s| s.kind == "apple").count(), 2);
+    assert_eq!(spots.iter().filter(|s| s.kind == "orange").count(), 2);
+    let beds: Vec<_> = data
+        .garden_beds
+        .iter()
+        .filter(|b| b.garden == "garden_fruit")
+        .collect();
+    assert_eq!(beds.len(), 2);
+    for (plant, key) in [("apple", "garden-apple"), ("orange", "garden-orange")] {
+        let b = beds.iter().find(|b| b.plant == plant).expect(plant);
+        assert_eq!(b.sign_key, key);
+        // the sign stands in the garden, off its fence
+        let p = Vec2::from(b.sign_pos);
+        let r = garden.rect;
+        assert!(
+            p.x > r.x as f32 + 0.6
+                && p.x < (r.x + r.w) as f32 - 0.6
+                && p.y > r.z as f32 + 0.6
+                && p.y < (r.z + r.d) as f32 - 0.6,
+            "{key}: sign {p:?} in the garden, 0.6 m off the fence"
+        );
+    }
+    // no overlap with solid elements, hiding places, scenery, barriers or ad boards
+    let r = garden.rect;
+    for e in &data.elements {
+        if e.ty.is_solid() || e.ty == ElementType::Barrier {
+            assert!(!rect_overlap(r, e.rect), "garden overlaps {}", e.id);
+        }
+    }
+    for h in &data.hiding_places {
+        assert!(!rect_overlap(r, h.rect), "garden overlaps {}", h.id);
+    }
+    for sc in &data.scenery {
+        assert!(!rect_overlap(r, sc.rect), "garden overlaps {}", sc.id);
+    }
+    for ad in &data.ad_boards {
+        let p = Vec2::from(ad.pos);
+        let area =
+            zoo_core::Rect::new((p.x - 1.5).floor() as i32, (p.y - 0.5).floor() as i32, 4, 2);
+        assert!(!rect_overlap(r, area), "garden overlaps ad board {}", ad.id);
+    }
+    // the gate touches the street: a path cell (not a garden path) outside the gate (rule 8)
+    let out = garden.gate_out();
+    let gate = garden.gate_center() + out * 0.5;
+    let street = zoo_core::level::cell_of(gate);
+    assert!(
+        data.elements.iter().any(|e| e.ty == ElementType::Path
+            && e.kind.as_deref() != Some("garden")
+            && e.rect.contains(street)),
+        "street cell {street:?} outside the gate"
+    );
+    // reachable from the level-3 spawn; every stand cell walkable, close to its tree
+    let mut level = Level::new(data.clone());
+    for b in [
+        "barrier_ne_tree",
+        "barrier_l2_construction",
+        "barrier_north_gate",
+    ] {
+        assert!(level.open_barrier(b), "{b}");
+    }
+    let k = data.part_index("level_3").unwrap();
+    let reach = flood_fill(level.grid(), data.parts[k].spawn.cell(), false);
+    let reached = |c: glam::IVec2| level.grid().index(c).is_some_and(|i| reach[i]);
+    assert!(reached(street), "the gate's street cell is reachable");
+    for s in &spots {
+        let stand = glam::IVec2::new(s.stand[0], s.stand[1]);
+        assert!(level.grid().is_walkable(stand, false), "{} stand", s.id);
+        assert!(reached(stand), "{}: stand reachable from the spawn", s.id);
+        let d = cell_center(stand).distance(s.pos());
+        assert!(d <= 1.2, "{}: stand {d} m from the tree", s.id);
+    }
+}
+
+// GARD-015 / GARD-016 in the game: harvest an apple and an orange by interacting.
+#[test]
+fn gard_016_harvest_fruit_by_interacting() {
+    let mut g = open_zoo(3);
+    for (spot, treat) in [("apple_1", Treat::Apple), ("orange_2", Treat::Orange)] {
+        at_plant(&mut g, spot);
+        assert_eq!(
+            g.available_target(),
+            Some(Target::Plant { spot: spot.into() })
+        );
+        let r = g.interact().expect("harvest");
+        assert!(
+            matches!(r, Interaction::Harvest { treat: t, count: 1, .. } if t == treat),
+            "{spot}"
+        );
+        assert_eq!(g.garden.basket.count(treat), 1);
+        assert_eq!(g.garden.plant(spot).unwrap().stage(), Stage::Empty);
+        assert!(g.available_target() != Some(Target::Plant { spot: spot.into() }));
+    }
+    assert!(g.drain_events().iter().any(|e| matches!(
+        e,
+        GameEvent::Harvested {
+            treat: Treat::Apple,
+            count: 1,
+            ..
+        }
+    )));
+    // the full basket refuses (6 in total over all kinds) and the tree keeps its fruit
+    g.garden.basket.carrots = 4;
+    assert_eq!(g.garden.basket.total(), 6);
+    at_plant(&mut g, "apple_2");
+    g.interact();
+    assert_eq!(g.garden.plant("apple_2").unwrap().stage(), Stage::Ripe);
+    assert!(g.drain_events().contains(&GameEvent::BasketFull));
+}
+
+// GARD-017: the saved game keeps all four treats; a save from before the fruit garden loads.
+#[test]
+fn gard_017_save_round_trip_with_fruit_and_old_saves() {
+    let mut g = open_zoo(3);
+    g.garden.basket.carrots = 1;
+    g.garden.basket.apples = 2;
+    g.garden.basket.oranges = 1;
+    g.garden.update(1.0);
+    let json = serde_json::to_string(&g.to_save()).unwrap();
+    let back: zoo_core::save::SaveState = serde_json::from_str(&json).unwrap();
+    let fresh = Game::from_save(common::zoo(), &back).expect("save loads");
+    assert_eq!(fresh.garden.basket, g.garden.basket);
+    // an old save: the basket JSON only has carrots and potatoes
+    let mut v: serde_json::Value = serde_json::from_str(&json).unwrap();
+    v["garden"]["basket"] = serde_json::json!({"carrots": 2, "potatoes": 1});
+    let old: zoo_core::save::SaveState = serde_json::from_value(v).unwrap();
+    let fresh = Game::from_save(common::zoo(), &old).expect("old save loads");
+    let b = fresh.garden.basket;
+    assert_eq!((b.carrots, b.potatoes, b.apples, b.oranges), (2, 1, 0, 0));
+}
+
+// GARD-019: the fruit signs read from Fluent in every reading level and both languages.
+#[test]
+fn gard_019_fruit_signs_read_from_fluent() {
+    let c: Content = common::content();
+    for (key, de, en) in [
+        ("garden-apple", "Äpfel", "Apples"),
+        ("garden-orange", "Orangen", "Oranges"),
+    ] {
+        assert_eq!(c.text(Language::De, key).as_deref(), Some(de));
+        assert_eq!(c.text(Language::En, key).as_deref(), Some(en));
+        for lang in [Language::De, Language::En] {
+            for level in [
+                ReadingLevel::Klasse1,
+                ReadingLevel::Klasse2,
+                ReadingLevel::Klasse3,
+            ] {
+                let k = format!("{key}-{}", level.id());
+                assert!(c.text(lang, &k).is_some_and(|t| !t.is_empty()), "{k}");
+            }
+        }
+    }
+    // the sign opens its panel like a board
+    let mut g = open_zoo(1);
+    let b = g
+        .level
+        .data
+        .garden_beds
+        .iter()
+        .find(|b| b.id == "bed_apple")
+        .unwrap()
+        .clone();
+    let sp = Vec2::from(b.sign_pos);
+    let f = zoo_core::level::facing_vec(&b.sign_facing);
+    g.player.pos = sp + f * 1.0;
+    g.player.facing = -f;
+    assert!(matches!(g.interact(), Some(Interaction::GardenSign { .. })));
+}
+
+// GARD-020: fruit to the monkey pair at home — they eat (hearts), one baby (FAM-008); a potato
+// is refused and stays.
+#[test]
+fn gard_020_monkeys_eat_apples_and_oranges_and_refuse_potatoes() {
+    let mut g = open_zoo(4);
+    assert!(g.debug_send_home("monkey"));
+    g.drain_events();
+    assert_eq!(g.group("monkey").len(), 2, "the monkeys come as a pair");
+    g.garden.basket.potatoes = 1;
+    g.garden.basket.apples = 2;
+    g.garden.basket.oranges = 1;
+    assert_eq!(g.give_treat("monkey", Treat::Potato), Some(false));
+    assert_eq!(g.garden.basket.potatoes, 1, "the potato stays");
+    assert!(g.babies.is_empty());
+    assert_eq!(g.give_treat("monkey", Treat::Apple), Some(true));
+    assert_eq!(g.garden.basket.apples, 1, "the apple leaves the basket");
+    let ev = g.drain_events();
+    assert!(ev.iter().any(
+        |e| matches!(e, GameEvent::TreatEaten { animal, treat: Treat::Apple } if animal == "monkey")
+    ));
+    assert_eq!(
+        ev.iter()
+            .filter(|e| matches!(e, GameEvent::BabyBorn { .. }))
+            .count(),
+        1,
+        "one baby"
+    );
+    assert_eq!(g.give_treat("monkey", Treat::Orange), Some(true));
+    assert_eq!(g.garden.basket.oranges, 0);
+    assert!(!g
+        .drain_events()
+        .iter()
+        .any(|e| matches!(e, GameEvent::BabyBorn { .. })));
+}
+
+// GARD-021: the treat hint and the gift at the animal work with the fruit.
+#[test]
+fn gard_021_treat_hint_and_gift_for_the_monkeys() {
+    use zoo_core::game::Gift;
+    use zoo_core::hints::{candidates, HintKind, HintTracker};
+    let mut g = open_zoo(4);
+    assert!(g.debug_send_home("monkey"));
+    let has = |g: &Game| {
+        candidates(g, &HintTracker::default())
+            .iter()
+            .any(|h| h.kind == HintKind::Treat && h.animal == Some("monkey"))
+    };
+    assert!(!has(&g), "nothing to give");
+    g.garden.basket.potatoes = 1;
+    assert!(!has(&g), "monkeys do not like potatoes");
+    g.garden.basket.potatoes = 0;
+    g.garden.basket.apples = 1;
+    assert!(g.gift_liked("monkey"));
+    assert!(matches!(
+        g.gift_for("monkey"),
+        Some(Gift::Treat(Treat::Apple))
+    ));
+    assert!(has(&g), "a liked apple");
+    g.garden.basket.apples = 0;
+    g.garden.basket.oranges = 1;
+    assert!(has(&g), "a liked orange");
+    // the treat the child chose is offered first
+    g.garden.basket.apples = 1;
+    g.treat_choice = Some(Treat::Orange);
+    assert!(matches!(
+        g.gift_for("monkey"),
+        Some(Gift::Treat(Treat::Orange))
+    ));
+    // an animal that does not like fruit (lion) gets no treat hint for it
+    assert!(!zoo_core::garden::likes("lion", Treat::Apple));
+}
+
+// GARD-022 (unit part): fruit treats of a spot are saved and the garden state survives a save
+// in the middle of regrowth.
+#[test]
+fn gard_regrow_fruit_in_three_steps_and_save() {
+    let mut g = open_zoo(5);
+    at_plant(&mut g, "orange_1");
+    g.interact().expect("harvest");
+    g.garden.update(70.0);
+    assert_eq!(g.garden.plant("orange_1").unwrap().stage(), Stage::Sprout);
+    let s = g.to_save();
+    let mut fresh = Game::from_save(common::zoo(), &s).expect("save loads");
+    assert_eq!(
+        fresh.garden.plant("orange_1").unwrap().stage(),
+        Stage::Sprout
+    );
+    fresh.garden.update(120.0);
+    assert_eq!(fresh.garden.plant("orange_1").unwrap().stage(), Stage::Ripe);
+}

@@ -1,8 +1,8 @@
 {
   "format": "buchstabenzoo-ads/1",
-  "version": 1,
-  "issued": "2026-09-30T21:02:53Z",
-  "valid_until": "2026-12-29T21:02:53Z",
+  "version": 2,
+  "issued": "2026-10-01T20:10:32Z",
+  "valid_until": "2026-12-30T20:10:32Z",
   "campaigns": [
     {
       "id": "mathfighter",
@@ -61,6 +61,36 @@
           "width": 1024,
           "height": 500,
           "sha256": "638caab3e9120795c8a1edf69cbe44e70d05ef5e58c80f6201f8836f6a2171f0"
+        }
+      ]
+    },
+    {
+      "id": "edugamegalaxy",
+      "slot": 3,
+      "active": true,
+      "link": "https://edugamegalaxy.rcms.ch",
+      "tagline": {
+        "de": "Effizient und mit Spaß lernen – für den Erfolg im Leben",
+        "en": "Learn efficiently and with fun – for success in life"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/edugamegalaxy-de.webp",
+          "mime": "image/webp",
+          "bytes": 64418,
+          "width": 1024,
+          "height": 500,
+          "sha256": "7180db1ba75a113c09bede5bf0aeddb3619f705e33c50a48e57e748da931a26c"
+        },
+        {
+          "lang": "en",
+          "path": "img/edugamegalaxy-en.webp",
+          "mime": "image/webp",
+          "bytes": 62628,
+          "width": 1024,
+          "height": 500,
+          "sha256": "8477bde5bd9404486102afe3569c6d6a66a6857dc9d130773959d00f89e2f194"
         }
       ]
     }

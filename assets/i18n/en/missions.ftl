@@ -86,7 +86,7 @@ mission-hippo-riddle-loc_shade-klasse2 = The sun is too hot for the hippo. It li
 mission-hippo-riddle-loc_shade-klasse3 = Hippos have sensitive skin and do not like strong sun. So our hippo has looked for a dark, cool spot. Thick treetops keep the sun away, and behind it stands the high wall around the whole zoo. It lies there in the dry grass and dozes.
 
 # shown when the hippo is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-hippo-home = Great! The hippo is home again.
+mission-hippo-home = Great! The hippos are home again.
 
 ## 3. Panda — loc_cave, loc_bamboo, loc_leaves
 
@@ -123,7 +123,7 @@ mission-panda-riddle-loc_leaves-klasse2 = The panda likes to play. It has snuggl
 mission-panda-riddle-loc_leaves-klasse3 = The zookeeper has been busy raking leaves under the trees. Now there is a huge heap of red, yellow and brown leaves. The panda found it and jumped right into the middle. When it turns over, the leaves rustle and fly through the air.
 
 # shown when the panda is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-panda-home = Great! The panda is home again.
+mission-panda-home = Great! The pandas are home again.
 
 # ======================================================================== levels 2 and 3
 # Animals 4-10 (CONT-MISSIONS §4-§10; hiding places proposal Q-095; levels GAME-LEVEL-2 / GAME-LEVEL-3).
@@ -190,7 +190,7 @@ mission-elephant-riddle-loc_big_ball-klasse2 = The elephant plays with something
 mission-elephant-riddle-loc_big_ball-klasse3 = Elephants are clever and like to play, even when they are grown up. So the zookeepers gave them a toy that is bigger than a child. It is round, red and white, and it rolls when you push it. Our elephant nudges it with its trunk and trumpets with joy.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-elephant-home = Great! The elephant is home again.
+mission-elephant-home = Great! The elephants are home again.
 
 ## 6. Goldfish — loc_waterfall, loc_water_wheel, loc_willow (level_3)
 
@@ -232,7 +232,7 @@ mission-goldfish-bowl-hint-klasse2 = Bring a big bowl full of water. Only in it 
 mission-goldfish-bowl-hint-klasse3 = A goldfish cannot walk along the path. You need a big glass bowl, and the zookeepers keep one in their house. Fill it with water, and the goldfish can jump in.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-goldfish-home = Great! The goldfish is home again.
+mission-goldfish-home = Great! The goldfish are home again.
 
 ## 7. Monkey — loc_pirate_ship, loc_carousel, loc_trampoline (level_3)
 
@@ -264,7 +264,7 @@ mission-monkey-riddle-loc_trampoline-klasse2 = The monkey bounces on a round blu
 mission-monkey-riddle-loc_trampoline-klasse3 = Monkeys like to jump from branch to branch. Our monkey has found something even better: a round blue mat lying in the lawn. Every time it lands on it, the mat throws it back up into the air. It does somersaults and laughs.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-monkey-home = Great! The monkey is home again.
+mission-monkey-home = Great! The monkeys are home again.
 
 ## 8. Giraffe — loc_lookout_tower, loc_train, loc_playground (level_2)
 
@@ -296,7 +296,7 @@ mission-giraffe-riddle-loc_playground-klasse2 = The giraffe stands where childre
 mission-giraffe-riddle-loc_playground-klasse3 = The giraffe is very curious. It heard children laughing and followed the sound. Now it stands between the swings and the slide. With its long tongue it pulls leaves off the trees.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-giraffe-home = Great! The giraffe is home again.
+mission-giraffe-home = Great! The giraffes are home again.
 
 ## 9. Lion — loc_sun_rocks, loc_stage, loc_deckchairs (level_2)
 
@@ -328,7 +328,7 @@ mission-lion-riddle-loc_deckchairs-klasse2 = The lion is on holiday. It stretche
 mission-lion-riddle-loc_deckchairs-klasse3 = Today the lion feels as if it were on holiday by the sea. It has found a place with colourful striped chairs for resting. A big sunshade keeps the sun off it. There it lies, stretches out all four paws and snores.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-lion-home = Great! The lion is home again.
+mission-lion-home = Great! The lions are home again.
 
 ## 10. Snow fox — loc_ice_cream_kiosk, loc_sprinkler, loc_laundry (level_3)
 
@@ -360,4 +360,11 @@ mission-snow_fox-riddle-loc_laundry-klasse2 = The snow fox hides between big whi
 mission-snow_fox-riddle-loc_laundry-klasse3 = In winter the snow fox's fur is as white as snow. That helps it to hide well. Today it has found a place where the zookeepers have hung big white sheets and towels out to dry. It sits very still between the flapping sheets and hopes that nobody will spot it.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-snow_fox-home = Great! The snow fox is home again.
+mission-snow_fox-home = Great! The snow foxes are home again.
+
+# Generic pair note on the info board of every pair species (GAME-FAMILY "Texts", Q-308): shown after the facts.
+# kiga: symbols only (male, female).
+mission-pair-note-kiga = ♂ ♀
+mission-pair-note-klasse1 = There are two. A male. A female.
+mission-pair-note-klasse2 = There are two animals: a male and a female.
+mission-pair-note-klasse3 = There are always two animals: a male and a female. They stay together and follow you together.

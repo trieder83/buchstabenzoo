@@ -138,7 +138,7 @@ test.describe('signed campaigns (test build)', () => {
     await serveAds(page, fixtureFiles(), requests);
     await start(page, `&adkey=${encodeURIComponent(PUB)}`);
     await settled(page);
-    expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 1: 'mathfighter', 2: 'abcsmash' });
+    expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 1: 'mathfighter', 2: 'abcsmash', 3: 'edugamegalaxy' });
     const mf = (await boards(page)).find((b) => b.slot === 1)!;
     await standAt(page, mf);
     await expect(page.locator('#ad-panel')).toBeVisible();
@@ -241,10 +241,47 @@ test.describe('signed campaigns (test build)', () => {
     expect(await opens(page)).toEqual([['https://abcsmash.rcms.ch/', '_blank', 'noopener,noreferrer']]);
   });
 
-  test('ADC1-006 ADC3-001 a board of the placeholder slot stays passive next to real campaigns', async ({ page }) => {
-    await serveAds(page, fixtureFiles(), []);
+  test('ADC3-002 ADC3-003 EduGameGalaxy: image + tagline by language, link behind the plus/minus gate, opened once', async ({ page }) => {
+    const requests: string[] = [];
+    await serveAds(page, fixtureFiles(), requests);
     await start(page, `&adkey=${encodeURIComponent(PUB)}`);
     await settled(page);
+    const edu = (await boards(page)).find((b) => b.slot === 3)!;
+    await standAt(page, edu);
+    await expect(page.locator('#ad-panel')).toBeVisible();
+    await expect(page.locator('#ad-tagline')).toHaveText('Effizient und mit Spaß lernen – für den Erfolg im Leben');
+    await expect(page.locator('#ad-link-text')).toHaveText('edugamegalaxy.rcms.ch');
+    expect(await page.locator('#ad-image').getAttribute('data-path')).toContain('edugamegalaxy-de');
+    await page.evaluate(() => window.__zoo!.app.set_language('en'));
+    await expect(page.locator('#ad-tagline')).toHaveText('Learn efficiently and with fun – for success in life');
+    expect(await page.locator('#ad-image').getAttribute('data-path')).toContain('edugamegalaxy-en');
+    await page.evaluate(() => window.__zoo!.app.set_reading_level('kiga'));
+    await expect(page.locator('#ad-tagline')).toHaveCount(0);
+    await page.evaluate(() => window.__zoo!.app.set_reading_level('klasse2'));
+    expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]); // ADC3-004
+    await page.locator('#ad-link').click();
+    const q = (await page.locator('#ad-gate-question').textContent())!;
+    await page.locator('.ad-choice', { hasText: new RegExp(`^${gateAnswer(q)}$`) }).click();
+    const hb = (await page.locator('#ad-hold').boundingBox())!;
+    await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+    await page.mouse.down();
+    await page.waitForFunction(() => (window as unknown as { __opens: unknown[] }).__opens.length > 0, undefined, { timeout: 8000 });
+    await page.mouse.up();
+    expect(await opens(page)).toEqual([['https://edugamegalaxy.rcms.ch/', '_blank', 'noopener,noreferrer']]);
+    expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]);
+  });
+
+  test('ADC1-006 a board whose campaign is not delivered stays a passive placeholder next to real campaigns', async ({ page }) => {
+    const files = fixtureFiles();
+    for (const l of ['de', 'en']) {
+      const img = Buffer.from(files.get(`img/edugamegalaxy-${l}.png`)!);
+      img[img.length - 12] ^= 0xff; // hash mismatch: campaign 3 is dropped
+      files.set(`img/edugamegalaxy-${l}.png`, img);
+    }
+    await serveAds(page, files, []);
+    await start(page, `&adkey=${encodeURIComponent(PUB)}`);
+    await settled(page);
+    expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 1: 'mathfighter', 2: 'abcsmash' });
     const third = (await boards(page)).find((b) => b.slot === 3)!;
     await standAt(page, third);
     await expect(page.locator('#ad-panel')).toBeHidden();
@@ -266,7 +303,7 @@ test.describe('signed campaigns (test build)', () => {
     await expect(page.locator('#ad-panel')).toBeHidden();
   });
 
-  test('ADS-021 a tampered image drops its campaign, the other one still shows', async ({ page }) => {
+  test('ADS-021 a tampered image drops its campaign, the others still show', async ({ page }) => {
     const files = fixtureFiles();
     const img = Buffer.from(files.get('img/mathfighter-wide.png')!);
     img[img.length - 12] ^= 0xff;
@@ -274,7 +311,7 @@ test.describe('signed campaigns (test build)', () => {
     await serveAds(page, files, []);
     await start(page, `&adkey=${encodeURIComponent(PUB)}`);
     await settled(page);
-    expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 2: 'abcsmash' });
+    expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 2: 'abcsmash', 3: 'edugamegalaxy' });
   });
 
   test('ADS-022 without the test key a manifest signed by another key is not trusted (only the compiled production key counts)', async ({ page }) => {

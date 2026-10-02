@@ -31,6 +31,62 @@ pub fn baby_model(species: &str) -> Option<&'static str> {
     }
 }
 
+/// How a member of a pair is drawn when its species has no dedicated female / baby model yet
+/// (Q-308, ART-ANIMALS "Family models"): the adult model scaled, the female slightly tinted.
+/// The male is the adult model at scale 1 (GAME-FAMILY §3: ~10 % larger than the female).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FamilyLook {
+    /// Uniform scale of the model.
+    pub scale: f32,
+    /// Colour tint `[r, g, b, amount]` mixed over the model colours (`amount` 0 = none).
+    pub tint: [f32; 4],
+}
+
+/// Female (member 1) without her own model: ~92 % size (the male is ~10 % larger) and a warm
+/// rosy tint, so the pair is told apart without art.
+pub const FEMALE_FALLBACK_LOOK: FamilyLook = FamilyLook {
+    scale: 0.92,
+    tint: [1.0, 0.72, 0.78, 0.16],
+};
+/// Baby without its own model: the adult model at ~45 % (GAME-FAMILY §8), no tint.
+pub const BABY_FALLBACK_LOOK: FamilyLook = FamilyLook {
+    scale: 0.45,
+    tint: [0.0; 4],
+};
+const OWN_LOOK: FamilyLook = FamilyLook {
+    scale: 1.0,
+    tint: [0.0; 4],
+};
+
+/// Look of pair member `member` (0 male, 1 female): own model = as modelled, else the fallback.
+pub fn member_look(species: &str, member: u8) -> FamilyLook {
+    if member >= 1 && female_model(species).is_none() {
+        FEMALE_FALLBACK_LOOK
+    } else {
+        OWN_LOOK
+    }
+}
+
+/// Look of the baby of a pair species.
+pub fn baby_look(species: &str) -> FamilyLook {
+    if baby_model(species).is_none() {
+        BABY_FALLBACK_LOOK
+    } else {
+        OWN_LOOK
+    }
+}
+
+/// Minimum distance (m) the two animals of a pair keep from each other at their hiding place and
+/// at home (centre to centre, Q-308): small animals one cell, big ones two, so bodies and
+/// props never clip. Perched animals (koala) sit side by side on a wide branch instead.
+pub fn pair_gap_m(species: &str) -> f32 {
+    match species {
+        "hippo" | "giraffe" | "elephant" => 2.0,
+        "zebra" | "panda" | "lion" => 1.5,
+        _ => 1.0,
+    }
+}
+
 pub const ANIMALS: [AnimalInfo; 13] = [
     AnimalInfo {
         id: "zebra",

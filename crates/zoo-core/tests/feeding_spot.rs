@@ -86,8 +86,11 @@ fn gard_010_group_comes_to_the_feed_spot() {
             let c = cell_center(s.cell_for(usize::from(a.member)));
             assert!(
                 a.pos.distance(c) < 0.6,
-                "{id}: member {} at its spot cell",
-                a.member
+                "{id}: member {} at its spot cell {c} (at {}, route {:?}, cells {:?})",
+                a.member,
+                a.pos,
+                a.wander.route,
+                s.cells
             );
         }
         // the nearest member is in reach and in front of the child
@@ -96,7 +99,14 @@ fn gard_010_group_comes_to_the_feed_spot() {
             Some(Target::Treat {
                 animal: g.animal(id).unwrap().id()
             }),
-            "{id}: can be given"
+            "{id}: can be given (player {} facing {}, spot {:?}, animals {:?})",
+            g.player.pos,
+            g.player.facing,
+            s.cells,
+            g.group(id)
+                .iter()
+                .map(|&j| g.animals[j].pos)
+                .collect::<Vec<_>>()
         );
     }
 }

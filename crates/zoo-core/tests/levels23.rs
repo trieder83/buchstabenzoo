@@ -183,8 +183,8 @@ fn layout_023_enterable_building() {
     let houses: Vec<_> = zoo.elements.iter().filter(|e| e.is_enterable()).collect();
     let mut ids: Vec<&str> = houses.iter().map(|e| e.id.as_str()).collect();
     ids.sort_unstable();
-    // every building with a door (LAYOUT-041): the zookeeper houses of levels 1 (bed,
-    // GAME-NIGHT) and 3, the night house of night_1, the food storages and the food hut
+    // every building with a door (LAYOUT-041): the zookeeper houses of levels 1, 2 and 3 (one
+    // bed each, GAME-NIGHT, LAYOUT-047), the night house of night_1, the food storages and the food hut
     assert_eq!(
         ids,
         [
@@ -194,6 +194,7 @@ fn layout_023_enterable_building() {
             "food_storage_n1",
             "night_house",
             "zookeeper_house_1",
+            "zookeeper_house_2",
             "zookeeper_house_3"
         ]
     );

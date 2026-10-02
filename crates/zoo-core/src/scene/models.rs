@@ -199,7 +199,7 @@ pub struct TextFace {
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlantPlacement {
     pub spot: String,
-    /// `carrot` | `potato`.
+    /// `carrot` | `potato` | `apple` | `orange`.
     pub kind: String,
     /// Plant base on the soil (world).
     pub pos: Vec3,

@@ -6,10 +6,13 @@ module: animals
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG]
 test_prefix: AANI
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Animals — concept and models
+
+**Contents:** Goal · Asset list · Game sizes · Behaviour · Rig conventions (quadrupeds) · Zebra model (v1) · Family models (GAME-FAMILY, 2026-09-30) · Models v1 (hippo, panda, koala, elephant, giraffe, lion, snow_fox) · Night animals (models v1) · Ambient animals (GAME-AMBIENT, M6) · Test cases · Open questions
+
 
 ## Goal
 
@@ -291,6 +294,17 @@ origin at the water surface; they replace the static `duck` / `frog` props of `k
 | `butterfly` | built-in renderer mesh (12 triangles, no `.glb`) | — | wing beat as instance scale | ≈ 0.34 m wingspan | implemented |
 
 Game scale of duckling / frog: Q-108. Manifest entries (Q-122 answered): added with `concept_approved = true` only after the user confirms the `kit_water` sheet counts; the static `duck` / `frog` props are removed from `kit_water`.
+
+## Family models still missing (Q-280, Q-282, 2026-10-01)
+
+Every species is a pair (GAME-FAMILY, Q-308), but only `zebra_female/foal` and `koala_female/joey`
+exist. For the other 11 species the game draws the adult model at 0.92 scale with a slight tint
+(female) and at 0.45 (baby) — a fallback, not art. Art tasks (concept sheets first; manifest entries
+`concept_approved = false`): `hippo_female`/`hippo_calf`, `panda_female`/`panda_cub`,
+`elephant_female`/`elephant_calf`, `giraffe_female`/`giraffe_calf`, `lion_female`/`lion_cub` (the
+lioness has no mane), `monkey_female`/`monkey_baby`, `snow_fox_female`/`snow_fox_kit`,
+`goldfish_female`/`goldfish_fry`, `hedgehog_female`/`hedgehog_hoglet`, `bat_female`/`bat_pup`,
+`owl_female`/`owl_owlet`. Animations as the adult (see the table above).
 
 ## Test cases
 

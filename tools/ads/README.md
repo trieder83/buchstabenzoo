@@ -1,7 +1,7 @@
 # Ad content: signing and deploying (GAME-ADS "External content")
 
 The game shows the content of the ad boards **only if it is signed by you**. Until you did the
-steps below the boards show the local placeholders ("Deine Werbung 1/2/3") and the game makes no
+steps below (and for any slot whose campaign is missing or invalid) the boards show the local placeholders ("Deine Werbung 1/2/3") and the game makes no
 request for ads.
 
 Needs Python 3 with `cryptography` and `Pillow` (`pip install cryptography pillow`).
@@ -27,7 +27,7 @@ python3 tools/ads/keygen.py --private ~/secrets/zoo-ads.key
 2. Edit `tools/ads/campaigns.template.json` (taglines de/en ≤ 80 characters, plain text, `active`,
    image list per language; `lang` `*` = every language). Campaign ids, slots and link hosts are
    fixed in the game (`web/src/ads.ts` `KNOWN_CAMPAIGNS`: `mathfighter` slot 1
-   `mathfighter.rcms.ch`, `abcsmash` slot 2 `abcsmash.rcms.ch`); a new advertiser needs a game
+   `mathfighter.rcms.ch`, `abcsmash` slot 2 `abcsmash.rcms.ch`, `edugamegalaxy` slot 3 `edugamegalaxy.rcms.ch`); a new advertiser needs a game
    release (Q-241) and a legal / child-safety check (GAME-ADS rule 6).
 3. Sign (fills sizes, dimensions and SHA-256 of the images, checks the game's limits):
 

@@ -141,15 +141,15 @@ describe('signature (ADS-008, ADS-009)', () => {
     const sig = fs.readFileSync(path.join(adsDir, 'campaigns.sig'), 'utf8');
     expect(await verifySignature(body, sig, [pub])).toBe(true);
     const m = parseManifest(body, NOW, 0);
-    expect(m.campaigns.map((c) => c.id)).toEqual(['mathfighter', 'abcsmash']);
+    expect(m.campaigns.map((c) => c.id)).toEqual(['mathfighter', 'abcsmash', 'edugamegalaxy']);
     expect(m.dropped).toEqual([]);
     expect(m.campaigns[0].link).toBe('https://mathfighter.rcms.ch/');
   });
 
-  it('ADS-008 loadAds returns both verified campaigns by slot', async () => {
+  it('ADS-008 loadAds returns all three verified campaigns by slot', async () => {
     const s = await server(fixtureManifest());
     const c = await loadAds(options(s));
-    expect([...c!.bySlot.keys()].sort()).toEqual([1, 2]);
+    expect([...c!.bySlot.keys()].sort()).toEqual([1, 2, 3]);
     expect(c!.bySlot.get(2)!.images.map((i) => i.lang)).toEqual(['de', 'en']);
   });
 
@@ -233,14 +233,16 @@ describe('manifest rules (ADS-010, ADS-011)', () => {
   it('ADS-011 unknown campaigns, slot mismatch, inactive and duplicate slots never show', () => {
     const enc = (o: unknown) => new TextEncoder().encode(JSON.stringify(o));
     const m = fixtureManifest();
-    const [mf, abc] = m.campaigns;
+    const [mf, abc, edu] = m.campaigns;
     const res = parseManifest(
-      enc({ ...m, campaigns: [{ ...mf, id: 'evil' }, { ...abc, slot: 1 }, { ...mf, active: false }] }),
+      enc({ ...m, campaigns: [{ ...mf, id: 'evil' }, { ...abc, slot: 1 }, { ...edu, slot: 2 }] }),
       NOW,
       0,
     );
     expect(res.campaigns).toEqual([]);
-    expect(res.dropped.map((d) => d[0])).toEqual(['evil', 'abcsmash']);
+    expect(res.dropped.map((d) => d[0])).toEqual(['evil', 'abcsmash', 'edugamegalaxy']);
+    const inactive = parseManifest(enc({ ...m, campaigns: [{ ...mf, active: false }] }), NOW, 0);
+    expect(inactive.campaigns).toEqual([]);
     const dup = parseManifest(enc({ ...m, campaigns: [mf, { ...mf }] }), NOW, 0);
     expect(dup.campaigns).toHaveLength(1);
     expect(dup.dropped).toEqual([['mathfighter', 'campaign']]);
@@ -253,7 +255,7 @@ describe('images (ADS-012, ADS-013, ADS-014)', () => {
     evil[evil.length - 12] ^= 0xff; // same size, other pixels
     const s = await server(fixtureManifest(), { tamper: { 'img/mathfighter-wide.png': evil } });
     const c = await loadAds(options(s));
-    expect([...c!.bySlot.keys()]).toEqual([2]);
+    expect([...c!.bySlot.keys()].sort()).toEqual([2, 3]);
   });
 
   it('ADS-012 every image of every campaign tampered → nothing to show', async () => {
@@ -277,6 +279,7 @@ describe('images (ADS-012, ADS-013, ADS-014)', () => {
     const m = fixtureManifest();
     m.campaigns[0].images[0].bytes = 600 * 1024;
     m.campaigns[1].images[0].width = 4096;
+    m.campaigns[2].images[0].width = 4096;
     expect(parseManifest(new TextEncoder().encode(JSON.stringify(m)), NOW, 0).campaigns).toEqual([]);
     const big = new Uint8Array(600 * 1024);
     big.set(read('img/abcsmash-de.png'));
@@ -288,6 +291,7 @@ describe('images (ADS-012, ADS-013, ADS-014)', () => {
   it('ADS-013 declared dimensions that differ from the file header are refused', async () => {
     const m = fixtureManifest();
     for (const i of m.campaigns[1].images) i.height = 130;
+    for (const i of m.campaigns[2].images) i.height = 130;
     const s = await server(m);
     const c = await loadAds(options(s));
     expect([...c!.bySlot.keys()]).toEqual([1]);
@@ -297,6 +301,7 @@ describe('images (ADS-012, ADS-013, ADS-014)', () => {
     const m = fixtureManifest();
     for (const i of m.campaigns[0].images) i.mime = 'image/webp'; // the files are PNG
     m.campaigns[1].images[0].mime = 'image/gif';
+    m.campaigns[2].images[0].mime = 'image/gif';
     const s = await server(m);
     const c = await loadAds(options(s));
     expect(c).toBeNull();
@@ -310,7 +315,7 @@ describe('images (ADS-012, ADS-013, ADS-014)', () => {
       const m = fixtureManifest();
       m.campaigns[0].images[0].path = bad;
       const r = parseManifest(enc(m), NOW, 0);
-      expect(r.campaigns.map((c) => c.id), bad).toEqual(['abcsmash']);
+      expect(r.campaigns.map((c) => c.id), bad).toEqual(['abcsmash', 'edugamegalaxy']);
     }
   });
 
@@ -336,6 +341,9 @@ describe('links (ADS-015)', () => {
     expect(ok('mathfighter', 'https://mathfighter.rcms.ch')).toBe('https://mathfighter.rcms.ch/');
     expect(ok('mathfighter', 'https://mathfighter.rcms.ch/')).toBe('https://mathfighter.rcms.ch/');
     expect(ok('abcsmash', 'https://abcsmash.rcms.ch')).toBe('https://abcsmash.rcms.ch/');
+    expect(ok('edugamegalaxy', 'https://edugamegalaxy.rcms.ch')).toBe('https://edugamegalaxy.rcms.ch/');
+    expect(ok('edugamegalaxy', 'https://edugamegalaxy.rcms.ch.evil.example')).toBeNull();
+    expect(ok('edugamegalaxy', 'https://mathfighter.rcms.ch')).toBeNull();
     const bad: [string, string][] = [
       ['mathfighter', 'http://mathfighter.rcms.ch'],
       ['mathfighter', 'https://abcsmash.rcms.ch'], // the other campaign's host
@@ -356,16 +364,17 @@ describe('links (ADS-015)', () => {
     ];
     for (const [id, l] of bad) expect(ok(id, l), l).toBeNull();
     expect(checkLink('mathfighter', 42)).toBeNull();
-    expect(Object.values(KNOWN_CAMPAIGNS).map((k) => k.host)).toEqual(['mathfighter.rcms.ch', 'abcsmash.rcms.ch']);
+    expect(Object.values(KNOWN_CAMPAIGNS).map((k) => k.host)).toEqual(['mathfighter.rcms.ch', 'abcsmash.rcms.ch', 'edugamegalaxy.rcms.ch']);
   });
 
   it('ADS-015 a manifest with a bad link drops that campaign', () => {
     const m = fixtureManifest();
     m.campaigns[0].link = 'https://mathfighter.rcms.ch/?ref=zoo';
     m.campaigns[1].link = 'https://evil.example';
+    m.campaigns[2].link = 'https://edugamegalaxy.rcms.ch/?x=1';
     const r = parseManifest(new TextEncoder().encode(JSON.stringify(m)), NOW, 0);
     expect(r.campaigns).toEqual([]);
-    expect(r.dropped.map((d) => d[1])).toEqual(['link', 'link']);
+    expect(r.dropped.map((d) => d[1])).toEqual(['link', 'link', 'link']);
   });
 });
 
@@ -383,7 +392,7 @@ describe('text (ADS-016)', () => {
     const m = fixtureManifest();
     m.campaigns[0].tagline = { de: '<script>alert(1)</script>', en: 'ok' };
     const r = parseManifest(new TextEncoder().encode(JSON.stringify(m)), NOW, 0);
-    expect(r.campaigns.map((c) => c.id)).toEqual(['abcsmash']);
+    expect(r.campaigns.map((c) => c.id)).toEqual(['abcsmash', 'edugamegalaxy']);
     expect(r.dropped).toEqual([['mathfighter', 'text']]);
   });
 });

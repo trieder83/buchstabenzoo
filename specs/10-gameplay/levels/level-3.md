@@ -6,10 +6,13 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L3
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Level 3 — monkey, goldfish, snow fox (adventure playground and stream)
+
+**Contents:** Goal · Design assumptions of this level (Q-numbers: see open-questions.md) · Spawn and camera · Map · Elements · Level entries · Hiding places (candidates) · Hiding places — riddle details and guards · Water sources and the fish bowl · Barriers · Walking distances · Behaviour · Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118, Q-137, Q-139 answered) · Test cases · Implementation status (M5b, 2026-09-26) · Open questions · Ideas (not decided)
+
 
 Owned by the `zoo-level-designer` agent. Layout data: `assets/levels/level-3.toml`
 (level id `level_3`). Coordinate system, element types, "Joining levels" and general rules:
@@ -32,7 +35,7 @@ animals of the artwork are in the game.
 Plus: **zookeeper house** `zookeeper_house_3` (enterable; the **fish bowl** stands on its
 table, a **water tap** at its door), **food storage 3** (all 10 food boxes, proposal
 Q-089), a map board at the entry, and a second entry path to the level-1 north gate
-(proposal Q-090).
+(Q-090, confirmed 2026-10-01).
 
 **Goldfish mission** (GAME-RESCUE "goldfish bowl"): read the board (it says a bowl is
 needed, `mission-goldfish-bowl-hint-<reading_level>`) → take the bowl in the zookeeper house (5.7 s
@@ -48,7 +51,7 @@ the goldfish board on the opposite side. Monkey places are in the south and west
 places in the north. 3³ = 27 combinations, **10** keep all spots ≥ 12 m apart; every
 candidate is in ≥ 1 (picking rule Q-082).
 
-## Proposals used in this level (not yet decided)
+## Design assumptions of this level (Q-numbers: see open-questions.md)
 
 | Topic | Proposal used here | Question |
 |---|---|---|
@@ -106,8 +109,8 @@ x −9…−7, z 46–47), level 2 east of x 23 (its `barrier_l2_construction` a
    68 ##~~~.....===TTTTTTTTTTTTTTTTTT===.gffffffffff%%
    67 ##~~~.....===TTTTTTTTTTTTTTTTTT===.gffffffffff%%
    66 ##~~~.....===ZZZZZZZTTTFFFFFFFF===.fffffffffff%%
-   65 ##~~~.....===Z_____ZTTTFFFFFFFF===.fffffffffff%%
-   64 ##~~~.....===Z_U___ZTTTFFFFFFFF===.fffffffffff%%
+   65 ##~~~.....===Z___YYZTTTFFFFFFFF===.fffffffffff%%
+   64 ##~~~.....===Z_U__yZTTTFFFFFFFF===.fffffffffff%%
    63 ##~~~.....===Z_____ZTTTFFFFFFFF===.fffffffffff%%
    62 ##~~~.....===Z_____ZTTTFFFFFFFF===............%%
    61 ##~~~========ZZZDZZZTTTFFFFDFFF===............%%
@@ -134,6 +137,7 @@ x −9…−7, z 46–47), level 2 east of x 23 (its `barrier_l2_construction` a
 | `=` | path | `~` | stream (`stream_l3`, water, flows south) |
 | `^` | rock ledge with the waterfall (`waterfall_rocks`) | `m` | mill hut (water wheel at x −20, z 70–72) |
 | `Y` | weeping willow (`tree_willow`) | `Z` / `_` / `D` / `U` | zookeeper house walls / walkable floor / doors / fish bowl on the table |
+| `Y` / `y` (inside the house) | bed `bed_l3` (`[[item]]`, solid) / its stand cell (the willow `Y` stands outdoors) | | |
 | `F` | food storage 3 | `T` | dense trees (solid) |
 | `f` `y` `x` | enclosure goldfish (pond) / monkey / snow fox | `g` | gate (goldfish: stone step for the bowl) |
 | `i` | info board | `M` | map board |
@@ -150,7 +154,7 @@ The water tap `tap_l3` is a prop at (−5.5, 60.9) flush on the south facade, 1.
 
 Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `path` and
 `hiding_place`, **except** the `interior` and `door` cells of `zookeeper_house_3`
-(proposal Q-092).
+(Q-092, confirmed 2026-10-01).
 
 | Id | Type | Grid rect (x, z, w, d) | Notes |
 |---|---|---|---|
@@ -176,8 +180,8 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `path_l3_mill` | path (side) | -19, 73, 5, 2 | Short path from the ring to the stream bank just north of the mill hut. |
 | `path_l3_ne` | path (side) | 10, 77, 10, 3 | Side path east from the ring towards the ice cream kiosk and the trampoline. |
 | `path_monkey_apron` | path (side) | 1, 80, 2, 2 | Street apron (rule 8): joins `path_l3_ring_n` (z 79) to the entrance of enc_monkey. |
-| `zookeeper_house_3` | building (zookeeper_house) | -11, 61, 7, 6 | door at cell (-8, 61); walkable interior (-10, 62, 5, 4). Enterable zookeeper house (roof cut-away inside, GAME-PLAYER §2): shelves, a table, a bed, and the big empty glass bowl (fish_bowl) on the table. Water tap on the outside wall next to the door. |
-| `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61); enterable, walkable interior (0, 62, 6, 4). Third food storage (proposal Q-089): all 10 food boxes outside in a row in front of the south facade (z 60.66; Q-181 answered): meat x −1.65, melons −0.93, hay −0.21, bananas 0.51, bamboo 1.23, grass 1.95, gap (box edges 2.26 … 4.74: ≥ 0.9 m beside each door post, Q-150, LAYOUT-038), fish food 5.05, berries 5.8, eucalyptus 6.6, leaves 7.4. Inside (Q-194 answered 2026-09-29): 6 more real, labelled food boxes (foods of the level's animals, repeated) on the wall band's plank platform — back (north) wall z 66.44 at x 0.88 (fish food), 1.52 (bananas), 4.28 (berries), 4.92 (fish food); west wall (−0.44, 64.0, bananas); east wall (6.44, 63.2, berries). |
+| `zookeeper_house_3` | building (zookeeper_house) | -11, 61, 7, 6 | door at cell (-8, 61); walkable interior (-10, 62, 5, 4). Enterable zookeeper house (roof cut-away inside, GAME-PLAYER §2): shelves, a table, a bed (`bed_l3`, `[[item]] kind = "bed"`: centre (−6.0, 65.5), footprint x −7…−5, z 65…66 at the north-east corner, long side along x, used from the south, stand cell (−6, 64); user request 2026-10-01: every bed is indoors, LAYOUT-047; nightfall follows level 3 too), and the big empty glass bowl (fish_bowl) on the table. Water tap on the outside wall next to the door. |
+| `food_storage_3` | building (food_storage) | -1, 61, 8, 6 | door at cell (3, 61); enterable, walkable interior (0, 62, 6, 4). Third food storage (Q-089, confirmed 2026-10-01): all 10 food boxes outside in a row in front of the south facade (z 60.66; Q-181 answered): meat x −1.65, melons −0.93, hay −0.21, bananas 0.51, bamboo 1.23, grass 1.95, gap (box edges 2.26 … 4.74: ≥ 0.9 m beside each door post, Q-150, LAYOUT-038), fish food 5.05, berries 5.8, eucalyptus 6.6, leaves 7.4. Inside (Q-194 answered 2026-09-29): 6 more real, labelled food boxes (foods of the level's animals, repeated) on the wall band's plank platform — back (north) wall z 66.44 at x 0.88 (fish food), 1.52 (bananas), 4.28 (berries), 4.92 (fish food); west wall (−0.44, 64.0, bananas); east wall (6.44, 63.2, berries). |
 | `trees_l3_center` | decoration (tree_grove) | -4, 61, 3, 16 | density `dense`.  |
 | `trees_l3_center_e` | decoration (tree_grove) | -1, 67, 8, 10 | density `dense`.  |
 | `enc_goldfish` | enclosure | 11, 63, 11, 10 | gate (11, 67, 1, 2). Goldfish pond enclosure: round pond with a low stone rim, water plants, a low wooden fence; the "gate" is a flat stone step where the bowl is put down to let the fish in (GAME-RESCUE goldfish bowl step 6). No waterfall, no wheel, no willow (riddle guards). |
@@ -191,7 +195,34 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `carousel_sw` | landmark (carousel) | -16, 52, 4, 4 | Small carousel with wooden horses and a striped round roof, slowly turning, music box sound. loc_carousel. |
 | `ice_cream_kiosk` | building (kiosk) | 15, 83, 4, 3 | Ice cream kiosk with a striped awning, a big ice-cream-cone icon on the roof (no text), a freezer chest with a glass lid in front (cold mist) and a cone stand. loc_ice_cream_kiosk. |
 | `trees_l3_garden` | decoration (tree_grove) | -11, 67, 7, 10 | density `dense`.  |
+| `path_garden_fruit` | path (garden) | 11, 74, 10, 1 | Garden path along the south edge of `garden_fruit` (stand cells of the four fruit trees). |
+| `path_garden_fruit_link` | path (garden) | 14, 75, 4, 2 | Garden path between the two beds up to the fruit garden's north fence line; joins the street `path_l3_ne` (z 77). |
 | `laundry_line` | decoration (washing_line) | -19, 82, 5, 1 | Washing line of the zookeepers between two posts on the lawn by the stream with big white sheets and towels flapping in the wind, a peg bag and a laundry basket. loc_laundry. |
+
+## Fruit garden (user request 2026-10-01, Q-320, GAME-GARDEN)
+
+The `[[garden]]` `garden_fruit` (not an `[[element]]`; its cells stay walkable) lies in the
+quiet strip between `enc_goldfish` (north fence line z 73) and `path_l3_ne` (z 77–79):
+rect x 11–20, z 74–76 (10 × 3 m), one row (z 73) clear of the goldfish fence.
+
+- **Gate:** 2 m, cells (15, 76, 2, 1), north side: the opening on the line z = 77 touches the
+  street cells of `path_l3_ne` (rule 8: street within 2 m). From the spawn (20, 53): entry path,
+  ring east, ring north, `path_l3_ne` ≈ 45 m.
+- **Beds** (`garden_bed`, rotated, 3 × 1 cells): `bed_apple` (11, 75, 3, 1) and `bed_orange`
+  (18, 75, 3, 1), 4 cells (14–17) between them. Two trees per bed, `plant_spot`s `apple_1`
+  (11.8, 75.5), `apple_2` (13.2, 75.5), `orange_1` (18.8, 75.5), `orange_2` (20.2, 75.5), all
+  `start_stage = "ripe"`; stand cells `path_garden_fruit` (11, 74), (13, 74), (18, 74), (20, 74),
+  1.0 m south of the tree.
+- **Signs:** `garden-apple` at (14.35, 75.4) and `garden-orange` at (17.65, 75.4), facing south
+  (the camera side), 0.6 m off the fence, clear of the paths' stand cells.
+- **Props:** a wheelbarrow at (19.8, 76.5) (facing east).
+- **Fence:** low picket fence on all four sides (north in two runs around the gate), inset
+  0.08 m. Animals never enter (they wait outside the gate, Q-102).
+- Riddle guards: no hiding place, scenery, ad board or solid element overlaps the garden;
+  the trees stand in soil beds, never in the monkey's wander areas (`loc_*` are all elsewhere);
+  no water (loc_waterfall, loc_sprinkler) and no washing line.
+- Never stuck: the garden is optional (hint priority lowest); with the garden gate closed
+  by nothing and the monkey pair following, the monkeys wait outside (Q-102).
 
 ## Level entries
 
@@ -289,7 +320,7 @@ Riddle guards (zoo-wide, Q-083):
 - The fish bowl, the tap and the stream banks are **not** riddle details (the riddles
   describe where the fish is, not how to carry it).
 
-## Water sources and the fish bowl (proposal Q-093)
+## Water sources and the fish bowl (Q-093, confirmed 2026-10-01)
 
 | Id | Kind | Where | Notes |
 |---|---|---|---|
@@ -298,7 +329,7 @@ Riddle guards (zoo-wide, Q-083):
 | `bank_stream_l3` (`[[water_source]]`) | bank | every walkable cell edge-adjacent to `stream_l3` | Interact at the bank → filled. |
 
 Water sources of the other unlocked levels (level-1 `river_*` and `pond_water` banks,
-level-2 `fountain_sw`) fill the bowl too (proposal Q-093). The goldfish home
+level-2 `fountain_sw`) fill the bowl too (Q-093, confirmed 2026-10-01). The goldfish home
 `enc_goldfish` contains `goldfish_pond` (`[[enclosure_feature]]`, 13, 64, 8, 8), fenced — it
 is not a water source for the player.
 
@@ -369,6 +400,13 @@ take a food box in front of `food_storage_3` (never the fish bowl — Q-139 answ
 grass corner between the monkey enclosure and the north wall (`l3_burglar_hideout` (8, 87, 3, 5));
 note texts `event-burglar-note-level_3-<reading_level>`.
 
+## Pairs (GAME-FAMILY, Q-308 / Q-280, 2026-10-01)
+
+`pair = true` on `enc_monkey`, `enc_snow_fox` and `enc_goldfish`: six animals in level 3. The
+**goldfish pair** is two fish at the same stream place; one filled bowl carries both (RESC-018..022
+for the group, FAM-029); on the stone step both jump into the pond (two cells apart). The monkeys
+and foxes keep 1 m; their feeding-spot cells are adjacent (1 cell).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -384,6 +422,8 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 | LAYOUT-L3-009 | Given each goldfish candidate, then its spot is a `stream_l3` cell, its wander area contains only stream cells, and a walkable bank cell centre lies within 2 m of the spot; for every other candidate a walkable cell centre is within 2 m. | unit |
 | LAYOUT-L3-010 | Given `level-3.toml`, then `fish_bowl` lies on a walkable interior cell of `zookeeper_house_3` reachable from the spawn, `tap_l3` has a walkable cell centre within 1.5 m, every `stream_l3` bank cell is a water source, and a walkable cell is edge-adjacent to the gate of `enc_goldfish`. | unit |
 | LAYOUT-L3-011 | Given `level-3.toml`, then it has 10 `food_box` entries in front of `food_storage_3` (one per food) plus 2–6 more inside that may repeat a food, each with a reachable walkable standing cell within 2 m. | unit |
+| LAYOUT-L3-019 | Given `level-3.toml`, then it has one `[[item]] kind = "bed"` (`bed_l3`) with `building = "zookeeper_house_3"` (enterable, door (−8, 61) on `path_l3_ring_s`) whose 2 × 1 m footprint lies on walkable interior cells, not on the door cell, the cell inside the door or the `fish_bowl` cell; its `stand` cell is walkable, 1.0–1.5 m from the bed centre, free of colliders and reachable from the spawn through the door; at level 3's nightfall the bed offered is `bed_l3` and the hint target `bed` is its stand cell (LAYOUT-047). | unit |
+| LAYOUT-L3-030 | Given `level-3.toml`, then `garden_fruit` (x 11–20, z 74–76) has its gate on the `path_l3_ne` side, 2 apple + 2 orange `plant_spot`s with walkable `path_garden_fruit` stand cells, no overlap with solid elements, hiding places, scenery, barriers or ad boards, and is reachable from the level-3 spawn (GAME-GARDEN GARD-018). | unit |
 | LAYOUT-L3-012 | Given the `[[hiding_place]]` list of level 3, then every animal with an enclosure has ≥ 3 candidates, wander areas ≥ 9 cells inside their rect, disjoint between animals, and every candidate is in a combination with all spots ≥ 12 m apart (12 of 27). | unit |
 | LAYOUT-L3-013 | Given the `[[scenery]]` list, then no scenery rect overlaps a solid element or path cell and each lies inside its hiding place's rect. | unit |
 | LAYOUT-L3-014 | Given the goldfish mission in level 3 (seeded), when the player reads the board, takes the bowl, fills it at `tap_l3`, takes fish food, feeds the fish from the bank and puts the bowl on the goldfish gate step, then the mission completes (RESC-018…021 on this level). | e2e |
@@ -402,8 +442,8 @@ note texts `event-burglar-note-level_3-<reading_level>`.
   `enc_goldfish` gate) — LAYOUT-L3-014 e2e (seed 4, willow). The monkey sits in the crow's
   nest at 4 m (Q-094) and climbs down at 0.72 m/s (`climb`).
 - `zookeeper_house_3` is enterable (Q-092): floor cells walkable, roof + upper walls hidden
-  inside (PLAY-028/029); a table (`table_wood` placeholder with a collider), shelves and a
-  bed (boxes) inside.
+  inside (PLAY-028/029); a table (`table_wood` placeholder with a collider), shelves and the
+  bed `bed_l3` (`kit_bedroom` `bed` model, the sleeping bed of level 3, 2026-10-01) inside.
 - Unit tests: LAYOUT-L3-001…013, 015 in `levels23.rs`; RESC-018…023 in `zoo_game.rs`.
 - **Placeholders:** `waterfall_rocks` (ledge, rocks = kit `rock`, falling water and foam),
   `mill_hut` + water wheel (turning in the water, not solid, LAYOUT-L3-017/018: a procedural placeholder wheel with a spinning `wheel` part until `mill_hut_wheel` has an approved concept — `loc_water_wheel` `concept_approved = false`), `tree_willow` (trunk, crown,
@@ -419,15 +459,16 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 ## Open questions
 
 - Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
-- Q-137 `[[light]]` data shape, Q-139 burglar event spots (both answered 2026-09-27). The beds of GAME-NIGHT are `bed_l1` in the level-1 `zookeeper_house_1` (Q-096) and `bed_l2` at level 2's food storage (Q-141 b); the bed in `zookeeper_house_3` stays decoration (no `[[item]] kind = "bed"`).
+- Q-137 `[[light]]` data shape, Q-139 burglar event spots (both answered 2026-09-27). The beds of GAME-NIGHT are `bed_l1` in the level-1 `zookeeper_house_1` (Q-096), `bed_l2` in the level-2 `zookeeper_house_2` (Q-141 b, moved indoors 2026-10-01) and `bed_l3` in `zookeeper_house_3` (2026-10-01: nightfall follows every completed day level, every bed indoors, LAYOUT-047).
 
 - Q-088 joining levels; Q-090 second entry through the level-1 north gate;
   Q-091 unlock timing (answered: the next morning); Q-141 (answered) night level before level 3; Q-089 own food storage; Q-092 enterable
   buildings; Q-093 fish bowl and water-source data (with Q-084); Q-094 animals up
   in a perch; Q-095 new hiding places; Q-017 pirate ship location (proposal here);
   Q-033 key on the pirate ship (not used); Q-080, Q-082, Q-043.
-- Q-096 (answered by Q-141) the bed after level 2 is `bed_l2` in level 2, not in `zookeeper_house_3`.
+- Q-096 (answered by Q-141) the bed after level 2 is `bed_l2` in level 2 (`zookeeper_house_2`); `zookeeper_house_3` has its own bed `bed_l3` for level 3's nightfall (2026-10-01).
 - Q-150 answered: the food-box row of `food_storage_3` leaves a gap ≥ 1.2 m in front of the door (meat moved from x 3.4 to −1.4, leaves from 4.2 to 7.4). Q-157 answered (no pocket beside a door: `tap_l3` moved flush on the facade to (−5.5, 60.9), LAYOUT-038).
+- Q-320 fruit garden (GAME-GARDEN): location, size and tree count are a proposal.
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).
 - Q-181 answered 2026-09-28: the food boxes stay outside, a few more inside; Q-194 answered 2026-09-29: the inside boxes are real, labelled food boxes too (foods may repeat the outside row).
 

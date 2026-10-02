@@ -202,6 +202,22 @@ kind = "side"
 rect = [10, 77, 10, 3]
 notes = "Side path east from the ring towards the ice cream kiosk and the trampoline."
 
+# fruit garden paths (GAME-GARDEN "Fruit garden", Q-320): stand cells in front of the trees; the
+# link ends at the gate line z = 77 where path_l3_ne begins (rule 8).
+[[element]]
+id = "path_garden_fruit"
+type = "path"
+kind = "garden"
+rect = [11, 74, 10, 1]
+notes = "Garden path along the south edge of garden_fruit (stand cells of the four fruit trees); see [[garden]] garden_fruit at the end of this file."
+
+[[element]]
+id = "path_garden_fruit_link"
+type = "path"
+kind = "garden"
+rect = [14, 75, 4, 2]
+notes = "Garden path between the two fruit beds up to the north fence line z = 77, next to the street path_l3_ne."
+
 # ---------------------------------------------------------------- centre: zookeeper house (fish bowl, tap), food storage 3, trees
 [[element]]
 id = "zookeeper_house_3"
@@ -267,6 +283,7 @@ type = "enclosure"
 animal = "goldfish"
 rect = [11, 63, 11, 10]
 gate = [11, 67, 1, 2]
+pair = true                 # GAME-FAMILY: every animal comes as a male + female pair (Q-308); fallback look until dedicated models exist
 blocks_view = false
 notes = "Goldfish pond enclosure: round pond with a low stone rim, water plants, a low wooden fence; the \"gate\" is a flat stone step where the bowl is put down to let the fish in (GAME-RESCUE goldfish bowl step 6). No waterfall, no wheel, no willow (riddle guards)."
 home_wander_on = ["water"]
@@ -292,6 +309,7 @@ type = "enclosure"
 animal = "monkey"
 rect = [-4, 82, 12, 10]
 gate = [1, 82, 2, 1]
+pair = true                 # GAME-FAMILY: all day animals come as a male + female pair (Q-308); fallback look until dedicated models exist
 blocks_view = false
 notes = "Climbing frame of logs and ropes, hanging tyres, a wooden monkey house, a banana basket. No ship, no carousel, no trampoline (riddle guards)."
 
@@ -309,6 +327,7 @@ type = "enclosure"
 animal = "snow_fox"
 rect = [-5, 50, 10, 7]
 gate = [-1, 56, 2, 1]
+pair = true                 # GAME-FAMILY: all day animals come as a male + female pair (Q-308); fallback look until dedicated models exist
 blocks_view = false
 notes = "Shady enclosure: wooden den with a straw bed under two pine trees, light rocks, a shallow drinking bowl. No freezer, no sprinkler, no washing line (riddle guards)."
 
@@ -465,6 +484,17 @@ pos = [-8.5, 64.5]
 building = "zookeeper_house_3"
 animal = "goldfish"
 notes = "Big empty glass bowl on the table in the zookeeper house (GAME-RESCUE goldfish bowl step 1)."
+
+# Bed of level 3 (user request 2026-10-01, GAME-LAYOUT rule 16): nightfall follows level 3 too, so
+# the zookeeper house holds a bed. Same fields as level-1.toml bed_l1; north-east corner of the room.
+[[item]]
+id = "bed_l3"
+kind = "bed"
+pos = [-6.0, 65.5]            # bed 2.0 x 1.0 m along the north wall, headboard west (x -7.0 .. -5.0, z 65.0 .. 66.0)
+building = "zookeeper_house_3"
+facing = "-z"                 # used from its long south side
+stand = [-6, 64]              # cell centre (-5.5, 64.5), 1.1 m in front of the bed, inside the room
+notes = "Child-size bed with the blue star blanket (kit_bedroom `bed`) inside zookeeper_house_3; interacting at night -> sleep -> next morning (GAME-NIGHT rule 3)."
 
 # ================================================================ water sources (proposal Q-093)
 # Where the fish bowl is filled (GAME-RESCUE goldfish bowl step 2). kind "tap" = prop at pos;
@@ -780,3 +810,84 @@ facing = "-z"
 id = "ad_l3_east"
 pos = [9.5, 81.5]
 facing = "-z"
+
+# ================================================================ fruit garden (GAME-GARDEN "Fruit garden", Q-320)
+# Same data shape as the vegetable garden of level 1 (see level-1.toml): not an [[element]], its cells
+# stay walkable; fence runs on cell-edge lines, the gate opens by itself within 2 m, animals never enter.
+# Two beds along x (3 x 1 cells), two trees per bed; the child stands on the garden path south of the
+# trees (stand cells). 4 fruit trees: 2 apple, 2 orange (treats apple / orange, GARD-015).
+[[garden]]
+id = "garden_fruit"
+rect = [11, 74, 10, 3]         # x 11-20, z 74-76: between enc_goldfish (z <= 72) and path_l3_ne (z 77-79)
+gate = [15, 76, 2, 1]          # opening x 15.0-17.0 on the line z = 77, onto the street path_l3_ne
+gate_side = "+z"
+gate_model = "garden_gate"
+fence_model = "garden_fence"
+fence_runs = [
+  [11.0, 77.0, 15.0, 77.0],    # north, west of the gate (4 m)
+  [17.0, 77.0, 21.0, 77.0],    # north, east of the gate (4 m)
+  [21.0, 74.0, 21.0, 77.0],    # east (3 m)
+  [11.0, 74.0, 21.0, 74.0],    # south (10 m)
+  [11.0, 74.0, 11.0, 77.0],    # west (3 m)
+]
+fence_inset_m = 0.08
+edges_closed_by = []
+animals_enter = false
+props = [
+  { model = "wheelbarrow", pos = [19.8, 76.5], facing = "+x" },    # tool corner by the north-east fence, behind the orange bed
+]
+notes = "Fenced fruit garden of level 3: an apple bed and an orange bed with two small fruit trees each (ripe at the start), a garden path along the south edge, a wheelbarrow. No water, no meadow flowers or butterflies, no hiding place (riddle guards)."
+
+[[garden_bed]]
+id = "bed_apple"
+garden = "garden_fruit"
+rect = [11, 75, 3, 1]
+plant = "apple"
+sign_pos = [14.35, 75.4]       # ≥ 0.6 m off the fence, beside the bed end, facing the path (south)
+sign_facing = "-z"
+sign_key = "garden-apple"
+
+[[garden_bed]]
+id = "bed_orange"
+garden = "garden_fruit"
+rect = [18, 75, 3, 1]
+plant = "orange"
+sign_pos = [17.65, 75.4]
+sign_facing = "-z"
+sign_key = "garden-orange"
+
+[[plant_spot]]
+id = "apple_1"
+garden = "garden_fruit"
+bed = "bed_apple"
+kind = "apple"
+pos = [11.8, 75.5]
+start_stage = "ripe"
+stand = [11, 74]
+
+[[plant_spot]]
+id = "apple_2"
+garden = "garden_fruit"
+bed = "bed_apple"
+kind = "apple"
+pos = [13.2, 75.5]
+start_stage = "ripe"
+stand = [13, 74]
+
+[[plant_spot]]
+id = "orange_1"
+garden = "garden_fruit"
+bed = "bed_orange"
+kind = "orange"
+pos = [18.8, 75.5]
+start_stage = "ripe"
+stand = [18, 74]
+
+[[plant_spot]]
+id = "orange_2"
+garden = "garden_fruit"
+bed = "bed_orange"
+kind = "orange"
+pos = [20.2, 75.5]
+start_stage = "ripe"
+stand = [20, 74]

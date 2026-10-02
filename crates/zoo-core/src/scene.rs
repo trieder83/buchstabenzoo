@@ -128,6 +128,32 @@ pub fn perch_point(h: &crate::level::HidingPlaceData, data: &LevelData) -> Vec2 
     spot + (q - spot).clamp_length_max(0.25)
 }
 
+/// Sideways offset (m) of the second animal of a pair on a shared perch (GAME-FAMILY §1):
+/// the pair sits side by side on the branch, never on top of each other (member 0 keeps the
+/// perch point).
+pub const PERCH_PAIR_OFFSET_M: f32 = 0.7;
+
+/// Unit direction across the branch of a perch (perpendicular to the way back to the tree).
+fn perch_across(h: &crate::level::HidingPlaceData, data: &LevelData) -> Vec2 {
+    let p = perch_point(h, data);
+    match perch_scenery(h, data) {
+        Some(e) => {
+            let d = rect_center(e.rect) - p;
+            if d.x.abs() >= d.y.abs() {
+                Vec2::Y
+            } else {
+                Vec2::X
+            }
+        }
+        None => Vec2::X,
+    }
+}
+
+/// Perch point of pair member `member` (0 = [`perch_point`]).
+pub fn perch_point_of(h: &crate::level::HidingPlaceData, data: &LevelData, member: u8) -> Vec2 {
+    perch_point(h, data) + perch_across(h, data) * (PERCH_PAIR_OFFSET_M * f32::from(member))
+}
+
 /// A model instance: `pos` is the model origin in world space, `yaw` the rotation about +Y
 /// (positive = counter-clockwise seen from above), `scale` a uniform scale (footprints scale
 /// with it).
@@ -184,7 +210,7 @@ pub struct BoxPlacement {
 }
 
 /// What a decal shows.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DecalImage {
     /// An image file (path relative to `assets/`, e.g. an enclosure sign silhouette).
     Texture(String),
@@ -196,6 +222,9 @@ pub enum DecalImage {
         width_px: u32,
         height_px: u32,
     },
+    /// A cell of a shared texture atlas (food box labels, FEED-030): `uv` = `[u0, v0, u1, v1]`.
+    /// Consecutive atlas decals with the same texture and normal are drawn in one call.
+    Atlas { texture: String, uv: [f32; 4] },
     /// The picture of an ad board (GAME-ADS): the host uploads a placeholder text or a
     /// verified campaign image as the texture `ad:<board>` (`App::set_ad_texture`).
     Ad {
@@ -249,6 +278,14 @@ const SIGN_PANEL_NORMAL: Vec3 = Vec3::new(0.0, 0.643, 0.766);
 const SILHOUETTE_SIZE: Vec2 = Vec2::new(1.02, 0.68);
 /// Decals float this far in front of their face (plus a polygon offset in the renderer).
 pub const DECAL_LIFT_M: f32 = 0.004;
+/// Food box label decals (GAME-FEED §1): half extents (m), centre height above
+/// the box foot and the crate's half depth (the `food_box` model is a 0.6 m crate).
+pub const FOOD_LABEL_HALF_M: (f32, f32) = (0.26, 0.065);
+pub const FOOD_LABEL_Y_M: f32 = 0.26;
+/// The lid decal (half side and height of the lid top above the box foot, m).
+pub const FOOD_LID_HALF_M: f32 = 0.22;
+pub const FOOD_LID_Y_M: f32 = 0.6;
+pub const FOOD_BOX_HALF_M: f32 = 0.302;
 
 /// Food storage sign board (ART-ENVIRONMENT behaviour 7): wooden board on the south facade
 /// above the food boxes; the text decal covers its front minus a wooden frame.
@@ -879,6 +916,7 @@ impl LevelScene {
         // also stand inside the enterable storage / hut (Q-194 answered 2026-09-29) — those
         // whose centre falls inside a `food_storage` / `food_hut` rect stand on the 0.15 m
         // plank platform of the wall band, like the old stock crates did.
+        let mut food_decals: Vec<(u8, u8, Decal)> = Vec::new();
         for b in &data.food_boxes {
             let first = s.placements.len();
             let yaw = facing_yaw(Dir::from_vec(b.facing()));
@@ -886,6 +924,7 @@ impl LevelScene {
                 matches!(e.kind.as_deref(), Some("food_storage" | "food_hut"))
                     && e.rect.contains(crate::level::cell_of(b.pos()))
             });
+            let y0 = if inside { STORAGE_PLATFORM_M } else { 0.0 };
             if inside {
                 s.model_at_y("food_box", b.pos(), STORAGE_PLATFORM_M, yaw);
             } else {
@@ -894,6 +933,47 @@ impl LevelScene {
             for p in &mut s.placements[first..] {
                 p.part = b.part as u8;
             }
+            // label decals (FEED-030): the lid (pictogram + word, flat on top: the legible
+            // side from the high camera) and the front label, both cells of one atlas
+            if let Some(food) = crate::food::Food::from_id(&b.food) {
+                use crate::food::{AtlasPart, ATLAS_TEXTURE};
+                let n = level_to_world(b.facing()).normalize_or_zero();
+                let right = Vec3::Y.cross(n);
+                let facing = Dir::from_vec(b.facing());
+                let face = |part| DecalImage::Atlas {
+                    texture: ATLAS_TEXTURE.to_owned(),
+                    uv: food.atlas_uv(part),
+                };
+                food_decals.push((
+                    0,
+                    0,
+                    Decal {
+                        id: String::new(),
+                        image: face(AtlasPart::Lid),
+                        center: level_to_world_at(b.pos(), y0 + FOOD_LID_Y_M + DECAL_LIFT_M),
+                        right: right * FOOD_LID_HALF_M,
+                        up: -n * FOOD_LID_HALF_M,
+                    },
+                ));
+                food_decals.push((
+                    1,
+                    facing as u8,
+                    Decal {
+                        id: String::new(),
+                        image: face(AtlasPart::Front),
+                        center: level_to_world_at(b.pos(), y0 + FOOD_LABEL_Y_M)
+                            + n * (FOOD_BOX_HALF_M + DECAL_LIFT_M),
+                        right: right * FOOD_LABEL_HALF_M.0,
+                        up: Vec3::Y * FOOD_LABEL_HALF_M.1,
+                    },
+                ));
+            }
+        }
+        // lids first, then fronts by facing: equal neighbours are drawn in one call
+        food_decals.sort_by_key(|(kind, facing, _)| (*kind, *facing));
+        for (i, (kind, _, mut d)) in food_decals.into_iter().enumerate() {
+            d.id = format!("foodbox:{}:{i}", if kind == 0 { "lid" } else { "front" });
+            s.decals.push(d);
         }
         // Carryable items stand on a table / the ground; the item itself is drawn by the
         // presentation (it moves). Water taps are small props (proposal Q-093).
@@ -2874,10 +2954,20 @@ impl LevelScene {
         let mid = (p + q) / 2.0;
         let len = p.distance(q) + 0.37;
         let along_x = (q - p).x.abs() >= (q - p).y.abs();
-        let size = if along_x {
-            Vec3::new(len, 0.18, 0.5)
+        // a pair species sits side by side: the branch is wide enough for both (GAME-FAMILY §1)
+        let pair = data
+            .elements_of(ElementType::Enclosure)
+            .any(|e| e.pair && e.animal.as_deref() == Some(h.animal.as_str()));
+        let (width, shift) = if pair {
+            (1.5, perch_across(h, data) * (PERCH_PAIR_OFFSET_M / 2.0))
         } else {
-            Vec3::new(0.5, 0.18, len)
+            (0.5, Vec2::ZERO)
+        };
+        let mid = mid + shift;
+        let size = if along_x {
+            Vec3::new(len, 0.18, width)
+        } else {
+            Vec3::new(width, 0.18, len)
         };
         let color = if target.kind.as_deref() == Some("pirate_ship") {
             colors::WOOD_LIGHT
@@ -3667,6 +3757,57 @@ mod tests {
         assert!(count("fence_wood") > 20);
         assert!(count("hedge") > 20);
         assert!(count("zoo_wall") > 20);
+    }
+
+    // FEED-030 (scene part): every food box carries a lid decal (flat, facing up) and a
+    // front decal (facing the box facing), both cells of the one shared atlas; equal
+    // neighbours (same normal) are adjacent so the renderer draws them in one call.
+    #[test]
+    fn feed_030_food_boxes_get_lid_and_front_decals() {
+        let data = level1();
+        let s = LevelScene::build(&data);
+        let lids: Vec<&Decal> = s
+            .decals
+            .iter()
+            .filter(|d| d.id.starts_with("foodbox:lid"))
+            .collect();
+        let fronts: Vec<&Decal> = s
+            .decals
+            .iter()
+            .filter(|d| d.id.starts_with("foodbox:front"))
+            .collect();
+        assert_eq!(lids.len(), data.food_boxes.len());
+        assert_eq!(fronts.len(), data.food_boxes.len());
+        assert!(lids.len() >= 10);
+        for d in s.decals.iter().filter(|d| d.id.starts_with("foodbox:")) {
+            assert!(
+                matches!(&d.image, DecalImage::Atlas { texture, .. } if texture == crate::food::ATLAS_TEXTURE)
+            );
+        }
+        for d in &lids {
+            assert!((d.normal() - Vec3::Y).length() < 1e-4, "lid faces up");
+            assert!((d.center.y - (FOOD_LID_Y_M + DECAL_LIFT_M)).abs() < 0.2 + STORAGE_PLATFORM_M);
+        }
+        // every box has a lid and a front near it, the front facing its facing
+        for b in &data.food_boxes {
+            let want = level_to_world(b.facing()).normalize();
+            assert!(lids
+                .iter()
+                .any(|d| (world_to_level(d.center) - b.pos()).length() < 0.01));
+            assert!(fronts.iter().any(|d| {
+                (d.normal() - want).length() < 1e-4
+                    && (world_to_level(d.center) - b.pos()).length() < 0.32
+            }));
+        }
+        // batching: the normals form few runs (lids: 1; fronts: one per facing)
+        let runs = |v: &[&Decal]| {
+            1 + v
+                .windows(2)
+                .filter(|w| (w[0].normal() - w[1].normal()).length() > 1e-4)
+                .count()
+        };
+        assert_eq!(runs(&lids), 1);
+        assert!(runs(&fronts) <= 4, "{}", runs(&fronts));
     }
 
     // AENV-011 (scene part): the zebra enclosure sign carries the zebra silhouette on its

@@ -278,7 +278,12 @@ fn escaped_hippo_in_the_pond_comes_to_the_shore() {
     g.player.pos = Vec2::new(-15.5, 28.5); // north shore, beside the ring path
     g.player.facing = Vec2::NEG_Y;
     idle(&mut g, 12.0);
-    let d = g.animal("hippo").unwrap().pos.distance(g.player.pos);
+    // a pair (Q-308): at least one of the two hippos comes within reach (they keep a gap)
+    let d = g
+        .group("hippo")
+        .iter()
+        .map(|&j| g.animals[j].pos.distance(g.player.pos))
+        .fold(f32::INFINITY, f32::min);
     assert!(d <= 2.0, "hippo stays {d:.2} m away");
     assert_eq!(
         g.available_target(),

@@ -6,10 +6,13 @@ module: water-rendering
 status: implemented
 depends_on: [ART-ENVIRONMENT, TECH-ARCH, GAME-LAYOUT]
 test_prefix: WATER
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Animated cartoon water (rendering)
+
+**Contents:** Goal · 1. Starting point (PoC M3) · 2. Approaches compared · 3. Decision (recommended combination) · Behaviour · 4. Shader specification · 5. Implementation plan (after M4) · Acceptance criteria · Test cases · Implementation (M6, 2026-09-26) · Open questions
+
 
 ## Goal
 

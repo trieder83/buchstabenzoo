@@ -164,7 +164,11 @@ fn resc_001_new_game_enclosures_empty_animals_hidden() {
             enc.id
         );
     }
-    assert_eq!(g.animals.len(), 4, "zebra pair (GAME-FAMILY), hippo, panda");
+    assert_eq!(
+        g.animals.len(),
+        6,
+        "zebra, hippo and panda pairs (GAME-FAMILY, Q-308)"
+    );
     for a in &g.animals {
         assert_eq!(a.state, AnimalState::Escaped);
         let h = g.level.data.hiding_place(&a.hiding_place).unwrap();
@@ -520,13 +524,19 @@ fn read_003_level_change_applies_to_next_label() {
     let mut g = common::game(1);
     let hp = g.animal("zebra").unwrap().hiding_place.clone();
     g.settings.reading_level = ReadingLevel::Kiga;
-    assert!(g.food_labels().iter().all(|(_, l)| l.picture));
+    assert!(g
+        .food_labels()
+        .iter()
+        .all(|(_, l)| l.pictogram_scale == 0.62));
     assert_eq!(
         g.info_board("zebra").unwrap().riddle_key,
         format!("mission-zebra-riddle-{hp}-kiga")
     );
     g.settings.reading_level = ReadingLevel::Klasse2;
-    assert!(g.food_labels().iter().all(|(_, l)| !l.picture));
+    assert!(g
+        .food_labels()
+        .iter()
+        .all(|(_, l)| l.pictogram_scale == 0.34));
     assert_eq!(
         g.info_board("zebra").unwrap().riddle_key,
         format!("mission-zebra-riddle-{hp}-klasse2")
@@ -540,8 +550,32 @@ fn feed_001_002_label_forms() {
     for level in ReadingLevel::ALL {
         g.settings.reading_level = level;
         for (food, label) in g.food_labels() {
-            assert_eq!(label.picture, level == ReadingLevel::Kiga, "{level:?}");
+            assert_eq!(label.pictogram, food.id(), "{level:?}");
+            assert!(!label.pictogram.is_empty());
             assert_eq!(label.word_key, food.label_key());
+        }
+    }
+    // FEED-001
+    g.settings.reading_level = ReadingLevel::Kiga;
+    assert!(g
+        .food_labels()
+        .iter()
+        .all(|(_, l)| l.pictogram_scale == 0.62));
+    // FEED-002: the pictogram shrinks with the level, the word stays the main thing later
+    let scales: Vec<f32> = ReadingLevel::ALL
+        .iter()
+        .map(|l| zoo_core::food::pictogram_scale(*l))
+        .collect();
+    assert!(scales.windows(2).all(|w| w[0] > w[1]), "{scales:?}");
+    assert!((0.45..=0.55).contains(&scales[1]), "klasse1 similar size");
+    assert!(scales[2] < 0.4 && scales[3] < 0.4, "klasse2/3 word larger");
+    // FEED-029: every food (day and night) x every level
+    for food in Food::ALL {
+        for level in ReadingLevel::ALL {
+            let l = zoo_core::FoodBox { food }.label(level);
+            assert_eq!(l.pictogram, food.id());
+            assert_eq!(l.word_key, format!("food-{}", food.id()));
+            assert_eq!(l.pictogram_scale, zoo_core::food::pictogram_scale(level));
         }
     }
     let c = common::content();
@@ -621,10 +655,7 @@ fn feed_007_interact_with_box_shows_label_then_take() {
         it,
         zoo_core::Interaction::FoodBox {
             food: Food::Grass,
-            label: zoo_core::food::FoodLabel {
-                word_key: "food-grass".into(),
-                picture: false
-            }
+            label: zoo_core::FoodBox { food: Food::Grass }.label(g.settings.reading_level)
         }
     );
     assert_eq!(g.carry.food(), None, "interacting alone takes nothing");
@@ -777,10 +808,7 @@ fn feed_028_inside_box_interact_then_take() {
         it,
         zoo_core::Interaction::FoodBox {
             food,
-            label: zoo_core::food::FoodLabel {
-                word_key: food.label_key(),
-                picture: false,
-            }
+            label: zoo_core::FoodBox { food }.label(g.settings.reading_level)
         }
     );
     assert_eq!(g.carry.food(), None, "interacting alone takes nothing");
@@ -822,4 +850,35 @@ fn animal_clip_table_is_read() {
     assert!(t.clip("hippo", "swim").is_some());
     assert!(t.clip("zebra", "drink").is_some());
     assert!(zoo_core::animals::swim_sink_m("hippo") > 0.5);
+}
+
+// FEED-035: the one food label atlas holds a lid and a front cell per food, inside the
+// texture and without overlap (one 1024 x 512 texture for all boxes, 2 MB)
+#[test]
+fn feed_035_food_atlas_cells_fit_and_do_not_overlap() {
+    use zoo_core::food::{AtlasPart, ATLAS_PX};
+    let mut cells = Vec::new();
+    for food in Food::ALL {
+        for part in [AtlasPart::Lid, AtlasPart::Front] {
+            let c = food.atlas_cell(part);
+            assert!(
+                c[0] + c[2] <= ATLAS_PX.0 && c[1] + c[3] <= ATLAS_PX.1,
+                "{food:?}"
+            );
+            let uv = food.atlas_uv(part);
+            assert!(uv.iter().all(|v| (0.0..=1.0).contains(v)));
+            assert!(uv[0] < uv[2] && uv[1] < uv[3]);
+            cells.push(c);
+        }
+    }
+    for (i, a) in cells.iter().enumerate() {
+        for b in &cells[i + 1..] {
+            let apart = a[0] + a[2] <= b[0]
+                || b[0] + b[2] <= a[0]
+                || a[1] + a[3] <= b[1]
+                || b[1] + b[3] <= a[1];
+            assert!(apart, "{a:?} overlaps {b:?}");
+        }
+    }
+    assert!(ATLAS_PX.0 * ATLAS_PX.1 * 4 <= 2 * 1024 * 1024);
 }

@@ -178,6 +178,10 @@ the 17 × 13 m night house (≈ one animal) — still one draw per material slot
 `watering_can` 134 (spout to +Z); `garden_sign` 52 (`sign_face` board, tilted back 10°).
 `garden_gate` is in kit_gates.
 
+Fruit trees (level-3 fruit garden, Q-323): `apple_tree_{sprout,young,ripe}` and `orange_tree_{sprout,young,ripe}`
+58 / 105 / 180 tris, origin = trunk base on the soil (y 0.22), ripe 1.1 · 1.5 · 1.0 m; palette `apple_red` 205,
+`orange_fruit` 206. Build only these: `blender -b --factory-startup --python tools/blender/props/kit_garden.py -- apple_tree_ripe …`.
+
 ## Palette cells added
 
 64–127 (night lights, moon door, bedroom, buildings, landmarks, garden) and 202–204 (garden);

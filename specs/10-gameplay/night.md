@@ -6,10 +6,13 @@ module: night
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION]
 test_prefix: NIGHT
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Nightfall and the night zoo
+
+**Contents:** Goal · Flow · Behaviour · Implementation data · Implementation (engine, 2026-09-27) · Test cases · Open questions
+
 
 ## Goal
 
@@ -37,14 +40,17 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
    blue over ~10 s; lanterns along the paths switch on; stars appear on the water; the
    animals in their enclosures lie down. Nightfall happens once per completed day level (day and night levels alternate, Q-078; saved, GAME-SAVE).
 2. **Night is friendly, never scary:** warm lanterns, soft blue shadows, cute glowing eyes,
-   gentle night sounds (crickets, an owl's hoo-hoo); no darkness the child cannot see in, no
+   gentle night sounds (a quiet looping cricket bed at dusk and night, ART-SOUND "Ambient loops", NIGHT-024; an owl's hoo-hoo is the owl's animal cue); no darkness the child cannot see in, no
    jump scares, no threatening shapes. The player always stays clearly visible (a soft light
    circle around her).
 3. **Two choices, shown without reading** (icons + audio, GAME-PLAYER UX rules):
-   - **🛏 Sleep:** a bed in the **zookeeper house** (enterable building, roof disappears
-     inside — GAME-PLAYER §2); after level 2 the bed `bed_l2` at level 2's food storage
-     (GAME-LEVEL-2). At nightfall the 🛏 icon offers the **nearest unlocked bed** (Q-141 b). Interacting with the bed → the child's character lies down,
-     short dream/fade → **next morning** in the day zoo (free play; care feeding and babies
+   - **🛏 Sleep:** a bed **inside an enterable zookeeper house** (roof disappears inside —
+     GAME-PLAYER §2). **Design rule (user request 2026-10-01): every bed stands inside an
+     enterable building, never outdoors** — each day level has a `zookeeper_house` with a bed
+     (`zookeeper_house_1` in level 1, `zookeeper_house_2` in level 2, `zookeeper_house_3` in
+     level 3), its door on a street (GAME-LAYOUT rule 8, LAYOUT-047). At nightfall the 🛏 icon
+     offers the **nearest unlocked bed** (Q-141 b). Interacting with the bed → the child's character lies down,
+     short dream/fade → **next morning** in the day zoo (free play; treats and babies
      continue, GAME-FAMILY). The game is saved.
    - **🌙 Moon door:** a big door with a moon sign (the **night-zoo gate**, a new barrier of
      the day zoo) glows and **opens** at nightfall; walking through it enters the **night
@@ -96,19 +102,29 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
     separate models; the comic style stays (cel shading, outlines). Performance budget as
     by day.
 
-11. **Night progress (user request 2026-09-28):** the child must always see what is still
-    missing before night falls. A small **🌙 progress indicator** (HUD, no reading needed)
-    shows one icon per animal species of the **current day level that is still missing**; an
-    animal that is home **disappears** from the pane (2026-09-30 user report: finished
-    animals confused the child). It is visible during day play. When all animals of the
-    level are home no animal icon is left and it shows only that **night is coming** (the
-    🌙 glows) through the celebration and dusk. Each icon is the animal itself (no text) and
-    tapping it is the 🧭 hint (below). At night it shows the animals of the unfinished night level
-    (night zoo); when nothing is missing any more it shows 🛏 (sleep) — also by day while the
-    night zoo waits (Q-140). While sleeping and in the morning it is hidden, and when every
-    unlocked level is complete by day it is hidden. **Tapping it is the same as the 🧭 hint
-    button** (GAME-HINT): the hint leads to the next missing animal's mission step. No text
-    is needed; its label for screen readers is the Fluent key `ui-night-progress`.
+11. **Compass shows what is missing (user request 2026-10-02; replaces the separate 🌙
+    progress pane of 2026-09-28):** there is no moon pane. The child sees what is missing
+    on the **🧭 compass button** itself (GAME-HINT, below the gear, ≥ 64 px). Attached to it
+    is the **compass strip**: small round animal icons (display only, no text) of the
+    species of the **current level that are still missing** (the level the child stands in;
+    a finished animal disappears, a pair counts once, at most 6 icons then `+n`). A small
+    **task badge** sits on the compass and shows the kind of the **next task** = the
+    icon of the best hint candidate (📋 board, 📦 food, 🐾 animal, 🚪 gate, 🥕 garden, 🛏 bed,
+    🚪🌙 moon door, …), so the compass always says what it will do. Special case: when
+    every animal of the level is home and night is coming (celebration, before dusk) the
+    badge is 🌙 ("night comes"). At dusk / night the badge is the bed 🛏 or the moon door
+    🚪🌙 (whichever the hint offers first); at night the strip lists the animals of the
+    unfinished night level; sleeping and morning: no strip, no task badge. **Tapping the
+    compass (or the strip, which is part of the button) is the 🧭 hint** and in addition
+    shows an **info bubble** next to the compass for about 4 s (user request 2026-10-01):
+    key `night-progress-info-<reading_level>` while animals are missing (de "Finde die
+    übrigen Tiere vor dem Einbruch der Nacht." / en "Find the remaining animals before
+    nightfall."; `klasse1` ≤ 5 words; `kiga` pictures only), `-done-` when nothing is
+    missing / night is coming ("Alle Tiere sind zu Hause. Bald wird es Nacht."), `-night-`
+    at night with animals missing, `-sleep-` when the badge is 🛏. While a hint about an
+    animal is shown, that animal's strip icon pulses. The label for screen readers is the
+    compass label `ui-hint`. The never-stuck rules are unchanged: the compass always leads
+    to a mission step.
 
 ## Implementation data (level design, 2026-09-27 — Q-133…Q-139 answered)
 
@@ -118,7 +134,8 @@ Where the night lives in the level data (owner `zoo-level-designer`; details in 
 | Thing | Data | Where |
 |---|---|---|
 | Bed (rule 3) | `[[item]] bed_l1`, `kind = "bed"`, pos (−12.0, 1.5), stand (−12, 2) | level 1, inside the new enterable `zookeeper_house_1` (x −14…−9, z 0…4, door (−9, 2)) west of the entrance plaza; bedroom props (`night_table`, `window_moon`, `rug_round`, `toy_chest`) as `[[prop]]`, bedside lamp `[[light]] kind = "indoor"` |
-| Bed after level 2 (rule 3) | `[[item]] bed_l2`, `kind = "bed"`, pos (42.0, 26.5), stand (42, 25) | level 2, outdoors against the south wall of `food_storage_2` (GAME-LEVEL-2 "Bed of level 2", Q-141; shelter Q-152) |
+| Bed of level 2 (rule 3) | `[[item]] bed_l2`, `kind = "bed"`, pos (29.0, 16.5), stand (29, 17), `building = "zookeeper_house_2"` | level 2, inside the new enterable `zookeeper_house_2` (x 27…32, z 15…19, door (32, 17) on `path_l2_sw`; GAME-LEVEL-2 "Bed of level 2", Q-141, user request 2026-10-01; the former outdoor bed and its shelter Q-152 are gone) |
+| Bed of level 3 (rule 3) | `[[item]] bed_l3`, `kind = "bed"`, pos (-6.0, 65.5), stand (-6, 64), `building = "zookeeper_house_3"` | level 3, inside `zookeeper_house_3` (door (-8, 61) on `path_l3_ring_s`; GAME-LEVEL-3). Nightfall follows every completed day level, so level 3 needs its bed too (user request 2026-10-01) |
 | Moon door (rule 3) | barrier `moon_door`, `kind = "moon_door"`, `transition = "level_1->night_1"`, `unlock_after = "level_1"`, `opens_at = "night"` | level 1, west zoo wall x −24…−23, z 29…30, reached by `path_moon`; open every night after level 1's nightfall, closed by day, never removed (Q-133) |
 | Night zoo (rule 4) | `assets/levels/night-1.toml`, `[level] time = "night"`, `[[entry]] entry_n1_moon` (−25, 29…30) | west of level 1, bounds (−72, 6, 48, 48) — GAME-LEVEL-NIGHT-1 |
 | Night house (rule 4) | `night_house` (enterable hall, `model_rect`) + `enc_n1_hedgehog` / `enc_n1_bat` / `enc_n1_owl` (`indoor = true`), boards outside; indoor lights `#E8735A` / `#5B7FE0` (Q-116) | `night_1`, north-east (Q-134) |
@@ -203,14 +220,16 @@ Rules for the implementation that follow from the data:
   ≈ 2.87 m centred 1.4 m above her feet, so its hard-edged ground pool is 2.5 m = the
   eyeshine radius (Q-142 answered, NIGHT-018). Placeholders (boxes) remain only as
   fallbacks for missing models.
-- **Night progress** (rule 11, `zoo_core::hints::night_progress`): state `missing` (the
-  first unlocked day level with a missing animal), `night_coming` (dusk pending or dusk:
-  the level of the last nightfall), `night` (the first unlocked, unfinished night level),
-  `sleep` (night with nothing missing, or by day while `night_zoo_waiting`), `hidden`
-  (sleeping, morning, or nothing left by day); one entry per species (a pair counts as home
-  when both are). Host: `#night-progress` (right, below the 🧭 button; a row left of the gear
-  on low landscape screens), icons ≥ 40 px, missing ones faded and grey, tap = hint press
-  (`App::night_progress_json`).
+- **Compass strip** (rule 11, data `zoo_core::hints::night_progress`, badge
+  `zoo_core::hints::compass_badge`): state `missing` (the day level the child stands in, else
+  the first unlocked day level with a missing animal), `night_coming` (dusk pending, i.e.
+  during the celebration; at `Dusk` the badge is already the bed), `night` (the first
+  unlocked, unfinished night level), `sleep` (night with nothing missing, or by day while
+  `night_zoo_waiting`), `hidden` (sleeping, morning, or nothing left by day); one entry per
+  species (a pair counts as home when both are). Host: the children `.badge` and `.strip`
+  of `#compass-btn` (strip below the button, in a row left of it on low landscape screens),
+  icons 30 px, polled at ≤ 4 Hz from `App::compass_json` = `{state, level, animals:[{id,
+  home}], badge, badge_animal}`.
 - **Host:** 🛏 / 🌙 choice icons at night, the dusk / morning / welcome / night-complete
   cut-in texts per reading level (`night-*` keys), the dream fade while sleeping.
 
@@ -219,7 +238,7 @@ Rules for the implementation that follow from the data:
 | ID | Given / When / Then | Level |
 |---|---|---|
 | NIGHT-001 | Given the last day animal enters its enclosure, then after the celebration dusk starts once and reaches night within 10–12 s; it does not start earlier. | unit |
-| NIGHT-002 | Given night has fallen, then the moon door is open and the unlocked bed (`bed_l1` in the zookeeper house; after level 2 also `bed_l2`, Q-141) is interactable; before nightfall the moon door is closed. | unit |
+| NIGHT-002 | Given night has fallen, then the moon door is open and the unlocked bed (`bed_l1` in `zookeeper_house_1`; after level 2 also `bed_l2` in `zookeeper_house_2`, after level 3 `bed_l3` in `zookeeper_house_3`; every bed inside an enterable building, LAYOUT-047) is interactable; before nightfall the moon door is closed. | unit |
 | NIGHT-003 | Given the player interacts with the bed, then the character sleeps, the game is saved and the next morning starts in the day zoo with all day animals home. | e2e |
 | NIGHT-004 | Given the player walks through the open moon door, then the night zoo level `night_1` loads with its own missions, and walking back through the door returns to the day zoo at night. | e2e |
 | NIGHT-005 | Given the night zoo, then the player, every info board text and every interactable are visible/readable (screenshot brightness of the player and of panels above a minimum contrast). | e2e |
@@ -236,10 +255,15 @@ Rules for the implementation that follow from the data:
 | NIGHT-016 | Given night and the player standing next to the bed, when `E` is pressed (desktop) or the touch action button (🛏) is tapped, then sleeping starts; away from the bed neither does anything bed-related. | e2e |
 | NIGHT-017 | Given the bat or the owl (`fly_height` in `animal_anims.toml`), then perched at its hiding place it plays `hang` (bat, data pose) / `perch` at the perch height, following the child it plays `fly` 1.5 m above the ground, at home it stands (`idle`); its `eye_glow` shines only inside the lantern radius and never while `sleep` plays (Q-146). | unit |
 | NIGHT-018 | Given the player's lantern at night, then its visible ground pool (sphere radius, centre 1.4 m above her feet) is 2.5 m ± 0.01 m = the eyeshine radius `LANTERN_RADIUS_M` (Q-142). | unit |
-| NIGHT-019 | Given a new game, then the 🌙 progress shows the three level-1 animals empty; each animal home is marked `home` in the JSON (the pane hides it, NIGHT-022); all home → `night_coming` through the celebration and dusk; at night the `night_1` animals; all of them home → `sleep`; sleeping/morning hidden; the next day the level-2 animals; by day with the night zoo waiting → `sleep` and the hint points at the bed (rule 11). | unit |
-| NIGHT-022 | Given the progress JSON with home and missing animals, then the pane shows only the missing ones (home ones are gone); with none missing it shows no animal icon (vitest `missingAnimals`; e2e NIGHT-020 checks the icon disappears). | unit |
-| NIGHT-020 | Given day play on a phone in portrait, then the 🌙 progress is visible (not covering the 🧭 button, the gear or the carried-food HUD), shows one icon per level-1 animal, a mission completed removes that animal's icon, and tapping it shows a hint (HINT-013). | e2e |
-| NIGHT-021 | Given all level-1 missions played to the end (scripted child following the hints, real movement), then the 🌙 shows night coming, dusk turns into night, the moon door opens, the bed works with `E` and the next morning comes (the whole night cycle is reachable end to end). | e2e |
+| NIGHT-019 | Given a new game, then the compass strip data lists the three level-1 animals; each animal home is marked `home` in the JSON (the strip hides it, NIGHT-022); all home → `night_coming` through the celebration; at dusk the badge is the bed; at night the `night_1` animals; all of them home → `sleep`; sleeping/morning hidden; the next day the level-2 animals; by day with the night zoo waiting → `sleep` and the hint points at the bed (rule 11). | unit |
+| NIGHT-022 | Given the compass JSON with home and missing animals, then the strip shows only the missing ones (home ones are gone, a pair once, at most 6 then `+n`); with none missing it shows no animal icon (vitest `missingAnimals`/`stripView`; e2e NIGHT-020 checks the icon disappears). | unit |
+| NIGHT-020 | Given day play on a phone in portrait and landscape, then there is no moon pane; the 🧭 button (≥ 64 px) carries the strip with one icon per level-1 animal and the task badge, a mission completed removes that animal's icon, nothing covers the interact button, the basket HUD or the stick, and tapping the compass shows the hint (HINT-013) and the bubble. | e2e |
+| NIGHT-023 | Given the compass tapped, then a bubble with the reading-level text `night-progress-info[-done\|-night\|-sleep]-<level>` shows for about 4 s next to the compass, in addition to the hint, and the strip icon of the hinted animal pulses (vitest `progressInfoKey`; e2e NIGHT-020 checks the bubble text). | unit, e2e |
+| NIGHT-026 | Given levels 1 and 2 are unlocked and animals are missing in both, when the child stands in level 2, then the compass strip lists the animals of level 2 only; standing in level 1 it lists level 1's animals only (user request 2026-10-01); when the current level has no missing animals the strip falls back to the first unlocked day level that still has some. | unit |
+| NIGHT-028 | Given the compass badge (`compass_badge`): new game → `board`; every day animal home and the celebration running → `night_coming` (🌙); at dusk → `bed`; at night with the moon door open → `moon_door` or `bed` (the best hint candidate); sleeping → none; the badge kind always equals the kind of the first hint candidate otherwise, without showing a hint. | unit |
+| NIGHT-027 | Given the child sleeps at the bed of any level (from the stand cell or even from the bed's centre) and gets up in the morning, then she stands on the bed's free `stand` cell NEXT to the bed (0.7–2.3 m from its centre), outside every collider and the bed's footprint, on a walkable cell with her feet on the floor — never inside or on top of the bed (user report 2026-10-02: she woke up inside the bed). | unit |
+| NIGHT-021 | Given all level-1 missions played to the end (scripted child following the hints, real movement), then the compass badge shows night coming (🌙), dusk turns into night, the moon door opens, the bed works with `E` and the next morning comes (the whole night cycle is reachable end to end). | e2e |
+| NIGHT-024 | Given dusk or night (day zoo or night zoo), then a quiet cricket loop plays (ART-SOUND "Ambient loops", ASND-022/027, gain ≤ 0.12, 3 s fade in); it fades out when sleeping starts; none by day. | unit (ASND-022), e2e (ASND-027) |
 
 ## Open questions
 
@@ -248,10 +272,10 @@ Rules for the implementation that follow from the data:
 - Q-126 answered 2026-09-27: dark-blue gradient with moon and stars, haze in the same blue, day fog end kept (20.8 m since FIX-056).
 - Q-091 answered 2026-09-27: barriers open the next morning (engine section, NIGHT-010).
 - Q-140 answered 2026-09-27: sleeping by day "until the evening" while a visited night level is unfinished (NIGHT-011).
-- Q-141 answered 2026-09-27: until `night_2` exists, level 3 opens the morning after level 2's night; bed `bed_l2` at level 2's food storage, the 🛏 icon offers the nearest unlocked bed.
+- Q-141 answered 2026-09-27: until `night_2` exists, level 3 opens the morning after level 2's night; bed `bed_l2` (moved by user request 2026-10-01 from the food storage wall into the new `zookeeper_house_2`), the 🛏 icon offers the nearest unlocked bed.
 - Q-142 answered 2026-09-27: eyeshine stays 2.5 m, the visible lantern ground pool is 2.5 m too (NIGHT-018).
 - Q-146 answered 2026-09-27: `eye_glow` is skipped while `sleep` plays; no eyelids for v1 (NIGHT-017).
 - Q-188 (open, proposal): the 🌙 progress also shows the night-zoo animals at night and 🛏 when nothing is missing (rule 11).
 - Q-147 (open) String-light spans ≤ 6 m by stretching the model.
 - Q-143 answered 2026-09-27: night animals, `sleep` and `eye_glow` are in ART-ANIMALS (models v1).
-- Q-152 shelter over `bed_l2`. Q-153 / Q-154 night models: manifest entries and ART-ENVIRONMENT listing.
+- Q-152 shelter over `bed_l2` (obsolete since 2026-10-01: the bed is indoors). Q-153 / Q-154 night models: manifest entries and ART-ENVIRONMENT listing.

@@ -72,10 +72,45 @@ pub fn riddle_key(animal: &str, hiding_place: &str, level: ReadingLevel) -> Stri
     format!("mission-{animal}-riddle-{hiding_place}-{}", level.id())
 }
 
+/// Fluent key of the generic pair note on the info board of a pair species
+/// (`mission-pair-note-<level>`, GAME-FAMILY "Texts", Q-308); `kiga`: the symbols ♂ ♀ only.
+pub fn pair_note_key(level: ReadingLevel) -> String {
+    format!("mission-pair-note-{}", level.id())
+}
+
 /// Fluent key of the facts about an animal on its info board (GAME-ANIMALS "Info board"
 /// item 4, CONT-MISSIONS: `mission-<animal>-facts-<level>`).
 pub fn facts_key(animal: &str, level: ReadingLevel) -> String {
     format!("mission-{animal}-facts-{}", level.id())
+}
+
+/// The Fluent keys of the welcome board of a level part (RESC-028, GAME-RESCUE "Welcome board
+/// at the entrance"): all depend on the reading level, `level_text` also on the level part id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WelcomeKeys {
+    pub title: String,
+    /// The game description.
+    pub text: String,
+    /// Lead-in of the animal list ("Find: Zebra, Hippo").
+    pub goal: String,
+    /// The four steps: read the riddle, take the food, show it, lead it home.
+    pub steps: [String; 4],
+    pub start: String,
+    /// What is special about this level.
+    pub level_text: String,
+}
+
+/// Keys of the welcome board for a level part id (`level_1`, …) and reading level.
+pub fn welcome_keys(part: &str, level: ReadingLevel) -> WelcomeKeys {
+    let l = level.id();
+    WelcomeKeys {
+        title: "welcome-title".to_owned(),
+        text: format!("welcome-{l}"),
+        goal: format!("welcome-goal-{l}"),
+        steps: [1, 2, 3, 4].map(|n| format!("welcome-step-{n}-{l}")),
+        start: format!("welcome-start-{l}"),
+        level_text: format!("welcome-level-{part}-{l}"),
+    }
 }
 
 /// Fluent key of an animal's name (info board heading, CONT-MISSIONS: `animal-<animal>`,

@@ -61,7 +61,7 @@ async function press(page: Page): Promise<Hint> {
 }
 
 async function progress(page: Page) {
-  return page.evaluate(() => JSON.parse(window.__zoo!.app.night_progress_json()) as { state: string; animals: { id: string; home: boolean }[] });
+  return page.evaluate(() => JSON.parse(window.__zoo!.app.compass_json()) as { state: string; badge: string; animals: { id: string; home: boolean }[] });
 }
 
 async function faceAndSettle(page: Page, x: number, z: number, s = 0.6) {
@@ -200,7 +200,8 @@ test.describe('desktop', () => {
     let p = await progress(page);
     expect(p.state).toBe('missing');
     expect(p.animals.map((a) => a.id).sort()).toEqual(['hippo', 'panda', 'zebra']);
-    await expect(page.locator('#night-progress')).toBeVisible();
+    await expect(page.locator('#compass-btn .strip .pa')).toHaveCount(3);
+    await expect(page.locator('#night-progress')).toHaveCount(0);
     const kinds: string[] = [];
     for (let step = 0; step < 40; step++) {
       p = await progress(page);
@@ -209,24 +210,27 @@ test.describe('desktop', () => {
       kinds.push(`${h.kind}:${h.animal}`);
       await followHint(page, h);
       await hideCelebration(page);
-      // the progress fills one icon per animal brought home
+      // the strip loses one icon per animal brought home
       const home = (await progress(page)).animals.filter((a) => a.home).length;
       await nextFrames(page, 2);
-      if (home > 0 && home < 3) await expect(page.locator('#night-progress')).toHaveAttribute('data-home', String(home));
+      if (home > 0 && home < 3) await expect(page.locator('#compass-btn')).toHaveAttribute('data-home', String(home));
     }
     for (const a of ['zebra', 'hippo', 'panda']) {
       expect(await page.evaluate((id) => window.__zoo!.app.mission_complete(id), a), `${a} (hints: ${kinds.join(' ')})`).toBe(true);
     }
-    // all home: night is coming (the 🌙 glows), dusk after the celebration, then night
+    // all home: night is coming (the 🌙 badge on the compass), dusk after the celebration, then night
     await nextFrames(page, 2);
-    await expect(page.locator('#night-progress')).toHaveAttribute('data-state', 'night_coming');
+    await expect(page.locator('#compass-btn')).toHaveAttribute('data-state', 'night_coming');
+    await expect(page.locator('#compass-btn .badge')).toHaveAttribute('data-badge', 'night_coming');
+    await expect(page.locator('#compass-btn .strip .pa')).toHaveCount(0);
     await page.evaluate(() => window.__zoo!.app.debug_step(7.5));
     expect(await page.evaluate(() => window.__zoo!.app.daytime())).toBe('dusk');
     await page.evaluate(() => window.__zoo!.app.debug_step(11));
     expect(await page.evaluate(() => window.__zoo!.app.daytime())).toBe('night');
     expect(await page.evaluate(() => window.__zoo!.app.barrier_open('moon_door'))).toBe(true);
     await nextFrames(page, 2);
-    await expect(page.locator('#night-progress')).toHaveAttribute('data-state', 'night');
+    await expect(page.locator('#compass-btn')).toHaveAttribute('data-state', 'night');
+    await expect(page.locator('#compass-btn .badge')).toHaveAttribute('data-badge', /^(moon_door|bed)$/);
     // at night the hint offers the moon door and the bed (top 3)
     const seen: string[] = [];
     let bed: Hint | null = null;
@@ -244,79 +248,107 @@ test.describe('desktop', () => {
     await page.keyboard.press('KeyE');
     expect(await page.evaluate(() => window.__zoo!.app.daytime())).toBe('sleeping');
     await nextFrames(page, 2);
-    await expect(page.locator('#night-progress')).toBeHidden();
+    await expect(page.locator('#compass-btn .badge')).toBeHidden();
+    await expect(page.locator('#compass-btn .strip .pa')).toHaveCount(0);
     await page.evaluate(() => window.__zoo!.app.debug_step(3));
     expect(await page.evaluate(() => window.__zoo!.app.daytime())).toBe('morning');
     await page.evaluate(() => window.__zoo!.app.debug_step(3.5));
     expect(await page.evaluate(() => window.__zoo!.app.daytime())).toBe('day');
-    // the night zoo waits (Q-140): the 🌙 shows the bed
+    // the night zoo waits (Q-140): the compass shows the bed
     await nextFrames(page, 2);
-    await expect(page.locator('#night-progress')).toHaveAttribute('data-state', 'sleep');
+    await expect(page.locator('#compass-btn')).toHaveAttribute('data-state', 'sleep');
+    await expect(page.locator('#compass-btn .badge')).toHaveAttribute('data-badge', 'bed');
     expect(errors).toEqual([]);
   });
 });
 
-test.describe('phone portrait (touch)', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+const PHONES = [
+  { name: 'portrait', width: 412, height: 892 },
+  { name: 'landscape', width: 892, height: 412 },
+];
+const overlaps = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }): boolean =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
-  test('HINT-009 / HINT-013 / NIGHT-020: 🧭 below the gear (≥ 64 px), the 🌙 progress visible, tap = hint', async ({ page }, info) => {
-    const errors = await start(page);
-    await page.locator('#game').tap({ position: { x: 200, y: 400 } }); // first touch: touch UI
-    await nextFrames(page, 2);
-    const gear = (await page.locator('#settings-btn').boundingBox())!;
-    const compass = (await page.locator('#compass-btn').boundingBox())!;
-    expect(compass.width).toBeGreaterThanOrEqual(64);
-    expect(compass.height).toBeGreaterThanOrEqual(64);
-    // directly below the gear: same column, below it, a small gap
-    expect(Math.abs(compass.x + compass.width / 2 - (gear.x + gear.width / 2))).toBeLessThan(4);
-    expect(compass.y).toBeGreaterThanOrEqual(gear.y + gear.height);
-    expect(compass.y - (gear.y + gear.height)).toBeLessThan(24);
-    // the night progress: visible, one icon per level-1 animal, not covering the buttons or the HUD
-    const prog = page.locator('#night-progress');
-    await expect(prog).toBeVisible();
-    await expect(prog.locator('.pa')).toHaveCount(3);
-    await expect(prog.locator('.pa.missing')).toHaveCount(3);
-    const pb = (await prog.boundingBox())!;
-    expect(pb.y).toBeGreaterThanOrEqual(compass.y + compass.height);
-    expect(pb.x + pb.width).toBeLessThanOrEqual(390);
-    const hud = await page.locator('#hud-carry').boundingBox();
-    if (hud) expect(hud.x + hud.width <= pb.x || hud.y >= pb.y + pb.height).toBe(true);
-    for (const icon of await prog.locator('.pa').all()) {
-      const b = (await icon.boundingBox())!;
-      expect(b.width).toBeGreaterThanOrEqual(40);
-    }
-    // tapping the 🧭 shows a hint
-    await page.locator('#compass-btn').tap();
-    await nextFrames(page, 3);
-    expect((await hint(page))?.kind).toBe('board');
-    await page.screenshot({ path: shot(info, 'phone_hint_and_progress.png') });
-    // one animal home: its icon disappears, only the missing ones stay (NIGHT-022)
-    await page.evaluate(() => window.__zoo!.app.debug_send_home('hippo'));
-    await nextFrames(page, 3);
-    await hideCelebration(page);
-    await expect(prog.locator('.pa')).toHaveCount(2);
-    await expect(prog.locator('.pa[data-animal="hippo"]')).toHaveCount(0);
-    await expect(prog).toHaveAttribute('data-home', '1');
-    // HINT-013: tapping the 🌙 progress is the same as 🧭
-    await page.evaluate(() => window.__zoo!.app.debug_step(12.5)); // the old hint is gone
-    await nextFrames(page, 2);
-    expect(await hint(page)).toBeNull();
-    await prog.tap();
-    await nextFrames(page, 3);
-    const h = await hint(page);
-    expect(h).not.toBeNull();
-    expect(['board', 'food']).toContain(h!.kind);
-    expect(h!.animal).not.toBe('hippo');
-    await expect(page.locator('#hint-marker, #hint-edge').first()).toBeAttached();
-    // all home: night is coming
-    await page.evaluate(() => {
-      for (const a of ['zebra', 'panda']) window.__zoo!.app.debug_send_home(a);
+for (const ph of PHONES) {
+  test.describe(`phone ${ph.name} (touch)`, () => {
+    test.use({ viewport: { width: ph.width, height: ph.height }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+
+    test(`HINT-009 / HINT-013 / NIGHT-020 (${ph.name}): the 🧭 below the gear (≥ 64 px) carries badge and strip, no moon pane, tap = hint + bubble`, async ({ page }, info) => {
+      const errors = await start(page);
+      await page.locator('#game').tap({ position: { x: ph.width / 2, y: ph.height / 2 } }); // first touch: touch UI
+      await nextFrames(page, 2);
+      const gear = (await page.locator('#settings-btn').boundingBox())!;
+      const compass = (await page.locator('#compass-btn').boundingBox())!;
+      expect(compass.width).toBeGreaterThanOrEqual(64);
+      expect(compass.height).toBeGreaterThanOrEqual(64);
+      // directly below the gear: same column, below it, a small gap
+      expect(Math.abs(compass.x + compass.width / 2 - (gear.x + gear.width / 2))).toBeLessThan(4);
+      expect(compass.y).toBeGreaterThanOrEqual(gear.y + gear.height);
+      expect(compass.y - (gear.y + gear.height)).toBeLessThan(24);
+      // no moon pane any more; the compass shows one strip icon per level-1 animal and the task badge
+      await expect(page.locator('#night-progress')).toHaveCount(0);
+      const c = page.locator('#compass-btn');
+      const strip = c.locator('.strip .pa');
+      await expect(strip).toHaveCount(3);
+      await expect(c.locator('.badge')).toBeVisible();
+      await expect(c.locator('.badge')).toHaveAttribute('data-badge', 'board');
+      // the strip must not cover the interact button, the basket HUD or the stick; inside the screen
+      for (const icon of await strip.all()) {
+        const b = (await icon.boundingBox())!;
+        expect(b.x).toBeGreaterThanOrEqual(0);
+        expect(b.x + b.width).toBeLessThanOrEqual(ph.width);
+        expect(b.y + b.height).toBeLessThanOrEqual(ph.height);
+        for (const other of ['#act', '#hud-carry', '#stick', '#settings-btn', '#drop-btn']) {
+          const ob = await page.locator(other).boundingBox();
+          if (ob) expect(overlaps(b, ob), `${other} vs strip icon`).toBe(false);
+        }
+      }
+      // tapping the strip is the compass tap: the hint shows (board first)
+      await strip.first().tap();
+      await nextFrames(page, 3);
+      expect((await hint(page))?.kind).toBe('board');
+      await page.screenshot({ path: shot(info, `phone_${ph.name}_compass.png`) });
+      // one animal home: its icon disappears, only the missing ones stay (NIGHT-022)
+      await page.evaluate(() => window.__zoo!.app.debug_send_home('hippo'));
+      await nextFrames(page, 3);
+      await hideCelebration(page);
+      await page.waitForTimeout(400); // the strip is polled at <= 4 Hz
+      await expect(strip).toHaveCount(2);
+      await expect(c.locator('.strip .pa[data-animal="hippo"]')).toHaveCount(0);
+      await expect(c).toHaveAttribute('data-home', '1');
+      // HINT-013: the compass tap = hint of a still missing animal + the explaining bubble
+      await page.evaluate(() => window.__zoo!.app.debug_step(12.5)); // the old hint is gone
+      await nextFrames(page, 2);
+      expect(await hint(page)).toBeNull();
+      await c.tap();
+      await nextFrames(page, 3);
+      const h = await hint(page);
+      expect(h).not.toBeNull();
+      expect(['board', 'food']).toContain(h!.kind);
+      expect(h!.animal).not.toBe('hippo');
+      await expect(page.locator('#hint-marker, #hint-edge').first()).toBeAttached();
+      // the strip icon of the hinted animal pulses
+      if (h!.animal) await expect(c.locator(`.strip .pa[data-animal="${h!.animal}"]`)).toHaveClass(/hl/);
+      // NIGHT-023: the bubble (default reading level klasse2, de) near the compass
+      const bubble = page.locator('#bubble');
+      await expect(bubble).toBeVisible();
+      await expect(bubble).toHaveAttribute('data-key', /^night-progress-info-(klasse|kiga)/);
+      expect(((await bubble.textContent()) ?? '').length).toBeGreaterThan(3);
+      expect(await bubble.textContent()).not.toContain('night-progress-info');
+      // all home: night is coming, the 🌙 badge, no animal icon
+      await page.evaluate(() => {
+        for (const a of ['zebra', 'panda']) window.__zoo!.app.debug_send_home(a);
+      });
+      await nextFrames(page, 3);
+      await hideCelebration(page);
+      await page.waitForTimeout(400);
+      await expect(c).toHaveAttribute('data-state', 'night_coming');
+      await expect(c.locator('.badge')).toHaveAttribute('data-badge', 'night_coming');
+      await expect(strip).toHaveCount(0);
+      await c.tap();
+      await expect(bubble).toHaveAttribute('data-key', /^night-progress-info-done-/);
+      await page.screenshot({ path: shot(info, `phone_${ph.name}_night_coming.png`) });
+      expect(errors).toEqual([]);
     });
-    await nextFrames(page, 3);
-    await hideCelebration(page);
-    await expect(prog).toHaveAttribute('data-state', 'night_coming');
-    await expect(prog.locator('.pa.missing')).toHaveCount(0);
-    await page.screenshot({ path: shot(info, 'phone_night_coming.png') });
-    expect(errors).toEqual([]);
   });
-});
+}

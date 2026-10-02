@@ -338,8 +338,11 @@ pub fn feed_spot(level: &Level, enclosure: usize, area: &WanderArea) -> Option<F
     };
     let tangent = IVec2::new(inward.y.abs(), inward.x.abs()); // along the fence
     let grid = level.grid();
-    let spot_at = |first: IVec2| -> Option<FeedSpot> {
-        let cells = [first, first + tangent];
+    // male and female wait a pair gap apart (whole cells) so they do not overlap
+    let want =
+        (crate::animals::pair_gap_m(enc.animal.as_deref().unwrap_or("")).ceil() as i32).max(1);
+    let spot_at = |first: IVec2, step: i32| -> Option<FeedSpot> {
+        let cells = [first, first + tangent * step];
         let ok = cells.iter().all(|&c| {
             area.contains(c)
                 && (1..=2).all(|k| {
@@ -372,10 +375,13 @@ pub fn feed_spot(level: &Level, enclosure: usize, area: &WanderArea) -> Option<F
     let t = |c: IVec2| c.x * tangent.x + c.y * tangent.y;
     let lo = gate_cells.iter().copied().min_by_key(|&c| t(c))?;
     let hi = gate_cells.iter().copied().max_by_key(|&c| t(c))?;
-    for gap in 1..=6 {
-        for first in [hi + tangent * (gap + 1), lo - tangent * (gap + 2)] {
-            if let Some(s) = spot_at(first) {
-                return Some(s);
+    // the pair gap first; where the fence side is too crowded (hippo) adjacent cells (1 m)
+    for step in (1..=want).rev() {
+        for gap in 1..=6 {
+            for first in [hi + tangent * (gap + 1), lo - tangent * (gap + 1 + step)] {
+                if let Some(s) = spot_at(first, step) {
+                    return Some(s);
+                }
             }
         }
     }
@@ -422,10 +428,23 @@ pub fn draw_target(
     interior: bool,
     rng: &mut Pcg32,
 ) -> Option<IVec2> {
+    draw_target_where(area, here, water_bias, interior, &|_| true, rng)
+}
+
+/// [`draw_target`] that only considers cells for which `allowed` holds (a pair keeps its gap
+/// to the partner, Q-308).
+pub fn draw_target_where(
+    area: &WanderArea,
+    here: IVec2,
+    water_bias: bool,
+    interior: bool,
+    allowed: &dyn Fn(IVec2) -> bool,
+    rng: &mut Pcg32,
+) -> Option<IVec2> {
     let pick = |filter: &dyn Fn(AreaCell) -> bool, rng: &mut Pcg32| -> Option<IVec2> {
         let all: Vec<IVec2> = area
             .cells()
-            .filter(|&(c, k)| c != here && filter(k))
+            .filter(|&(c, k)| c != here && filter(k) && allowed(c))
             .map(|(c, _)| c)
             .collect();
         let inner: Vec<IVec2> = if interior {

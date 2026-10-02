@@ -11,8 +11,8 @@ updated: 2026-10-01
 
 # Visitors, shops and coins (idea)
 
-> **Status: idea collection (user request 2026-10-01).** Nothing here is decided or built;
-> numbers are the user's first ideas, the rest are proposals. Decisions go to
+> **Status: idea collection (user request 2026-10-01), not built.** The points listed under
+> "Decisions" are decided (Q-300…Q-307 answered); numbers elsewhere are proposals. Decisions go to
 > `specs/open-questions.md` (Q-300…Q-307, answered 2026-10-01; see "Decisions").
 
 ## Goal
@@ -30,10 +30,10 @@ Families of 2–5 visitors by day from level 3 (Q-300) · visitors feed animals 
 ## Behaviour
 
 1. **When:** visitors appear from level 3 on (the level that has the `ice_cream_kiosk`,
-   GAME-LEVEL-3), during the day only, ****families of 2–5** (parents + children) at a time (Q-300 answered). They walk along the
+   GAME-LEVEL-3), during the day only, **families of 2–5** (parents + children) at a time (Q-300 answered). They walk along the
    streets (like ambient animals but with a character model), stop at a shop, buy, and leave. They
    never enter enclosures, never block doors or gates, and are not solid for the child (no
-   pushing, like GAME-CART rule 41); they are friendly NPCs that can also give a hint (glossary
+   pushing, like GAME-CART rule 5); they are friendly NPCs that can also give a hint (glossary
    `visitor`).
 2. **Ice cream kiosk** (`ice_cream_kiosk`, level 3, freezer chest in front): a visitor buys one
    ice cream → the child gets **4 coins**. The kiosk has a **stock** (proposal: 8 scoops; shown as

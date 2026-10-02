@@ -25,6 +25,17 @@
         { "lang": "de", "path": "img/abcsmash-de.webp" },
         { "lang": "en", "path": "img/abcsmash-en.webp" }
       ]
+    },
+    {
+      "id": "edugamegalaxy",
+      "slot": 3,
+      "active": true,
+      "link": "https://edugamegalaxy.rcms.ch",
+      "tagline": { "de": "Effizient und mit Spaß lernen – für den Erfolg im Leben", "en": "Learn efficiently and with fun – for success in life" },
+      "images": [
+        { "lang": "de", "path": "img/edugamegalaxy-de.webp" },
+        { "lang": "en", "path": "img/edugamegalaxy-en.webp" }
+      ]
     }
   ]
 }

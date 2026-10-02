@@ -73,7 +73,8 @@ async function playZebra(page: Page, lang: string, level: string, shot?: string)
   await expect(page.locator('#panel-food .word')).toHaveText(t['food-grass']);
   // ANIM-006: riddle → food word first, then "more about the zebra" + facts
   await expect(page.locator('#panel-title .word')).toHaveText(t['animal-zebra-more']);
-  await expect(page.locator('#panel-facts')).toHaveText(t[`mission-zebra-facts-${level}`]);
+  // (a pair species: the generic pair note follows the facts, GAME-FAMILY Q-308)
+  await expect(page.locator("#panel-facts")).toHaveText(`${t[`mission-zebra-facts-${level}`]} ${t[`mission-pair-note-${level}`]}`);
   const order = await page.evaluate(() => [...document.querySelectorAll('#panel [id]')].map((e) => e.id));
   expect(order.indexOf('panel-text')).toBeLessThan(order.indexOf('panel-food'));
   expect(order.indexOf('panel-food')).toBeLessThan(order.indexOf('panel-title'));

@@ -6,10 +6,13 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1]
 test_prefix: LAYOUT-N1
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Night level 1 — the moonlit forest garden (hedgehog, bat, owl)
+
+**Contents:** Goal · Design assumptions of this level (Q-numbers: see open-questions.md) · Spawn, entry and camera · Map · Elements · Night house (GAME-NIGHT rule 4; Q-134 answered) · Night food storage · Hiding places (candidates) · Hiding places — riddle details (night clues) · Barriers · Walking distances · Night lights (GAME-NIGHT rule 1, Q-118, Q-114) · Night riddles and the haze · Behaviour · Mockups · Test cases · Open questions
+
 
 Owned by the `zoo-level-designer` agent. Layout data: `assets/levels/night-1.toml` (level id
 `night_1`). Coordinate system, element types and general rules: GAME-LAYOUT. Night rules:
@@ -37,7 +40,7 @@ enclosures) and a **loop path** (north, west and south ring) around a dense old-
 hiding places lie in the **far west and south** of the loop, all ≥ 22 m from their own board
 and gate, behind the dense groves `grove_n1_center` and `grove_n1_north`.
 
-## Proposals used in this level (not yet decided)
+## Design assumptions of this level (Q-numbers: see open-questions.md)
 
 | Topic | Proposal used here | Question |
 |---|---|---|
@@ -380,6 +383,15 @@ The approved mood image `env_night_overview/overview.png` is not layout-true (it
 enclosures and the moon door at the bottom). Next step (ART-PIPELINE): a greybox of this layout
 → layout-true overview + player views, brief `art/environment/env_night_overview/layout.md`
 (camera and areas). The night house interior follows `env_night_house` (cut-away).
+
+## Pairs (GAME-FAMILY, Q-308 / Q-280, 2026-10-01)
+
+`pair = true` on `enc_n1_hedgehog`, `enc_n1_bat`, `enc_n1_owl`: six night animals. Hiding areas hold two
+(hedgehog places 25–26 cells, bats 11–20, owls 21–25 cells; FAM-022); the bat pair hangs and the
+owl pair sits 0.7 m apart on a 1.5 m wide perch branch; home areas 38–46 cells. They have no
+feeding spot (no treats) and no baby yet (Q-281). The mission still completes when both are home
+(NIGHT-010 completion, moon door and morning rules unchanged); both eyes shine in the lantern
+light.
 
 ## Test cases
 

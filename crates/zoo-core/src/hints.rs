@@ -1,6 +1,6 @@
 //! Next-target hint (GAME-HINT) and the night progress indicator (GAME-NIGHT "Night
 //! progress"): pure, deterministic logic; the host only draws the 🧭 button, the bouncing
-//! indicator, the edge arrow and the 🌙 progress HUD.
+//! indicator, the edge arrow and the compass strip and task badge.
 //!
 //! * [`candidates`] lists every currently useful target, best first (priority, then the
 //!   nearest). Targets that do not exist in the game yet (events, golf carts, the key box,
@@ -9,7 +9,8 @@
 //!   presses), the riddle-fairness timers (rule 4: board first, the hiding-area edge after
 //!   60 s) and the idle nudge (rule 6: the 🧭 button pulses after 90 s without a useful
 //!   action).
-//! * [`night_progress`] tells the child what is still missing before night falls.
+//! * [`night_progress`] (the compass strip) and [`compass_badge`] tell the child what is
+//!   still missing before night falls and what the compass will do next.
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -169,10 +170,50 @@ fn hint(id: String, kind: HintKind, priority: u8, pos: Vec2, stand: Vec2) -> Hin
     }
 }
 
+/// A walkable point near `p` where the child can really STAND: the nearest walkable cell whose
+/// circle (radius 0.3 m) overlaps no prop collider (a stand point inside a bed, fence or sign is
+/// grid-walkable but unreachable — the scripted follower and a real child would get stuck there).
+fn free_stand(g: &Game, p: Vec2) -> Vec2 {
+    let r = crate::collision::PLAYER_RADIUS_M;
+    let cols = g.level.colliders();
+    let base = crate::save::nearest_walkable(g, p, false);
+    if !cols.overlaps(base, r) {
+        return base;
+    }
+    let grid = g.level.grid();
+    let start = cell_of(base);
+    let mut best: Option<(f32, Vec2)> = None;
+    for ring in 1..=6i32 {
+        for dz in -ring..=ring {
+            for dx in -ring..=ring {
+                if dx.abs() != ring && dz.abs() != ring {
+                    continue;
+                }
+                let c = start + glam::IVec2::new(dx, dz);
+                if !grid.is_walkable(c, false) {
+                    continue;
+                }
+                let q = cell_center(c);
+                if cols.overlaps(q, r) {
+                    continue;
+                }
+                let d = q.distance(p);
+                if best.is_none_or(|(bd, _)| d < bd) {
+                    best = Some((d, q));
+                }
+            }
+        }
+        if best.is_some() {
+            break;
+        }
+    }
+    best.map_or(base, |(_, q)| q)
+}
+
 /// Walkable point near `p`, on the side of `from` (the scripted player stands there).
 fn stand_near(g: &Game, p: Vec2, from: Vec2, ahead_m: f32) -> Vec2 {
     let dir = (from - p).normalize_or(Vec2::NEG_Y);
-    crate::save::nearest_walkable(g, p + dir * ahead_m, false)
+    free_stand(g, p + dir * ahead_m)
 }
 
 /// Whether a level point lies in a night level (the night zoo).
@@ -217,7 +258,7 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
         its.iter().find_map(|it| match it.target {
             Target::InfoBoard { animal: a } if a == animal => {
                 let dir = it.readable.unwrap_or(Vec2::NEG_Y);
-                let stand = crate::save::nearest_walkable(g, it.point + dir * 1.0, false);
+                let stand = free_stand(g, it.point + dir * 1.0);
                 Some((it.point, stand))
             }
             _ => None,
@@ -256,7 +297,7 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
                         (facing / n as f32).normalize_or(Vec2::NEG_Y),
                     ),
                 };
-                let stand = crate::save::nearest_walkable(g, c + f * 1.1, false);
+                let stand = free_stand(g, c + f * 1.1);
                 hint(
                     format!("storage:{k}"),
                     HintKind::Food,
@@ -436,7 +477,7 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             if let Some((c, r)) = hiding_circle(g, a, wide) {
                 if p.distance(c) > r {
                     let edge = circle_edge(c, r, p);
-                    let stand = crate::save::nearest_walkable(g, edge, false);
+                    let stand = free_stand(g, edge);
                     steps.push(hint(
                         format!("area:{id}"),
                         HintKind::Animal,
@@ -538,7 +579,7 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
                 // the feeding spot next to the gate: there the animals wait (GARD-010)
                 let c = (cell_center(s.cells[0]) + cell_center(s.cells[1])) / 2.0;
                 let spot = c - Vec2::new(s.inward.x as f32, s.inward.y as f32) * 0.5;
-                (spot, crate::save::nearest_walkable(g, s.stand, false))
+                (spot, free_stand(g, s.stand))
             } else {
                 (fence, stand_near(g, fence, p, 0.9))
             };
@@ -603,7 +644,7 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             .min_by(|a, b| a.1.point.distance(p).total_cmp(&b.1.point.distance(p)));
         if let Some((animal, it)) = fallback {
             let dir = it.readable.unwrap_or(Vec2::NEG_Y);
-            let stand = crate::save::nearest_walkable(g, it.point + dir, false);
+            let stand = free_stand(g, it.point + dir);
             let mut h = hint(
                 format!("board:{animal}"),
                 HintKind::Board,
@@ -697,7 +738,7 @@ pub struct HintTracker {
 }
 
 impl HintTracker {
-    /// The hint button (🧭, `H`, or tapping the 🌙 progress): shows the best target, or —
+    /// The hint button (🧭, `H`, or tapping the strip, part of the button): shows the best target, or —
     /// pressed again while a hint is shown — the next of the top [`HINT_CYCLE`].
     pub fn press(&mut self, g: &Game) -> Option<&Hint> {
         self.idle_s = 0.0;
@@ -925,7 +966,7 @@ fn edge(c: Vec2, d: Vec2, w: f32, h: f32, margin: f32) -> ScreenPlace {
     }
 }
 
-/// State of the 🌙 night progress indicator (GAME-NIGHT "Night progress").
+/// State of the compass strip (GAME-NIGHT rule 11 "Compass shows what is missing").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProgressState {
     /// Not shown (sleeping, morning, nothing left to do).
@@ -952,7 +993,7 @@ impl ProgressState {
     }
 }
 
-/// What the 🌙 indicator shows: the animals (one per species) of a level and whether each
+/// What the compass strip shows: the animals (one per species) of a level and whether each
 /// is home.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NightProgress {
@@ -976,7 +1017,7 @@ fn level_animals(g: &Game, k: usize) -> Vec<(&'static str, bool)> {
     out
 }
 
-/// The night progress of the current level (GAME-NIGHT "Night progress", NIGHT-019/020).
+/// The strip data of the current level (GAME-NIGHT rule 11, NIGHT-019/026).
 pub fn night_progress(g: &Game) -> NightProgress {
     let data = &g.level.data;
     let hidden = NightProgress {
@@ -1004,9 +1045,16 @@ pub fn night_progress(g: &Game) -> NightProgress {
             return with(ProgressState::NightComing, k);
         }
         Phase::Night => {
-            let night = (0..data.parts.len()).find(|&k| {
-                data.is_night_part(k) && g.part_unlocked(k) && has_animals(k) && !done(k)
-            });
+            let here = data.part_at(cell_of(g.player.pos));
+            let night = here
+                .filter(|&k| {
+                    data.is_night_part(k) && g.part_unlocked(k) && has_animals(k) && !done(k)
+                })
+                .or_else(|| {
+                    (0..data.parts.len()).find(|&k| {
+                        data.is_night_part(k) && g.part_unlocked(k) && has_animals(k) && !done(k)
+                    })
+                });
             if let Some(k) = night {
                 return with(ProgressState::Night, k);
             }
@@ -1027,9 +1075,17 @@ pub fn night_progress(g: &Game) -> NightProgress {
             .unwrap_or(0);
         return with(ProgressState::NightComing, k);
     }
-    // the first unlocked day level with animals still missing
-    let day = (0..data.parts.len())
-        .find(|&k| !data.is_night_part(k) && g.part_unlocked(k) && has_animals(k) && !done(k));
+    // the day level the child is IN, if animals are still missing there (user request
+    // 2026-10-01: the pane shows the animals of the level we are in, not of another one);
+    // else the first unlocked day level with animals still missing
+    let here = data.part_at(cell_of(g.player.pos));
+    let day = here
+        .filter(|&k| !data.is_night_part(k) && g.part_unlocked(k) && has_animals(k) && !done(k))
+        .or_else(|| {
+            (0..data.parts.len()).find(|&k| {
+                !data.is_night_part(k) && g.part_unlocked(k) && has_animals(k) && !done(k)
+            })
+        });
     if let Some(k) = day {
         return with(ProgressState::Missing, k);
     }
@@ -1041,4 +1097,17 @@ pub fn night_progress(g: &Game) -> NightProgress {
         return with(ProgressState::Sleep, k);
     }
     hidden
+}
+
+/// The task badge of the compass (GAME-NIGHT rule 11, NIGHT-028): the kind of the NEXT task
+/// = the best hint candidate, computed without showing a hint. `night_coming` while every
+/// animal of the day level is home and the dusk is still pending (celebration).
+pub fn compass_badge(g: &Game, t: &HintTracker) -> Option<(&'static str, Option<&'static str>)> {
+    if matches!(g.daytime.phase, Phase::Sleeping | Phase::Morning) {
+        return None;
+    }
+    if g.daytime.phase == Phase::Day && g.daytime.dusk_in.is_some() {
+        return Some(("night_coming", None));
+    }
+    candidates(g, t).first().map(|h| (h.kind.id(), h.animal))
 }

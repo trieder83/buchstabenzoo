@@ -69,6 +69,21 @@ Vegetable garden furniture, in a 3 by 3 grid: 1) a long rectangular raised garde
 text, letters, words, numbers, writing, captions, writing on signs, watermark, signature, logo, brand names, UI, HUD, scenery, landscape, horizon, sky, characters, people, animals, hands, overlapping props, cropped props, perspective distortion, fisheye, eye-level view, dark, gloomy, dirty, broken, rotten vegetables, rubbish, voxels, cubes, blocky Minecraft style, pixel art, pixelated textures, photorealistic, realistic photo, realistic fur, hyper-detailed textures, soft painterly gradients, glossy plastic, anime, watercolour, sketchy lines, inconsistent line thickness
 ```
 
+## Fruit trees of the level-3 fruit garden (2026-10-01, Q-323)
+
+No concept sheet was generated for these (user request: apples and oranges in the level with the
+monkey). `apple_tree_{sprout,young,ripe}` and `orange_tree_{sprout,young,ripe}` are built straight
+from this description in `kit_garden.py` (6 models, 58 / 105 / 180 triangles each, 1.5 m high when
+ripe, origin on the soil mound); preview `fruit_trees_preview.png` (day above, night below). The
+user should review it before a proper concept sheet is made.
+
+- Dwarf trees, round chunky crown of three lumpy blobs on a short brown trunk, comic look like
+  `tree_round`; the same growth logic as the vegetables: **sprout** (thin sapling, 3-4 leaves),
+  **young** (crown without fruit, smaller), **ripe** (full crown with 5 big fruits on the camera side).
+- **Apple:** light fresh-green crown, red apples (`apple_red`). **Orange:** dark glossy green crown
+  (grove colours), orange fruits (`orange_fruit`). From the 55 degree camera they differ by fruit and crown colour.
+- No text, no flowers, no ladder; the fruit is part of the tree mesh (no separate item model).
+
 ## Review checklist (before `concept_approved = true` — user decides)
 
 - [ ] Comic style matches the approved prop sheets (outlines, flat colours, one shadow tone).

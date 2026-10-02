@@ -54,7 +54,7 @@ Placeholders are logged as warnings and must be gone for POC-004.
 | M2 | Assets v1 | Ground/fence/sign kits, trees, water, bridge, zebra, girl exported as `.glb`; asset tests green (APIPE-001…010) |
 | M3 | Renderer | Level 1 renders in the browser with the high camera, cel shading and outlines; placeholder boxes allowed |
 | M4 | Playable | The zebra mission can be played end to end with keyboard and touch |
-| M5a | All level-1 animals | Hippo and panda missions playable like the zebra, discovery (RESC-014…016), wandering (ANIM-008…012), speeds 1.93/0.98 m/s, hippo pool, sparse woods, collision footprints (LAYOUT-015…020) |
+| M5a | All level-1 animals | Hippo and panda missions playable like the zebra, discovery (RESC-014…016), wandering (ANIM-008…012), speeds 1.93 m/s path / 0.98 m/s grass (grass is 1.45 m/s since 2026-09-29, GAME-PLAYER §6), hippo pool, sparse woods, collision footprints (LAYOUT-015…020) |
 | M5b | Levels 2 and 3 | Levels 1–3 joined into one zoo (Q-088), the seven new missions playable (koala, elephant, giraffe, lion, monkey, goldfish with the bowl, snow fox), level unlocking, enterable zookeeper house, save v2; LAYOUT-021…024, LAYOUT-L2-*/L3-*, RESC-018…023, FAM-001/002 (flag), PLAY-028/029 |
 | M5 | PoC done | All POC tests green on desktop Chrome/Firefox and a mid-range phone |
 

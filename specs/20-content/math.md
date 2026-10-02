@@ -6,7 +6,7 @@ module: math
 status: draft
 depends_on: [PROD-VISION, CONT-READING]
 test_prefix: MATH
-updated: 2026-09-26
+updated: 2026-10-01
 ---
 
 # Math tasks
@@ -33,6 +33,9 @@ as a detached worksheet.
 2. **Number lock:** the food storage or a gate opens with a code computed from a task.
 3. **Counting:** "Wie viele Enten schwimmen im Teich?" to get a hint from a visitor.
 4. **Word problems** (`mathe3`+) on info boards, combining reading and math.
+5. **Coins** (GAME-ECON, from level 3): buy animal food and garden seeds, pay the animal doctor —
+   `mathe1` sums ≤ 20, `mathe2` multiplication, `mathe3` change, `mathe4` bigger sums / units,
+   `mathe5` decimals in money (Q-305 answered 2026-10-01; day only, optional, never blocks a mission).
 
 ## Behaviour
 

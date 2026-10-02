@@ -6,10 +6,13 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L2
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Level 2 — koala, elephant, giraffe, lion (behind the fallen tree)
+
+**Contents:** Goal · Design assumptions of this level (Q-numbers: see open-questions.md) · Spawn and camera · Map · Elements · Level entry and exit · Hiding places (candidates) · Hiding places — riddle details and guards · Barriers · Walking distances · Food storage 2 · Bed of level 2 · Elephant pool · High-angle camera · Behaviour · Night lights and burglar event (GAME-NIGHT, GAME-EVENTS; Q-118, Q-137, Q-139 answered) · Test cases · Implementation status (M5b, 2026-09-26) · Open questions
+
 
 Owned by the `zoo-level-designer` agent. Layout data: `assets/levels/level-2.toml`
 (level id `level_2`). Coordinate system, element types, "Joining levels" and general rules:
@@ -44,7 +47,7 @@ blossom tree, ball, log pile, flat rocks). Nothing of level 2 needs the level-1 
 **48** keep all four chosen spots ≥ 12 m apart; every candidate is part of ≥ 9 valid
 combinations (picking rule Q-082: re-draw until valid).
 
-## Proposals used in this level (not yet decided)
+## Design assumptions of this level (Q-numbers: see open-questions.md)
 
 | Topic | Proposal used here | Question |
 |---|---|---|
@@ -118,11 +121,11 @@ is labelled below. Generated from `assets/levels/level-2.toml`. The fallen tree
    22 %%.......===..................==..................##
    21 %%.......===.....lllllgglllll.==..................##
    20 %%.......===.....llllllllllll.==..................##
-   19 %%.......===.....llllllllllll.==..................##
-   18 %%.......===.....llllllllllll.==..................##
-   17 %%.......===WWW7.llllllllllll.==..........PP......##
-   16 %%.......===WWW..llllllllllll....8........PP9PPPP.##
-   15 %%..........WWW..llllllllllll.ZZZZZZZZ....PP.PPPP.##
+   19 %%.hhhhhh===.....llllllllllll.==..................##
+   18 %%.h____h===.....llllllllllll.==..................##
+   17 %%.h_y__d===WWW7.llllllllllll.==..........PP......##
+   16 %%.hYY__h===WWW..llllllllllll....8........PP9PPPP.##
+   15 %%.hhhhhh...WWW..llllllllllll.ZZZZZZZZ....PP.PPPP.##
    14 %%...............llllllllllll.ZZZZZZZZ............##
    13 %%##################################################
    12 %%##################################################
@@ -146,7 +149,8 @@ is labelled below. Generated from `assets/levels/level-2.toml`. The fallen tree
 | `s` | flat rocks (`flat_rocks_nw`, walkable) | `S` | spawn |
 | `1` `2` `3` | animal spot koala: `loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree` | `4` `5` `6` | animal spot elephant: `loc_fountain`, `loc_log_pile`, `loc_big_ball` |
 | `7` `8` `9` | animal spot giraffe: `loc_lookout_tower`, `loc_train`, `loc_playground` | `a` `b` `c` | animal spot lion: `loc_sun_rocks`, `loc_stage`, `loc_deckchairs` |
-| `.` | grass (walkable, slower — Q-046) | `Y` / `y` | bed `bed_l2` (`[[item]]`, solid) / its stand cell (Q-141) |
+| `.` | grass (walkable, slower — Q-046) | `Y` / `y` | bed `bed_l2` (`[[item]]`, solid, inside the house) / its stand cell (Q-141) |
+| `h` / `_` / `d` | `zookeeper_house_2`: wall (solid) / interior floor (walkable) / door cell | | |
 
 ## Elements
 
@@ -178,10 +182,11 @@ every type except `path` and `hiding_place`. The level has no legacy `[[element]
 | `path_l2_nw` | path (side) | 24, 52, 15, 3 | Leads west to barrier_l2_construction and runs on under it (x 24…25) to the level-3 gate and `path_l3_entry`: the construction fence stands on the street (LAYOUT-040). |
 | `path_lion_apron` | path (side) | 46, 22, 2, 2 | Street apron (rule 8): joins `path_l2_ring_s` (z 24) to the entrance of enc_lion. |
 | `path_giraffe_apron` | path (side) | 45, 42, 2, 2 | Street apron (rule 8): joins `path_l2_ring_n` (z 41) to the entrance of enc_giraffe. |
-| `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30); enterable, walkable interior (40, 28, 4, 6). Second food storage (proposal Q-089): all 10 food boxes, row in front of the west facade facing the arriving child (Q-181 answered); 6 more real labelled food boxes inside (Q-194 answered 2026-09-29). |
+| `zookeeper_house_2` | building (zookeeper_house) | 27, 15, 6, 5 | door at cell (32, 17) on the east facade, onto `path_l2_sw` (street cell (33, 17) touches the door); walkable interior (28, 16, 4, 3). Small enterable zookeeper house with the bed `bed_l2` (user request 2026-10-01: every bed indoors, LAYOUT-047): same model and room as `zookeeper_house_1` (`zookeeper_house`, 6 × 5 m, door east, roof cut away inside, PLAY-028): bed, night table with bedside lamp, moon window, round rug, toy chest; wall lamp on the east facade north of the door. No desk, no key box. |
+| `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30); enterable, walkable interior (40, 28, 4, 6). Second food storage (Q-089, confirmed 2026-10-01): all 10 food boxes, row in front of the west facade facing the arriving child (Q-181 answered); 6 more real labelled food boxes inside (Q-194 answered 2026-09-29). |
 | `grove_l2_center` | decoration (tree_grove) | 45, 27, 6, 12 | density `dense`.  |
 | `trees_l2_center_n` | decoration (trees) | 39, 35, 6, 4 | density `dense`.  |
-| `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter, feeding trough (GAME-FAMILY). No tree taller than the others, no blossoms, no tree house (riddle guards). |
+| `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter. No tree taller than the others, no blossoms, no tree house (riddle guards). |
 | `board_koala` | decoration (info_board) | 35, 39, 1, 1 | info board of `enc_koala`.  |
 | `enc_elephant` | enclosure | 55, 28, 12, 13 | gate (55, 33, 1, 2). Elephant pool (still water, stones, a shallow ramp — like hippo_pool), hay rack, sand-coloured ground patch, one big boulder. No fountain, no logs, no ball (riddle guards). |
 | `board_elephant` | decoration (info_board) | 54, 31, 1, 1 | info board of `enc_elephant`, just south of its gate cells; moved from 54, 36 by FIX-056 so that `loc_big_ball` stays ≥ 22 m from its standing points. |
@@ -339,7 +344,7 @@ within 2 m of each animal spot.
 All neighbour pairs are ≤ 10 s (longest: elephant board → giraffe board 9.1 s, since the
 elephant board stands south of its gate — FIX-056). Each hiding place is ≤ 10 s from its neighbour (list above).
 
-## Food storage 2 (proposal Q-089)
+## Food storage 2 (Q-089, confirmed 2026-10-01)
 
 `food_storage_2` (39, 27, 6, 8) stands at the end of the entry path, door (39, 30) on the
 west facade. It is **enterable** like every building with a door (GAME-LAYOUT): `interior`
@@ -356,31 +361,38 @@ the free floor — the level's four animals' foods, repeated: back (east) wall h
 leaves (44.44, 33.12), eucalyptus (44.44, 29.08), meat (44.44, 29.72); north wall hay (42.0,
 34.44); south wall leaves (41.0, 27.56).
 
-## Bed of level 2 (Q-141 answered, option b)
+## Bed of level 2 (Q-141 answered, option b; moved indoors by user request 2026-10-01)
 
 After level 2's last mission night falls (GAME-NIGHT); the 🛏 icon offers the **nearest
 unlocked bed** (GAME-NIGHT rule 3), so a child in level 2 does not have to walk back to
-`zookeeper_house_1` (x −14…−9). Level 2 gets its own bed as an `[[item]]` (not an element —
-same data shape as level-1 `bed_l1`; items are not in the element table / LAYOUT-005):
+`zookeeper_house_1` (x −14…−9). **Every bed stands inside an enterable building**
+(GAME-LAYOUT rule 16, LAYOUT-047): level 2 therefore gets a small **zookeeper house**
+`zookeeper_house_2` (27, 15, 6, 5) at the south-west corner of the level, with the bed as an
+`[[item]]` (not an element — same data shape as level-1 `bed_l1`; items are not in the element
+table / LAYOUT-005). The house is `zookeeper_house_1` moved by (+41, +15): same model, same
+room, same furniture (bed along the south wall of the room, night table and moon window at the
+west wall, round rug, toy chest, bedside lamp; no desk and no key box).
 
 | Id | Kind | Centre (x, z) | Footprint (x, z) | Facing | Stand cell | Notes |
 |---|---|---|---|---|---|---|
-| `bed_l2` | bed (`kit_bedroom` `bed` model, 2.0 × 1.0 m) | 42.0, 26.5 | 41.0–43.0, 26.0–27.0 (cells (41, 26), (42, 26)) | `-z` (used from its long south side, headboard east, yaw 0) | (42, 25), centre (42.5, 25.5), 1.1 m in front | Outdoors against the south wall of `food_storage_2`, on the north row of `path_l2_ring_s`. |
+| `bed_l2` | bed (`kit_bedroom` `bed` model, 2.0 × 1.0 m) | 29.0, 16.5 | 28.0–30.0, 16.0–17.0 (cells (28, 16), (29, 16)) | `+z` (used from its long north side, headboard west, yaw as `bed_l1`) | (29, 17), centre (29.5, 17.5), 1.1 m in front | Inside `zookeeper_house_2`; the house's `building` field links item and building (roof cut-away while inside). |
 
-Why here: the storage is surrounded by paths and solid trees (no free grass beside it), and
-the south facade has no door. The bed leans against the windowless storage wall (sheltered
-on one side, visible from the ring), 3 m from the storage's south-west corner and the food
-boxes; `path_l2_ring_s` keeps a 2 m free lane south of it (z 24–25). It is no path junction
-(ring corners are x 36–38 and 51–53), blocks no door or gate (storage door (39, 30) on the
-west facade, lion gate (46–47, 21), `board_lion` (44, 23) keeps its reading cells), and lies
-in no hiding-place rect, wander area, scenery or lantern position. No riddle scenery: a bed
-is not a feature of any level-2 hiding place.
+Furniture (`[[prop]]`, all `building = "zookeeper_house_2"`): `night_table_l2` (28.28, 17.3),
+`window_moon_l2` (28.0, 17.5), `rug_l2` (30.0, 17.4, flat), `toy_chest_l2` (28.55, 18.72);
+bedside lamp `[[light]] l2_indoor_bedside` (28.28, 17.3), wall lamp `l2_wall_zookeeper_house`
+(33.05, 18.4).
 
-**Proposal (Q-152):** give the bed a small shelter so it reads as "the zookeeper's night
-camp" and not as furniture left on the path — e.g. a striped canvas awning / lean-to roof
-fixed to the storage's south wall above the bed (≈ 2.4 × 1.4 m, eaves at ≈ 2.0 m) and a
-lantern on a hook. No model id exists for it yet; until decided the bed stands without a
-roof.
+Why here: the south-west corner holds only grass between the hedge and `path_l2_sw`; the door
+(32, 17) opens straight onto the street cell (33, 17) of `path_l2_sw` (rule 8, 1 m in front of
+the door stays free), about 8 s of walking from the spawn (27, 29) and on the way to nothing
+else, so it never blocks a mission route. The house lies in no hiding-place rect, wander area or
+scenery (the nearest are `loc_fountain` (28, 22, 3, 6) and `loc_lookout_tower` (37, 14, 4, 5))
+and covers no lantern, board, gate or food box position. The never-stuck invariants hold: the
+hint target `bed` (stand cell (29, 17)) is a walkable interior cell reachable over the door.
+
+*Superseded:* the earlier outdoor bed against the south wall of `food_storage_2` (centre
+(42.0, 26.5)) and its shelter proposal Q-152 are removed; the storage interior stays free for
+its food boxes and the door walkway (LAYOUT-038).
 
 ## Elephant pool (user decision 2026-09-26: pools where animals need water)
 
@@ -446,6 +458,13 @@ take a food box in front of `food_storage_2` and hide on the grass strip between
 enclosure and the east wall (`l2_burglar_hideout` (71, 37, 3, 5)) — no hiding place, scenery or
 path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 
+## Pairs (GAME-FAMILY, Q-308 / Q-280, 2026-10-01)
+
+`pair = true` on all four enclosures (`enc_koala` since 2026-09-30, `enc_elephant`, `enc_lion`,
+`enc_giraffe`): eight animals in level 2. The koala pair sits side by side on the branch / porch
+(0.7 m apart, branch 1.5 m wide); elephants and giraffes keep 2 m, lions 1.5 m. Feeding spots:
+male and female 2 cells apart (FAM-023). No path, board or barrier moved; the walking tables hold.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -467,7 +486,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 | LAYOUT-L2-015 | Given a new game seeded with S that reaches level 2, then both koalas start at the same chosen koala place and both follow when one is shown eucalyptus (GAME-FAMILY FAM-001/002 in level 2). | unit |
 | LAYOUT-L2-016 | Given `enc_elephant`, then `elephant_pool` covers 35–60 % of its cells, is fully inside the enclosure and not adjacent to the gate cells, and the elephant's home wander area includes pool cells. | unit |
 | LAYOUT-L2-017 | Given the approved mockups of the 12 level-2 places, then a reviewer can name each place's riddle details without text, the lion enclosure shows no flat rocks, the elephant pool no jet or coins, the giant tree is clearly twice as tall as all other trees. | manual |
-| LAYOUT-L2-018 | Given `level-2.toml`, then it has one `[[item]] kind = "bed"` (`bed_l2`) whose 2 × 1 m footprint lies on walkable cells of level 2 outside every hiding-place rect, scenery rect, door/gate cell and the 1 m in front of every door/gate, the level is still fully reachable from the spawn with the bed solid, and its `stand` cell is walkable, 1.0–1.5 m from the bed centre and reachable from the spawn; at level 2's nightfall the bed offered is `bed_l2` (Q-141). | unit |
+| LAYOUT-L2-018 | Given `level-2.toml`, then it has one `[[item]] kind = "bed"` (`bed_l2`) with `building = "zookeeper_house_2"` — an enterable `zookeeper_house` (door (32, 17), interior (28, 16, 4, 3), door street cell (33, 17) on `path_l2_sw`) — whose 2 × 1 m footprint lies on walkable interior cells (not the door cell), outside every hiding-place rect and scenery rect; the level is still fully reachable from the spawn with the bed solid, and its `stand` cell is walkable, 1.0–1.5 m from the bed centre, free of colliders and reachable from the spawn through the door; at level 2's nightfall the bed offered is `bed_l2` and the hint target `bed` is its stand cell (Q-141, LAYOUT-047). | unit |
 
 ## Implementation status (M5b, 2026-09-26)
 
@@ -505,7 +524,7 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
   `kiga` words; Q-085 tree density and enclosure features; Q-080 hiding-place data;
   Q-082 picking rule; Q-043 poses (`climb` at perches, `sleep`, `drink`).
 - Q-096 where the child sleeps after level 2 (zookeeper house of level 3 is still closed) —
-  answered by Q-141 (b): `bed_l2` at the food storage; Q-152 shelter over `bed_l2`.
+  answered by Q-141 (b): `bed_l2` (since 2026-10-01 inside `zookeeper_house_2`); Q-152 shelter over `bed_l2` is obsolete.
 - Q-150 answered: the food-box row of `food_storage_2` leaves a gap ≥ 1.2 m in front of the door.
 - Q-173 scope of the Q-157 wall-gap rule (nothing solid 0.1–0.6 m in front of a wall/fence near an opening).
 - Q-181 answered 2026-09-28: the food boxes stay outside, a few more inside; Q-194 answered 2026-09-29: the inside boxes are real, labelled food boxes too (foods may repeat the outside row).

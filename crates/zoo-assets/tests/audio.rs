@@ -216,3 +216,25 @@ fn asnd_004_every_species_has_call_happy_refuse() {
         .collect();
     eprintln!("ASND-004: species without animal cues yet (Q-215): {open:?}");
 }
+
+// ASND-020: the night cricket loop is registered (CC0, origin, files) and listed on the review page;
+// the group-aware checker (tools/sound/check_audio.py, ASND-021) holds it to the loop limits
+// (20-40 s, -22 LUFS +/- 2, ogg <= 150 KB, loop seam), not to the one-shot limits.
+#[test]
+fn asnd_020_ambient_crickets_entry() {
+    let entries = audio_entries();
+    let e = entries
+        .iter()
+        .find(|e| s(e, "id") == "ambient_crickets")
+        .expect("ambient_crickets in the manifest");
+    assert_eq!(s(e, "group"), "ambient");
+    assert!(["CC0", "public-domain"].contains(&s(e, "licence")));
+    assert!(!s(e, "origin_url").is_empty());
+    assert_eq!(e.get("variants").and_then(|v| v.as_integer()), Some(1));
+    for f in cue_files(e) {
+        assert!(f.exists(), "{}", f.display());
+    }
+    let ogg = root().join("assets/audio/ambient/ambient_crickets_1.ogg");
+    assert!(std::fs::metadata(ogg).unwrap().len() <= 150_000);
+    assert!(read("art/catalog.js").contains("ambient/ambient_crickets_1.ogg"));
+}

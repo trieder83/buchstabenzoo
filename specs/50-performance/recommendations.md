@@ -460,7 +460,20 @@ entries, when asked, and measures before and after.
   the signed-ad loader (`@noble/ed25519`, small) and the DOM (look stick, intro).
 - **Proposal:** re-measure on a quiet machine with a forced GC (`--js-flags=--expose-gc`,
   `gc()` before reading); if still > 32 MB take a heap snapshot.
-- **Status:** open (unverified; not a confirmed break).
+- **Update 2026-10-02:** 29.8 MB desktop, 40.2 MB phone / desktop_half (was 61 - 64), still
+  at load 25 - 37 and without forced GC; the two equal 40.15 MB values look like a GC plateau.
+- **Status:** open (unverified; needs a quiet machine + `gc()`).
+
+### PERF-R-021 — Draw-call creep from pairs / characters (watch item, run 2026-10-02)
+
+- **Finding:** +2 draw calls (+5 %) in animal-heavy scenes after all animals became pairs
+  (S01 31 -> 33, S02 38 -> 40, S10 36 -> 38; level 3 unchanged). Max is 40 of 140, night
+  margin to the +6 rule is 1. Each skinned character is its own draw (no batching).
+- **Proposal:** if scenes with 10+ visible animals appear, instance animals per model
+  (GPU skinning with per-instance bone offsets / texture) or cull members beyond the
+  camera range; otherwise do nothing. Re-check the night +6 rule when new night props land.
+- **Expected gain:** up to ~1 draw per extra visible animal. **Cost/risk:** skinning rewrite.
+- **Status:** open (watch only).
 
 ## Acceptance criteria
 

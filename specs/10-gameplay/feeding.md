@@ -6,7 +6,7 @@ module: feeding
 status: draft
 depends_on: [GAME-WORLD, CONT-READING, GAME-PLAYER]
 test_prefix: FEED
-updated: 2026-09-28
+updated: 2026-10-02
 ---
 
 # Food boxes and carrying food
@@ -21,13 +21,35 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 1. Food boxes stand in the food storage. Each `food_box` holds one food and has a label with
    the food's name; label form depends on the reading level:
 
-   | Reading level | Label |
-   |---|---|
-   | `kiga` | picture + word |
-   | `klasse1` | word only |
-   | `klasse2` | word only; boxes with similar-looking words side by side (e.g. *Heu* / *Hai*-Futter) (Q-032) |
-   | `klasse3` | word only, plus distractor boxes |
+   Every label (decals on the crate **lid** and the crate front **and** the text panel, §6) shows a **pictogram** of
+   the food plus the word (user request 2026-10-02). The pictogram only *supports* the word:
+   the riddle and the info board name the food by word, so the older children still read.
+   The pictogram's share of the label height (`pictogram_scale`, pictogram above the word):
 
+   | Reading level | Label | `pictogram_scale` |
+   |---|---|---|
+   | `kiga` | big pictogram + word | 0.62 |
+   | `klasse1` | pictogram + word at similar size | 0.50 |
+   | `klasse2` | word large, smaller pictogram; boxes with similar-looking words side by side (e.g. *Heu* / *Hai*-Futter) (Q-032) | 0.34 |
+   | `klasse3` | word large, small pictogram, plus distractor boxes | 0.28 |
+
+   The scale shrinks with the level; the word always gets the rest (`1 - scale`).
+   Pictograms are **vector drawings** (flat colours + dark outline, one drawer per food on a
+   128 x 128 grid, `web/src/pictograms.ts`), not emoji: emoji fonts differ between headless
+   Linux, Android and iOS (and may be missing). The same drawers serve the decals and the box
+   panel; the HUD carry icon and other lists keep their emoji (`FOOD_ICONS`, not a label).
+   Pictogram id = food id. Info board texts and facts do not change.
+
+   **Lid and front (user request 2026-10-02, the front is unreadable from the 55° camera):**
+   the legible side is the **lid** — a flat decal on the top face of every food crate
+   (outside rows and inside the storages), pictogram above the word, sized by
+   `pictogram_scale` (on the small lid drawn 1.25x, at most 0.78, so it reads from the camera). The **front** keeps a small label (pictogram left + word). The word stays
+   the way to choose on every level (the board names the food by word); the lid pictogram
+   only supports it. **One shared atlas texture** (1024 x 512 RGBA = 2 MB: 14 lid cells
+   128 x 128 + 14 front cells 256 x 64, `text:food-atlas`, rendered by the host, redrawn on
+   language/reading-level change) serves all boxes of all foods; the renderer draws
+   consecutive atlas decals with the same normal in **one draw call** (all lids: 1, fronts:
+   one per facing), so the boxes add at most about 4 draw calls.
 2. Boxes are closed — the food is not visible, so the label must be read.
 3. The player carries one food at a time. Taking another box puts the current food back.
 4. Food is not consumed by showing it to an animal — only when the animals enter their
@@ -35,7 +57,7 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 5. Whether the food storage is locked at the start (`quest_key`) is open (Q-033).
 6. **Taking a box (decision for M4 — simplest reading-first flow):** interacting with an
    available food box (GAME-PLAYER §5: within 2 m, on the label side, facing it) opens the
-   text panel with the box **label** (picture + word on `kiga`, word only otherwise) and a
+   text panel with the box **label** (pictogram + word, sized per reading level, §1) and a
    big **take** button (hand icon, no reading needed). Pressing take — or interacting again
    while the panel is open — makes the player carry that food (§3). Closing the panel
    without taking changes nothing. The carried food is shown in the HUD (icon + word).
@@ -162,8 +184,8 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| FEED-001 | Given reading level `kiga`, then every food box label shows a picture and one word. | unit |
-| FEED-002 | Given reading level `klasse1`+, then no food box label shows a picture. | unit |
+| FEED-001 | Given reading level `kiga`, then every food box label has a pictogram (id = food id) with `pictogram_scale` 0.62 and one word. | unit |
+| FEED-002 | Given any reading level, then every label of every food has a pictogram and a word; given reading levels in order `kiga`..`klasse3`, then `pictogram_scale` strictly decreases, `klasse1` is the similar-size level (0.45..=0.55) and `klasse2`/`klasse3` are below 0.4 (word larger than the pictogram). | unit |
 | FEED-003 | Given the player carries hay, when taking the bamboo box, then the player carries bamboo and hay is back. | unit |
 | FEED-004 | Given the player shows grass to zebras, then the player still carries grass. | unit |
 | FEED-005 | Given every animal's correct food, then a food box with that food exists in the storage. | unit |
@@ -190,6 +212,13 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 | FEED-026 | Given the exported bamboo forest model, then every cut spot has the stage nodes `stalk_full`, `stalk_young` and `stump` (§17). | asset |
 | FEED-027 | Given every food storage / food hut, then 2–6 `[[food_box]]` entries stand inside it (whose position falls inside the storage's rect), each stands on the 0.15 m plank platform of the solid wall band, is solid for the player, and has a walkable standing point within 2 m in front of its label, clear of the door walkway (Q-194 answered 2026-09-29). | unit |
 | FEED-028 | Given the player stands in front of a food box inside a storage facing it, when interacting, then the text panel with that box's label opens exactly as for an outside box; when taking, the player carries that food (Q-194 answered 2026-09-29: inside boxes are real food boxes). | unit |
+| FEED-029 | Given every food (day and night) and every reading level, then `FoodBox::label` gives a non-empty pictogram id equal to the food id, a `pictogram_scale` from the §1 table, and the word key of that food. | unit |
+| FEED-030 | Given a level, then every `[[food_box]]` (outside and inside) has a lid decal (facing up) and a front decal (facing the box facing), all cells of the one atlas `text:food-atlas`; lids are adjacent in the decal list (1 draw), fronts are grouped by facing (<= 4 runs); changing the reading level re-requests the atlas. Start view: the decals add <= 5 draw calls (e2e log). | unit + e2e |
+| FEED-035 | Given the atlas, then every food has a lid cell (128 x 128) and a front cell (256 x 64) inside 1024 x 512, without overlap, UVs inside 0..1, <= 2 MB. | unit |
+| FEED-031 | Given the host's pictogram set, then there is one distinct drawer per food (all 14), deterministic (same draw calls twice) and drawn inside the 128 x 128 grid. | vitest |
+| FEED-032 | Given a lid cell, then the host draws the pictogram (share `pictogram_scale` of the height) above the word (rest), the word fitted to the width; the front cell has a smaller pictogram left of the word. | vitest |
+| FEED-033 | Given the box panel of a food box, then it shows the vector pictogram and the word on every reading level; the pictogram is bigger on `kiga` than on `klasse3`. | e2e |
+| FEED-034 | Given the zoo camera in front of the food box row on `kiga` and `klasse3`, then the labels are legible (screenshots `qa/reports/img/`). | e2e |
 
 ## Open questions
 

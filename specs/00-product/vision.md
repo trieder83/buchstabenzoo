@@ -6,7 +6,7 @@ module: vision
 status: draft
 depends_on: []
 test_prefix: VIS
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Product vision
@@ -26,7 +26,7 @@ can be part of the way.
 1. **Reading comprehension is the key mechanic** — finding an animal always requires
    understanding a riddle at the child's reading level; guessing must be slower than reading.
 2. **Math as a second subject** — optional math tasks at the child's math level (CONT-MATH).
-3. **Friendly and pressure-free** — no violence, no ads in the UI; only passive in-world ad boards (no links, no tracking, no network; first own cross-promotion, legal/child-safety check before any third-party ad — GAME-ADS, Q-128 answered), no in-app purchases, no timers
+3. **Friendly and pressure-free** — no violence, no ads in the UI; only in-world ad boards (no tracking, no ads in menus or popups; placeholders and boards without a verified own campaign are passive; own cross-promotion boards are readable with a link behind a parental gate, content loaded from our origin and accepted only if signed by us; legal/child-safety check before any third-party ad — GAME-ADS, Q-128 / Q-217 / Q-240 answered), no in-app purchases, no timers
    unless a spec says so.
 4. **Explorable 3D zoo** — third-person, walk around, talk to visitors, discover places
    (e.g. the pirate ship).

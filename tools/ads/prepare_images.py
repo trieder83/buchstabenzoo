@@ -19,6 +19,8 @@ JOBS = {
     "mathfighter-alt.webp": "campaign-1-mathfighter/resources/feature_graphic_2.png",
     "abcsmash-de.webp": "campaign-2-abcsmash/resources/feature-graphic-de-de.png",
     "abcsmash-en.webp": "campaign-2-abcsmash/resources/feature-graphic-en-us.png",
+    "edugamegalaxy-de.webp": "campaign-3-edugamegalaxy/resources/edugamegalaxy-de.png",
+    "edugamegalaxy-en.webp": "campaign-3-edugamegalaxy/resources/edugamegalaxy-en.png",
 }
 
 

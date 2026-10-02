@@ -150,3 +150,35 @@ fn arch_006_multi_node_assets_keep_parts_slots_empties_and_faces() {
     assert!(body.image_index.is_some());
     assert_eq!(body.image_index, eye.image_index);
 }
+
+// GARD-023: the fruit trees of the level-3 fruit garden load, stay low-poly and grow from stage
+// to stage.
+#[test]
+fn gard_023_fruit_tree_models_exist_load_and_grow() {
+    for kind in ["apple", "orange"] {
+        let mut heights = Vec::new();
+        for stage in ["sprout", "young", "ripe"] {
+            let m = load(&format!("assets/models/props/{kind}_tree_{stage}.glb"));
+            let tris = m.mesh.indices.len() / 3;
+            assert!(
+                tris > 0 && tris <= 400,
+                "{kind}_tree_{stage}: {tris} triangles"
+            );
+            let top = m
+                .mesh
+                .positions
+                .iter()
+                .map(|p| p[1])
+                .fold(f32::MIN, f32::max);
+            heights.push(top);
+        }
+        assert!(
+            heights[0] < heights[1] && heights[1] < heights[2],
+            "{kind}: sprout < young < ripe, got {heights:?}"
+        );
+        assert!(
+            heights[2] > 1.3 && heights[2] < 1.8,
+            "{kind}: ~1.5 m when ripe"
+        );
+    }
+}

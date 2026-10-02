@@ -3,7 +3,7 @@ id: GAME-RESCUE
 title: Rescue mission — core loop
 aspect: gameplay
 module: rescue-mission
-status: draft
+status: implemented
 depends_on: [PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH]
 test_prefix: RESC
 updated: 2026-10-01
@@ -136,14 +136,34 @@ The bowl is a placeholder glass mesh built by the renderer (light-blue screen-do
 with outlines; water as a smaller glass cylinder) until a model exists.
 
 
-## Welcome board at the entrance (user request 2026-09-26)
+## Welcome board at the entrance (user request 2026-09-26, 2026-10-01)
 
-The board next to the start gate (the map board by the entrance plaza, `map_board` in
-GAME-LEVEL-1) explains the game when the child stands in front of it: its reading panel
-opens automatically like every board (GAME-PLAYER §4) and shows the **game description** for
-the current reading level and language. The map itself (GAME-MAP rule 9) is opened from the
-same panel with a map button once the map exists. Keys: `welcome-<reading_level>` (de/en),
-plus pictures for `kiga` (empty enclosure → magnifier → food box → animal home).
+The big **map board** at the entrance of a level (`kind = "map_board"`: `map_board` in
+GAME-LEVEL-1, `map_board_l3`, `map_board_n1`; level 2 has none yet) explains the game and its
+level when the child stands in front of it: its reading panel opens automatically like every
+board (GAME-PLAYER §4: ≤ 2 m, on its readable side — facing the level spawn — and facing it) and
+shows, for the current reading level and language:
+
+1. a **pictures row** (as the intro) 🏚️🐾❓ → 🔍 → 🥕 → 🏠 and the title `welcome-title`;
+2. the **game description** `welcome-<reading_level>` (table below);
+3. the **goal of this level**: the animal icons and names of this level part (every species once,
+   pairs count once; `animal-<id>`), lead-in `welcome-goal-<reading_level>`;
+4. **how to play** in four steps with icons 📋 🥕 🐾 🏠 (`welcome-step-<1..4>-<reading_level>`:
+   read the riddle on the info board, take the right food from the food storage by reading the
+   labels, find the animal and show it the food, lead it through the gate into its enclosure);
+5. a **level note** `welcome-level-<part id>-<reading_level>` (`level_1`: some animals come in
+   pairs, rescue both; `level_2`: new part; `level_3`: the goldfish needs a bowl of water;
+   `night_1`: take the lantern) and **where to start** `welcome-start-<reading_level>` (info
+   board / food storage; the 🧭 shows the way).
+
+The panel scrolls inside its box (it is longer than a riddle). It is **not** an info board or a
+mission board: reading it starts no mission and it never counts for the hints (HINT-001: the
+"nearest unread info board" ignores it). A board of a later level appears only once that level
+is unlocked and shows **its own** animals. The map itself (GAME-MAP rule 9) is opened from the
+same panel with a map button once the map exists (not built yet). Code: `Target::WelcomeBoard
+{ level }` / `Interaction::WelcomeBoard`, panel kind `welcome_board`.
+
+Keys `welcome-<reading_level>` (de/en):
 
 | Level | Deutsch | English |
 |---|---|---|
@@ -152,16 +172,15 @@ plus pictures for `kiga` (empty enclosure → magnifier → food box → animal 
 | klasse2 | Oh nein, die Tiere sind ausgebrochen! Lies die Rätsel auf den Infotafeln, finde die Tiere und bring sie mit dem richtigen Futter zurück in ihr Gehege. | Oh no, the animals have escaped! Read the riddles on the info boards, find the animals and bring them back to their enclosures with the right food. |
 | klasse3 | Heute Nacht sind alle Tiere aus ihren Gehegen ausgebrochen – jetzt sind die Gehege leer! Auf jeder Infotafel steht ein Rätsel, das verrät, wo sich das Tier versteckt. Hol im Futterlager das richtige Futter und zeig es dem Tier – dann folgt es dir. Führe es durch das Tor zurück in sein Gehege. Schaffst du es, alle Tiere zu retten? | Last night all the animals escaped from their enclosures – now the enclosures are empty! Every info board has a riddle that tells you where the animal is hiding. Get the right food from the food storage and show it to the animal – then it will follow you. Lead it through the gate back into its enclosure. Can you rescue all the animals? |
 
-Rules: `klasse1` sentences ≤ 5 words (READ-002); the word for an animal's home is
-*Gehege* / *enclosure*, never *Käfig* / *cage* (glossary). The welcome panel is also shown
-once automatically at the very first start of a new game (after the character choice), so
-children who walk off in another direction still know the goal.
+The final texts of the other keys are in `assets/i18n/{de,en}/ui.ftl`. Rules: `klasse1`
+sentences ≤ 5 words (READ-002); the word for an animal's home is *Gehege* / *enclosure*, never
+*Käfig* / *cage* (glossary). The intro (below) replaces the automatic first-start panel.
 
 ## Intro at the entrance gate (user request 2026-09-29)
 
 At the very first start of a new game (after the character choice) the child stands at the
 **entrance gate** and sees a short **intro** (3 pages, one picture + one short text each,
-big "next" arrow ≥ 64 px, skippable, replayable from the welcome board; no time pressure).
+big "next" arrow ≥ 64 px, skippable, replayable from the settings (❓, RESC-031; the welcome board itself does not replay it); no time pressure).
 It replaces the automatic welcome panel of the previous section (the board keeps the same text
 for later). Keys `intro-<n>-<reading_level>` (de/en); `kiga` gets pictures and read-aloud only (Q-008).
 
@@ -210,9 +229,10 @@ user request 2026-10-01: a child with an old save had never seen the explanation
 | RESC-026 | Given an animal whose picked hiding place has `perch_height_m` (koala, monkey), then it sits at that height beside its spot, does not wander and faces the player; the player shows the right food from the ground within 2 m; when it follows it first comes down (`climb` at its `climb_speed`, else `walk` at 1.8 m/s) (§12, Q-094). | unit, e2e |
 | RESC-027 | Given the player carries the bowl with the fish, when she interacts at another enclosure's gate, then `ui-refuse` and the fish stays in the bowl; when she puts the bowl down (nothing else in range), then the fish stays safe in the bowl and can be picked up again (goldfish bowl implementation note). | unit |
 | RESC-029 | Given a new game after the character choice, then the intro shows 3 pages at the entrance gate (animals broke out / find them and bring them back to the right enclosure / find the food they like so they follow), each in `de` and `en` for every reading level, skippable and never repeated after saving; it ends with the first hint target. | e2e |
-| RESC-032 | NEVER STUCK: given a save with one zebra entry (member 0 complete, home) restored into the zebra pair, then the zebra mission is open again (the 🌙 pane lists it, the first hint is about the zebra), and `Game::mission` is complete only if every member is. | unit |
+| RESC-030 | Given a split pair (one zebra already home, the other still outside), when the player shows the right food to the one outside, then it eats and follows (the interaction must address the member that is outside, not the first member of the group). | unit |
+| RESC-032 | NEVER STUCK: given a save with one zebra entry (member 0 complete, home) restored into the zebra pair, then the zebra mission is open again (the compass strip lists it, the first hint is about the zebra), and `Game::mission` is complete only if every member is. | unit |
 | RESC-031 | Given a game whose intro was seen (e.g. a loaded save), when the settings are opened and ❓ is pressed, then the 3 intro pages show again (skippable, finishing does not change the save) and the first-step hint follows. | e2e |
-| RESC-028 | Given the player stands in front of the map board at the entrance, then the reading panel opens with `welcome-<reading_level>` in the current language (kiga: pictures + "Tiere weg!"); at the first start of a new game it is shown once automatically. | e2e |
+| RESC-028 | Given the player stands in front of the map board at the entrance (≤ 2 m, facing it), then the reading panel opens with `welcome-<reading_level>`, the animals of that level (names), four steps, the level note and the start hint in the current language (kiga: pictures + "Tiere weg!"); it is no info board (no mission starts, hints ignore it); later levels' boards show their own animals; every key exists in de and en for every reading level (no raw key, klasse1 ≤ 5 words, no *Käfig*/*cage*). | unit (`welcome_board.rs`), e2e (`welcome_board.spec.ts`) |
 
 ## Open questions
 

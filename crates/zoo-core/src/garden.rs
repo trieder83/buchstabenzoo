@@ -1,5 +1,6 @@
-//! Vegetable garden and treats (GAME-GARDEN): plant spots that are harvested into a basket
-//! and regrow in three visible steps, and the treats the animals like (proposal Q-100).
+//! Vegetable garden, fruit garden and treats (GAME-GARDEN): plant spots that are harvested
+//! into a basket and regrow in three visible steps, and the treats the animals like (proposal
+//! Q-100, fruit Q-321).
 //!
 //! Pure state: the layout comes from `[[garden]]`, `[[garden_bed]]`, `[[plant_spot]]`
 //! (proposal Q-102); [`crate::Game`] decides when the player may harvest / give a treat.
@@ -15,21 +16,25 @@ pub const BASKET_CAPACITY: u32 = 6;
 /// every third of it is one visible growth step (empty → sprout → young → ripe).
 pub const REGROW_S: f32 = 180.0;
 
-/// A treat from the garden.
+/// A treat from the garden: vegetables (level 1) and fruit (level 3, Q-320).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Treat {
     Carrot,
     Potato,
+    Apple,
+    Orange,
 }
 
 impl Treat {
-    pub const ALL: [Treat; 2] = [Treat::Carrot, Treat::Potato];
+    pub const ALL: [Treat; 4] = [Treat::Carrot, Treat::Potato, Treat::Apple, Treat::Orange];
 
     pub fn id(self) -> &'static str {
         match self {
             Treat::Carrot => "carrot",
             Treat::Potato => "potato",
+            Treat::Apple => "apple",
+            Treat::Orange => "orange",
         }
     }
 
@@ -37,6 +42,8 @@ impl Treat {
         match id {
             "carrot" => Some(Treat::Carrot),
             "potato" => Some(Treat::Potato),
+            "apple" => Some(Treat::Apple),
+            "orange" => Some(Treat::Orange),
             _ => None,
         }
     }
@@ -46,13 +53,30 @@ impl Treat {
         match self {
             Treat::Carrot => "garden-carrot",
             Treat::Potato => "garden-potato",
+            Treat::Apple => "garden-apple",
+            Treat::Orange => "garden-orange",
+        }
+    }
+
+    /// Fruit comes from trees (`<id>_tree_<stage>` models), vegetables from beds
+    /// (`<id>_plant_<stage>`).
+    pub fn is_fruit(self) -> bool {
+        matches!(self, Treat::Apple | Treat::Orange)
+    }
+
+    /// Treats a harvest of this plant gives (carrot 1, potato 2–3 seeded, fruit 1).
+    fn yield_n(self, rng: &mut Pcg32) -> u32 {
+        match self {
+            Treat::Carrot | Treat::Apple | Treat::Orange => 1,
+            Treat::Potato => 2 + rng.next_u32() % 2,
         }
     }
 }
 
-/// Which treats an animal likes (GAME-GARDEN §5, **proposal Q-100**: carrots — zebra,
-/// elephant, giraffe, hippo, monkey, panda; potatoes — elephant, hippo, panda; the others
-/// none).
+/// Which treats an animal likes (GAME-GARDEN §5, **proposal Q-100 / Q-321**): carrots —
+/// zebra, elephant, giraffe, hippo, monkey, panda; potatoes — elephant, hippo, panda; apples
+/// — monkey, elephant, giraffe, zebra, panda; oranges — monkey, elephant, giraffe; the others
+/// none.
 pub fn likes(animal: &str, treat: Treat) -> bool {
     match treat {
         Treat::Carrot => matches!(
@@ -60,6 +84,11 @@ pub fn likes(animal: &str, treat: Treat) -> bool {
             "zebra" | "elephant" | "giraffe" | "hippo" | "monkey" | "panda"
         ),
         Treat::Potato => matches!(animal, "elephant" | "hippo" | "panda"),
+        Treat::Apple => matches!(
+            animal,
+            "monkey" | "elephant" | "giraffe" | "zebra" | "panda"
+        ),
+        Treat::Orange => matches!(animal, "monkey" | "elephant" | "giraffe"),
     }
 }
 
@@ -127,22 +156,29 @@ impl PlantState {
     }
 }
 
-/// Treats in the basket (a slot of its own, separate from the hands: GARD-007).
+/// Treats in the basket (a slot of its own, separate from the hands: GARD-007). Saves from
+/// before the fruit garden hold only `carrots` and `potatoes` (GARD-017).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Basket {
     pub carrots: u32,
     pub potatoes: u32,
+    #[serde(default)]
+    pub apples: u32,
+    #[serde(default)]
+    pub oranges: u32,
 }
 
 impl Basket {
     pub fn total(&self) -> u32 {
-        self.carrots + self.potatoes
+        self.carrots + self.potatoes + self.apples + self.oranges
     }
 
     pub fn count(&self, t: Treat) -> u32 {
         match t {
             Treat::Carrot => self.carrots,
             Treat::Potato => self.potatoes,
+            Treat::Apple => self.apples,
+            Treat::Orange => self.oranges,
         }
     }
 
@@ -150,7 +186,17 @@ impl Basket {
         match t {
             Treat::Carrot => &mut self.carrots,
             Treat::Potato => &mut self.potatoes,
+            Treat::Apple => &mut self.apples,
+            Treat::Orange => &mut self.oranges,
         }
+    }
+
+    /// Puts up to `n` treats in, as many as fit under [`BASKET_CAPACITY`]; returns how many
+    /// went in.
+    pub fn add(&mut self, t: Treat, n: u32) -> u32 {
+        let n = n.min(BASKET_CAPACITY.saturating_sub(self.total()));
+        *self.slot(t) += n;
+        n
     }
 
     /// Removes one treat; false if there is none.
@@ -215,7 +261,8 @@ impl Garden {
         }
     }
 
-    /// Harvests a ripe plant into the basket: 1 carrot, or 2–3 potatoes (seeded, GARD-002);
+    /// Harvests a ripe plant into the basket: 1 carrot / apple / orange, or 2–3 potatoes
+    /// (seeded, GARD-002, GARD-016);
     /// what does not fit stays in the soil (the basket is filled up to its capacity). The
     /// spot becomes empty soil and regrows. Returns the treat and how many went in.
     pub fn harvest(&mut self, id: &str, rng: &mut Pcg32) -> Result<(Treat, u32), HarvestError> {
@@ -231,13 +278,9 @@ impl Garden {
         if space == 0 {
             return Err(HarvestError::BasketFull);
         }
-        let n = match p.treat {
-            Treat::Carrot => 1,
-            Treat::Potato => 2 + rng.next_u32() % 2,
-        }
-        .min(space);
-        p.grown_s = 0.0;
         let treat = p.treat;
+        let n = treat.yield_n(rng).min(space);
+        p.grown_s = 0.0;
         *self.basket.slot(treat) += n;
         Ok((treat, n))
     }
@@ -252,9 +295,10 @@ impl Garden {
                 }
             }
         }
-        let b = saved.basket;
-        self.basket.carrots = b.carrots.min(BASKET_CAPACITY);
-        self.basket.potatoes = b.potatoes.min(BASKET_CAPACITY - self.basket.carrots);
+        self.basket = Basket::default();
+        for t in Treat::ALL {
+            self.basket.add(t, saved.basket.count(t));
+        }
     }
 }
 
@@ -365,6 +409,106 @@ mod tests {
         fresh.restore(&back);
         assert_eq!(fresh, g);
         assert_eq!(fresh.plant("carrot_w1").unwrap().stage(), Stage::Sprout);
+    }
+
+    fn level3() -> LevelData {
+        let s = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../assets/levels/level-3.toml"
+        ))
+        .unwrap();
+        LevelData::from_toml_str(&s).unwrap()
+    }
+
+    // GARD-015
+    #[test]
+    fn gard_015_four_treats_ids_and_likes_table() {
+        assert_eq!(Treat::ALL.len(), 4);
+        for t in Treat::ALL {
+            assert_eq!(Treat::from_id(t.id()), Some(t));
+            assert_eq!(t.label_key(), format!("garden-{}", t.id()));
+        }
+        assert!(Treat::Apple.is_fruit() && Treat::Orange.is_fruit());
+        assert!(!Treat::Carrot.is_fruit() && !Treat::Potato.is_fruit());
+        // the monkey: apples and oranges (and carrots), not potatoes
+        assert!(likes("monkey", Treat::Apple));
+        assert!(likes("monkey", Treat::Orange));
+        assert!(likes("monkey", Treat::Carrot));
+        assert!(!likes("monkey", Treat::Potato));
+        // the full table of GAME-GARDEN 5
+        let table: [(&str, [bool; 4]); 11] = [
+            ("zebra", [true, false, true, false]),
+            ("elephant", [true, true, true, true]),
+            ("giraffe", [true, false, true, true]),
+            ("hippo", [true, true, false, false]),
+            ("monkey", [true, false, true, true]),
+            ("panda", [true, true, true, false]),
+            ("koala", [false; 4]),
+            ("lion", [false; 4]),
+            ("snow_fox", [false; 4]),
+            ("goldfish", [false; 4]),
+            ("owl", [false; 4]),
+        ];
+        for (animal, want) in table {
+            for (t, w) in Treat::ALL.into_iter().zip(want) {
+                assert_eq!(likes(animal, t), w, "{animal} {t:?}");
+            }
+        }
+    }
+
+    // GARD-016
+    #[test]
+    fn gard_016_fruit_yields_one_and_shares_the_capacity() {
+        let mut g = Garden::new(&level3());
+        let mut rng = Pcg32::new(1);
+        for (spot, treat) in [("apple_1", Treat::Apple), ("orange_1", Treat::Orange)] {
+            assert_eq!(g.plant(spot).unwrap().stage(), Stage::Ripe, "{spot}");
+            assert_eq!(g.harvest(spot, &mut rng), Ok((treat, 1)));
+            assert_eq!(g.plant(spot).unwrap().stage(), Stage::Empty);
+            assert_eq!(g.basket.count(treat), 1);
+        }
+        // capacity 6 in total over all kinds: 2 fruit + 3 carrots = 5, one more fits, then full
+        g.basket.carrots = 3;
+        assert_eq!(g.harvest("apple_2", &mut rng), Ok((Treat::Apple, 1)));
+        assert_eq!(g.basket.total(), BASKET_CAPACITY);
+        assert_eq!(
+            g.harvest("orange_2", &mut rng),
+            Err(HarvestError::BasketFull)
+        );
+        assert_eq!(g.plant("orange_2").unwrap().stage(), Stage::Ripe);
+        // regrows in 3 minutes like the vegetables
+        g.update(REGROW_S);
+        assert_eq!(g.plant("apple_1").unwrap().stage(), Stage::Ripe);
+    }
+
+    // GARD-017
+    #[test]
+    fn gard_017_basket_saves_per_kind_and_old_saves_load() {
+        let mut g = Garden::new(&level3());
+        g.basket = Basket {
+            carrots: 1,
+            potatoes: 1,
+            apples: 2,
+            oranges: 1,
+        };
+        let json = serde_json::to_string(&g).unwrap();
+        let back: Garden = serde_json::from_str(&json).unwrap();
+        let mut fresh = Garden::new(&level3());
+        fresh.restore(&back);
+        assert_eq!(fresh.basket, g.basket);
+        // an old save: only carrots and potatoes in the basket
+        let old = r#"{"plants":[],"basket":{"carrots":2,"potatoes":3}}"#;
+        let back: Garden = serde_json::from_str(old).unwrap();
+        assert_eq!((back.basket.apples, back.basket.oranges), (0, 0));
+        let mut fresh = Garden::new(&level3());
+        fresh.restore(&back);
+        assert_eq!((fresh.basket.carrots, fresh.basket.potatoes), (2, 3));
+        // too many treats are clamped to the capacity
+        let big = r#"{"plants":[],"basket":{"carrots":4,"potatoes":4,"apples":4,"oranges":4}}"#;
+        let back: Garden = serde_json::from_str(big).unwrap();
+        let mut fresh = Garden::new(&level3());
+        fresh.restore(&back);
+        assert_eq!(fresh.basket.total(), BASKET_CAPACITY);
     }
 
     #[test]

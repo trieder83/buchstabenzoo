@@ -9,8 +9,8 @@ use zoo_core::animals::AnimalState;
 use zoo_core::daytime::{Phase, CELEBRATION_S, DUSK_S};
 use zoo_core::game::{STALL_HELP_S, STALL_WALK_S};
 use zoo_core::hints::{
-    self, candidates, night_progress, HintKind, HintTracker, ProgressState, AREA_HINT_AFTER_S,
-    AREA_MIN_DIAMETER_M, HINT_SHOW_S, IDLE_NUDGE_S, WIDE_AREA_MIN_DIAMETER_M,
+    self, candidates, compass_badge, night_progress, HintKind, HintTracker, ProgressState,
+    AREA_HINT_AFTER_S, AREA_MIN_DIAMETER_M, HINT_SHOW_S, IDLE_NUDGE_S, WIDE_AREA_MIN_DIAMETER_M,
 };
 use zoo_core::level::{cell_center, cell_of};
 use zoo_core::rng::Pcg32;
@@ -659,7 +659,7 @@ fn hint_007_screen_place_edge_arrow() {
     }
 }
 
-// NIGHT-019: the night progress indicator.
+// NIGHT-019: the compass strip data.
 #[test]
 fn night_019_progress_until_nightfall() {
     let mut s = Sim::new(night_game(6));
@@ -713,7 +713,7 @@ fn night_019_progress_until_nightfall() {
     assert!(p.animals.iter().all(|(_, h)| !*h));
 }
 
-// NIGHT-019: slept before the night zoo was done (Q-140) → the 🌙 says "sleep".
+// NIGHT-019: slept before the night zoo was done (Q-140) → the compass says "sleep".
 #[test]
 fn night_019_progress_sleep_by_day_while_the_night_zoo_waits() {
     let mut s = Sim::new(night_game(6));
@@ -803,7 +803,12 @@ fn messy_state(seed: u64) -> Sim {
     let mut s = random_state(seed);
     let mut r = Pcg32::new(seed ^ 0x5eed);
     let g = &mut s.g;
-    for id in ["zebra"] {
+    // every pair species of the zoo (Q-308: all day animals come as pairs), also split pairs
+    let mut species: Vec<&'static str> = g.animals.iter().map(|a| a.id()).collect();
+    species.dedup();
+    species.sort_unstable();
+    species.dedup();
+    for id in species {
         let group = g.group(id);
         if group.len() < 2 || g.mission(id).is_some_and(|m| m.complete) {
             continue;
@@ -833,6 +838,18 @@ fn messy_state(seed: u64) -> Sim {
             }
             _ => {}
         }
+    }
+    if r.next_u32().is_multiple_of(2) {
+        // babies in every pair (FAM-011: wherever the female is, the baby is with her; it is
+        // never a dead end)
+        let mut save = g.to_save();
+        let mut ids: Vec<String> = g.animals.iter().map(|a| a.id().to_string()).collect();
+        ids.sort();
+        ids.dedup();
+        save.babies = ids;
+        let p = g.player.pos;
+        *g = Game::from_save(zoo_data(), &save).unwrap();
+        g.player.pos = p;
     }
     g.drain_events();
     s
@@ -933,4 +950,28 @@ fn hint_021_never_stuck_follow_hints_from_messy_states_with_save_restore() {
             }
         }
     }
+}
+
+// NIGHT-028: the compass badge = the kind of the best candidate, without showing a hint.
+#[test]
+fn night_028_compass_badge_is_the_next_task() {
+    let mut s = Sim::new(night_game(6));
+    let first = candidates(&s.g, &s.t).first().map(|h| h.kind.id());
+    let b = compass_badge(&s.g, &s.t).expect("a badge in a new game");
+    assert_eq!(Some(b.0), first);
+    assert_eq!(b.0, "board");
+    assert!(s.t.shown().is_none(), "computing the badge shows no hint");
+    for a in DAY_1 {
+        s.g.debug_send_home(a);
+    }
+    assert_eq!(compass_badge(&s.g, &s.t).map(|b| b.0), Some("night_coming"));
+    s.idle(CELEBRATION_S + 1.0);
+    assert_eq!(s.g.daytime.phase, Phase::Dusk);
+    assert_eq!(compass_badge(&s.g, &s.t).map(|b| b.0), Some("bed"));
+    s.idle(DUSK_S);
+    assert_eq!(s.g.daytime.phase, Phase::Night);
+    let k = compass_badge(&s.g, &s.t).map(|b| b.0).unwrap();
+    assert!(k == "moon_door" || k == "bed", "night badge {k}");
+    assert!(s.g.daytime.sleep());
+    assert_eq!(compass_badge(&s.g, &s.t), None, "sleeping: no badge");
 }

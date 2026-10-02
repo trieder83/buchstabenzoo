@@ -6,7 +6,7 @@ module: glossary
 status: draft
 depends_on: []
 test_prefix: GLOS
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Glossary
@@ -21,6 +21,7 @@ language for player-facing text.
 | `enclosure` | Gehege | enclosure | Fenced area where an animal species belongs. Never "cage"/"Käfig" in code or text. |
 | `enclosure_sign` | Gehegeschild | enclosure sign | Sign above an enclosure with the animal's name (+ silhouette on low levels). |
 | `food_box` | Futterkiste | food box | Box whose label must be read to find the right food. |
+| `pictogram` | Piktogramm | pictogram | Simple flat vector drawing of a food on a food box label and panel (GAME-FEED §1); supports the word, never replaces it. |
 | `food` | Futter | food | Item an animal eats (e.g. bamboo, hay). |
 | `enclosure_item` | Gehegeausstattung | enclosure item | Non-food items an enclosure needs (pool, stone, logs, bridge). |
 | `visitor` | Besucher | visitor | NPC the player can talk to; gives hints. |
@@ -60,6 +61,7 @@ language for player-facing text.
 | `fog` | Nebel | fog | How unexplored cells are drawn on the map. Not the camera's distance fog/haze of the close views (`fog_end`, GAME-CAMERA-VIEWS). |
 | `water_field` | Wasserfeld | water field | Texture baked at level load by the zoo-core level assembly (`zoo_core::water`, one for the joined zoo), uploaded by the renderer: position along the river flow, offset across it, distance to the shore and river/pond flag; drives the water animation (TECH-WATER). Not player-facing. |
 | `nightfall` | Einbruch der Nacht | nightfall | Transition from day to night (dusk) after all animals of a day level are home — once per completed day level (GAME-NIGHT). |
+| `compass_strip` | Kompass-Leiste | compass strip | Small round animal icons of the species still missing in the current level, attached to the 🧭 compass button together with the task badge (the kind of the next task); replaces the former moon pane (GAME-NIGHT rule 11, GAME-HINT rule 8). |
 | `night_zoo` | Nachtzoo | night zoo | New area with nocturnal animals, reached through the moon door (GAME-NIGHT). |
 | `level_gate` (model `gate_zoo`) | Zootor † | level gate | Big double gate across every `[[entry]]` between two levels: closed and solid behind the story barrier while the next level is locked, open for good after unlocking (GAME-LAYOUT "Gates between the levels", LAYOUT-036). |
 | `moon_door` | Mondtor | moon door | Gate of the day zoo that opens at nightfall and leads to the night zoo. |
@@ -68,8 +70,8 @@ language for player-facing text.
 | `daytime` (phases `day`, `dusk`, `night`, `sleeping`, `morning`) | Tageszeit † | time of day | Saved day/night state of the zoo (`zoo_core::daytime`, GAME-NIGHT "Implementation", GAME-SAVE). Not "level". |
 | `night_level` (data `[level] time = "night"`, id `night_<N>`) | Nachtlevel † | night level | A level of the night zoo, reached only through a moon door (GAME-LAYOUT "Moon door and night levels", GAME-LEVEL-NIGHT-1). |
 | `night_house` / `indoor_enclosure` (data `indoor = true`) | Nachthaus / Innengehege † | night house / indoor enclosure | Enterable building of a night level whose dim indoor enclosures open into its visitor hall (GAME-LEVEL-NIGHT-1, Q-134 answered). |
-| `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (proposal Q-093). |
-| `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (proposal Q-093). |
+| `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (Q-093, confirmed 2026-10-01). |
+| `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (Q-093, confirmed 2026-10-01). |
 | `level_entry` (data `[[entry]]`) | Levelzugang † | level entry | Cells of a level directly behind a barrier of an earlier level; the only walkable border cells of a level (GAME-LAYOUT "Joining levels", proposal Q-088). |
 | `lying_item` | abgelegter Gegenstand † | item lying on the ground | An item the child put down (a food or the fish bowl — never the basket or the honey pot, which have their own slot, Q-172); stays where it was put, saved, at most 8 in the zoo (GAME-FEED §8–11). |
 | `bamboo_forest` (data `decoration` kind `bamboo`, `harvestable = true`) | Bambuswald | bamboo forest | Dense bamboo thicket; when harvestable, bamboo is cut there at its cut spots as a second source of the food `bamboo` (GAME-FEED §14–17). Also the panda's `kiga` place word (CONT-MISSIONS). |
@@ -89,5 +91,15 @@ language for player-facing text.
 | `flow` (data key) | Fließrichtung † | flow | Direction a `river` / `stream` element flows in level coordinates (`N`/`E`/`S`/`W`); bridges inherit it; the river pieces chain along it (GAME-LAYOUT "Flowing water"). Not player-facing. |
 | `scenery` (data `[[scenery]]`) | Kulisse † | scenery | Non-solid ground dressing a riddle relies on (tall grass, sand, mud, tree shade, leaf pile); `props` may list ambient animals such as `butterfly` (GAME-LAYOUT). |
 | `ambient_animal` (`duck`, `duckling`, `frog`, `butterfly`) | Umgebungstier † | ambient animal | Small decorative animal with behaviour but no mission, food or collision; never saved (GAME-AMBIENT). Not an `animal` in the sense above. |
+| `pair` (data `pair = true` on an enclosure) | Paar † | pair | Male + female of one species that hide together, follow as one group and enter their enclosure together (GAME-FAMILY; decision 2026-10-01: every species is a pair). |
+| `baby` (`game.babies`) | Baby (Fohlen, Joey, …) † | baby | Young animal that appears when a pair at home is given a liked treat; always stays with the female, never a mission requirement (GAME-FAMILY). |
+| `treat` | Leckerli | treat | Special food from the vegetable garden (carrot, potato) or the level-3 fruit garden (apple, orange) given to an animal at home; makes it happy and, for a pair, makes a baby (GAME-GARDEN, GAME-FAMILY). Not a `food` of the rescue mission. |
+| `fruit_garden` (`garden_fruit`) | Obstgarten | fruit garden | Fenced garden of level 3 with two apple and two orange trees; fruit is a treat (GAME-GARDEN "Fruit garden", Q-320). |
+| `basket` | Korb † | basket | Carry slot for harvested treats, separate from the food hands (GAME-GARDEN, Q-172). |
+| `feeding_spot` (data `feed_spot`) | Futterplatz † | feeding spot | Cells just inside an enclosure's fence on the gate side where the pair and the baby gather when the child stands outside with a liked treat (GAME-GARDEN rule 6a). |
+| `welcome_board` (data `kind = "map_board"`) | Willkommenstafel † | welcome board | The big board at the entrance of a level: game description, goal of the level, how to play (GAME-RESCUE "Welcome board"). Not an `info_board`. |
+| `intro` | Einführung † | intro | The 3 pages shown at the entrance gate at the first start of a new game; replayable from the settings (GAME-RESCUE "Intro"). |
+| `never_stuck` | Nie festgefahren † | never stuck | Rule set that guarantees the child always has a next step: hint priority, `help` hint after 120 s, animals come to the player after 180 s (GAME-HINT, GAME-LAYOUT "Level design rules" 15). Not player-facing. |
+| `ad_board` / `campaign` / `parental_gate` | Werbetafel / Kampagne / Elterngate † | ad board / campaign / parental gate | In-world billboard; the signed external content of one own cross-promotion shown on several boards; the plus/minus (or language) task + 3 s hold before a link opens (GAME-ADS). |
 
 † German term is a proposal until confirmed (Q-045).

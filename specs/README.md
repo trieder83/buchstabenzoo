@@ -58,3 +58,21 @@ updated: 2026-09-26
 - Use the terms from `glossary.md` exactly. New concept → add it to the glossary first.
 - Anything undecided goes to `open-questions.md` as `Q-###` — never silently assumed.
 - A spec may only move to `approved` when it has no open blocking questions.
+
+## Reading guide for `10-gameplay/` (by topic)
+
+`INDEX.md` lists the specs by id; this is the same folder grouped by topic. A spec belongs to one
+topic only; cross-topic rules are referenced by id, never copied.
+
+| Topic | Specs (ids) | Read first |
+|---|---|---|
+| **Core loop** | GAME-RESCUE (loop, goldfish bowl, welcome board, intro), GAME-FEED (food boxes, carrying, bamboo), GAME-QUESTS (optional quests), GAME-HINT (🧭 hint, never stuck), GAME-SAVE | GAME-RESCUE |
+| **World and levels** | GAME-WORLD, GAME-LAYOUT (rules, elements, gates, level design rules), GAME-LEVEL-1/2/3, GAME-LEVEL-NIGHT-1 (`levels/`), GAME-MAP | GAME-LAYOUT |
+| **Animals and family** | GAME-ANIMALS (states, wandering, info board), GAME-FAMILY (pairs, babies), GAME-GARDEN (treats, feeding spot), GAME-AMBIENT | GAME-ANIMALS |
+| **Player, input, camera** | GAME-PLAYER (controls, collision, ground height), GAME-CAMERA-VIEWS (look-around, first person), GAME-CART | GAME-PLAYER |
+| **Night and events** | GAME-NIGHT (nightfall, night zoo, compass strip, bed), GAME-EVENTS (burglars, storm, bees) | GAME-NIGHT |
+| **Economy and ads** | GAME-ECON (visitors, coins; idea), GAME-ADS + GAME-ADS-C1/C2/C3 (`ads/`) | GAME-ADS |
+
+Status words: `draft` = specified, `implemented` = built and all its tests green. Spec text marked
+*proposal* means a decision is still outstanding (Q-###); the answered ones are written as decisions.
+Long specs (layout, levels, missions, environment) start with a **Contents:** line of their sections.

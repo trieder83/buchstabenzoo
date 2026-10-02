@@ -8,7 +8,7 @@ use glam::{IVec2, Vec2};
 
 use crate::animals::{animal_info, AnimalInfo, AnimalState};
 use crate::content::{
-    animal_more_key, animal_name_key, facts_key, riddle_key, Language, ReadingLevel,
+    animal_more_key, animal_name_key, facts_key, pair_note_key, riddle_key, Language, ReadingLevel,
 };
 use crate::daytime::Daytime;
 use crate::food::{Carry, Food, FoodBox, FoodLabel, FoodStorage};
@@ -18,7 +18,7 @@ use crate::level::{
 use crate::nav;
 use crate::player::{in_interaction_range, MoveParams, Player};
 use crate::rng::Pcg32;
-use crate::scene::info_board_pose;
+use crate::scene::{info_board_pose, map_board_pose};
 use crate::wander::{self, Wander, WanderArea};
 
 /// Chosen hiding places of one animal set are at least this far apart (RESC-014, Q-082).
@@ -273,6 +273,11 @@ pub enum Target {
     GardenSign {
         bed: String,
     },
+    /// The big map board at a level entry: the game description of that level (RESC-028).
+    /// `level` is the id of the level part the board belongs to (`level_1`, …).
+    WelcomeBoard {
+        level: String,
+    },
     /// An animal at home, from its fence, with a treat in the basket (GAME-GARDEN §6).
     Treat {
         animal: &'static str,
@@ -293,7 +298,10 @@ impl Target {
     pub fn is_reading(&self) -> bool {
         matches!(
             self,
-            Target::InfoBoard { .. } | Target::FoodBox { .. } | Target::GardenSign { .. }
+            Target::InfoBoard { .. }
+                | Target::FoodBox { .. }
+                | Target::GardenSign { .. }
+                | Target::WelcomeBoard { .. }
         )
     }
 
@@ -313,6 +321,7 @@ impl Target {
             Target::MoonDoor { .. } => "moon_door",
             Target::Plant { .. } => "plant",
             Target::GardenSign { .. } => "garden_sign",
+            Target::WelcomeBoard { .. } => "welcome_board",
             Target::Treat { .. } => "treat",
         }
     }
@@ -327,7 +336,7 @@ pub struct Interactable {
 }
 
 /// Result of [`Game::interact`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Interaction {
     /// Open the text panel with the riddle (starts the mission, RESC-012).
     InfoBoard(InfoBoard),
@@ -355,6 +364,11 @@ pub enum Interaction {
     },
     /// A garden sign: the word (Fluent key) and the reading-level sentence key.
     GardenSign { bed: String, key: String },
+    /// The welcome board of a level (RESC-028): the level part id and its animal species.
+    WelcomeBoard {
+        level: String,
+        animals: Vec<&'static str>,
+    },
     /// Gave the carried food to an animal at home (it stays in the hands).
     FoodGift {
         animal: &'static str,
@@ -384,6 +398,8 @@ pub struct Baby {
     pub facing: Vec2,
     /// Remaining cells to walk through; empty = resting.
     pub route: Vec<IVec2>,
+    /// Playful following state (mode, hop, clip clock), see [`crate::baby`].
+    pub play: crate::baby::BabyPlay,
 }
 
 /// One animal group (herd size Q-030: modelled as one unit).
@@ -538,6 +554,9 @@ pub struct InfoBoard {
     pub picture: Option<String>,
     /// The food word — the same key as the matching food box label (ANIM-003).
     pub food_key: String,
+    /// A pair species (male + female, GAME-FAMILY): the generic pair note
+    /// (`mission-pair-note-<level>`, Q-308) shown after the facts.
+    pub pair_note_key: Option<String>,
 }
 
 #[derive(Debug)]
@@ -587,6 +606,8 @@ pub struct Game {
     /// Seed of this playthrough and the RNG after the setup (GAME-SAVE).
     pub(crate) seed: u64,
     pub(crate) rng: Pcg32,
+    /// Own RNG of the babies' playful behaviour (not saved; keeps the main stream untouched).
+    pub(crate) baby_rng: Pcg32,
     /// Play time in seconds (sum of `update` steps).
     pub time_s: f64,
     /// Autosave bookkeeping (GAME-SAVE §3).
@@ -795,17 +816,28 @@ impl Game {
             a.facing = rest_facing(&level, a);
             // the second animal of a pair waits one wander cell away (GAME-FAMILY §1)
             if a.member > 0 {
-                if let Some(c) = a
+                // (the cell nearest to the first one that is at least the species' pair gap away,
+                // else the farthest cell; Q-308)
+                let gap = crate::animals::pair_gap_m(a.id());
+                let d = |c: &IVec2| cell_center(*c).distance(a.pos);
+                let cells: Vec<IVec2> = a
                     .area
                     .cells()
                     .map(|(c, _)| c)
                     .filter(|&c| c != cell_of(a.pos))
-                    .min_by(|x, y| {
-                        cell_center(*x)
-                            .distance(a.pos)
-                            .total_cmp(&cell_center(*y).distance(a.pos))
-                    })
-                {
+                    .collect();
+                let far = cells
+                    .iter()
+                    .copied()
+                    .filter(|c| d(c) >= gap - 1e-3 && d(c) <= 3.0)
+                    .min_by(|x, y| d(x).total_cmp(&d(y)));
+                if let Some(c) = far.or_else(|| {
+                    cells
+                        .iter()
+                        .copied()
+                        .filter(|c| d(c) <= 3.0)
+                        .max_by(|x, y| d(x).total_cmp(&d(y)))
+                }) {
                     a.pos = cell_center(c);
                 }
             }
@@ -840,6 +872,7 @@ impl Game {
             panel: ReadingPanel::default(),
             seed,
             rng,
+            baby_rng: Pcg32::new(seed ^ 0xBABE_BABE_5EED),
             time_s: 0.0,
             autosave: Autosave::default(),
             bowl,
@@ -876,6 +909,17 @@ impl Game {
         self.part_unlocked(a.part)
     }
 
+    /// The animal species of one level part in level order (pairs count once, RESC-028).
+    pub fn part_animal_ids(&self, k: usize) -> Vec<&'static str> {
+        let mut out: Vec<&'static str> = Vec::new();
+        for a in self.animals.iter().filter(|a| a.part == k) {
+            if !out.contains(&a.id()) {
+                out.push(a.id());
+            }
+        }
+        out
+    }
+
     /// Indices of the animals of one species (both animals of a pair, GAME-FAMILY).
     pub fn group(&self, animal: &str) -> Vec<usize> {
         (0..self.animals.len())
@@ -901,7 +945,10 @@ impl Game {
         }
         let place = self.level.data.hiding_place(&a.hiding_place)?;
         let h = place.perch_height_m?;
-        Some((crate::scene::perch_point(place, &self.level.data), h))
+        Some((
+            crate::scene::perch_point_of(place, &self.level.data, a.member),
+            h,
+        ))
     }
 
     /// Takes the events since the last call. Progress events among them make an autosave due
@@ -977,6 +1024,7 @@ impl Game {
             riddle_key: riddle_key(a.id(), &a.hiding_place, level),
             picture: (level == ReadingLevel::Kiga).then(|| a.hiding_place.clone()),
             food_key: a.info.foods[0].label_key(),
+            pair_note_key: (self.group(a.id()).len() >= 2).then(|| pair_note_key(level)),
         })
     }
 
@@ -1288,6 +1336,23 @@ impl Game {
                 readable: Some(dir.offset().as_vec2()),
             });
         }
+        // the big map boards at the level entries explain the game (RESC-028)
+        for e in &data.elements {
+            if e.kind.as_deref() != Some("map_board") || !self.part_unlocked(e.part) {
+                continue;
+            }
+            let Some(part) = data.parts.get(e.part) else {
+                continue;
+            };
+            let (point, dir) = map_board_pose(e, part.spawn.cell());
+            out.push(Interactable {
+                target: Target::WelcomeBoard {
+                    level: part.id.clone(),
+                },
+                point,
+                readable: Some(dir.offset().as_vec2()),
+            });
+        }
         for &(food, point, facing) in &self.food_boxes {
             out.push(Interactable {
                 target: Target::FoodBox { food },
@@ -1416,7 +1481,20 @@ impl Game {
                     .into_iter()
                     .filter(|&j| self.animals[j].state == AnimalState::InEnclosure)
                     .map(|j| self.animals[j].pos)
-                    .min_by(|x, y| x.distance(p).total_cmp(&y.distance(p)))
+                    .chain(self.baby_states.get(a.id()).map(|b| b.pos))
+                    .min_by(|x, y| {
+                        // the baby counts like the adults (FAM-013): the nearest member in
+                        // reach and in front of the child wins, else the nearest one
+                        let key = |q: &Vec2| {
+                            let d = q.distance(p);
+                            let ok = d <= crate::player::INTERACTION_RANGE_M
+                                && (d < 1e-3
+                                    || angle_deg(self.player.facing, *q - p) <= FACING_DEG);
+                            (!ok, d)
+                        };
+                        let (kx, ky) = (key(x), key(y));
+                        kx.0.cmp(&ky.0).then(kx.1.total_cmp(&ky.1))
+                    })
                     .unwrap_or(a.pos);
                 out.push(Interactable {
                     target: Target::Treat { animal: a.id() },
@@ -1568,6 +1646,13 @@ impl Game {
                 Some(Interaction::GardenSign {
                     bed: b.id.clone(),
                     key: b.sign_key.clone(),
+                })
+            }
+            Target::WelcomeBoard { level } => {
+                let k = self.level.data.part_index(&level)?;
+                Some(Interaction::WelcomeBoard {
+                    animals: self.part_animal_ids(k),
+                    level,
                 })
             }
             Target::Treat { animal } => match self.gift_for(animal)? {
@@ -1817,12 +1902,44 @@ impl Game {
             })
     }
 
-    /// Places the newborn baby next to its mother (birth and save restore).
+    /// The cell the baby stands in beside its mother in any state: at home inside her area
+    /// (see [`Game::baby_home_cell`]), else the nearest walkable cell around her (hiding
+    /// place, on the way), never a parent's cell.
+    fn baby_cell_beside(&self, female: usize) -> Option<IVec2> {
+        let f = &self.animals[female];
+        if f.state == AnimalState::InEnclosure && !f.area.is_empty() {
+            return self.baby_home_cell(female);
+        }
+        let here = cell_of(f.pos);
+        let taken: Vec<IVec2> = self
+            .group(f.id())
+            .into_iter()
+            .map(|j| cell_of(self.animals[j].pos))
+            .collect();
+        let grid = self.level.grid();
+        let mut best: Option<(i32, IVec2)> = None;
+        for dx in -4i32..=4 {
+            for dy in -4i32..=4 {
+                let c = here + IVec2::new(dx, dy);
+                if taken.contains(&c) || !grid.is_walkable(c, false) || grid.is_prop_blocked(c) {
+                    continue;
+                }
+                let d = (cell_center(c).distance(f.pos) * 100.0) as i32;
+                if best.is_none_or(|(bd, _)| d < bd) {
+                    best = Some((d, c));
+                }
+            }
+        }
+        Some(best.map_or(here, |(_, c)| c))
+    }
+
+    /// Places the baby next to its mother (birth, save restore, safety net): the baby always
+    /// is with the female (FAM-011).
     pub(crate) fn spawn_baby(&mut self, species: &str) {
         let Some(f) = self.female_of(species) else {
             return;
         };
-        let Some(c) = self.baby_home_cell(f) else {
+        let Some(c) = self.baby_cell_beside(f) else {
             return;
         };
         let facing = self.animals[f].facing;
@@ -1832,11 +1949,15 @@ impl Game {
                 pos: cell_center(c),
                 facing,
                 route: Vec::new(),
+                play: crate::baby::BabyPlay::default(),
             },
         );
     }
 
-    /// The baby follows its mother and comes to the feeding spot with the pair (rank 2).
+    /// The baby is always with the female (FAM-011..013): at home it keeps next to her inside
+    /// the fence and comes to the feeding spot with the pair (rank 2); while she is out or
+    /// follows the child it walks after her (nav path, faster than she); a baby that is
+    /// outside her area while she is home, or far from her, is put beside her.
     fn update_babies(&mut self, dt: f32) {
         let species: Vec<String> = self.baby_states.keys().cloned().collect();
         let p = self.player.pos;
@@ -1846,23 +1967,28 @@ impl Game {
             let Some(f) = self.female_of(&id) else {
                 continue;
             };
-            if self.animals[f].state != AnimalState::InEnclosure
-                || (dark && !night_part[self.animals[f].part])
-            {
+            let state = self.animals[f].state;
+            if state == AnimalState::InEnclosure {
+                if dark && !night_part[self.animals[f].part] {
+                    continue;
+                }
+                let inside = self.baby_states.get(&id).is_some_and(|b| {
+                    self.animals[f].area.is_empty() || self.animals[f].area.contains(cell_of(b.pos))
+                });
+                if !inside {
+                    self.spawn_baby(&id);
+                    continue;
+                }
+            } else {
+                self.baby_walks_after(&id, f, dt);
                 continue;
             }
             let call = self.gift_call(f);
-            let target = match &call {
-                Some(c) => Some(c[2]),
-                None => {
-                    let mother = self.animals[f].pos;
-                    let far = self
-                        .baby_states
-                        .get(&id)
-                        .is_some_and(|b| b.pos.distance(mother) > 2.0);
-                    far.then(|| self.baby_home_cell(f)).flatten()
-                }
-            };
+            if call.is_none() {
+                self.baby_play(&id, f, dt, true);
+                continue;
+            }
+            let target = call.as_ref().map(|c| c[2]);
             let area = &self.animals[f].area;
             let Some(b) = self.baby_states.get_mut(&id) else {
                 continue;
@@ -1873,21 +1999,50 @@ impl Game {
                     b.route = area.route(here, t).unwrap_or_default();
                 }
             }
+            b.play.mode = crate::baby::Mode::Idle;
+            b.play.hop = 0.0;
             if b.route.is_empty() {
-                if call.is_some() {
-                    b.facing = (p - b.pos).normalize_or(b.facing);
-                }
+                b.facing = (p - b.pos).normalize_or(b.facing);
                 continue;
             }
-            let speed = if call.is_some() {
-                wander::GIFT_SPEED
-            } else {
-                wander::WANDER_SPEED
-            };
+            let speed = wander::GIFT_SPEED;
             let (_, dir) = wander::follow_route(&mut b.pos, &mut b.route, speed * dt);
             if dir != Vec2::ZERO {
                 b.facing = dir;
             }
+        }
+    }
+
+    /// The baby of a female that is not at home walks after her (nav path), a little faster
+    /// than she; if it is hopelessly far it is put beside her.
+    fn baby_walks_after(&mut self, id: &str, f: usize, dt: f32) {
+        let far = self
+            .baby_states
+            .get(id)
+            .is_some_and(|b| b.pos.distance(self.animals[f].pos) > crate::baby::TELEPORT_M);
+        if far {
+            self.spawn_baby(id);
+            return;
+        }
+        self.baby_play(id, f, dt, false);
+    }
+
+    /// One step of the playful baby behaviour ([`crate::baby`]) around female `f`; `home`:
+    /// she is in her enclosure, so the baby stays inside her wander area.
+    fn baby_play(&mut self, id: &str, f: usize, dt: f32, home: bool) {
+        let m = &self.animals[f];
+        let area = (home && !m.area.is_empty()).then_some(&m.area);
+        let ctx = crate::baby::Ctx {
+            mother: m.pos,
+            mother_facing: m.facing,
+            home: area,
+            grid: self.level.grid(),
+            path_speed: self.move_params.speed_on(Surface::Path),
+            grass_speed: self.move_params.speed_on(Surface::Grass),
+            dt,
+        };
+        if let Some(b) = self.baby_states.get_mut(id) {
+            crate::baby::step(b, &ctx, &mut self.baby_rng);
         }
     }
 
@@ -2146,6 +2301,34 @@ impl Game {
                 let r = self.level.data.elements[enc_index].rect;
                 IVec2::new(r.x + r.w / 2, r.z + r.d / 2)
             });
+        // the partner already stands there: take the nearest home cell a pair gap away (Q-308)
+        let gap = crate::animals::pair_gap_m(self.animals[i].id());
+        let mates: Vec<Vec2> = self
+            .group(self.animals[i].id())
+            .into_iter()
+            .filter(|&j| j != i && self.animals[j].state == AnimalState::InEnclosure)
+            .map(|j| self.animals[j].pos)
+            .collect();
+        let entry = if mates
+            .iter()
+            .any(|m| m.distance(cell_center(entry)) < gap - 1e-3)
+        {
+            area.cells()
+                .map(|(c, _)| c)
+                .filter(|&c| {
+                    mates
+                        .iter()
+                        .all(|m| m.distance(cell_center(c)) >= gap - 1e-3)
+                })
+                .min_by(|x, y| {
+                    cell_center(*x)
+                        .distance(cell_center(entry))
+                        .total_cmp(&cell_center(*y).distance(cell_center(entry)))
+                })
+                .unwrap_or(entry)
+        } else {
+            entry
+        };
         let pause = wander::draw_pause(&mut self.rng);
         let a = &mut self.animals[i];
         a.state = AnimalState::InEnclosure;
@@ -2337,10 +2520,16 @@ impl Game {
                 let b = cells[rank];
                 let here = cell_of(a.pos);
                 let near = a.pos.distance(p);
-                if near > wander::GIFT_WAIT_M && b != here && cell_center(b).distance(a.pos) > 0.05
+                // (a spot cell with a pair gap beyond the child's 1.4 m is still walked to)
+                if (near > wander::GIFT_WAIT_M || cell_center(b).distance(p) >= wander::GIFT_WAIT_M)
+                    && cell_center(b).distance(a.pos) > 0.05
                 {
                     if a.wander.route.last() != Some(&b) {
-                        a.wander.route = a.area.route(here, b).unwrap_or_default();
+                        a.wander.route = if b == here {
+                            vec![b] // to the middle of its spot cell
+                        } else {
+                            a.area.route(here, b).unwrap_or_default()
+                        };
                     }
                     a.wander.pause_s = 1.0;
                     let (_, dir) = wander::follow_route(
@@ -2391,19 +2580,99 @@ impl Game {
                     continue;
                 }
                 let here = cell_of(a.pos);
-                let target = wander::draw_target(&a.area, here, water_bias, true, &mut self.rng);
+                // a pair keeps its distance: only cells a pair gap from the partner (Q-308)
+                let mates = self.mate_points(i);
+                let pair_gap = crate::animals::pair_gap_m(self.animals[i].id());
+                let target = wander::draw_target_where(
+                    &self.animals[i].area,
+                    here,
+                    water_bias,
+                    true,
+                    &|c| {
+                        !mates
+                            .iter()
+                            .any(|m| m.distance(cell_center(c)) < pair_gap - 1e-3)
+                    },
+                    &mut self.rng,
+                );
+                let a = &mut self.animals[i];
                 a.wander.pause_s = wander::draw_pause(&mut self.rng);
                 if let Some(t) = target {
                     a.wander.route = a.area.route(here, t).unwrap_or_default();
                 }
                 continue;
             }
+            let before = a.pos;
             let (_, dir) =
                 wander::follow_route(&mut a.pos, &mut a.wander.route, wander::WANDER_SPEED * dt);
             if dir != Vec2::ZERO {
                 a.facing = dir;
             }
+            // never walk into the partner: stop where the gap would be undercut (Q-308)
+            let now = self.animals[i].pos;
+            // (an animal that comes to the player may close up to 60 % of the gap)
+            let relax = if escaped && p.distance(now) <= wander::NOTICE_PLAYER_M {
+                0.6
+            } else {
+                1.0
+            };
+            // (coming to the player, only the partner's real position counts, not its goal)
+            let by_pos = |q: Vec2| {
+                self.animals
+                    .iter()
+                    .enumerate()
+                    .filter(|&(j, m)| {
+                        j != i
+                            && m.id() == self.animals[i].id()
+                            && m.state == self.animals[i].state
+                            && matches!(m.state, AnimalState::Escaped | AnimalState::InEnclosure)
+                    })
+                    .map(|(_, m)| m.pos.distance(q))
+                    .fold(f32::INFINITY, f32::min)
+            };
+            let (gap_now, gap_before) = if relax < 1.0 {
+                (by_pos(now), by_pos(before))
+            } else {
+                (self.mate_gap(i, now), self.mate_gap(i, before))
+            };
+            if now != before
+                && gap_now < crate::animals::pair_gap_m(self.animals[i].id()) * relax - 1e-3
+                && gap_now < gap_before
+            {
+                let a = &mut self.animals[i];
+                a.pos = before;
+                a.wander.route.clear();
+                a.wander.pause_s = 1.0;
+            }
         }
+    }
+
+    /// Where the partner(s) of animal `i` are or are heading (same pair, same state; empty for
+    /// a single animal or a partner that follows / is carried).
+    fn mate_points(&self, i: usize) -> Vec<Vec2> {
+        let a = &self.animals[i];
+        let mut out = Vec::new();
+        for (j, m) in self.animals.iter().enumerate() {
+            if j != i
+                && m.id() == a.id()
+                && m.state == a.state
+                && matches!(m.state, AnimalState::Escaped | AnimalState::InEnclosure)
+            {
+                out.push(m.pos);
+                if let Some(&c) = m.wander.route.last() {
+                    out.push(cell_center(c)); // a partner on its way counts with its destination
+                }
+            }
+        }
+        out
+    }
+
+    /// Distance to the nearest partner point (infinite for a single animal).
+    fn mate_gap(&self, i: usize, p: Vec2) -> f32 {
+        self.mate_points(i)
+            .iter()
+            .map(|m| m.distance(p))
+            .fold(f32::INFINITY, f32::min)
     }
 
     /// Clip an animal rests with at its place (GAME-RESCUE §11): the hiding place `pose`

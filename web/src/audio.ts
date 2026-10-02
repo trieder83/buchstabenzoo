@@ -5,6 +5,8 @@
 //  - Files are fetched lazily per group (`steps`, `ui`, `doors`, `pickups`, `animals/<species>`)
 //    the first time a cue of the group is needed, or prefetched when idle after the gesture.
 //  - `.ogg` is preferred, `.m4a` is the fallback (Q-212).
+//  - Night ambience (ART-SOUND "Ambient loops", ASND-020..027): a looping cricket bed on its own
+//    gain node; zoo-core gives the target (`App.ambient_target()`), the gain follows it linearly in 3 s.
 //  - Every failure is silent: the game works without audio (ASND-019).
 
 /** Fired on `window` by the settings menu: `detail.on` = sound switched on / off (ASND-009). */
@@ -15,6 +17,13 @@ export const PREFETCH_GROUPS = ['steps', 'ui', 'doors', 'pickups'] as const;
 
 /** A cue played this long after it was decided is stale (the file was still loading). */
 export const STALE_MS = 1500;
+
+/** Safety clamp of the ambient gain; equals `zoo_core::sound::AMBIENT_GAIN` (ASND-022). */
+export const AMBIENT_GAIN_MAX = 0.12;
+/** Fade in / out time of the ambient bed in seconds (full swing, ASND-023). */
+export const AMBIENT_FADE_S = 3;
+/** Cue id and group of the night cricket loop. */
+export const AMBIENT_CUE = 'ambient_crickets';
 
 const LOG_LIMIT = 500;
 
@@ -57,6 +66,8 @@ export interface LogEntry {
 export interface AudioApp {
   poll_sounds(): string;
   audio_animals?(): string;
+  /** Target gain of the ambient bed (0 by day, 0.12 at dusk / night). */
+  ambient_target?(): number;
   ui_tap?(): void;
 }
 
@@ -66,6 +77,10 @@ export interface AudioEnv {
   createContext: () => AudioContextLike | null;
   canPlayType: (type: string) => string;
   now: () => number;
+  /** The tab is in the background (the bed is silenced and the context suspended). */
+  hidden?: () => boolean;
+  /** A title / intro overlay covers the game (the bed stays silent). */
+  blocked?: () => boolean;
 }
 
 /** The subset of `AudioContext` used here. */
@@ -73,6 +88,7 @@ export interface AudioContextLike {
   state: string;
   destination: unknown;
   resume(): Promise<void>;
+  suspend?(): Promise<void>;
   decodeAudioData(
     data: ArrayBuffer,
     ok: (b: AudioBufferLike) => void,
@@ -81,10 +97,13 @@ export interface AudioContextLike {
   createBufferSource(): {
     buffer: AudioBufferLike | null;
     playbackRate: { value: number };
+    loop?: boolean;
     connect(n: unknown): void;
     start(): void;
+    stop?(): void;
+    disconnect?(): void;
   };
-  createGain(): { gain: { value: number }; connect(n: unknown): void };
+  createGain(): { gain: { value: number }; connect(n: unknown): void; disconnect?(): void };
 }
 export type AudioBufferLike = object;
 
@@ -140,6 +159,11 @@ function browserEnv(): AudioEnv {
     },
     canPlayType: (t) => new Audio().canPlayType(t),
     now: () => performance.now(),
+    hidden: () => document.visibilityState === 'hidden',
+    blocked: () => {
+      const intro = document.getElementById('intro');
+      return !!intro && !intro.hidden;
+    },
   };
 }
 
@@ -161,6 +185,15 @@ export class GameAudio {
   private readonly lastVariant = new Map<string, number>();
   private lastPrefetch = 0;
   private prefetching = false;
+  // ambient bed
+  private ambGain = 0;
+  private ambTarget = 0;
+  private ambLast = -1;
+  private ambSrc: { stop?(): void; disconnect?(): void } | null = null;
+  private ambNode: { gain: { value: number }; disconnect?(): void } | null = null;
+  private ambLoading = false;
+  private ambFailed = false;
+  private ambSuspended = false;
 
   constructor(index: readonly string[], env: AudioEnv = browserEnv()) {
     this.env = env;
@@ -176,6 +209,16 @@ export class GameAudio {
   /** `running`, `suspended`, … of the AudioContext; `none` before the gesture / without Web Audio. */
   get state(): string {
     return this.ctx?.state ?? 'none';
+  }
+
+  /** Debug / e2e state of the ambient bed (`__zoo.audio.ambient`). */
+  get ambient(): { playing: boolean; gain: number; target: number; fetched: boolean } {
+    return {
+      playing: this.ambSrc !== null,
+      gain: this.ambGain,
+      target: this.ambTarget,
+      fetched: this.fetched.some((f) => f.includes(`/${AMBIENT_CUE}_`)),
+    };
   }
 
   setEnabled(on: boolean): void {
@@ -224,10 +267,93 @@ export class GameAudio {
       for (const e of events) this.play(e);
     }
     const now = this.env.now();
+    this.tickAmbient(app, now);
     if (this.unlocked && now - this.lastPrefetch > 2000) {
       this.lastPrefetch = now;
       this.prefetch(app);
     }
+  }
+
+  /**
+   * The night cricket bed (ASND-023..026): moves the gain linearly towards the target (0.12 at
+   * dusk / night, from zoo-core) in `AMBIENT_FADE_S`, silences it at once in a hidden tab,
+   * fetches the file lazily (first target > 0 after the first gesture) and keeps one source.
+   */
+  private tickAmbient(app: AudioApp, now: number): void {
+    const dt = this.ambLast < 0 ? 0 : Math.min(0.25, Math.max(0, (now - this.ambLast) / 1000));
+    this.ambLast = now;
+    let raw = 0;
+    try {
+      raw = Number(app.ambient_target?.() ?? 0) || 0;
+    } catch {
+      raw = 0;
+    }
+    const hidden = this.env.hidden?.() ?? false;
+    const blocked = this.env.blocked?.() ?? false;
+    const target = this.enabled && !blocked && !hidden ? Math.min(AMBIENT_GAIN_MAX, Math.max(0, raw)) : 0;
+    this.ambTarget = target;
+    if (hidden) this.ambGain = 0; // silent at once
+    else {
+      const step = (AMBIENT_GAIN_MAX / AMBIENT_FADE_S) * dt;
+      this.ambGain =
+        this.ambGain < target ? Math.min(target, this.ambGain + step) : Math.max(target, this.ambGain - step);
+    }
+    if (!this.unlocked || !this.ctx) return;
+    try {
+      if (hidden && this.ambSrc && !this.ambSuspended && this.ctx.state === 'running') {
+        this.ambSuspended = true;
+        void this.ctx.suspend?.()?.catch(() => undefined);
+      } else if (!hidden && this.ambSuspended) {
+        this.ambSuspended = false;
+        void this.ctx.resume().catch(() => undefined);
+      }
+    } catch {
+      // silent
+    }
+    if (target > 0 && !this.ambSrc && !this.ambLoading && !this.ambFailed) this.startAmbient();
+    if (this.ambSrc && this.ambGain === 0 && target === 0) this.stopAmbient();
+    if (this.ambNode) this.ambNode.gain.value = this.ambGain;
+  }
+
+  private startAmbient(): void {
+    const files = this.cues.get(AMBIENT_CUE);
+    const ctx = this.ctx;
+    if (!files || !ctx) return;
+    const buffer = this.buffers.get(AMBIENT_CUE)?.[0];
+    if (!buffer) {
+      this.ambLoading = true;
+      void this.load(files.group).finally(() => {
+        this.ambLoading = false; // loaded: the next tick starts it; failed: never retried
+        this.ambFailed = !this.buffers.has(AMBIENT_CUE);
+      });
+      return;
+    }
+    try {
+      const src = ctx.createBufferSource();
+      const node = ctx.createGain();
+      src.buffer = buffer;
+      src.loop = true;
+      node.gain.value = this.ambGain;
+      src.connect(node);
+      node.connect(ctx.destination);
+      src.start();
+      this.ambSrc = src;
+      this.ambNode = node;
+    } catch {
+      // playback failed: silent
+    }
+  }
+
+  private stopAmbient(): void {
+    try {
+      this.ambSrc?.stop?.();
+      this.ambSrc?.disconnect?.();
+      this.ambNode?.disconnect?.();
+    } catch {
+      // silent
+    }
+    this.ambSrc = null;
+    this.ambNode = null;
   }
 
   /** Prefetches the common groups and the animal calls of the unlocked levels, one at a time. */
@@ -244,7 +370,10 @@ export class GameAudio {
     if (this.prefetching || !todo.length) return;
     this.prefetching = true;
     void (async () => {
-      for (const g of todo) await this.load(g);
+      for (const g of todo) {
+        if (!this.enabled) break; // muted meanwhile: stop downloading (ASND-009)
+        await this.load(g);
+      }
     })().finally(() => {
       this.prefetching = false;
     });

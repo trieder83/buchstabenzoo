@@ -22,7 +22,8 @@ updated: 2026-09-26
 
 1. The reading level is chosen per profile at start (by a parent) and can be changed in settings.
 2. Every piece of readable content is stored per level; gameplay code selects by level.
-3. Font: clear sans-serif school font with single-storey "a" (Q-021 which font/licence).
+3. Food box labels carry a pictogram on every level; its share shrinks with the level (`kiga` 0.62 .. `klasse3` 0.28, GAME-FEED §1): the pictogram supports the word, it never replaces it.
+4. Font: clear sans-serif school font with single-storey "a" (Q-021 which font/licence).
 
 ## Test cases
 

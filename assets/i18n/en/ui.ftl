@@ -35,10 +35,9 @@ sign-food-storage = Food
 # Name board of the entrance arch (proposal Q-148)
 sign-zoo-entrance = Letter Zoo
 
-## Hint (GAME-HINT) and night progress (GAME-NIGHT rule 11): screen-reader / read-aloud labels only
+## Hint (GAME-HINT) and compass strip (GAME-NIGHT rule 11): screen-reader / read-aloud labels only
 
 ui-hint = Where next?
-ui-night-progress = These animals are still missing before night
 
 hint-read = Read the board
 hint-food = Get the food
@@ -84,3 +83,79 @@ ad-gate-hold = Hold the button for 3 seconds.
 ad-close = Close
 
 ui-replay-intro = Explain the game
+
+# Tapping the compass explains it (GAME-NIGHT rule 11, NIGHT-023)
+night-progress-info-kiga = 🔍🐾 → 🌙
+night-progress-info-klasse1 = Find all animals before night.
+night-progress-info-klasse2 = Find the remaining animals before nightfall.
+night-progress-info-klasse3 = Find the remaining animals before night falls – otherwise it gets dark and they are not home yet.
+night-progress-info-done-kiga = 🏠🏠🏠 → 🌙
+night-progress-info-done-klasse1 = All animals are home.
+night-progress-info-done-klasse2 = All animals are home. Night is coming soon.
+night-progress-info-done-klasse3 = All animals are home – well done! Night is about to fall.
+night-progress-info-night-kiga = 🔍🐾 🌙
+night-progress-info-night-klasse1 = Find the night animals.
+night-progress-info-night-klasse2 = Find the remaining animals in the night zoo.
+night-progress-info-night-klasse3 = It is night in the zoo. Find the remaining animals and bring them to their enclosure.
+night-progress-info-sleep-kiga = 🛏️
+night-progress-info-sleep-klasse1 = Time to sleep.
+night-progress-info-sleep-klasse2 = All animals are home. Time to sleep.
+night-progress-info-sleep-klasse3 = All animals are home. Go to bed now, then a new day begins.
+
+# Welcome board at the entrance map board (RESC-028)
+welcome-title = Rescue the animals!
+
+welcome-kiga = Animals gone!
+welcome-klasse1 = The animals are gone. Find all animals. Bring them back home.
+welcome-klasse2 = Oh no, the animals have escaped! Read the riddles on the info boards, find the animals and bring them back to their enclosures with the right food.
+welcome-klasse3 = Last night all the animals escaped from their enclosures – now the enclosures are empty! Every info board has a riddle that tells you where the animal is hiding. Get the right food from the food storage and show it to the animal – then it will follow you. Lead it through the gate back into its enclosure. Can you rescue all the animals?
+
+welcome-goal-kiga = 🔍
+welcome-goal-klasse1 = Find:
+welcome-goal-klasse2 = You have to find these animals:
+welcome-goal-klasse3 = These animals are missing in this part of the zoo:
+
+welcome-step-1-kiga = Board
+welcome-step-1-klasse1 = Read the info board.
+welcome-step-1-klasse2 = Read the riddle on the info board.
+welcome-step-1-klasse3 = Read the riddle on the info board. It tells you where the animal is hiding.
+
+welcome-step-2-kiga = Food
+welcome-step-2-klasse1 = Get the right food.
+welcome-step-2-klasse2 = Get the right box at the food storage. Read the labels.
+welcome-step-2-klasse3 = Get the right food at the food storage: read the labels on the boxes and take the matching box.
+
+welcome-step-3-kiga = Animal
+welcome-step-3-klasse1 = Find the animal.
+welcome-step-3-klasse2 = Find the animal and show it the food. It follows you.
+welcome-step-3-klasse3 = Find the animal, go close and show it the food – then it follows you.
+
+welcome-step-4-kiga = Home
+welcome-step-4-klasse1 = Bring it home.
+welcome-step-4-klasse2 = Lead the animal through the gate into its enclosure.
+welcome-step-4-klasse3 = Lead the animal back through the gate into its enclosure. Then it is home again.
+
+welcome-start-kiga = 🧭
+welcome-start-klasse1 = Tip: Press 🧭.
+welcome-start-klasse2 = Not sure what to do? Press the compass 🧭, it shows you the way.
+welcome-start-klasse3 = Start at an info board or at the food storage. If you are stuck, the compass 🧭 shows you the way.
+
+welcome-level-level_1-kiga = 🦓🦛🐼
+welcome-level-level_1-klasse1 = This is the start. Some animals come in pairs.
+welcome-level-level_1-klasse2 = You start here. Some animals come in pairs: rescue both!
+welcome-level-level_1-klasse3 = You start here. Some animals come in pairs, mum and dad. Rescue both, then they are a family again!
+
+welcome-level-level_2-kiga = 🐨🐘🦁🦒
+welcome-level-level_2-klasse1 = This is a new part.
+welcome-level-level_2-klasse2 = You are in a new part of the zoo. New animals and new riddles are waiting here.
+welcome-level-level_2-klasse3 = You are in a new part of the zoo. New animals, new riddles and new food are waiting here.
+
+welcome-level-level_3-kiga = 🐠🐒🦊
+welcome-level-level_3-klasse1 = The last part. The goldfish needs water.
+welcome-level-level_3-klasse2 = This is the last part of the zoo. The goldfish needs a bowl of water.
+welcome-level-level_3-klasse3 = This is the last part of the zoo. New: the goldfish needs a bowl of water so that you can carry it.
+
+welcome-level-night_1-kiga = 🔦🌙
+welcome-level-night_1-klasse1 = It is night. Take the lantern.
+welcome-level-night_1-klasse2 = It is night in the zoo. Take your lantern with you.
+welcome-level-night_1-klasse3 = It is night in the zoo. Take your lantern with you: in its light the animals' eyes shine.

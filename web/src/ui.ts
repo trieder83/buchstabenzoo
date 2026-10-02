@@ -5,6 +5,7 @@
 
 import { SOUND_EVENT } from './audio';
 import { dragScroll } from './scroll';
+import { pictogramCanvas } from './pictograms';
 
 /** The gate intro (RESC-029) is shown in a new game; automated tests skip it unless `?intro=1`. */
 export function introEnabled(search: string, webdriver: boolean): boolean {
@@ -39,7 +40,7 @@ export interface UiApp {
   /** GAME-NIGHT: time of day and the dream fade of the sleep (0…1). */
   daytime?(): string;
   sleep_fade?(): number;
-  /** GAME-GARDEN: the treat basket as JSON `{"carrot", "potato", "capacity", "offered"}`. */
+  /** GAME-GARDEN: the treat basket as JSON `{"carrot", "potato", "apple", "orange", "capacity", "offered"}`. */
   basket_json?(): string;
   /** GAME-FEED §8: something droppable is in the hands; put it down (false: nothing dropped). */
   can_put_down?(): boolean;
@@ -54,8 +55,13 @@ export interface UiApp {
   intro_pending?(): boolean;
   intro_done?(): void;
   /** GAME-NIGHT rule 11: the 🌙 night progress as JSON. */
-  night_progress_json?(): string;
+  compass_json?(): string;
 }
+
+/** Welcome board pictures (RESC-028, as the intro): empty enclosure, paw prints, riddle. */
+export const WELCOME_PICTURES = '🏚️🐾❓ → 🔍 → 🥕 → 🏠';
+/** Icons of the four steps: riddle board, food, animal, home. */
+export const WELCOME_STEP_ICONS = ['📋', '🥕', '🐾', '🏠'];
 
 /** Icons of the hint targets (GAME-HINT rule 2). */
 export const HINT_ICONS: Record<string, string> = {
@@ -86,6 +92,8 @@ export interface HintView {
   dots: number;
   /** Fluent key of the next-step line (`hint-read`, …; GAME-HINT rule 4a). */
   step: string;
+  /** The animal the hint is about ('' = none); its strip icon pulses. */
+  animal: string;
 }
 
 /** Parses the hint JSON; null when no hint is shown or the JSON is broken. */
@@ -103,43 +111,86 @@ export function parseHint(json: string | undefined): HintView | null {
       angle: typeof h.angle === 'number' ? h.angle : 90,
       dots: Math.max(1, Math.min(5, Math.round(h.dots ?? 1))),
       step: typeof h.step === 'string' ? h.step : '',
+      animal: typeof h.animal === 'string' ? h.animal : '',
     };
   } catch {
     return null;
   }
 }
 
-/** The 🌙 night progress (GAME-NIGHT rule 11). */
+/** The compass strip and task badge (GAME-NIGHT rule 11). */
 export interface NightProgress {
   state: string;
   level: string;
   animals: { id: string; home: boolean }[];
+  /** Kind of the next task (the best hint candidate), `night_coming`, or '' for none. */
+  badge: string;
+  badgeAnimal: string;
 }
 
-/** Only the animals still missing: a finished animal disappears from the pane (GAME-NIGHT rule 11). */
+/** Strip icons shown at most; the rest is a "+n" chip. */
+export const STRIP_MAX = 6;
+
+/** Only the animals still missing: a finished animal disappears from the strip (GAME-NIGHT rule 11). */
 export function missingAnimals(p: NightProgress): NightProgress['animals'] {
   return p.animals.filter((a) => !a.home);
 }
 
-/** Parses the night progress JSON; hidden on errors. */
+/** The strip: the first icons of the missing animals and how many more there are (NIGHT-022). */
+export function stripView(p: NightProgress): { ids: string[]; more: number } {
+  const ids = missingAnimals(p).map((a) => a.id);
+  return ids.length > STRIP_MAX ? { ids: ids.slice(0, STRIP_MAX - 1), more: ids.length - (STRIP_MAX - 1) } : { ids, more: 0 };
+}
+
+/** Icon of the task badge: the hint icons, the moon door as 🚪🌙, night coming as 🌙. */
+export function badgeIcon(kind: string): string {
+  if (kind === 'moon_door') return '🚪🌙';
+  if (kind === 'night_coming') return '🌙';
+  return kind ? (HINT_ICONS[kind] ?? '⭐') : '';
+}
+
+/** Fluent key of the info bubble shown when the compass is tapped (NIGHT-023). */
+export function progressInfoKey(p: NightProgress, readingLevel: string): string {
+  const mid = p.state === 'night_coming' || (p.state === 'missing' && missingAnimals(p).length === 0)
+    ? 'done-'
+    : p.state === 'night'
+      ? 'night-'
+      : p.state === 'sleep'
+        ? 'sleep-'
+        : '';
+  return `night-progress-info-${mid}${readingLevel}`;
+}
+
+/** Parses the compass JSON; hidden on errors. */
 export function parseProgress(json: string | undefined): NightProgress {
   try {
-    const p = JSON.parse(json ?? '') as Partial<NightProgress>;
+    const p = JSON.parse(json ?? '') as Partial<NightProgress> & { badge_animal?: string };
     const animals = Array.isArray(p.animals)
       ? p.animals
           .filter((a) => a && typeof a.id === 'string')
           .map((a) => ({ id: a.id, home: Boolean(a.home) }))
       : [];
-    return { state: typeof p.state === 'string' ? p.state : 'hidden', level: String(p.level ?? ''), animals };
+    return {
+      state: typeof p.state === 'string' ? p.state : 'hidden',
+      level: String(p.level ?? ''),
+      animals,
+      badge: typeof p.badge === 'string' ? p.badge : '',
+      badgeAnimal: typeof p.badge_animal === 'string' ? p.badge_animal : '',
+    };
   } catch {
-    return { state: 'hidden', level: '', animals: [] };
+    return { state: 'hidden', level: '', animals: [], badge: '', badgeAnimal: '' };
   }
 }
+
+/** Treat kinds of the basket, in HUD order (GAME-GARDEN §5: vegetables, fruit). */
+export const TREATS = ['carrot', 'potato', 'apple', 'orange'] as const;
 
 /** Treat basket contents (GAME-GARDEN §4). */
 export interface Basket {
   carrot: number;
   potato: number;
+  apple: number;
+  orange: number;
   capacity?: number;
   offered?: string;
 }
@@ -148,16 +199,23 @@ export interface Basket {
 export function parseBasket(json: string | undefined): Basket {
   try {
     const b = JSON.parse(json ?? '') as Partial<Basket>;
-    return { carrot: Math.max(0, b.carrot ?? 0), potato: Math.max(0, b.potato ?? 0), capacity: b.capacity, offered: b.offered };
+    return {
+      carrot: Math.max(0, b.carrot ?? 0),
+      potato: Math.max(0, b.potato ?? 0),
+      apple: Math.max(0, b.apple ?? 0),
+      orange: Math.max(0, b.orange ?? 0),
+      capacity: b.capacity,
+      offered: b.offered,
+    };
   } catch {
-    return { carrot: 0, potato: 0 };
+    return { carrot: 0, potato: 0, apple: 0, orange: 0 };
   }
 }
 
 export const LANGUAGES = ['de', 'en'] as const;
 export const READING_LEVELS = ['kiga', 'klasse1', 'klasse2', 'klasse3'] as const;
 
-/** Placeholder food pictures (kiga labels, HUD). */
+/** Emoji food pictures for the HUD / lists (food box labels use the vector pictograms.ts). */
 export const FOOD_ICONS: Record<string, string> = {
   grass: '🌿',
   melons: '🍉',
@@ -172,6 +230,8 @@ export const FOOD_ICONS: Record<string, string> = {
   // garden treats (GAME-GARDEN)
   carrot: '🥕',
   potato: '🥔',
+  apple: '🍎',
+  orange: '🍊',
   // night zoo (GAME-NIGHT rule 6)
   beetles: '🪲',
   fruit: '🍎',
@@ -266,6 +326,8 @@ export const TARGET_ICONS: Record<string, string> = {
   // GAME-GARDEN: pull a plant, read a garden sign, give a treat at the fence
   plant: '🥕',
   garden_sign: '👀',
+  // RESC-028: the welcome board at the level entry
+  welcome_board: '🗺️',
   treat: '🧺',
 };
 
@@ -378,11 +440,21 @@ interface PanelData {
   facts?: string;
   text?: string;
   picture?: string | boolean | null;
+  /** Food box panel (FEED-033): pictogram id and its share of the label height. */
+  pictogram?: string;
+  pictogram_scale?: number;
   food?: string;
   food_text?: string;
   take?: string;
   /** Info board: a container is needed (the goldfish bowl hint). */
   hint?: string | null;
+  /** Welcome board (RESC-028): level goal, animals, steps, start hint, level note. */
+  goal?: string;
+  animals?: string[];
+  steps?: string[];
+  start?: string;
+  level_text?: string;
+  level?: string;
 }
 
 interface GameEventMsg {
@@ -453,8 +525,11 @@ export class Ui {
   readonly compass = document.getElementById('compass-btn') as HTMLButtonElement | null;
   readonly hintMarker = document.getElementById('hint-marker') as HTMLDivElement | null;
   readonly hintEdge = document.getElementById('hint-edge') as HTMLDivElement | null;
-  /** GAME-NIGHT rule 11: what is still missing before night falls. */
-  readonly nightProgress = document.getElementById('night-progress') as HTMLButtonElement | null;
+  /** GAME-NIGHT rule 11: the task badge and the strip of missing animals on the compass. */
+  private readonly compassBadge = document.querySelector('#compass-btn .badge') as HTMLElement | null;
+  private readonly compassStrip = document.querySelector('#compass-btn .strip') as HTMLElement | null;
+  private lastCompassPoll = 0;
+  private hintAnimal = '';
   private lastHintKind = '';
   private lastHintStep = '';
   private lastHintDots = -1;
@@ -490,13 +565,13 @@ export class Ui {
       e.stopPropagation();
       this.putDown();
     });
-    for (const b of [this.compass, this.nightProgress]) {
-      b?.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.pressHint();
-      });
-    }
+    // the badge and the strip are children of the button: a tap on them is this tap
+    this.compass?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.pressHint();
+      this.sayProgressInfo();
+    });
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
     // (CAMV-019)
@@ -528,11 +603,12 @@ export class Ui {
     const json = this.app.interact();
     if (!json) return;
     const data = JSON.parse(json) as PanelData;
-    if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign') this.openPanel(data);
+    if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign' || data.kind === 'welcome_board')
+      this.openPanel(data);
     this.pollEvents();
   }
 
-  /** The 🧭 button / tapping the 🌙 progress (GAME-HINT rule 1/8): show the next target. */
+  /** The 🧭 button (GAME-HINT rule 1/8): show the next target. */
   pressHint(): void {
     // works while a reading panel is open: the panel closes first (GAME-HINT rule 4a)
     if (this.panelKey) this.closePanel();
@@ -548,6 +624,7 @@ export class Ui {
     if (!this.hintMarker || !this.hintEdge || !this.app.hint_json) return;
     const h = parseHint(this.app.hint_json());
     this.compass?.classList.toggle('on', h !== null);
+    this.setHintAnimal(h?.animal ?? '');
     if (!h) {
       if (!this.hintMarker.hidden) this.hintMarker.hidden = true;
       if (!this.hintEdge.hidden) this.hintEdge.hidden = true;
@@ -577,7 +654,13 @@ export class Ui {
     if (h.on) {
       this.hintMarker.style.transform = `translate(${h.x.toFixed(0)}px, ${h.y.toFixed(0)}px) translate(-50%, -100%)`;
     } else {
-      this.hintEdge.style.transform = `translate(${h.x.toFixed(0)}px, ${h.y.toFixed(0)}px) translate(-50%, -50%)`;
+      // keep the whole arrow (icon + step line) on screen: the edge point is clamped by the
+      // size of the element, so the text is never cut off at the border
+      const halfW = this.hintEdge.offsetWidth / 2 + 8;
+      const halfH = this.hintEdge.offsetHeight / 2 + 8;
+      const ex = Math.min(Math.max(h.x, halfW), Math.max(halfW, window.innerWidth - halfW));
+      const ey = Math.min(Math.max(h.y, halfH), Math.max(halfH, window.innerHeight - halfH));
+      this.hintEdge.style.transform = `translate(${ex.toFixed(0)}px, ${ey.toFixed(0)}px) translate(-50%, -50%)`;
       (this.hintEdge.querySelector('.spin') as HTMLElement).style.transform = `rotate(${h.angle.toFixed(0)}deg)`;
       if (h.dots !== this.lastHintDots) {
         this.lastHintDots = h.dots;
@@ -651,28 +734,49 @@ export class Ui {
     this.compass.dataset.pulses = String(n);
   }
 
-  /** The 🌙 night progress (GAME-NIGHT rule 11): one icon per animal, filled = home. */
+  /** The strip icon of the hinted animal pulses (NIGHT-023). */
+  private setHintAnimal(id: string): void {
+    if (id === this.hintAnimal) return;
+    this.hintAnimal = id;
+    this.compassStrip?.querySelectorAll<HTMLElement>('.pa[data-animal]').forEach((e) => {
+      e.classList.toggle('hl', id !== '' && e.dataset.animal === id);
+    });
+  }
+
+  /**
+   * The compass (GAME-NIGHT rule 11): the task badge (kind of the next task) and the strip of
+   * the missing animals. Polled at <= 4 Hz; the DOM is only touched when the JSON changes.
+   */
   private updateProgress(): void {
-    if (!this.nightProgress || !this.app.night_progress_json) return;
-    const json = this.app.night_progress_json();
+    if (!this.compass || !this.app.compass_json) return;
+    const now = performance.now();
+    if (now - this.lastCompassPoll < 250) return;
+    this.lastCompassPoll = now;
+    const json = this.app.compass_json();
     if (json === this.lastProgress) return;
     this.lastProgress = json;
     const p = parseProgress(json);
-    this.nightProgress.hidden = p.state === 'hidden';
-    this.nightProgress.dataset.state = p.state;
-    this.nightProgress.dataset.level = p.level;
-    const moon = this.nightProgress.querySelector('.moon') as HTMLElement;
-    moon.textContent = p.state === 'sleep' ? '🛏️' : '🌙';
-    const box = this.nightProgress.querySelector('.animals') as HTMLElement;
-    box.replaceChildren(
-      ...missingAnimals(p).map((a) => {
-        const e = el('span', 'pa missing', ANIMAL_ICONS[a.id] ?? '🐾');
-        e.dataset.animal = a.id;
+    const c = this.compass;
+    c.dataset.state = p.state;
+    c.dataset.level = p.level;
+    c.dataset.home = String(p.animals.filter((a) => a.home).length);
+    c.dataset.missing = String(missingAnimals(p).length);
+    if (this.compassBadge) {
+      this.compassBadge.hidden = p.badge === '';
+      this.compassBadge.dataset.badge = p.badge;
+      this.compassBadge.textContent = badgeIcon(p.badge);
+    }
+    if (this.compassStrip) {
+      const v = stripView(p);
+      const icons = v.ids.map((id) => {
+        const e = el('span', 'pa', ANIMAL_ICONS[id] ?? '🐾');
+        e.dataset.animal = id;
+        e.classList.toggle('hl', id === this.hintAnimal);
         return e;
-      }),
-    );
-    this.nightProgress.dataset.home = String(p.animals.filter((a) => a.home).length);
-    this.nightProgress.dataset.missing = String(p.animals.filter((a) => !a.home).length);
+      });
+      if (v.more > 0) icons.push(el('span', 'pa more', `+${v.more}`));
+      this.compassStrip.replaceChildren(...icons);
+    }
   }
 
   /** Put-down button (GAME-FEED §8): drop the item in the hands; a gentle shake if not. */
@@ -808,7 +912,7 @@ export class Ui {
     const carry = this.app.carry_food();
     const bowl = this.app.carry_bowl?.() ?? '';
     const basket = parseBasket(this.app.basket_json?.());
-    const treats = basket.carrot + basket.potato;
+    const treats = basket.carrot + basket.potato + basket.apple + basket.orange;
     this.hud.hidden = !carry && !bowl && treats === 0;
     this.hud.dataset.food = carry;
     this.hud.dataset.bowl = bowl;
@@ -826,11 +930,13 @@ export class Ui {
       const b = el('span', 'basket');
       b.id = 'hud-basket';
       b.append(el('span', 'icon', '🧺'));
-      for (const t of ['carrot', 'potato'] as const) {
+      for (const t of TREATS) {
         if (basket[t] > 0) b.append(el('span', `treat ${t}`, `${FOOD_ICONS[t]}${basket[t]}`));
       }
       b.dataset.carrot = String(basket.carrot);
       b.dataset.potato = String(basket.potato);
+      b.dataset.apple = String(basket.apple);
+      b.dataset.orange = String(basket.orange);
       this.hud.append(b);
     }
     this.hud.setAttribute('aria-label', `${this.app.t('ui-carrying')} ${this.app.carry_text()}`);
@@ -899,6 +1005,33 @@ export class Ui {
         more.append(facts);
       }
       kids.push(more);
+    } else if (data.kind === 'welcome_board') {
+      // RESC-028: pictures, game description, goal of this level, four steps, start hint
+      const pic = el('div', 'panel-picture', WELCOME_PICTURES);
+      pic.id = 'panel-picture';
+      const title = el('h2', 'panel-title', data.title ?? '');
+      title.id = 'panel-title';
+      const goal = el('p', 'welcome-goal');
+      goal.id = 'welcome-goal';
+      goal.dataset.level = data.level ?? '';
+      goal.append(el('span', 'icons', (data.animals ?? []).map((a) => ANIMAL_ICONS[a] ?? '🐾').join('')), el('span', 'word', data.goal ?? ''));
+      const steps = el('ol', 'welcome-steps');
+      steps.id = 'welcome-steps';
+      (data.steps ?? []).forEach((t, i) => {
+        const li = el('li', 'welcome-step');
+        li.append(el('span', 'icon', WELCOME_STEP_ICONS[i] ?? ''), el('span', 'word', t));
+        steps.append(li);
+      });
+      const kidsW: HTMLElement[] = [close, pic, title, text, goal, steps];
+      if (data.level_text) {
+        const note = el('p', 'welcome-level', data.level_text);
+        note.id = 'welcome-level';
+        kidsW.push(note);
+      }
+      const start = el('p', 'welcome-start', data.start ?? '');
+      start.id = 'welcome-start';
+      kidsW.push(start);
+      kids.push(...kidsW);
     } else if (data.kind === 'garden_sign') {
       // garden sign (GARD-009): the vegetable picture, its word, a sentence from klasse1 on
       const pic = el('div', 'panel-picture', FOOD_ICONS[data.food ?? ''] ?? '🌱');
@@ -908,9 +1041,13 @@ export class Ui {
       kids.push(close, pic, title);
       if (data.text) kids.push(text);
     } else {
-      if (data.picture === true) {
-        const pic = el('div', 'panel-picture', FOOD_ICONS[data.food ?? ''] ?? '❓');
+      if (data.pictogram) {
+        // food box: vector pictogram, bigger on kiga than on klasse3 (FEED-033)
+        const pic = el('div', 'panel-picture');
         pic.id = 'panel-picture';
+        pic.dataset.pictogram = data.pictogram;
+        pic.dataset.scale = String(data.pictogram_scale ?? 0.5);
+        pic.append(pictogramCanvas(data.pictogram, data.pictogram_scale ?? 0.5));
         kids.push(pic);
       }
       kids.push(close, text);
@@ -925,6 +1062,15 @@ export class Ui {
     this.panel.replaceChildren(body);
     this.panel.dataset.kind = data.kind;
     this.panel.hidden = false;
+    if (data.kind === 'welcome_board') {
+      dragScroll(body, body);
+      // the ▼ cue shows until the end of the long panel is reached (or when it all fits)
+      const markEnd = (): void => {
+        body.dataset.end = body.scrollTop + body.clientHeight >= body.scrollHeight - 8 ? '1' : '0';
+      };
+      body.addEventListener('scroll', markEnd);
+      requestAnimationFrame(markEnd);
+    }
     if (data.kind === 'info_board') {
       fitReadingText(body);
       // long facts scroll by dragging anywhere on the panel box (PLAY-032/033)
@@ -962,14 +1108,24 @@ export class Ui {
     this.pollEvents();
   }
 
-  private say(text: string, key: string): void {
+  /** Tapping the compass explains it in a bubble next to it for ~4 s (NIGHT-023). */
+  private sayProgressInfo(): void {
+    const p = parseProgress(this.app.compass_json?.() ?? this.lastProgress);
+    if (p.state === 'hidden') return;
+    const key = progressInfoKey(p, this.app.reading_level());
+    this.say(this.app.t(key), key, 4000, 'compass');
+  }
+
+  private say(text: string, key: string, ms = 2500, near = ''): void {
     this.bubble.textContent = text;
     this.bubble.dataset.key = key;
+    if (near) this.bubble.dataset.near = near;
+    else delete this.bubble.dataset.near;
     this.bubble.hidden = false;
     window.clearTimeout(this.bubbleTimer);
     this.bubbleTimer = window.setTimeout(() => {
       this.bubble.hidden = true;
-    }, 2500);
+    }, ms);
   }
 
   private celebrateMission(text: string, key: string): void {
@@ -1118,7 +1274,6 @@ export class Ui {
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
     this.dropBtn?.setAttribute('aria-label', this.app.t('ui-put-down'));
     this.compass?.setAttribute('aria-label', this.app.t('ui-hint'));
-    this.nightProgress?.setAttribute('aria-label', this.app.t('ui-night-progress'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
     this.settings.querySelector('#sound-toggle')?.setAttribute('aria-label', this.app.t('ui-sound'));

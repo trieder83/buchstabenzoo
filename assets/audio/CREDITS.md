@@ -28,6 +28,7 @@ No CC-NC, ND or unclear licences are used.
 | https://commons.wikimedia.org/wiki/File:Lion_raring-sound1TamilNadu178.ogg | public domain | Tamil Wikipedia uploader | lion |
 | https://commons.wikimedia.org/wiki/File:Fennec_Singing.ogg | public domain | Eosin-Y, 2007 | fennec, snow_fox |
 | https://commons.wikimedia.org/wiki/File:Steinkauz.OGG | public domain | Rabe19, 2013 | owl |
+| https://opengameart.org/content/crickets-ambient-noise-loopable | CC0 | Ted Kerr (downloaded 2026-10-01) | `ambient_crickets` (night loop) |
 | https://commons.wikimedia.org/wiki/File:Hedgehog_O.ogg | CC0 | Ullus, 2013 | hedgehog |
 | https://opengameart.org/content/camel-groan | CC0 | AntumDeluge (recording by craigsmith) | hippo (stand-in) |
 | https://opengameart.org/content/bat-screeches | CC0 | AntumDeluge (recording by polymorpheva) | bat |

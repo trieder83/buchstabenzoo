@@ -30,7 +30,8 @@ MAX_IMAGE_BYTES = 512 * 1024
 MAX_DIM = 2048
 MAX_TAGLINE = 80
 # the campaigns the game knows (web/src/ads.ts KNOWN_CAMPAIGNS): id -> (slot, link host)
-KNOWN = {"mathfighter": (1, "mathfighter.rcms.ch"), "abcsmash": (2, "abcsmash.rcms.ch")}
+KNOWN = {"mathfighter": (1, "mathfighter.rcms.ch"), "abcsmash": (2, "abcsmash.rcms.ch"),
+         "edugamegalaxy": (3, "edugamegalaxy.rcms.ch")}
 PATH_RE = re.compile(r"^img/[a-z0-9][a-z0-9._-]{0,63}$")
 
 

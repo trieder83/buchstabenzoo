@@ -90,13 +90,64 @@ impl Food {
     }
 }
 
-/// How a food box label is shown (GAME-FEED §1).
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// How a food box label is shown (GAME-FEED §1): a pictogram plus the word.
+#[derive(Debug, Clone, PartialEq)]
 pub struct FoodLabel {
     /// Fluent key of the word.
     pub word_key: String,
-    /// `kiga`: a picture of the food next to the word.
-    pub picture: bool,
+    /// Pictogram id (= food id), drawn by the host (`web/src/pictograms.ts`).
+    pub pictogram: &'static str,
+    /// Share of the label height the pictogram takes (pictogram above the word); the word
+    /// gets the rest. Shrinks with the reading level: the pictogram only supports the word.
+    pub pictogram_scale: f32,
+}
+
+/// Pictogram share of the label height per reading level (GAME-FEED §1).
+pub fn pictogram_scale(level: ReadingLevel) -> f32 {
+    match level {
+        ReadingLevel::Kiga => 0.62,
+        ReadingLevel::Klasse1 => 0.50,
+        ReadingLevel::Klasse2 => 0.34,
+        ReadingLevel::Klasse3 => 0.28,
+    }
+}
+
+/// Texture id of the shared food label atlas (host-rendered, FEED-030).
+pub const ATLAS_TEXTURE: &str = "text:food-atlas";
+/// Size of the food label atlas in px: 14 lid cells (128 x 128, 8 per row) on top, 14 front
+/// cells (256 x 64, 4 per row) below. 1024 x 512 RGBA8 = 2 MB for ALL boxes.
+pub const ATLAS_PX: (u32, u32) = (1024, 512);
+
+/// Which face of the crate an atlas cell is for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AtlasPart {
+    /// Pictogram + word, flat on the lid (the legible side from the high camera).
+    Lid,
+    /// Small pictogram + word on the crate front.
+    Front,
+}
+
+impl Food {
+    /// Cell `[x, y, w, h]` (px) of this food in the atlas.
+    pub fn atlas_cell(self, part: AtlasPart) -> [u32; 4] {
+        let i = Food::ALL.iter().position(|f| *f == self).unwrap_or(0) as u32;
+        match part {
+            AtlasPart::Lid => [(i % 8) * 128, (i / 8) * 128, 128, 128],
+            AtlasPart::Front => [(i % 4) * 256, 256 + (i / 4) * 64, 256, 64],
+        }
+    }
+
+    /// UV rectangle `[u0, v0, u1, v1]` of the cell, inset by half a texel (no bleeding).
+    pub fn atlas_uv(self, part: AtlasPart) -> [f32; 4] {
+        let [x, y, w, h] = self.atlas_cell(part);
+        let (aw, ah) = (ATLAS_PX.0 as f32, ATLAS_PX.1 as f32);
+        [
+            (x as f32 + 0.5) / aw,
+            (y as f32 + 0.5) / ah,
+            ((x + w) as f32 - 0.5) / aw,
+            ((y + h) as f32 - 0.5) / ah,
+        ]
+    }
 }
 
 /// A closed food box in the food storage (GAME-FEED §2). Never runs out (§4).
@@ -109,7 +160,8 @@ impl FoodBox {
     pub fn label(&self, level: ReadingLevel) -> FoodLabel {
         FoodLabel {
             word_key: self.food.label_key(),
-            picture: level == ReadingLevel::Kiga,
+            pictogram: self.food.id(),
+            pictogram_scale: pictogram_scale(level),
         }
     }
 }

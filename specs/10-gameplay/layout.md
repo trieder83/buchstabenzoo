@@ -11,6 +11,9 @@ updated: 2026-10-01
 
 # Zoo layout and level boundaries
 
+**Contents:** Goal · Coordinate system · Coordinate spaces · Modular edges: fences, hedges, walls · Element types · Joining levels · Level design rules — how a level is played and how the player is guided · Enterable buildings · Moon door and night levels · Night lights, interactables and furniture · Levels · Behaviour · Forests: dense vs. walkable · Enclosure features and wandering at home · Collision footprints · Gates and doors · Test cases · Open questions
+
+
 Owned by the `zoo-level-designer` agent. Describes **where** everything is; the look of each
 area is in ART-ENVIRONMENT, the rules in GAME-WORLD.
 
@@ -82,7 +85,7 @@ one straight line of pieces, measured in whole metres along x or z.
 |---|---|---|
 | `path` | main path, side path, bridge, jetty, cave floor | yes, `surface = path` (full speed) |
 | `enclosure` | one per animal (see GAME-ANIMALS) | only via its gate when leading an animal |
-| `building` | entrance, food storage, kiosk, toilet, zookeeper house | entrance only if interactive; *proposal Q-092:* a building with an `interior` rect and a `door` cell is **enterable** — interior and door cells are walkable (surface `path`, floor), the rest stays solid (e.g. `zookeeper_house_3`, GAME-LEVEL-3). **Every building with a `door` is enterable** (user request 2026-09-28, LAYOUT-041) — see "Enterable buildings" |
+| `building` | entrance, food storage, kiosk, toilet, zookeeper house | entrance only if interactive; *Q-092 (confirmed 2026-10-01):* a building with an `interior` rect and a `door` cell is **enterable** — interior and door cells are walkable (surface `path`, floor), the rest stays solid (e.g. `zookeeper_house_3`, GAME-LEVEL-3). **Every building with a `door` is enterable** (user request 2026-09-28, LAYOUT-041) — see "Enterable buildings" |
 | `landmark` | pirate ship, fountain, map board, stream, waterfall, stage, zoo train | around it / on it if specified; water landmarks (`pond`, `river`, `stream`, `fountain`) are never walkable |
 | `barrier` | road block, stones, fallen tree, construction fence, closed gate, **moon door** (kind `moon_door`, see "Moon door and night levels") | no (while closed) |
 | `boundary` | outer zoo wall, hedge, water | no, never removed |
@@ -140,7 +143,7 @@ player walks on grass **slower** than on paths (GAME-PLAYER §6: 1.93 m/s on pat
 the missions of a level that are playable; only their animals, info boards and gates are
 interactable. Without the field every enclosure's animal is in scope.
 
-**Proposals used by the level files (not yet decided):**
+**Design assumptions used by the level files (Q-numbers: see open-questions.md; Q-085, Q-087, Q-088 … Q-094 confirmed 2026-10-01):**
 - *Sight blocking data (Q-044):* solid elements may set `blocks_view = true` (and `height_m`,
   used for mockups/greybox). Since the high-angle camera is decided (Q-049, GAME-PLAYER §2),
   "an animal's hiding place cannot be seen from its own enclosure" is checked as a **screen
@@ -158,7 +161,7 @@ interactable. Without the field every enclosure's animal is in scope.
   on the side facing the board, move the spot inside its place, move the board along its
   enclosure, move the whole place (FIX-056 moves accepted, Q-145 answered).
 
-## Joining levels (proposal, level design — Q-088)
+## Joining levels (Q-088, confirmed 2026-10-01)
 
 The zoo is **one continuous map** split into levels:
 - Every level file uses the **same level coordinates** (origin = centre of the zoo entrance
@@ -174,7 +177,7 @@ The zoo is **one continuous map** split into levels:
   entry barriers are closed). Saves keep one position in level coordinates (GAME-SAVE).
 - A barrier belongs to the earlier level's file and names its transition
   (`transition = "level_1->level_2"`); a level may have several entries (level 3: from level 2
-  and, proposal Q-090, through the level-1 north gate).
+  and, Q-090 (confirmed 2026-10-01), through the level-1 north gate).
 - Riddle details are unique **zoo-wide** among all levels that can be unlocked together
   (Q-083): a landmark or scenery kind a riddle relies on exists once in the joined map.
 - Current plan (proposals): level 1 at x −24…23, z −2…47; level 2 east of it (x 24…75,
@@ -199,8 +202,7 @@ candidates for **every** animal of `[level] missions` (or of every enclosure whe
 absent), and no animal without a mission entry. Locked levels keep their animals hidden and
 asleep (LAYOUT-025) — whether they should already be active from the very start of the game is Q-201.
 
-**Implementation (M5b, 2026-09-26 — proposals Q-088…Q-094 implemented data-driven, still
-open for confirmation):**
+**Implementation (M5b, 2026-09-26 — Q-088…Q-094 implemented data-driven and confirmed 2026-10-01):**
 - `LevelData::join` joins `level-1.toml`, `level-2.toml`, `level-3.toml` into one grid (id
   `zoo`); cells of the joined bounding box that belong to no level are out of bounds. All
   three levels are always loaded; a locked level is sealed by its closed entry barriers,
@@ -213,7 +215,7 @@ open for confirmation):**
   night (the child sleeps in the bed) every barrier the level unlocks opens — `unlock_after =
   "<level>"` when that level is joined (e.g. the fallen tree after `night_1`, Q-078), else the
   exit barriers of the level (`transition = "<level>-><next>"`) — **and every entry barrier of
-  the next level** (for level 3 also the level-1 `barrier_north_gate`, proposal Q-090). Moon
+  the next level** (for level 3 also the level-1 `barrier_north_gate`, Q-090 confirmed 2026-10-01). Moon
   doors are not exits (see "Moon door and night levels"). Opened barriers never close; their
   models disappear.
 - **Discovery per level:** one pick per animal with the rule of GAME-RESCUE §1 (spread
@@ -284,8 +286,8 @@ one is not done.
     `kiga` is guided by pictures and read-aloud.
 14. **Sizes:** first board reachable ≤ 15 s of walking from the start; the longest walk
     between two mission steps ≤ 60 s on streets; a level takes about 10–20 minutes for a
-    child of the target reading level (proposal — Q-202).
-12. **NEVER STUCK (user report 2026-10-01: grey zebra in the 🌙 pane, hint only "collect
+    child of the target reading level (Q-202 answered 2026-09-30: the pacing numbers stand).
+15. **NEVER STUCK (user report 2026-10-01: grey zebra in the 🌙 pane, hint only "collect
     vegetables", no animal in sight).** Invariants of every level and every reachable state:
     (a) while a mission of an unlocked level is open, a hint of priority ≤ 3 exists — the
     optional garden is never the only hint (HINT-019); (b) every open mission's animals are
@@ -295,17 +297,25 @@ one is not done.
     mission progress while a mission is open, the 🧭 hint points straight at the missing animal
     itself (kind `help`, "Hier ist das Tier! Zeig ihm sein Futter", priority 1, exact position);
     after 60 s more the escaped animals of open missions walk to a cell 3–5 m from the player
-    (Q-097 proposal, Q-262) — HINT-020; (d) the 🌙 pane never lists an animal the player cannot
+    (Q-097 proposal, Q-262) — HINT-020; (d) the compass strip never lists an animal the player cannot
     find: tapping it is the 🧭 hint (HINT-013) and leads to that animal. Test: following only the
     hints from random, split-pair and restored states always brings every animal home (HINT-021).
 
-Tests: LAYOUT-046 (guidance checks below) and the per-level tests of rules 6, 7, 8, 10.
+16. **Every bed is indoors (user request 2026-10-01):** each day level that ends with nightfall
+    has a bed `[[item]] kind = "bed"` standing **inside an enterable building** (a
+    `zookeeper_house` with `door` + `interior`): the bed footprint and its `stand` cell lie on
+    walkable interior cells (not on the door cell), the building's door has a `path` cell within
+    2 m (rule 8), and the bed is reachable from the level's spawn over walkable cells through the
+    door. No bed stands outdoors (LAYOUT-047). Beds today: `bed_l1` in `zookeeper_house_1`,
+    `bed_l2` in `zookeeper_house_2`, `bed_l3` in `zookeeper_house_3`.
+
+Tests: LAYOUT-046 (guidance checks below), LAYOUT-047 (rule 16) and the per-level tests of rules 6, 7, 8, 10.
 
 ## Enterable buildings (user request 2026-09-28)
 
 **Every building with a door is enterable** once its level is unlocked ("make sure we can
 enter all unlocked doors, like from the Futterhaus"): a `building` element with a `door` cell
-always has an `interior` rect (LAYOUT-041). Today: `zookeeper_house_1`, `zookeeper_house_3`,
+always has an `interior` rect (LAYOUT-041). Today: `zookeeper_house_1`, `zookeeper_house_2`, `zookeeper_house_3`,
 `night_house`, the food storages `food_storage` (interior (−3, 12, 6, 4)), `food_storage_2`
 ((40, 28, 4, 6)), `food_storage_3` ((0, 62, 6, 4)) and the food hut `food_storage_n1`
 ((−43, 27, 3, 4)). Buildings without a door (entrance arch, kiosk) stay solid blocks.
@@ -396,9 +406,9 @@ condition, spawn point, and a top-down ASCII or SVG map.
 
 | Level id | Area | Status |
 |---|---|---|
-| `level_1` | [levels/level-1.md](levels/level-1.md) (GAME-LEVEL-1): entrance, food storage, zookeeper house `zookeeper_house_1` (bed, cart key box), moon door to `night_1`, zebra, hippo and panda enclosures and their 9 candidate hiding places (`loc_river`, `loc_meadow`, `loc_sand`; `loc_pond`, `loc_mud`, `loc_shade`; `loc_cave`, `loc_bamboo`, `loc_leaves`); hippo pool `hippo_pool`; dense central grove, sparse woods `trees_nw` / `trees_ne`; vegetable garden `garden_veg` in the back (GAME-GARDEN, Q-102) | draft — proposal pending Q-023 |
-| `level_2` | [levels/level-2.md](levels/level-2.md) (GAME-LEVEL-2): behind `barrier_ne_tree` (east); food storage 2, koala (pair), elephant, giraffe and lion enclosures, elephant pool, and their 12 candidate hiding places (`loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree`; `loc_fountain`, `loc_log_pile`, `loc_big_ball`; `loc_lookout_tower`, `loc_train`, `loc_playground`; `loc_sun_rocks`, `loc_stage`, `loc_deckchairs`); exit `barrier_l2_construction` | draft — proposal (Q-088, Q-089, Q-091, Q-094, Q-095) |
-| `level_3` | [levels/level-3.md](levels/level-3.md) (GAME-LEVEL-3): behind `barrier_l2_construction` (north of level 1, second entry through `barrier_north_gate`, Q-090); zookeeper house with the fish bowl and a tap, food storage 3, stream with waterfall, monkey, goldfish (pond) and snow fox enclosures, adventure playground with the pirate ship, and their 9 candidate hiding places (`loc_pirate_ship`, `loc_carousel`, `loc_trampoline`; `loc_waterfall`, `loc_water_wheel`, `loc_willow`; `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`) | draft — proposal (Q-017, Q-088…Q-095) |
+| `level_1` | [levels/level-1.md](levels/level-1.md) (GAME-LEVEL-1): entrance, food storage, zookeeper house `zookeeper_house_1` (bed `bed_l1`, cart key box), moon door to `night_1`, zebra, hippo and panda enclosures and their 9 candidate hiding places (`loc_river`, `loc_meadow`, `loc_sand`; `loc_pond`, `loc_mud`, `loc_shade`; `loc_cave`, `loc_bamboo`, `loc_leaves`); hippo pool `hippo_pool`; dense central grove, sparse woods `trees_nw` / `trees_ne`; vegetable garden `garden_veg` in the back (GAME-GARDEN, Q-102) | draft — proposal pending Q-023 |
+| `level_2` | [levels/level-2.md](levels/level-2.md) (GAME-LEVEL-2): behind `barrier_ne_tree` (east); food storage 2, zookeeper house `zookeeper_house_2` (bed `bed_l2`, 2026-10-01), koala (pair), elephant, giraffe and lion enclosures, elephant pool, and their 12 candidate hiding places (`loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree`; `loc_fountain`, `loc_log_pile`, `loc_big_ball`; `loc_lookout_tower`, `loc_train`, `loc_playground`; `loc_sun_rocks`, `loc_stage`, `loc_deckchairs`); exit `barrier_l2_construction` | draft — proposal (Q-088, Q-089, Q-091, Q-094, Q-095) |
+| `level_3` | [levels/level-3.md](levels/level-3.md) (GAME-LEVEL-3): behind `barrier_l2_construction` (north of level 1, second entry through `barrier_north_gate`, Q-090); zookeeper house with the fish bowl, a bed `bed_l3` and a tap, food storage 3, stream with waterfall, monkey, goldfish (pond) and snow fox enclosures, adventure playground with the pirate ship, and their 9 candidate hiding places (`loc_pirate_ship`, `loc_carousel`, `loc_trampoline`; `loc_waterfall`, `loc_water_wheel`, `loc_willow`; `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`) | draft — proposal (Q-017, Q-088…Q-095) |
 | `night_1` | [levels/night-1.md](levels/night-1.md) (GAME-LEVEL-NIGHT-1): the night zoo west of level 1 behind the level-1 `moon_door` (open at night); plaza with string lights, night food hut, night house with the indoor enclosures of hedgehog, bat and owl, loop path around dense old-tree groves, and 9 candidate hiding places (`loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms`; `loc_windmill`, `loc_fireflies`, `loc_hollow_tree`; `loc_moon_pond`, `loc_hilltop`, `loc_fir`) | draft (Q-133…Q-138 answered) |
 | `level_4` | *planned (Q-174 answered 2026-09-28), not specified yet:* the only known content is the **bear enclosure** (bear pair, needed for the honey part of the bee event, GAME-EVENTS); its place in the map, entry, other enclosures and hiding places are open (Q-175) | planned |
 | later levels | further night levels (`night_2`…) and day areas after Q-023 | — |
@@ -417,7 +427,7 @@ condition, spawn point, and a top-down ASCII or SVG map.
    are never mirrored and are oriented by rotations about +Y only.
 6. Every straight run of fence, hedge or wall is filled by 2 m segments plus, for odd
    lengths, one 1 m segment at the end; turns use corner pieces (Q-057).
-7. *(Proposal Q-088)* All levels share one coordinate system; unlocked levels are joined
+7. *(Q-088, confirmed 2026-10-01)* All levels share one coordinate system; unlocked levels are joined
    into one grid through their `[[entry]]` cells (see "Joining levels").
 
 
@@ -434,7 +444,7 @@ Every other prop keeps its own collision shape (GAME-PLAYER §7) — in particul
 boards, enclosure signs and the map board are always solid**, so the player can never walk
 into or through a billboard.
 
-**Level data for tree areas** *(proposal, level design — Q-085)*:
+**Level data for tree areas** *(Q-085, confirmed 2026-10-01)*:
 - Every `decoration` of kind `trees` / `tree_grove` has `density = "dense" | "sparse"`.
 - `dense`: all cells of the rectangle are solid (as before). Its walkable sides get a
   visible border (`edge = "bushes"`: `bush` props every ≈ 1.3 m, centred 0.6 m inside the
@@ -449,7 +459,7 @@ into or through a billboard.
 - Hiding places next to sparse woods: a place's wander area is additionally clipped to the
   place's `rect`, so opening a wood never enlarges a wander area (LAYOUT-014 unchanged).
 
-## Enclosure features and wandering at home (proposal, level design — Q-085)
+## Enclosure features and wandering at home (Q-085, confirmed 2026-10-01)
 
 GAME-ANIMALS: an animal `in_enclosure` wanders slowly inside its enclosure. Where it may
 walk is level data:
@@ -468,7 +478,7 @@ walk is level data:
 - *Proposal:* an animal with `water` in `home_wander_on` picks a water cell for 7 of 10 new
   wander targets (hippos spend most time in the water; seeded RNG, ANIM-011).
 
-## Collision footprints (proposal, level design — Q-087)
+## Collision footprints (Q-087, confirmed 2026-10-01)
 
 Measured from the exported `.glb` files: the cross-section of each mesh between 0.05 m and
 1.4 m height (player height 1.20 m + margin) in model space (x = model right, z = model
@@ -589,7 +599,7 @@ door model with its opening and model widths; `Game::opening_open` decides: buil
 of **enterable** buildings — since 2026-09-28 every building with a door — while the player
 is within 1.6 m of the door cell (a door of a building without an interior would stay shut), enclosure gates (`gate_wood`, indoor `glass_door`) while
 the player leads animals (or carries one in its container) within 3 m — they stay open
-1.5 s behind the animals —, the garden gate within 2 m (proposal Q-102), the moon door with
+1.5 s behind the animals —, the garden gate within 2 m (Q-102), the moon door with
 its barrier. The presentation eases the open amount (≈ 0.5 s open, 0.8 s close):
 `door_wood` / `gate_wood` swing as a whole by 90° (inwards / into the enclosure), the
 leaves of `garden_gate`, `glass_door` and `moon_door` open to their back. Collision is
@@ -651,6 +661,7 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-044 | Given each level file (`level-1`, `level-2`, `level-3`, `night-1`) and any seed, when the level starts (new game / barrier opened / moon door opened), then for every animal of the level (every `[level] missions` entry, else every enclosure animal; both members of a pair) exactly one chosen hiding place exists, the animal is in state `escaped`, visible, not asleep, its position is a walkable cell inside that place's wander area, and after 10 s of simulation it has reacted (animation state ≠ frozen, ANIM-008 limits hold); no animal is missing or spawned later (user request 2026-09-30). | unit |
 | LAYOUT-045 | Given the level data, then every enclosure animal of a level is listed in that level's `missions` (or the field is absent) and has ≥ 3 `[[hiding_place]]` candidates, so no animal of an in-scope enclosure is left without a place. | unit |
 | LAYOUT-046 | Given each level file, then (rule 6) an info board or the food storage lies within 15 m of the spawn / entry cell and on screen in the zoo view; (rule 8) every board, storage door, enclosure gate, garden gate, bed and door has a `path` cell within 2 m and is connected to the spawn over `path` cells only; (rule 10) no mission element of the level lies behind a closed barrier; (rule 11) from every seeded game state (new, board read, food carried, following, level done, dusk, night) the hint has a reachable target; (rule 14) the walking distance from the spawn to the first board is ≤ 15 s and between any two mission steps ≤ 60 s on streets. | unit |
+| LAYOUT-047 | Given every `[[item]] kind = "bed"` of the joined zoo, then it has a `building` that is an enterable `zookeeper_house` (`interior` + `door`, LAYOUT-041), its 2 × 1 m footprint lies inside the interior rect (not on the door cell or the cell inside the door) on walkable cells, its `stand` cell is a walkable interior cell 1.0–1.5 m from the bed centre and free of colliders, the door cell has a `path` cell within 2 m, and the stand cell is reachable from the spawn of the bed's level through the door; each of levels 1, 2 and 3 has one such bed (user request 2026-10-01). | unit |
 
 ## Open questions
 

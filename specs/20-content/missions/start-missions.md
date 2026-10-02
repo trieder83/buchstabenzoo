@@ -6,10 +6,13 @@ module: missions
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-FEED, CONT-READING, CONT-MATH, CONT-L10N]
 test_prefix: MISS
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Start missions — 10 animals
+
+**Contents:** Overview · 1. Zebra — `loc_river`, `loc_meadow`, `loc_sand` · 2. Hippo — `loc_pond`, `loc_mud`, `loc_shade` · 3. Panda — `loc_cave`, `loc_bamboo`, `loc_leaves` · 4. Koala (pair) — `loc_treehouse`, `loc_tallest_tree`, `loc_blossom_tree` · 5. Elephant — `loc_fountain`, `loc_log_pile`, `loc_big_ball` · 6. Goldfish — `loc_waterfall`, `loc_water_wheel`, `loc_willow` · 7. Monkey — `loc_pirate_ship`, `loc_carousel`, `loc_trampoline` · 8. Giraffe — `loc_lookout_tower`, `loc_train`, `loc_playground` · 9. Lion — `loc_sun_rocks`, `loc_stage`, `loc_deckchairs` · 10. Snow fox — `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry` · Night level 1 — hedgehog, bat, owl (GAME-NIGHT, GAME-LEVEL-NIGHT-1) · Behaviour · Test cases · Open questions
+
 
 Content for the first 10 rescue missions (flow: GAME-RESCUE). German is the reference text;
 English follows it. Animal selection is a **proposal** pending Q-002.

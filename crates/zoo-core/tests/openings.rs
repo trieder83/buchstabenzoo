@@ -892,7 +892,8 @@ fn layout_041_every_building_with_a_door_is_enterable() {
             e.id
         );
     }
-    assert_eq!(n, 7, "buildings with a door");
+    // 8 since the zookeeper house of level 2 (every bed is indoors, LAYOUT-047)
+    assert_eq!(n, 8, "buildings with a door");
     // the stock boxes inside a building are solid (never walked through, Q-194); the labelled
     // food boxes stand outside (Q-181 answered)
     for p in data

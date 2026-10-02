@@ -31,6 +31,22 @@ pub const WOOD_MIN_HEIGHT_M: f32 = 0.08;
 /// Pitch variation of a played cue (±5 %).
 pub const PITCH_VARIATION: f32 = 0.05;
 
+/// Final gain of the night cricket bed (ASND-022): no master / group factor on top, the file is
+/// −22 LUFS so the bed plays at about −40 LUFS; "not too loud" (user request 2026-10-01).
+pub const AMBIENT_GAIN: f32 = 0.12;
+/// The bed fades in and out over this long (s).
+pub const AMBIENT_FADE_S: f32 = 3.0;
+
+/// Target gain of the ambient cricket loop: quiet crickets at dusk and night (day or night
+/// zoo), none by day, while sleeping and in the morning (ASND-022, Q-222).
+pub fn ambient_target(phase: crate::daytime::Phase) -> f32 {
+    use crate::daytime::Phase;
+    match phase {
+        Phase::Dusk | Phase::Night => AMBIENT_GAIN,
+        Phase::Day | Phase::Sleeping | Phase::Morning => 0.0,
+    }
+}
+
 /// The non-animal cue ids (ASND list); animal cues are `animal_<species>_call|happy|refuse`.
 pub const CUES: &[&str] = &[
     "step_path",

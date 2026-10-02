@@ -55,6 +55,8 @@ const WATER_WHEEL: &str = "__water_wheel";
 /// Lying foods show their icon above them within this distance of the player (GAME-FEED §10).
 const LYING_ICON_M: f32 = 5.0;
 const BOWL_HEIGHT_M: f32 = 0.36;
+/// Sideways offset of each of the two fish in the bowl (m).
+const BOWL_PAIR_SPREAD_M: f32 = 0.1;
 /// Glass colour; alpha 0.5 = screen-door transparency in the cel shader.
 const GLASS: [f32; 4] = [0.78, 0.92, 0.98, 0.5];
 const BOWL_WATER_COLOR: [f32; 4] = [0.36, 0.66, 0.90, 0.5];
@@ -78,8 +80,11 @@ const FIREFLIES_PER_AREA: usize = 6;
 const HAND_LANTERN: &str = "hand_lantern";
 /// `hand_lantern.socket_handle` (glTF): the grip that coincides with her hand.
 const HAND_LANTERN_GRIP: Vec3 = Vec3::new(0.0, 0.385, 0.0);
-/// Garden plant models per growth stage (`kit_garden`; `empty` = no model).
-const PLANT_MODELS: [[&str; 3]; 2] = [
+/// Plant kinds in the order of [`PLANT_MODELS`] (treat ids, GAME-GARDEN).
+const PLANT_KINDS: [&str; 4] = ["carrot", "potato", "apple", "orange"];
+/// Garden plant models per growth stage (`kit_garden`; `empty` = no model): carrot, potato,
+/// apple tree, orange tree.
+const PLANT_MODELS: [[&str; 3]; 4] = [
     [
         "carrot_plant_sprout",
         "carrot_plant_young",
@@ -90,9 +95,15 @@ const PLANT_MODELS: [[&str; 3]; 2] = [
         "potato_plant_young",
         "potato_plant_ripe",
     ],
+    ["apple_tree_sprout", "apple_tree_young", "apple_tree_ripe"],
+    [
+        "orange_tree_sprout",
+        "orange_tree_young",
+        "orange_tree_ripe",
+    ],
 ];
 /// Models the presentation places itself (not in the level scene).
-const EXTRA_MODELS: [&str; 7] = [
+const EXTRA_MODELS: [&str; 13] = [
     HAND_LANTERN,
     "carrot_plant_sprout",
     "carrot_plant_young",
@@ -100,6 +111,12 @@ const EXTRA_MODELS: [&str; 7] = [
     "potato_plant_sprout",
     "potato_plant_young",
     "potato_plant_ripe",
+    "apple_tree_sprout",
+    "apple_tree_young",
+    "apple_tree_ripe",
+    "orange_tree_sprout",
+    "orange_tree_young",
+    "orange_tree_ripe",
 ];
 /// Gates and doors: opening / closing speed (open amount per second) and how long an
 /// enclosure gate stays open behind the animals (s).
@@ -676,7 +693,7 @@ impl App {
             .collect();
         let mut plants = Vec::new();
         for pl in &scene.plants {
-            let kind = usize::from(pl.kind == "potato");
+            let kind = PLANT_KINDS.iter().position(|k| *k == pl.kind).unwrap_or(0);
             let region = part_regions[(pl.part as usize).min(part_regions.len() - 1)];
             let mut stages = [None; 3];
             let mut base = [Instance::model(pl.pos, 0.0, false); 3];
@@ -752,7 +769,21 @@ impl App {
         // Decals: sign silhouettes (image files) and sign texts (rendered by the host).
         let mut text_textures: Vec<(String, String, u32, u32)> = Vec::new();
         for d in &decals {
+            let mut uv = None;
             let texture = match &d.image {
+                // food box labels: one shared atlas texture, a cell per decal (FEED-030)
+                DecalImage::Atlas { texture, uv: r } => {
+                    if !text_textures.iter().any(|(t, ..)| t == texture) {
+                        text_textures.push((
+                            texture.clone(),
+                            "food-atlas".to_owned(),
+                            zoo_core::food::ATLAS_PX.0,
+                            zoo_core::food::ATLAS_PX.1,
+                        ));
+                    }
+                    uv = Some(*r);
+                    texture.clone()
+                }
                 DecalImage::Texture(path) => {
                     if !renderer.has_decal_texture(path) {
                         let Some(png) = files.get(path) else {
@@ -784,7 +815,12 @@ impl App {
                 .iter()
                 .find(|(id, _)| d.id.strip_prefix("sign:") == Some(id.as_str()))
                 .map_or(zoo_render::renderer::REGION_ALWAYS, |(_, r)| *r);
-            renderer.add_decal_in(&texture, d.corners(), d.normal(), region);
+            match uv {
+                Some(r) => {
+                    renderer.add_decal_uv(&texture, d.corners(), d.normal(), region, r, true)
+                }
+                None => renderer.add_decal_in(&texture, d.corners(), d.normal(), region),
+            }
         }
 
         // Water wheels turning in the water (LAYOUT-L3-017): a procedural placeholder model
@@ -1224,6 +1260,10 @@ impl App {
     pub fn set_reading_level(&mut self, id: &str) -> bool {
         match ReadingLevel::from_id(id) {
             Some(l) => {
+                if self.game.settings.reading_level != l {
+                    // the food box labels change their pictogram size (FEED-030)
+                    self.text_dirty = true;
+                }
                 self.game.settings.reading_level = l;
                 true
             }
@@ -1328,8 +1368,14 @@ impl App {
             .text_textures
             .iter()
             .map(|(id, key, w, h)| {
+                // the shared food label atlas (FEED-030): every food's lid and front cell
+                let picto = if key == "food-atlas" {
+                    self.food_atlas_cells()
+                } else {
+                    String::new()
+                };
                 format!(
-                    "{{\"id\":{},\"key\":{},\"text\":{},\"width\":{w},\"height\":{h}}}",
+                    "{{\"id\":{},\"key\":{},\"text\":{},\"width\":{w},\"height\":{h}{picto}}}",
                     js(id),
                     js(key),
                     js(&self.text_now(key))
@@ -1337,6 +1383,27 @@ impl App {
             })
             .collect();
         format!("[{}]", items.join(","))
+    }
+
+    /// JSON `,"cells":[...]` of the food label atlas: per food and face the cell rectangle in
+    /// px, the word (current language), the pictogram and its share of the height.
+    fn food_atlas_cells(&self) -> String {
+        use zoo_core::food::{AtlasPart, Food};
+        let level = self.game.settings.reading_level;
+        let mut cells = Vec::new();
+        for food in Food::ALL {
+            let l = zoo_core::FoodBox { food }.label(level);
+            for (part, name) in [(AtlasPart::Lid, "lid"), (AtlasPart::Front, "front")] {
+                let [x, y, w, h] = food.atlas_cell(part);
+                cells.push(format!(
+                    "{{\"part\":\"{name}\",\"x\":{x},\"y\":{y},\"w\":{w},\"h\":{h},\"text\":{},\"pictogram\":{},\"pictogram_scale\":{}}}",
+                    js(&self.text_now(&l.word_key)),
+                    js(l.pictogram),
+                    l.pictogram_scale
+                ));
+            }
+        }
+        format!(",\"cells\":[{}]", cells.join(","))
     }
 
     /// Uploads a rendered text texture (RGBA8, top row first). Returns false for unknown ids
@@ -1501,20 +1568,23 @@ impl App {
         ok
     }
 
-    /// The treat basket (GAME-GARDEN §4) as JSON `{"carrot": n, "potato": n, "capacity": 6,
-    /// "offered": "carrot"|""}` for the HUD (icons + numbers).
+    /// The treat basket (GAME-GARDEN §4) as JSON `{"carrot": n, "potato": n, "apple": n,
+    /// "orange": n, "capacity": 6, "offered": "carrot"|""}` for the HUD (icons + numbers).
     pub fn basket_json(&self) -> String {
         let b = self.game.garden.basket;
         format!(
-            "{{\"carrot\":{},\"potato\":{},\"capacity\":{},\"offered\":{}}}",
+            "{{\"carrot\":{},\"potato\":{},\"apple\":{},\"orange\":{},\"capacity\":{},\"offered\":{}}}",
             b.carrots,
             b.potatoes,
+            b.apples,
+            b.oranges,
             zoo_core::garden::BASKET_CAPACITY,
             js(self.game.offered_treat().map_or("", |t| t.id()))
         )
     }
 
-    /// Chooses the treat offered at a fence (`carrot`, `potato`); false if unknown.
+    /// Chooses the treat offered at a fence (`carrot`, `potato`, `apple`, `orange`); false if
+    /// unknown.
     pub fn select_treat(&mut self, id: &str) -> bool {
         match zoo_core::garden::Treat::from_id(id) {
             Some(t) => {
@@ -1905,31 +1975,60 @@ impl App {
                     .get(i)
                     .filter(|ga| ga.member == 1)
                     .and_then(|_| {
-                        let m = zoo_core::animals::baby_model(a.id)?;
+                        // own baby model, else the adult model scaled to ~45 % (Q-308)
+                        let m = match zoo_core::animals::baby_model(a.id) {
+                            Some(m) if self.baby_models.contains(&m) => m,
+                            _ => a.model,
+                        };
                         let st = self.game.baby_states.get(a.id)?;
-                        (self.game.babies.iter().any(|b| b == a.id)
-                            && self.baby_models.contains(&m))
-                        .then_some((m, st.pos, st.facing, !st.route.is_empty()))
+                        self.game.babies.iter().any(|b| b == a.id).then_some((
+                            m,
+                            st.pos,
+                            st.facing,
+                            !st.route.is_empty(),
+                            st.play.clone(),
+                        ))
                     });
-                if let Some((m, bpos, bfacing, walking)) = baby {
+                if let Some((m, bpos, bfacing, walking, play)) = baby {
+                    // playful baby (FAM-014..018): own clip clock/rate, `eat` while sniffing, hop
+                    let sniff = play.mode == zoo_core::baby::Mode::Sniff;
+                    let look = if zoo_core::animals::baby_model(a.id) == Some(m) {
+                        zoo_core::animals::member_look(a.id, 0)
+                    } else {
+                        zoo_core::animals::BABY_FALLBACK_LOOK
+                    };
                     self.draws.push((
                         m,
                         CharacterDraw {
-                            pos: level_to_world(bpos) + Vec3::Y * (pos.y - level_to_world(a.pos).y),
+                            pos: level_to_world(bpos)
+                                + Vec3::Y * (pos.y - level_to_world(a.pos).y + play.hop),
                             yaw: facing_to_yaw(bfacing),
-                            idle_time: a.idle_time + 0.7,
-                            walk_time: a.walk_time + 0.3,
+                            idle_time: play.clip_t + 0.7,
+                            walk_time: play.clip_t + 0.3,
                             walk_blend: if walking { 1.0 } else { 0.0 },
                             idle_clip: a.rest,
                             walk_clip: a.locomotion,
-                            action: action.map(|n| (n, t)),
-                            action_blend: if action.is_some() { 1.0 } else { 0.0 },
+                            action: if sniff {
+                                Some(("eat", play.sniff_t))
+                            } else {
+                                action.map(|n| (n, t))
+                            },
+                            action_blend: if sniff || action.is_some() { 1.0 } else { 0.0 },
                             under_water: a.under_water,
                             tilt: Quat::IDENTITY,
                             eye_glow: false,
+                            scale: look.scale,
+                            tint: look.tint,
                         },
                     ));
                 }
+                let own = self
+                    .game
+                    .animals
+                    .get(i)
+                    .map_or(zoo_core::animals::member_look(a.id, 0), |ga| {
+                        zoo_core::animals::member_look(a.id, ga.member)
+                    });
                 self.draws.push((
                     a.model,
                     CharacterDraw {
@@ -1946,6 +2045,8 @@ impl App {
                         tilt: Quat::IDENTITY,
                         // eye_glow inside the lantern light, never while asleep (Q-146)
                         eye_glow: zoo_core::night::eye_glow(shine, a.rest, action),
+                        scale: own.scale,
+                        tint: if a.under_water { [0.0; 4] } else { own.tint },
                     },
                 ));
             } else if is_night_placeholder(a.id) {
@@ -2020,6 +2121,8 @@ impl App {
                     under_water: false,
                     tilt: p.tilt,
                     eye_glow: false,
+                    scale: 1.0,
+                    tint: [0.0; 4],
                 },
             ));
         }
@@ -2200,6 +2303,7 @@ impl App {
                 && self.renderer.has_decal_texture(&match &d.image {
                     DecalImage::Texture(p) => p.clone(),
                     DecalImage::Text { key, .. } => text_texture_id(key),
+                    DecalImage::Atlas { texture, .. } => texture.clone(),
                     DecalImage::Ad { board, .. } => zoo_core::ads::texture_id(board),
                 })
         })
@@ -2635,6 +2739,11 @@ impl App {
         self.game.daytime.phase.id().to_owned()
     }
 
+    /// Target gain of the night cricket bed (0 by day, 0.12 at dusk / night; ASND-022).
+    pub fn ambient_target(&self) -> f32 {
+        zoo_core::sound::ambient_target(self.game.daytime.phase)
+    }
+
     /// Night light of the time of day `[night 0…1, warm 0…1]`.
     pub fn daylight(&self) -> Vec<f32> {
         let l = self.game.daytime.light();
@@ -3026,6 +3135,13 @@ impl App {
                     key: b.sign_key.clone(),
                 })
             }
+            Target::WelcomeBoard { level } => {
+                let k = self.game.level.data.part_index(level)?;
+                Some(Interaction::WelcomeBoard {
+                    level: level.clone(),
+                    animals: self.game.part_animal_ids(k),
+                })
+            }
             _ => None,
         }
     }
@@ -3039,7 +3155,15 @@ impl App {
                 js(b.animal),
                 js(&self.text_now(&b.name_key)),
                 js(&self.text_now(&b.more_key)),
-                js(&self.text_now(&b.facts_key)),
+                // a pair species: the generic pair note after the facts (GAME-FAMILY, Q-308)
+                js(&match &b.pair_note_key {
+                    Some(k) => format!(
+                        "{} {}",
+                        self.text_now(&b.facts_key),
+                        self.text_now(k)
+                    ),
+                    None => self.text_now(&b.facts_key),
+                }),
                 js(&self.text_now(&b.riddle_key)),
                 b.picture.as_deref().map_or("null".to_owned(), js),
                 js(b.food_key.trim_start_matches("food-")),
@@ -3057,11 +3181,12 @@ impl App {
                 },
             ),
             Interaction::FoodBox { food, label } => format!(
-                "{{\"kind\":\"food_box\",\"key\":{},\"food\":{},\"text\":{},\"picture\":{},\"take\":{}}}",
+                "{{\"kind\":\"food_box\",\"key\":{},\"food\":{},\"text\":{},\"pictogram\":{},\"pictogram_scale\":{},\"take\":{}}}",
                 js(&format!("food_box:{}", food.id())),
                 js(food.id()),
                 js(&self.text_now(&label.word_key)),
-                label.picture,
+                js(label.pictogram),
+                label.pictogram_scale,
                 js(&self.text_now("ui-take")),
             ),
             Interaction::ShowFood {
@@ -3100,6 +3225,29 @@ impl App {
                     js(key.trim_start_matches("garden-")),
                     js(&self.text_now(key)),
                     js(&text)
+                )
+            }
+            Interaction::WelcomeBoard { level, animals } => {
+                // the game description, the goal of this level and how to play (RESC-028)
+                let k = zoo_core::content::welcome_keys(level, self.game.settings.reading_level);
+                let names: Vec<String> = animals
+                    .iter()
+                    .map(|a| self.text_now(&zoo_core::content::animal_name_key(a)))
+                    .collect();
+                let goal = format!("{} {}", self.text_now(&k.goal), names.join(", "));
+                let steps: Vec<String> = k.steps.iter().map(|s| js(&self.text_now(s))).collect();
+                let ids: Vec<String> = animals.iter().map(|a| js(a)).collect();
+                format!(
+                    "{{\"kind\":\"welcome_board\",\"key\":{},\"level\":{},\"title\":{},\"text\":{},\"goal\":{},\"animals\":[{}],\"steps\":[{}],\"start\":{},\"level_text\":{}}}",
+                    js(&format!("welcome_board:{level}")),
+                    js(level),
+                    js(&self.text_now(&k.title)),
+                    js(&self.text_now(&k.text)),
+                    js(&goal),
+                    ids.join(","),
+                    steps.join(","),
+                    js(&self.text_now(&k.start)),
+                    js(&self.text_now(&k.level_text)),
                 )
             }
             Interaction::Treat {
@@ -3445,7 +3593,12 @@ impl App {
             v.visible = self.game.in_scope(a);
             // in the bowl: at its water surface (origin = water surface, fish rig)
             v.anchor = match (a.state, bowl) {
-                (AnimalState::InBowl, Some(base)) => Some(base + Vec3::Y * (BOWL_HEIGHT_M * 0.74)),
+                (AnimalState::InBowl, Some(base)) => {
+                    // two fish side by side across their heading (GAME-FAMILY, Q-308)
+                    let side = Vec3::new(-a.facing.y, 0.0, a.facing.x)
+                        * (BOWL_PAIR_SPREAD_M * (f32::from(a.member) - 0.5) * 2.0);
+                    Some(base + side + Vec3::Y * (BOWL_HEIGHT_M * 0.74))
+                }
                 _ => None,
             };
             if let Some((from, t, into)) = v.leap {
@@ -3986,7 +4139,7 @@ impl App {
 
     // -------------------------------------------------------------- hints (GAME-HINT)
 
-    /// The 🧭 hint button / `H` / tapping the 🌙 progress (GAME-HINT rule 2/3, rule 8):
+    /// The 🧭 hint button / `H` (GAME-HINT rule 2/3, rule 8):
     /// shows the best next target, pressed again within 12 s the next of the top 3.
     /// Returns the target kind (`board`, `food`, …) or empty.
     pub fn hint_press(&mut self) -> String {
@@ -4036,20 +4189,27 @@ impl App {
         self.hints.pulses()
     }
 
-    /// The 🌙 night progress (GAME-NIGHT rule 11): JSON `{"state": "hidden" | "missing" |
-    /// "night_coming" | "night" | "sleep", "level", "animals": [{"id", "home"}]}`.
-    pub fn night_progress_json(&self) -> String {
+    /// The compass strip and task badge (GAME-NIGHT rule 11): JSON `{"state": "hidden" |
+    /// "missing" | "night_coming" | "night" | "sleep", "level", "animals": [{"id", "home"}],
+    /// "badge" (kind of the next task, "" = none), "badge_animal"}`. Computed without showing
+    /// a hint; the host polls it at <= 4 Hz.
+    pub fn compass_json(&self) -> String {
         let p = zoo_core::hints::night_progress(&self.game);
         let animals: Vec<String> = p
             .animals
             .iter()
             .map(|(id, home)| format!("{{\"id\":{},\"home\":{}}}", js(id), home))
             .collect();
+        let (badge, animal) = zoo_core::hints::compass_badge(&self.game, &self.hints)
+            .map(|(k, a)| (k, a.unwrap_or("")))
+            .unwrap_or(("", ""));
         format!(
-            "{{\"state\":{},\"level\":{},\"animals\":[{}]}}",
+            "{{\"state\":{},\"level\":{},\"animals\":[{}],\"badge\":{},\"badge_animal\":{}}}",
             js(p.state.id()),
             js(&p.level),
-            animals.join(",")
+            animals.join(","),
+            js(badge),
+            js(animal)
         )
     }
 
@@ -4069,20 +4229,43 @@ impl App {
             .unwrap_or_default()
     }
 
-    /// Debug/e2e: puts `n` treats (`carrot`, `potato`) into the basket (up to its capacity).
+    /// Debug/e2e: puts `n` treats (`carrot`, `potato`, `apple`, `orange`) into the basket (up
+    /// to its capacity).
     pub fn debug_give_treats(&mut self, id: &str, n: u32) {
-        let b = &mut self.game.garden.basket;
-        let room = zoo_core::garden::BASKET_CAPACITY.saturating_sub(b.total());
-        match zoo_core::garden::Treat::from_id(id) {
-            Some(zoo_core::garden::Treat::Carrot) => b.carrots += n.min(room),
-            Some(zoo_core::garden::Treat::Potato) => b.potatoes += n.min(room),
-            None => {}
+        if let Some(t) = zoo_core::garden::Treat::from_id(id) {
+            self.game.garden.basket.add(t, n);
         }
     }
 
     /// Debug/e2e: how many babies were born (GAME-FAMILY §5).
     pub fn debug_baby_count(&self) -> u32 {
         self.game.babies.len() as u32
+    }
+
+    /// Debug/e2e: distance (m) between the baby of a pair species and its female, `-1` if
+    /// there is no baby (FAM-011..013: the baby is always with her).
+    pub fn debug_baby_gap(&self, id: &str) -> f32 {
+        let f = self
+            .game
+            .group(id)
+            .into_iter()
+            .find(|&j| self.game.animals[j].member == 1);
+        match (f, self.game.baby_states.get(id)) {
+            (Some(f), Some(b)) => b.pos.distance(self.game.animals[f].pos),
+            _ => -1.0,
+        }
+    }
+
+    /// Debug/e2e: whether the baby of a pair species stands inside its enclosure's fence.
+    pub fn debug_baby_inside(&self, id: &str) -> bool {
+        let (Some(a), Some(b)) = (self.game.animal(id), self.game.baby_states.get(id)) else {
+            return false;
+        };
+        let r = self.game.level.data.elements[a.enclosure].rect;
+        b.pos.x > r.x as f32
+            && b.pos.x < (r.x + r.w) as f32
+            && b.pos.y > r.z as f32
+            && b.pos.y < (r.z + r.d) as f32
     }
 
     /// Debug/e2e: how many drawn animals of a species are playing or queueing a reaction
@@ -4131,6 +4314,7 @@ fn target_key(t: &Target) -> String {
         Target::MoonDoor { id } => format!("moon_door:{id}"),
         Target::Plant { spot } => format!("plant:{spot}"),
         Target::GardenSign { bed } => format!("garden_sign:{bed}"),
+        Target::WelcomeBoard { level } => format!("welcome_board:{level}"),
         Target::Treat { animal } => format!("treat:{animal}"),
     }
 }
@@ -4210,6 +4394,15 @@ mod tests {
         assert!(list.contains(&"textures/signs/silhouette_goldfish.png".to_owned()));
         assert!(list.contains(&"models/props/tree_eucalyptus.glb".to_owned()));
         assert!(list.contains(&ANIMAL_ANIMS.to_owned()));
+        // GARD-023: the fruit trees of the level-3 fruit garden, every growth stage
+        for kind in ["apple", "orange"] {
+            for stage in ["sprout", "young", "ripe"] {
+                assert!(
+                    list.contains(&format!("models/props/{kind}_tree_{stage}.glb")),
+                    "{kind}_tree_{stage}"
+                );
+            }
+        }
         // the hippo pool's model (placeholder rim when missing)
         assert!(list.contains(&"models/props/pool_tiled.glb".to_owned()));
         // AENV-011: the zebra sign silhouette is fetched (hippo/panda once they exist)

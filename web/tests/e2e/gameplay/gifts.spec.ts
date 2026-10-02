@@ -35,6 +35,9 @@ test('GARD-012: carrots given directly to the home zebra pair', async ({ page })
   expect(await page.evaluate(() => window.__zoo!.app.debug_reacting_views('zebra'))).toBe(2);
   expect((await basket()).carrot).toBe(3);
   expect(await page.evaluate(() => window.__zoo!.app.debug_baby_count())).toBe(1);
+  // FAM-011/013: the baby is inside the fence beside the female
+  expect(await page.evaluate(() => window.__zoo!.app.debug_baby_inside('zebra'))).toBe(true);
+  expect(await page.evaluate(() => window.__zoo!.app.debug_baby_gap('zebra'))).toBeLessThan(6);
   // a second gift: the carrot leaves the basket, no second baby
   await wait(page, 4);
   await page.keyboard.press('KeyE');

@@ -15,6 +15,16 @@ garden-potato-klasse1 = Potatoes grow here.
 garden-potato-klasse2 = Potatoes grow here. They are under the ground.
 garden-potato-klasse3 = Potatoes grow in this bed. The potatoes are under the ground. On top grow leaves and small white flowers.
 
+## Fruit garden of level 3 (GARD-019, Q-320): one sign per bed
+garden-apple = Apples
+garden-orange = Oranges
+garden-apple-klasse1 = Apples grow here.
+garden-apple-klasse2 = Apples grow here. Pick an apple from the tree!
+garden-apple-klasse3 = Apples grow on these small trees. The ripe apples are red. Pick them carefully from the tree!
+garden-orange-klasse1 = Oranges grow here.
+garden-orange-klasse2 = Oranges grow here. Pick an orange from the tree!
+garden-orange-klasse3 = Oranges grow on these small trees. The ripe oranges are orange. Pick them carefully from the tree!
+
 ## Harvest and treats (GAME-GARDEN §3–§6): short feedback bubbles
 garden-basket-full = The basket is full!
 garden-treat-yum = Mmm, yummy!

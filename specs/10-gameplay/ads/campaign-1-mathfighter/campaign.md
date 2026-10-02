@@ -30,7 +30,7 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**. C
 2. **Reading the ad:** like an info board (GAME-PLAYER §4/§5) an ad board of this campaign is
    *readable*: standing in front of it opens a **reading panel** with the image and the
    tagline (Fluent, per reading level: `kiga` shows only the picture, `klasse1+` the tagline).
-   Ads of placeholder campaigns stay passive.
+   Boards of a slot without a delivered, verified campaign (placeholder) stay passive.
 3. **Clickable link (user request 2026-09-30, Q-217 answered: option (a)):** the open panel shows
    a big link button (icon + "mathfighter.rcms.ch"). Pressing it shows the **parental gate**
    (GAME-ADS rule 11: a two-digit sum, then hold ✋ 3 s); only after it the URL opens in the
@@ -50,7 +50,7 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**. C
 | ADC1-003 | Given the open panel, then it has a link button ≥ 64 px with the host `mathfighter.rcms.ch`; pressing it first shows the parental gate and does **not** open anything yet (test build, ADS-020). | e2e |
 | ADC1-004 | Given the parental gate was passed, then the URL opens in a new browser tab/external browser exactly once (`noopener`), with no query parameters; given the gate was failed or cancelled, nothing opens. | e2e |
 | ADC1-005 | Given the game runs for a session without pressing the link, then no network request to mathfighter.rcms.ch is made (ADS-004 still holds for all other boards). | e2e |
-| ADC1-006 | Given placeholder campaign 3 (and any board without a verified campaign), then its boards stay non-interactable (no panel, no link). | e2e |
+| ADC1-006 | Given a slot whose campaign is not delivered or fails verification (and any board without a verified campaign), then its boards stay non-interactable (no panel, no link). | e2e |
 
 ## Open questions
 

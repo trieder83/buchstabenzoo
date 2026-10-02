@@ -9,10 +9,14 @@ import {
   parseHint,
   parseLyingIcons,
   parseProgress,
+  badgeIcon,
   missingAnimals,
+  stripView,
+  progressInfoKey,
   saveSettings,
   targetIcon,
   type KeyValue,
+  TREATS,
 } from './ui';
 
 class MapStore implements KeyValue {
@@ -126,11 +130,25 @@ describe('garden basket HUD (GAME-GARDEN §4)', () => {
     expect(parseBasket('{"carrot":2,"potato":3,"capacity":6,"offered":"carrot"}')).toEqual({
       carrot: 2,
       potato: 3,
+      apple: 0,
+      orange: 0,
       capacity: 6,
       offered: 'carrot',
     });
-    expect(parseBasket('')).toEqual({ carrot: 0, potato: 0 });
-    expect(parseBasket(undefined)).toEqual({ carrot: 0, potato: 0 });
+    expect(parseBasket('')).toEqual({ carrot: 0, potato: 0, apple: 0, orange: 0 });
+    expect(parseBasket(undefined)).toEqual({ carrot: 0, potato: 0, apple: 0, orange: 0 });
+  });
+  // GARD-015: fruit treats of the level-3 fruit garden
+  it('parses fruit counts and has a picture per treat kind', () => {
+    expect(parseBasket('{"carrot":0,"potato":0,"apple":2,"orange":1,"capacity":6,"offered":"apple"}')).toMatchObject({
+      apple: 2,
+      orange: 1,
+      offered: 'apple',
+    });
+    expect(TREATS).toEqual(['carrot', 'potato', 'apple', 'orange']);
+    for (const t of TREATS) expect(FOOD_ICONS[t], t).toBeTruthy();
+    expect(FOOD_ICONS.apple).toBe('🍎');
+    expect(FOOD_ICONS.orange).toBe('🍊');
   });
   it('has pictures for treats and the garden targets (no reading needed)', () => {
     expect(FOOD_ICONS.carrot).toBeTruthy();
@@ -159,7 +177,7 @@ describe('GAME-HINT overlay data (HINT-007)', () => {
   it('parses a shown hint and clamps the distance dots to 1…5', () => {
     const h = parseHint('{"id":"board:zebra","kind":"board","on":false,"x":40,"y":300,"angle":180,"dots":9,"step":"hint-read"}');
     // HINT-016: the next-step key travels with the hint
-    expect(h).toEqual({ id: 'board:zebra', kind: 'board', on: false, x: 40, y: 300, angle: 180, dots: 5, step: 'hint-read' });
+    expect(h).toEqual({ id: 'board:zebra', kind: 'board', on: false, x: 40, y: 300, angle: 180, dots: 5, step: 'hint-read', animal: '' });
     expect(parseHint('')).toBeNull();
     expect(parseHint('{broken')).toBeNull();
     expect(parseHint('{"kind":"board"}')).toBeNull();
@@ -179,13 +197,39 @@ describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
       { id: 'zebra', home: true },
       { id: 'hippo', home: false },
     ]);
-    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [] });
+    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [], badge: '', badgeAnimal: '' });
   });
   it('NIGHT-022: shows only the animals still missing; none missing = empty list', () => {
     const p = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"zebra","home":true},{"id":"hippo","home":false},{"id":"panda","home":false}]}');
     expect(missingAnimals(p).map((a) => a.id)).toEqual(['hippo', 'panda']);
     const done = parseProgress('{"state":"night_coming","level":"level_1","animals":[{"id":"zebra","home":true}]}');
     expect(missingAnimals(done)).toEqual([]);
+    expect(stripView(done)).toEqual({ ids: [], more: 0 });
+  });
+  it('NIGHT-022: at most 6 icons, then +n; the badge kind maps to an icon', () => {
+    const many = parseProgress(
+      `{"state":"missing","level":"l","animals":[${Array.from({ length: 9 }, (_, i) => `{"id":"a${i}","home":false}`).join(',')}],"badge":"board","badge_animal":"zebra"}`,
+    );
+    expect(stripView(many)).toEqual({ ids: ['a0', 'a1', 'a2', 'a3', 'a4'], more: 4 });
+    expect(many.badge).toBe('board');
+    expect(many.badgeAnimal).toBe('zebra');
+    expect(badgeIcon('board')).toBe('📋');
+    expect(badgeIcon('night_coming')).toBe('🌙');
+    expect(badgeIcon('bed')).toBe('🛏️');
+    expect(badgeIcon('moon_door')).toBe('🚪🌙');
+    expect(badgeIcon('')).toBe('');
+  });
+});
+
+describe('NIGHT-023: tapping the compass explains it', () => {
+  const mk = (state: string, home: boolean) =>
+    parseProgress(`{"state":"${state}","level":"level_1","animals":[{"id":"zebra","home":${home}}]}`);
+  it('picks the info key per state and reading level', () => {
+    expect(progressInfoKey(mk('missing', false), 'klasse2')).toBe('night-progress-info-klasse2');
+    expect(progressInfoKey(mk('missing', true), 'klasse1')).toBe('night-progress-info-done-klasse1');
+    expect(progressInfoKey(mk('night_coming', true), 'kiga')).toBe('night-progress-info-done-kiga');
+    expect(progressInfoKey(mk('night', false), 'klasse3')).toBe('night-progress-info-night-klasse3');
+    expect(progressInfoKey(mk('sleep', true), 'klasse2')).toBe('night-progress-info-sleep-klasse2');
   });
 });
 

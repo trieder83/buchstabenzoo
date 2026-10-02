@@ -1052,6 +1052,11 @@ pub struct CharacterDraw {
     pub tilt: Quat,
     /// The `eye_glow` slot shines (night animal inside the lantern radius, NIGHT-006).
     pub eye_glow: bool,
+    /// Uniform model scale (1 = as modelled): pair members without their own model (Q-308).
+    pub scale: f32,
+    /// Colour tint `[r, g, b, amount]` over the model colours (amount 0 = none); an under-water
+    /// character uses the water tint instead.
+    pub tint: [f32; 4],
 }
 
 /// How far an under-water character is pulled towards the camera for the depth test, so it
@@ -1082,6 +1087,8 @@ impl CharacterDraw {
             under_water: false,
             tilt: Quat::IDENTITY,
             eye_glow: false,
+            scale: 1.0,
+            tint: [0.0; 4],
         }
     }
 
@@ -1089,6 +1096,7 @@ impl CharacterDraw {
         Mat4::from_translation(self.pos)
             * Mat4::from_quat(self.tilt)
             * Mat4::from_rotation_y(self.yaw)
+            * Mat4::from_scale(Vec3::splat(self.scale))
     }
 }
 
@@ -1122,6 +1130,9 @@ struct DecalDraw {
     max: Vec3,
     /// Hidden with this render region (a name board hidden with its roof).
     region: u16,
+    /// Atlas decal (food box labels): consecutive visible neighbours with the same texture
+    /// and normal merge into one draw call.
+    batch: bool,
 }
 
 /// Generous bounds of a skinned character around its origin (giraffe 4.5 m, elephant).
@@ -1550,11 +1561,34 @@ impl Renderer {
 
     /// Adds a decal that is hidden with a render region.
     pub fn add_decal_in(&mut self, texture: &str, corners: [Vec3; 4], normal: Vec3, region: u16) {
+        self.add_decal_uv(
+            texture,
+            corners,
+            normal,
+            region,
+            [0.0, 0.0, 1.0, 1.0],
+            false,
+        );
+    }
+
+    /// Adds a decal showing the `uv` rectangle `[u0, v0, u1, v1]` of a (shared atlas) texture.
+    /// With `batch`, consecutive decals of the same texture and normal share one draw call.
+    pub fn add_decal_uv(
+        &mut self,
+        texture: &str,
+        corners: [Vec3; 4],
+        normal: Vec3,
+        region: u16,
+        uv: [f32; 4],
+        batch: bool,
+    ) {
         let first_vertex = self.decals.vertices.len() / 5;
-        for (c, uv) in corners
-            .iter()
-            .zip([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
-        {
+        for (c, uv) in corners.iter().zip([
+            [uv[0], uv[1]],
+            [uv[2], uv[1]],
+            [uv[2], uv[3]],
+            [uv[0], uv[3]],
+        ]) {
             self.decals
                 .vertices
                 .extend_from_slice(&[c.x, c.y, c.z, uv[0], uv[1]]);
@@ -1568,6 +1602,7 @@ impl Renderer {
             min: min - Vec3::splat(0.05),
             max: max + Vec3::splat(0.05),
             region,
+            batch,
         });
         self.decals.uploaded = false;
     }
@@ -2739,7 +2774,7 @@ impl Renderer {
                 p.set4f(gl, U::Tint, UNDER_WATER_TINT);
                 p.set1f(gl, U::DepthBias, UNDER_WATER_DEPTH_BIAS_M);
             } else {
-                p.set4f(gl, U::Tint, [0.0; 4]);
+                p.set4f(gl, U::Tint, draw.tint);
                 p.set1f(gl, U::DepthBias, 0.0);
             }
             p.set2ui(gl, U::LightMask, mask);
@@ -2910,6 +2945,27 @@ impl Renderer {
             gl.enable(Gl::POLYGON_OFFSET_FILL);
             gl.polygon_offset(-1.0, -4.0);
             gl.bind_vertex_array(self.decals.vao.as_ref());
+            // draws of consecutive batched quads with the same texture and normal merge
+            let mut run: Option<(usize, i32, &DecalDraw)> = None; // (first quad, quads, decal)
+            let flush = |run: &mut Option<(usize, i32, &DecalDraw)>, stats: &mut FrameStats| {
+                let Some((first, n, d)) = run.take() else {
+                    return;
+                };
+                let Some(t) = self.decal_textures.get(&d.texture) else {
+                    return;
+                };
+                gl.bind_texture(Gl::TEXTURE_2D, Some(t));
+                p.set3f(gl, U::Normal, d.normal);
+                gl.draw_elements_with_i32(
+                    Gl::TRIANGLES,
+                    6 * n,
+                    Gl::UNSIGNED_SHORT,
+                    (first * 6 * 2) as i32,
+                );
+                stats.draw_calls += 1;
+                stats.triangles += 2 * n as u32;
+                stats.decals += n as u32;
+            };
             for d in &self.decals.draws {
                 if !cull.visible(d.min, d.max)
                     || (d.region != REGION_ALWAYS
@@ -2918,23 +2974,25 @@ impl Renderer {
                             .get(d.region as usize)
                             .is_some_and(|r| r.hidden))
                 {
+                    flush(&mut run, &mut stats);
                     continue;
                 }
-                let Some(t) = self.decal_textures.get(&d.texture) else {
-                    continue;
-                };
-                gl.bind_texture(Gl::TEXTURE_2D, Some(t));
-                p.set3f(gl, U::Normal, d.normal);
-                gl.draw_elements_with_i32(
-                    Gl::TRIANGLES,
-                    6,
-                    Gl::UNSIGNED_SHORT,
-                    (d.first_vertex / 4 * 6 * 2) as i32,
-                );
-                stats.draw_calls += 1;
-                stats.triangles += 2;
-                stats.decals += 1;
+                let quad = d.first_vertex / 4;
+                if let Some((first, n, prev)) = &mut run {
+                    if d.batch
+                        && prev.batch
+                        && prev.texture == d.texture
+                        && prev.normal == d.normal
+                        && *first + *n as usize == quad
+                    {
+                        *n += 1;
+                        continue;
+                    }
+                }
+                flush(&mut run, &mut stats);
+                run = Some((quad, 1, d));
             }
+            flush(&mut run, &mut stats);
             gl.disable(Gl::POLYGON_OFFSET_FILL);
             gl.depth_mask(true);
             gl.disable(Gl::BLEND);

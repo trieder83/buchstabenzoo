@@ -339,67 +339,83 @@
         border: 2px solid #3b2314;
         background: #fff3d6;
       }
-      /* GAME-NIGHT rule 11: what is still missing before night falls — 🌙 + one icon per
-         animal of the level (filled = home, faded = missing); tap = hint. */
-      #night-progress {
-        position: fixed;
-        right: calc(16px + env(safe-area-inset-right));
-        top: calc(180px + env(safe-area-inset-top));
-        width: 68px;
+      /* GAME-NIGHT rule 11 "Compass shows what is missing": the task badge (kind of the next
+         task) sits on the 🧭, the compass strip (missing animals of the level) hangs below it
+         (a row left of it on low landscape screens). Both are children of the button: display
+         only, a tap on them is the compass tap. */
+      #compass-btn {
+        overflow: visible;
+      }
+      #compass-btn .badge {
+        position: absolute;
+        left: -10px;
+        bottom: -8px;
+        min-width: 32px;
+        height: 32px;
         box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        padding: 6px 0;
-        border-radius: 34px;
-        border: 5px solid #3b2314;
-        background: #fff3d6;
-        box-shadow: 0 5px 0 rgba(59, 35, 20, 0.55);
-      }
-      #night-progress .moon,
-      #night-progress .pa {
-        width: 44px;
-        height: 44px;
-        font-size: 32px;
-        line-height: 44px;
+        padding: 0 3px;
+        border-radius: 16px;
+        border: 3px solid #3b2314;
+        background: #fff;
+        font-size: 18px;
+        line-height: 26px;
         text-align: center;
+        white-space: nowrap;
       }
-      #night-progress .animals {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
+      #compass-btn .badge[data-badge='moon_door'] {
+        font-size: 13px;
       }
-      #night-progress .pa.missing {
-        filter: grayscale(1);
-        opacity: 0.35;
-      }
-      #night-progress[data-state='night_coming'],
-      #night-progress[data-state='night'],
-      #night-progress[data-state='sleep'] {
+      #compass-btn .badge[data-badge='night_coming'],
+      #compass-btn .badge[data-badge='bed'],
+      #compass-btn .badge[data-badge='moon_door'] {
         background: #2e3e7a;
       }
-      #night-progress[data-state='night_coming'] .moon,
-      #night-progress[data-state='sleep'] .moon {
-        border-radius: 50%;
+      #compass-btn .badge[data-badge='night_coming'] {
         animation: moonglow 1.2s ease-in-out infinite alternate;
       }
       @keyframes moonglow {
         to {
-          box-shadow: 0 0 18px 6px #ffd66b;
-          background: rgba(255, 214, 107, 0.35);
+          box-shadow: 0 0 14px 5px #ffd66b;
         }
       }
+      #compass-btn .strip {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+      }
+      #compass-btn .strip .pa {
+        width: 34px;
+        height: 34px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 3px solid #3b2314;
+        background: #fff3d6;
+        font-size: 20px;
+        line-height: 28px;
+        text-align: center;
+        font-weight: bold;
+      }
+      #compass-btn .strip .pa.more {
+        font-size: 14px;
+        background: #fff;
+      }
+      #compass-btn .strip .pa.hl {
+        background: #ffd65c;
+        animation: nudge 0.8s ease-in-out infinite;
+      }
       @media (orientation: landscape) and (max-height: 540px) {
-        #night-progress {
-          top: calc(16px + env(safe-area-inset-top));
-          right: calc(100px + env(safe-area-inset-right));
-          width: auto;
-          height: 58px;
-          flex-direction: row;
-          padding: 0 8px;
-        }
-        #night-progress .animals {
+        #compass-btn .strip {
+          top: 50%;
+          left: auto;
+          right: 100%;
+          transform: translateY(-50%);
+          margin: 0 10px 0 0;
           flex-direction: row;
         }
       }
@@ -630,6 +646,93 @@
           padding: 0 0 0 12px;
         }
       }
+      /* RESC-028: the welcome board is long; it scrolls inside the panel box */
+      .panel-body[data-kind='welcome_board'] {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        cursor: grab;
+        gap: 6px;
+        padding-right: 80px;
+        max-height: calc(64dvh - var(--panel-top));
+      }
+      /* scroll cue (QA 2026-10-02: a small child never saw the steps below): a bouncing arrow at
+         the bottom edge while there is more to read */
+      .panel-body[data-kind='welcome_board']::after {
+        content: '▼';
+        position: sticky;
+        bottom: -4px;
+        flex: none;
+        display: block;
+        margin-top: auto;
+        padding-top: 18px;
+        text-align: center;
+        font-size: max(4.4vh, 30px);
+        line-height: 1;
+        color: #3b2314;
+        background: linear-gradient(rgba(255, 248, 231, 0), #fff8e7 70%);
+        pointer-events: none;
+        animation: welcome-cue 0.9s ease-in-out infinite alternate;
+      }
+      .panel-body[data-kind='welcome_board'][data-end='1']::after {
+        display: none;
+      }
+      @keyframes welcome-cue {
+        from {
+          transform: translateY(-4px);
+        }
+        to {
+          transform: translateY(4px);
+        }
+      }
+      .panel-body[data-kind='welcome_board'] > .panel-picture {
+        font-size: max(6vh, 36px);
+      }
+      .panel-body[data-kind='welcome_board'] > .panel-close {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+      }
+      .welcome-goal {
+        margin: 0;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--read);
+        font-weight: bold;
+      }
+      .welcome-goal .icons {
+        font-size: calc(var(--read) * 1.5);
+      }
+      .welcome-steps {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        text-align: left;
+        font-size: var(--read);
+        font-weight: bold;
+      }
+      .welcome-step {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .welcome-step .icon {
+        font-size: calc(var(--read) * 1.5);
+        min-width: 1.4em;
+        text-align: center;
+      }
+      .welcome-level,
+      .welcome-start {
+        margin: 0;
+        font-size: var(--read);
+        font-weight: bold;
+        color: #5a3a22;
+      }
       .panel-title {
         margin: 0 0 4px;
         display: flex;
@@ -695,6 +798,14 @@
         font-weight: bold;
         text-align: center;
         pointer-events: none;
+      }
+      #bubble[data-near='compass'] {
+        left: auto;
+        right: calc(100px + env(safe-area-inset-right));
+        top: calc(180px + env(safe-area-inset-top));
+        transform: none;
+        max-width: min(60vw, 340px);
+        font-size: max(2.6vh, 18px);
       }
       #celebrate {
         position: fixed;
@@ -803,8 +914,7 @@
     <div id="hint-marker" hidden><div class="bob"><span class="icon"></span><span class="arrow">▼</span><span class="line"></span></div></div>
     <div id="hint-edge" hidden><div class="spin"><span>➤</span></div><span class="icon"></span><span class="dots"></span><span class="line"></span></div>
     <button id="settings-btn" class="round" type="button">⚙️</button>
-    <button id="compass-btn" class="round" type="button">🧭</button>
-    <button id="night-progress" type="button" hidden><span class="moon">🌙</span><span class="animals"></span></button>
+    <button id="compass-btn" class="round" type="button">🧭<span class="badge" hidden></span><span class="strip"></span></button>
     <button id="view-btn" class="round" type="button" aria-pressed="false">👓</button>
     <button id="look-btn" class="round" type="button">👁️</button>
     <div id="intro" hidden><div class="intro-card"><div class="intro-pic"></div><p class="intro-text"></p><div class="intro-dots"></div><button class="intro-skip round" type="button">✖</button><button class="intro-next round" type="button">➤</button></div></div>

@@ -255,3 +255,37 @@ fn asnd_016_distance_gain() {
     }
     assert!(cue_gain("step_path", 20.0) == 0.0);
 }
+
+// ASND-022: the night cricket bed (ambient loop) is quiet and follows the phase.
+#[test]
+fn asnd_022_ambient_target_follows_the_phase() {
+    use zoo_core::daytime::Phase;
+    const { assert!(AMBIENT_GAIN > 0.0 && AMBIENT_GAIN <= 0.12) };
+    assert_eq!(AMBIENT_FADE_S, 3.0);
+    for p in Phase::ALL {
+        let t = ambient_target(p);
+        match p {
+            Phase::Dusk | Phase::Night => assert_eq!(t, AMBIENT_GAIN, "{p:?}"),
+            _ => assert_eq!(t, 0.0, "{p:?}"),
+        }
+    }
+    // the host clamp in web/src/audio.ts is the same number
+    let ts = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../web/src/audio.ts"
+    ))
+    .unwrap();
+    let line = ts
+        .lines()
+        .find(|l| l.contains("export const AMBIENT_GAIN_MAX"))
+        .expect("AMBIENT_GAIN_MAX in audio.ts");
+    let v: f32 = line
+        .split('=')
+        .nth(1)
+        .unwrap()
+        .trim()
+        .trim_end_matches(';')
+        .parse()
+        .unwrap();
+    assert_eq!(v, AMBIENT_GAIN);
+}

@@ -6,7 +6,7 @@ module: sound
 status: draft
 depends_on: [ART-PIPELINE, ART-ANIMALS, GAME-ANIMALS, GAME-FEED, GAME-PLAYER, PERF-BUDGETS]
 test_prefix: ASND
-updated: 2026-09-30
+updated: 2026-10-01
 ---
 
 # Sound effects — sourcing and pipeline
@@ -58,7 +58,7 @@ sounds cute. Lions may roar softly, never scary (child-friendly UX).
   (peaks ≤ −1 dBFS), fade in/out 5 ms, mono for positional cues.
 - Delivered as **Ogg Vorbis/Opus `.ogg` plus `.m4a` (AAC)** fallback where needed (Safari/iOS),
   in `assets/audio/<group>/<cue>_<n>.ogg`. Short cues ≤ 1.5 s (animal calls ≤ 3 s).
-- **Size budget:** whole first set ≤ 1.5 MB (PERF-BUDGETS "audio", to be added, Q-200); loaded
+- **Size budget:** whole first set ≤ 1.5 MB (PERF-BUDGETS budget 24, Q-200 answered 2026-09-30); loaded
   lazily by group, never blocking the first frame.
 - Every cue is listed in `assets/manifest.toml` (`kind = "audio"`, `source`, `licence`,
   `origin_url`/`prompt`/`script`, `approved`); a human sets `approved = true` after listening
@@ -123,6 +123,37 @@ console error, the game works without audio. The files are served under `/assets
 every cue decision `{cue, file, gain, rate, x, z, muted}` *before* playing (works without an
 audio device), `fetched` the audio URLs requested so far.
 
+## Ambient loops (user request 2026-10-01, Q-222 answered: night crickets only, no music)
+
+"In the night we should have a not too loud background sound of chirping crickets." One cue
+`ambient_crickets` (group `ambient`), a **seamless loop** instead of a one-shot cue.
+
+- **Asset:** `assets/audio/ambient/ambient_crickets_1.ogg` + `.m4a` (variants = 1), mono, **20–40 s**
+  (now 21.8 s), **−22 LUFS ± 2** (ungated K-weighted; a quiet bed, far below the −16 LUFS cues), peaks ≤ −1 dBFS,
+  `.ogg` ≤ 150 KB, spectral peak 3–6 kHz (crickets, nothing else), loop point without a click (jump at the
+  seam ≤ the largest normal sample step of the file, level within ±3 dB of the file level). Source: real CC0
+  recording by Ted Kerr (OpenGameArt), cleaned and looped by `tools/sound/crickets.py` (source order of this
+  spec: real CC0 first; brief `art/sound/brief.md`). `approved = false` until a human has listened;
+  review page `art/index.html` section "Sound". `tools/sound/check_audio.py` has a group-aware exception: group
+  `ambient` is checked against these limits, not against the one-shot limits of ASND-003.
+- **Who decides what (core vs host).** `zoo-core::sound::ambient_target(phase)` is the target gain of the bed:
+  `AMBIENT_GAIN` = **0.12** in `dusk` and `night`, **0** in `day`, `sleeping`, `morning`. It is the **final**
+  gain (no master / group factor on top: master 0.35 would make the bed inaudible on phones; the file is
+  −22 LUFS, so the bed plays at about −40 LUFS, ~9 dB below a footstep at −31 LUFS). `App.ambient_target()`
+  (zoo-web) hands it to the host, polled per frame like `poll_sounds()`. The night zoo (`night_1`, phase
+  `night`) plays the bed like the day zoo at night. Fade time `AMBIENT_FADE_S` = **3 s** (in and out).
+- **Host (`web/src/audio.ts`).** An own channel: `AudioBufferSourceNode` with `loop = true` → its own `GainNode` →
+  destination. The gain follows the target **linearly in 3 s** (full swing; `gain` is advanced per frame from
+  the frame clock, no per-frame allocation, no `setTargetAtTime` pile-up). The effective target is
+  `AMBIENT_GAIN_MAX` (0.12, clamp of the host as a safety net) × sound switch (off → 0, fades out in 3 s, the saved
+  setting is not touched) × tab visible (hidden → 0 at once and `AudioContext.suspend()`; visible again →
+  `resume()` and fade in) × not on the title / intro overlay.
+  - **Lazy:** the file is fetched only the first time the target is > 0 **after the first gesture** (never before
+    the first frame, never prefetched by day); decode failure / no files → silent, no console output.
+  - **No doubling:** at most one source node exists for the whole session; once the gain has faded to 0 the node
+    is stopped and released, a later night starts a new one; phase flips while fading just change the target.
+  - Debug: `window.__zoo.audio.ambient` = `{ playing, gain, target, fetched }`.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -146,13 +177,22 @@ audio device), `fetched` the audio URLs requested so far.
 | ASND-017 | Given an `assets/index.json` and a `canPlayType`, then the host maps a cue to its group and files, prefers `.ogg`, falls back to `.m4a`, picks variation `v mod n` without repeating the last one, and skips a cue without files silently. | vitest |
 | ASND-018 | Given the build, then `assets/audio/**/*.ogg|.m4a` are listed in `assets/index.json` and served with `audio/ogg` / `audio/mp4`; `firebase.json` sets both types and the CSP allows `media-src` / `connect-src 'self'` only. | vitest |
 | ASND-019 | Given no `AudioContext`, a failing `fetch` or `decodeAudioData`, then `Audio.play` / `prefetch` never throw and nothing is logged to the console. | vitest |
+| ASND-020 | Given the `ambient_crickets` entry, then it has licence `CC0`/`public-domain` with `origin_url`, group `ambient`, `approved`, and both files exist; the group-aware checker accepts it (20–40 s, −24…−20 LUFS, peak ≤ −1 dBFS, ogg ≤ 150 KB) and does not apply the 1.5 s one-shot limit; the review page lists it. | unit |
+| ASND-021 | Given the decoded loop, then its spectral peak is 3–6 kHz, the loop point has no click (jump ≤ the largest normal sample step) and the level within ±50 ms of the seam is within ±3 dB of the file level. | unit (checker) |
+| ASND-022 | Given the phases, then `ambient_target` is 0.12 in dusk and night and 0 in day, sleeping, morning; `AMBIENT_GAIN` ≤ 0.12, fade 3 s; the host constant `AMBIENT_GAIN_MAX` of `audio.ts` equals it. | unit |
+| ASND-023 | Given the ambient channel and a target 0.12, then the gain rises linearly to 0.12 in 3 s, never above 0.12; target 0 fades it out in 3 s and then releases the source; one source node at a time. | vitest |
+| ASND-024 | Given repeated night / day flips (also mid-fade), then the gain follows without jumps, the file is fetched once and there is never more than one running source. | vitest |
+| ASND-025 | Given the sound switch off (target > 0), then the bed fades to silence and the saved setting is unchanged; switching on fades it back in; a hidden tab silences it at once and suspends the context, visible again resumes it. | vitest |
+| ASND-026 | Given no gesture yet / no `AudioContext` / failing fetch or decode, then nothing is fetched, nothing throws and nothing is logged to the console; the first fetch happens only after the first gesture and only when the target is > 0. | vitest |
+| ASND-027 | Given a game forced to night, then after the first gesture the loop is fetched and plays with gain ≤ 0.12 (`__zoo.audio.ambient`); by day it has faded out and stopped; the page logs no console error. | e2e |
 
 ## Open questions
 
-- Q-200 Audio budget in PERF-BUDGETS (1.5 MB proposal), whether a generator API may be used
-  and which (licence and cost), and whether the user wants to supply / review sounds himself.
+- Q-200 answered 2026-09-30: audio budget 1.5 MB (PERF-BUDGETS budget 24); a generator API may be used
+  once the sound-artist names it with licence and cost (Q-213, Q-250); the user reviews / approves the sounds.
+- Q-210 answered (real recordings, route 1), Q-212 answered (.ogg + .m4a); open: Q-211 size, Q-213, Q-214, Q-215, Q-216, Q-250, Q-251.
 - Q-220 Sound for following animals' footsteps (`step_*` per animal) and `_baby` / `_step` cues:
   not in this version (only the player's steps). Proposal: later, quietly, per follower.
 - Q-221 Stereo pan: not in this version (the camera yaw would have to reach the host). Proposal:
   add a pan from the direction to the emitter relative to the camera when headphones are common.
-- Q-222 Ambient / music: not part of this spec. Does the game get a soft background loop?
+- Q-222 answered 2026-10-01: night crickets only ("Ambient loops"), no music, no daytime ambience.

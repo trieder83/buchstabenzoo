@@ -486,9 +486,10 @@ fn night_016_bed_stand_is_free_and_reachable() {
     assert_ne!(g.available_target(), Some(Target::Bed));
 }
 
-// LAYOUT-L2-018 (Q-141 answered): level 2 has its own bed `bed_l2` on walkable cells, clear of
-// hiding places, scenery and doors; its stand cell is walkable, 1.0–1.5 m from the bed and
-// reachable; with level 2 open the bed offered near level 2 is `bed_l2`.
+// LAYOUT-L2-018 (Q-141 answered; indoors since 2026-10-01, LAYOUT-047 in `beds_indoors.rs`):
+// level 2 has its own bed `bed_l2` inside `zookeeper_house_2` on walkable cells, clear of
+// hiding places and scenery; its stand cell is walkable, 1.0–1.5 m from the bed and reachable;
+// with level 2 open the bed offered near level 2 is `bed_l2`.
 #[test]
 fn layout_l2_018_level_2_bed() {
     use zoo_core::collision::PLAYER_RADIUS_M;
@@ -502,6 +503,7 @@ fn layout_l2_018_level_2_bed() {
     assert_eq!(bed.kind, "bed");
     let k = data.part_index("level_2").unwrap();
     assert_eq!(bed.part, k);
+    assert_eq!(bed.building.as_deref(), Some("zookeeper_house_2"));
     let mut g = zoo_core::Game::new(data.clone(), 3).unwrap();
     assert!(g.level.open_barrier("barrier_ne_tree"));
     assert!(g.level_unlocked("level_2"));

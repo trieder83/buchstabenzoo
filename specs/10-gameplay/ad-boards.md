@@ -22,7 +22,7 @@ and accepted only if signed by us** (rules 7–9, threat model below).
 **Campaign directories (user request 2026-09-30):** each of the 3 campaigns has its own
 directory with its resources and spec: [`ads/campaign-1-mathfighter/`](ads/campaign-1-mathfighter/campaign.md)
 (Math Fighter, images + tagline + link), [`ads/campaign-2-abcsmash/`](ads/campaign-2-abcsmash/campaign.md) (ABC Smash, reading game,
-image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (placeholder until filled).
+image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edugamegalaxy/campaign.md) (EduGameGalaxy, image + tagline + link; its slot stays a placeholder only while no valid campaign is delivered).
 
 ## Behaviour
 
@@ -47,13 +47,13 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
    campaign are **not interactable** (no tap, no link, no popup, no video, no sound), collect
    **no data** and never interrupt play (see Q-128). **Exception (user decision 2026-09-30,
    Q-217 answered: option (a)):** a board whose slot shows a verified own campaign
-   (`mathfighter`, `abcsmash`) is *readable*: a reading panel with the picture, the tagline
+   (`mathfighter`, `abcsmash`, `edugamegalaxy`) is *readable*: a reading panel with the picture, the tagline
    (`klasse1+`) and a link button; the link opens only after the parental gate (rule 8). Content
    rules: age-appropriate, no food/sweets marketing to children, no gambling, no in-app purchase
    hints (to be confirmed legally).
 5. At night the boards are lit softly like the other signs (GAME-NIGHT, category b).
 6. **First campaigns** (Q-128 answered, user 2026-09-27): own cross-promotion (Math Fighter, ABC
-   Smash); a legal/child-safety check is required before any third-party ad.
+   Smash, EduGameGalaxy); a legal/child-safety check is required before any third-party ad.
 
 ### External content (user requirements 2026-09-30, Q-240…Q-247)
 
@@ -74,6 +74,7 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
      ADS-010); `issued` not more than 1 day in the future, now ≤ `valid_until` (ADS-011);
    - ≤ 3 campaigns; each campaign id, **slot and link host are compiled into the game**
      (`mathfighter` → slot 1 → `mathfighter.rcms.ch`, `abcsmash` → slot 2 → `abcsmash.rcms.ch`,
+     `edugamegalaxy` → slot 3 → `edugamegalaxy.rcms.ch`,
      Q-241); unknown ids, a wrong slot, duplicates, `active = false` are not shown (ADS-011);
    - link: https only, exactly the allowlisted host of *that* campaign, no user info, port,
      path, query or fragment; the game opens the canonical URL it builds itself (ADS-015);
@@ -118,8 +119,8 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
 |---|---|---|
 | ADS-001 | Given a level, then it has 4–6 ad boards with unique ids, none on enclosures, info boards (≥ 4 m), hiding places, scenery, gardens, within 4 m of a food box, 5 m of a gate/door, or on a path/solid cell (LAYOUT-L*-006, -032…039 still hold). | unit |
 | ADS-002 | Given the joined zoo and any seed, then every one of the 3 slots is on ≥ 2 boards and all boards have a slot. | unit |
-| ADS-003 | Given no campaign is loaded, then every board has its picture texture and the placeholders read "Deine Werbung 1/2/3" (de) / "Your ad 1/2/3" (en) from Fluent. | e2e |
-| ADS-004 | Given an ad board of a placeholder slot (or any board without a verified own campaign), then it is not interactable (no panel, no interact target) and the game makes no network request for ads — in the release build (no key compiled) no request at all. | e2e |
+| ADS-003 | Given no campaign is loaded (or a slot's campaign is not delivered), then every board has its picture texture and the placeholders read "Deine Werbung 1/2/3" (de) / "Your ad 1/2/3" (en) from Fluent. | e2e |
+| ADS-004 | Given an ad board whose slot has no verified campaign (or any board without a verified own campaign), then it is not interactable (no panel, no interact target) and the game makes no network request for ads — in the release build (no key compiled) no request at all. | e2e |
 | ADS-005 | Given two play sessions with different seeds, then the slot-to-board assignment differs; with the same seed (and any order of the data) it is identical. | unit |
 | ADS-006 | Given the active campaigns, then every one is own cross-promotion unless a legal/child-safety check is recorded for it (rule 6, Q-128). | manual |
 | ADS-007 | Given the player position, then a board is "in front" only within 3 m in front of its picture (not behind, not beside, nearest wins). | unit |
@@ -140,6 +141,7 @@ image + tagline + link) and [`ads/campaign-3/`](ads/campaign-3/campaign.md) (pla
 | ADS-020 | Given a correctly signed test manifest (test build), then the boards show the campaign pictures, the panel shows picture + tagline + link button ≥ 64 px, and the link opens (`noopener`, canonical URL) exactly once, only after the gate. | e2e |
 | ADS-021 | Given a manifest signed with a wrong key (test build) or a tampered image, then the placeholders remain / only that campaign is missing, and no panel opens. | e2e |
 | ADS-022 | Given the test build without `?adkey=`, then the test manifest is not trusted and not even requested. | e2e |
+| ADS-023 | Given the RELEASE build (production key compiled in, no `?adkey=`) and the real signed `ads/campaigns.json`, then campaigns 1, 2 and 3 are accepted and loaded (needs the owner's public key in `ad-keys.ts` and a signed manifest; `web/tests/e2e/ads_prod.spec.ts`). | e2e |
 
 ## Open questions
 

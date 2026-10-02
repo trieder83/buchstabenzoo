@@ -287,7 +287,13 @@ impl Game {
         if at_bed || in_night_zoo {
             match self.nearest_bed() {
                 Some(bed) => {
-                    self.player.pos = crate::save::nearest_walkable(self, bed, false);
+                    // wake NEXT to the bed, on its free stand cell (user report 2026-10-02: the
+                    // child woke inside the bed): the data `stand` cell, else a free cell around
+                    let at = self
+                        .bed_stand(bed)
+                        .unwrap_or_else(|| crate::save::nearest_walkable(self, bed, false));
+                    let r = crate::collision::PLAYER_RADIUS_M;
+                    self.player.pos = self.level.colliders().push_out_all(at, r);
                 }
                 None => {
                     self.player.pos = cell_center(self.level.data.parts[0].spawn.cell());

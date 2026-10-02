@@ -6,10 +6,13 @@ module: character-rig-and-animation
 status: draft
 depends_on: [ART-PIPELINE, GAME-PLAYER, TECH-ARCH]
 test_prefix: RIG
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Character rig and animation — technical contract
+
+**Contents:** Goal · Behaviour · Acceptance criteria · Test cases · Open questions
+
 
 ## Goal
 

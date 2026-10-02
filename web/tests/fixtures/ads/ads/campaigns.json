@@ -63,6 +63,36 @@
           "sha256": "a08793e15804fa0e77c79ba3ebae8d71e3dccc7211f4d9f732f8dc1b842af437"
         }
       ]
+    },
+    {
+      "id": "edugamegalaxy",
+      "slot": 3,
+      "active": true,
+      "link": "https://edugamegalaxy.rcms.ch",
+      "tagline": {
+        "de": "Effizient und mit Spaß lernen – für den Erfolg im Leben",
+        "en": "Learn efficiently and with fun – for success in life"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/edugamegalaxy-de.png",
+          "mime": "image/png",
+          "bytes": 946,
+          "width": 256,
+          "height": 128,
+          "sha256": "be098aceed938884fc8a9839ed529b0929a5dd90a2c2c17fb12f8d6142c3c056"
+        },
+        {
+          "lang": "en",
+          "path": "img/edugamegalaxy-en.png",
+          "mime": "image/png",
+          "bytes": 919,
+          "width": 256,
+          "height": 128,
+          "sha256": "de402dce58ef3819ba66725bb46935d707aa96bb77688c9bc9773a1adee76091"
+        }
+      ]
     }
   ]
 }

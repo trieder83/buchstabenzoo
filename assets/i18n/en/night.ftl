@@ -43,7 +43,7 @@ mission-hedgehog-riddle-loc_mushrooms-klasse1 = The ground is soft. It smells of
 mission-hedgehog-riddle-loc_mushrooms-klasse2 = The hedgehog sits on soft green moss under a thick old tree. Little brown caps stand in a circle around it, and it smells of damp earth.
 mission-hedgehog-riddle-loc_mushrooms-klasse3 = Under a big old tree the ground is as soft as a pillow. Green moss grows there, and it smells of damp earth and old wood. Little brown and pale caps stand in a circle like a ring. Our hedgehog has curled up right in the middle of this ring.
 
-mission-hedgehog-home = Great! The hedgehog is home again.
+mission-hedgehog-home = Great! The hedgehogs are home again.
 
 ## Night level 1 — bat: loc_windmill, loc_fireflies, loc_hollow_tree
 
@@ -74,7 +74,7 @@ mission-bat-riddle-loc_hollow_tree-klasse1 = The tree is very thick. It has a ro
 mission-bat-riddle-loc_hollow_tree-klasse2 = The bat hangs on a very old, very thick tree. In its trunk there is a big round hole, like a little window.
 mission-bat-riddle-loc_hollow_tree-klasse3 = This tree is the thickest and oldest in the whole garden. Three children together could hardly hug it. High up, its trunk has a big round hole, dark and cosy. Our bat hangs upside down right in front of it, holding on with its little claws.
 
-mission-bat-home = Great! The bat is home again.
+mission-bat-home = Great! The bats are home again.
 
 ## Night level 1 — owl: loc_moon_pond, loc_hilltop, loc_fir
 
@@ -105,7 +105,7 @@ mission-owl-riddle-loc_fir-klasse1 = I sit very high. The tree is pointed. It ha
 mission-owl-riddle-loc_fir-klasse2 = The owl sits at the very top of a tall, pointed tree with dark needles and cones. From up there it calls: hoo-hoo!
 mission-owl-riddle-loc_fir-klasse3 = In the garden there is a tree that stays green even in winter. It has dark, sharp needles, and brown cones hang from its branches. Its top points into the sky like an arrow. Our owl sits right up on this top and softly calls: hoo-hoo!
 
-mission-owl-home = Great! The owl is home again.
+mission-owl-home = Great! The owls are home again.
 
 ## Night flow (GAME-NIGHT)
 

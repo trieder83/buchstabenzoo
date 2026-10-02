@@ -43,7 +43,7 @@ mission-hedgehog-riddle-loc_mushrooms-klasse1 = Der Boden ist weich. Es riecht n
 mission-hedgehog-riddle-loc_mushrooms-klasse2 = Der Igel sitzt auf weichem, grünem Moos unter einem alten, dicken Baum. Rund um ihn stehen kleine braune Hüte im Kreis, und es riecht nach feuchter Erde.
 mission-hedgehog-riddle-loc_mushrooms-klasse3 = Unter einem großen alten Baum ist der Boden weich wie ein Kissen. Dort wächst grünes Moos, und es riecht nach feuchter Erde und altem Holz. Kleine braune und cremefarbene Hüte stehen im Kreis wie ein Ring. Mitten in diesem Ring hat sich unser Igel zusammengerollt.
 
-mission-hedgehog-home = Super! Der Igel ist wieder zu Hause.
+mission-hedgehog-home = Super! Die Igel sind wieder zu Hause.
 
 ## Night level 1 — bat: loc_windmill, loc_fireflies, loc_hollow_tree
 
@@ -74,7 +74,7 @@ mission-bat-riddle-loc_hollow_tree-klasse1 = Der Baum ist sehr dick. Er hat ein 
 mission-bat-riddle-loc_hollow_tree-klasse2 = Die Fledermaus hängt an einem uralten, sehr dicken Baum. In seinem Stamm ist ein großes rundes Loch, wie ein kleines Fenster.
 mission-bat-riddle-loc_hollow_tree-klasse3 = Dieser Baum ist der dickste und älteste im ganzen Garten. Drei Kinder könnten ihn zusammen kaum umarmen. Weit oben hat sein Stamm ein großes rundes Loch, dunkel und gemütlich. Genau davor hängt unsere Fledermaus kopfüber und hält sich mit ihren kleinen Krallen fest.
 
-mission-bat-home = Super! Die Fledermaus ist wieder zu Hause.
+mission-bat-home = Super! Die Fledermäuse sind wieder zu Hause.
 
 ## Night level 1 — owl: loc_moon_pond, loc_hilltop, loc_fir
 
@@ -105,7 +105,7 @@ mission-owl-riddle-loc_fir-klasse1 = Ich sitze ganz hoch. Der Baum ist spitz. Er
 mission-owl-riddle-loc_fir-klasse2 = Die Eule sitzt ganz oben in einem hohen, spitzen Baum mit dunklen Nadeln und Zapfen. Von dort ruft sie: Huhu!
 mission-owl-riddle-loc_fir-klasse3 = Im Garten steht ein Baum, der auch im Winter grün bleibt. Er hat dunkle, spitze Nadeln, und an seinen Ästen hängen braune Zapfen. Seine Spitze zeigt wie ein Pfeil in den Himmel. Ganz oben auf dieser Spitze sitzt unsere Eule und ruft leise: Huhu!
 
-mission-owl-home = Super! Die Eule ist wieder zu Hause.
+mission-owl-home = Super! Die Eulen sind wieder zu Hause.
 
 ## Night flow (GAME-NIGHT)
 

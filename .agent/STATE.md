@@ -106,3 +106,24 @@ next steps / questions. The main session prunes entries once committed. -->
 ### 2026-09-30 performance — run (2) 0f0b153
 - Done: full run logged (measurements.md), baseline `tools/perf/baselines/2026-09-30b.json`, PERF-R-020 (JS heap reading 61-64 MB, unverified) added, PERF-R-019 updated. No code changed.
 - Next: re-measure JS heap on a quiet machine (gc()); phone run (Q-013).
+
+### 2026-10-01 sound (night crickets, Q-222 answered)
+- Done (uncommitted): `ambient_crickets` loop (CC0, Ted Kerr/OpenGameArt, `tools/sound/crickets.py`, `assets/audio/ambient/`, manifest via register.py, CREDITS, brief, art/catalog.js); `zoo_core::sound::{AMBIENT_GAIN 0.12, AMBIENT_FADE_S 3, ambient_target}` + `App.ambient_target()`; `web/src/audio.ts` ambient channel (`__zoo.audio.ambient`); spec ART-SOUND "Ambient loops" ASND-020..027, NIGHT-024.
+- Tests: zoo-core `--test sound` (ASND-022), zoo-assets `--test audio` (ASND-020/021 via check_audio.py), vitest `audio-ambient.test.ts` (ASND-023..026), e2e ASND-027 in `web/tests/e2e/audio.spec.ts`.
+- Next: spec-manager (INDEX); a human listens to the loop and sets `approved`.
+
+### 2026-10-01 level designer — every bed indoors (Q-312/Q-313, uncommitted)
+- Done: GAME-LAYOUT rule 16 + LAYOUT-047, night.md rule 3 (+ bed table), level-2/3 specs. `bed_l2` moved into the new enterable `zookeeper_house_2` (27,15,6,5, door (32,17) on `path_l2_sw`; copy of house 1 without desk/key box; props + lights in level-2.toml); new `bed_l3` in `zookeeper_house_3` (level-3.toml). Brief `art/environment/env_zookeeper_house_2/brief.md`.
+- Tests: new `crates/zoo-core/tests/beds_indoors.rs` (LAYOUT-047, L2-018/L3-019 hint at dusk per level); levels23 LAYOUT-023 list updated; night.rs L2-018 asserts the building. e2e `night.spec.ts` green. Open: Q-313 (positions OK?). Unrelated red: zoo-assets `apipe_010`.
+
+### 2026-10-01 fruit garden in level 3 (GAME-GARDEN "Fruit garden", uncommitted)
+- Done: `garden_fruit` (x 11-20, z 74-76, gate onto `path_l3_ne`, 2 apple + 2 orange trees, signs, wheelbarrow, paths `path_garden_fruit[_link]`) in `assets/levels/level-3.toml`; `Treat` Apple/Orange (ALL = 4), `Basket` apples/oranges (`#[serde(default)]`, capacity 6 total, `Basket::add`), likes table (monkey: apple + orange; also elephant/giraffe/zebra/panda apple, elephant/giraffe orange); zoo-web `basket_json` + `PLANT_KINDS`; HUD 🍎 🍊 (`TREATS` in ui.ts); Fluent `garden-apple/orange` (+ klasse1-3) de/en; models `apple_tree_*`, `orange_tree_*` in `kit_garden.py` (58/105/180 tris, palette 205/206, preview `art/props/kit_garden/fruit_trees_preview.png`).
+- Tests: GARD-015..021, 023 + LAYOUT-L3-030 (zoo-core garden.rs/lib tests, zoo-assets models.rs, zoo-web required_assets), e2e GARD-022 `web/tests/e2e/gameplay/fruit-garden.spec.ts`; gifts GARD-012 green; clippy/lint/vitest green.
+- Not mine / red: `openings::layout_041` (8 vs 7 buildings with a door: new house from the beds-indoors work), `pipeline::apipe_010` (art/ads brief).
+- Open: Q-320..Q-324 (location, likes table, yield, art without concept sheet, sign picture). Disk was at 99% (1.3 GB free) - stale `target/debug/incremental` dirs were deleted.
+
+### 2026-10-02 UI redesign: compass strip replaces the moon pane
+Done: `#night-progress` removed; `#compass-btn` carries `.badge` (kind of the best hint candidate, `night_coming` = 🌙) and `.strip` (missing animals of the current level, max 6 + `+n`, hinted animal pulses). Core `hints::compass_badge`, web `App::compass_json` (replaces `night_progress_json`, polled <= 4 Hz in ui.ts `updateProgress`). Specs: night.md rule 11 + NIGHT-019/020/022/023/026/028, hints.md rule 8/HINT-013, glossary `compass_strip`. Tests: hints.rs NIGHT-028, ui.test.ts, hints.spec.ts (portrait 412x892 + landscape 892x412). Not committed.
+
+### 2026-10-02 gameplay-qa — pairs/baby/fruit garden/welcome/ads re-check
+- Done: all requested specs green (34 + audio 6 + ads 10 + m5b level2/goldfish/PLAY-028 3). New test `web/tests/e2e/gameplay/welcome-scroll.spec.ts` (RESC-028 QA, green). Findings: welcome panel scroll is undiscoverable (no cue); m5b goldfish review shot is covered by an ad panel (test stands at the ad board).

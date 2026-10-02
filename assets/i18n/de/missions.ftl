@@ -88,7 +88,7 @@ mission-hippo-riddle-loc_shade-klasse2 = Dem Flusspferd ist die Sonne zu heiß. 
 mission-hippo-riddle-loc_shade-klasse3 = Flusspferde haben eine empfindliche Haut und mögen keine pralle Sonne. Darum hat sich unser Flusspferd einen dunklen, kühlen Platz gesucht. Dicke Baumkronen halten die Sonne ab, und hinter ihm steht die hohe Mauer, die den ganzen Zoo umgibt. Dort liegt es im trockenen Gras und döst.
 
 # shown when the hippo is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-hippo-home = Super! Das Flusspferd ist wieder zu Hause.
+mission-hippo-home = Super! Die Flusspferde sind wieder zu Hause.
 
 ## 3. Panda — loc_cave, loc_bamboo, loc_leaves
 
@@ -125,7 +125,7 @@ mission-panda-riddle-loc_leaves-klasse2 = Der Panda spielt gern. Er hat sich in 
 mission-panda-riddle-loc_leaves-klasse3 = Der Zoowärter hat unter den Bäumen fleißig Blätter zusammengeharkt. Jetzt liegt dort ein riesiger Haufen aus roten, gelben und braunen Blättern. Der Panda hat ihn entdeckt und sich mitten hineingeworfen. Wenn er sich dreht, raschelt es, und Blätter fliegen durch die Luft.
 
 # shown when the panda is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-panda-home = Super! Der Panda ist wieder zu Hause.
+mission-panda-home = Super! Die Pandas sind wieder zu Hause.
 
 # ======================================================================== levels 2 and 3
 # Animals 4-10 (CONT-MISSIONS §4-§10; hiding places proposal Q-095; levels GAME-LEVEL-2 / GAME-LEVEL-3).
@@ -192,7 +192,7 @@ mission-elephant-riddle-loc_big_ball-klasse2 = Der Elefant spielt mit etwas Ries
 mission-elephant-riddle-loc_big_ball-klasse3 = Elefanten sind klug und spielen gern, auch wenn sie schon groß sind. Die Zoowärter haben ihnen deshalb ein Spielzeug geschenkt, das größer ist als ein Kind. Es ist rund, rot und weiß und rollt, wenn man es anstößt. Unser Elefant schubst es mit dem Rüssel und trompetet vor Freude.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-elephant-home = Super! Der Elefant ist wieder zu Hause.
+mission-elephant-home = Super! Die Elefanten sind wieder zu Hause.
 
 ## 6. Goldfish — loc_waterfall, loc_water_wheel, loc_willow (level_3)
 
@@ -234,7 +234,7 @@ mission-goldfish-bowl-hint-klasse2 = Bring ein großes Glas voll Wasser mit. Nur
 mission-goldfish-bowl-hint-klasse3 = Ein Goldfisch kann nicht über den Weg laufen. Du brauchst ein großes Glas, und die Zoowärter haben eins in ihrem Haus. Fülle es mit Wasser, dann kann der Goldfisch hineinspringen.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-goldfish-home = Super! Der Goldfisch ist wieder zu Hause.
+mission-goldfish-home = Super! Die Goldfische sind wieder zu Hause.
 
 ## 7. Monkey — loc_pirate_ship, loc_carousel, loc_trampoline (level_3)
 
@@ -266,7 +266,7 @@ mission-monkey-riddle-loc_trampoline-klasse2 = Der Affe hüpft auf einer runden,
 mission-monkey-riddle-loc_trampoline-klasse3 = Affen springen gern von Ast zu Ast. Unser Affe hat etwas noch Besseres entdeckt: eine runde, blaue Matte, die im Rasen liegt. Jedes Mal, wenn er darauf landet, schleudert sie ihn wieder hoch in die Luft. Er macht Purzelbäume und lacht dabei.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-monkey-home = Super! Der Affe ist wieder zu Hause.
+mission-monkey-home = Super! Die Affen sind wieder zu Hause.
 
 ## 8. Giraffe — loc_lookout_tower, loc_train, loc_playground (level_2)
 
@@ -298,7 +298,7 @@ mission-giraffe-riddle-loc_playground-klasse2 = Die Giraffe steht dort, wo Kinde
 mission-giraffe-riddle-loc_playground-klasse3 = Die Giraffe ist sehr neugierig. Sie hat Kinder lachen hören und ist dem Lachen gefolgt. Jetzt steht sie zwischen Schaukeln und Rutsche. Mit ihrer langen Zunge zupft sie Blätter von den Bäumen.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-giraffe-home = Super! Die Giraffe ist wieder zu Hause.
+mission-giraffe-home = Super! Die Giraffen sind wieder zu Hause.
 
 ## 9. Lion — loc_sun_rocks, loc_stage, loc_deckchairs (level_2)
 
@@ -330,7 +330,7 @@ mission-lion-riddle-loc_deckchairs-klasse2 = Der Löwe macht Urlaub. Er räkelt 
 mission-lion-riddle-loc_deckchairs-klasse3 = Heute fühlt sich der Löwe wie im Urlaub am Meer. Er hat einen Platz mit bunt gestreiften Stühlen zum Ausruhen gefunden. Ein großer Sonnenschirm schützt ihn vor der Sonne. Dort liegt er, streckt alle vier Pfoten von sich und schnarcht.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-lion-home = Super! Der Löwe ist wieder zu Hause.
+mission-lion-home = Super! Die Löwen sind wieder zu Hause.
 
 ## 10. Snow fox — loc_ice_cream_kiosk, loc_sprinkler, loc_laundry (level_3)
 
@@ -362,4 +362,11 @@ mission-snow_fox-riddle-loc_laundry-klasse2 = Der Schneefuchs versteckt sich zwi
 mission-snow_fox-riddle-loc_laundry-klasse3 = Im Winter ist das Fell des Schneefuchses so weiß wie Schnee. So kann er sich gut verstecken. Heute hat er einen Platz gefunden, an dem die Zoowärter große weiße Laken und Handtücher zum Trocknen aufgehängt haben. Zwischen den flatternden Tüchern sitzt er ganz still und hofft, dass ihn niemand entdeckt.
 
 # shown when the animal is back in its enclosure (mission complete, GAME-RESCUE §8)
-mission-snow_fox-home = Super! Der Schneefuchs ist wieder zu Hause.
+mission-snow_fox-home = Super! Die Schneefüchse sind wieder zu Hause.
+
+# Generic pair note on the info board of every pair species (GAME-FAMILY "Texts", Q-308): shown after the facts.
+# kiga: symbols only (male, female).
+mission-pair-note-kiga = ♂ ♀
+mission-pair-note-klasse1 = Es sind zwei. Ein Männchen. Ein Weibchen.
+mission-pair-note-klasse2 = Es sind zwei Tiere: ein Männchen und ein Weibchen.
+mission-pair-note-klasse3 = Es sind immer zwei Tiere: ein Männchen und ein Weibchen. Sie bleiben zusammen und folgen dir gemeinsam.

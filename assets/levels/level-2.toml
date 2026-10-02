@@ -182,6 +182,18 @@ kind = "side"
 rect = [24, 52, 15, 3]
 notes = "Leads west to barrier_l2_construction; runs on under the construction fence (x 24-25 = barrier cells) to the level-3 gate (LAYOUT-040)."
 
+# ---------------------------------------------------------------- south-west corner: zookeeper house 2 (bed of level 2)
+[[element]]
+id = "zookeeper_house_2"
+type = "building"
+kind = "zookeeper_house"
+rect = [27, 15, 6, 5]
+interior = [28, 16, 4, 3]     # 4 x 3 m room, same as zookeeper_house_1
+door = [32, 17]               # east facade, onto path_l2_sw (street cell (33, 17))
+blocks_view = true
+height_m = 4.0
+notes = "Small enterable zookeeper house with the bed bed_l2 (user request 2026-10-01: every bed indoors, LAYOUT-047): zookeeper_house_1 moved by (+41, +15): bed, night table with bedside lamp, moon window, round rug, toy chest. No desk, no key box. Roof cut away while the player is inside (PLAY-028)."
+
 # ---------------------------------------------------------------- centre: food storage 2, grove, map board
 [[element]]
 id = "food_storage_2"
@@ -245,6 +257,7 @@ type = "enclosure"
 animal = "elephant"
 rect = [55, 28, 12, 13]
 gate = [55, 33, 1, 2]
+pair = true                 # GAME-FAMILY: all day animals come as a male + female pair (Q-308); fallback look until dedicated models exist
 blocks_view = false
 notes = "Elephant pool (still water, stones, a shallow ramp — like hippo_pool), hay rack, sand-coloured ground patch, one big boulder. No fountain, no logs, no ball (riddle guards)."
 home_wander_on = ["grass", "water"]
@@ -270,6 +283,7 @@ type = "enclosure"
 animal = "lion"
 rect = [41, 14, 12, 8]
 gate = [46, 21, 2, 1]
+pair = true                 # GAME-FAMILY: all day animals come as a male + female pair (Q-308); fallback look until dedicated models exist
 blocks_view = false
 notes = "Wooden sun deck with a straw roof, a big lying log, dry grass. NO flat rocks, no stage, no chairs (riddle guards)."
 
@@ -294,6 +308,7 @@ type = "enclosure"
 animal = "giraffe"
 rect = [40, 44, 12, 12]
 gate = [45, 44, 2, 1]
+pair = true                 # GAME-FAMILY: all day animals come as a male + female pair (Q-308); fallback look until dedicated models exist
 blocks_view = false
 notes = "Tall feeding rack with leafy branches (4 m), giraffe house with a tall door. No tower, no slide, no train (riddle guards)."
 
@@ -505,17 +520,51 @@ pos = [41.0, 27.56]   # south wall
 facing = "+z"
 
 # ================================================================ items
-# Bed of level 2 (Q-141 answered, option b): the child sleeps here after level 2's nightfall
-# (the 🛏 icon offers the nearest unlocked bed, GAME-NIGHT rule 3). Same fields as level-1.toml
-# bed_l1. Outdoors, against the south wall of food_storage_2 on the north row of path_l2_ring_s;
-# the 2 m south of it stay free. Shelter over it = proposal Q-152 (no model id yet).
+# Bed of level 2 (Q-141 answered, option b; moved indoors 2026-10-01, GAME-LAYOUT rule 16): the
+# child sleeps here after level 2's nightfall (the 🛏 icon offers the nearest unlocked bed,
+# GAME-NIGHT rule 3). Same fields as level-1.toml bed_l1; inside the enterable zookeeper_house_2
+# (zookeeper_house_1 moved by +41, +15).
 [[item]]
 id = "bed_l2"
 kind = "bed"
-pos = [42.0, 26.5]            # bed 2.0 x 1.0 m, headboard east (x 41.0 .. 43.0, z 26.0 .. 27.0), foot of the storage wall
-facing = "-z"                 # used from its long south side (yaw 0)
-stand = [42, 25]              # cell centre (42.5, 25.5), 1.1 m in front of the bed, on path_l2_ring_s
-notes = "Child-size bed with the blue star blanket (kit_bedroom `bed`, same as bed_l1) against the south wall of food_storage_2; interacting at night -> sleep -> next morning (GAME-NIGHT rule 3, Q-141 b)."
+pos = [29.0, 16.5]            # bed 2.0 x 1.0 m along the south wall, headboard west (x 28.0 .. 30.0, z 16.0 .. 17.0)
+building = "zookeeper_house_2"
+facing = "+z"                 # used from its long north side
+stand = [29, 17]              # cell centre (29.5, 17.5), 1.1 m in front of the bed, inside the room
+notes = "Child-size bed with the blue star blanket (kit_bedroom `bed`, same as bed_l1) inside zookeeper_house_2; interacting at night -> sleep -> next morning (GAME-NIGHT rule 3, Q-141 b)."
+
+# Furniture of zookeeper_house_2 (same pieces as zookeeper_house_1 minus desk and key box).
+[[prop]]
+id = "night_table_l2"
+model = "night_table"
+pos = [28.28, 17.3]
+facing = "+x"
+size_m = [0.5, 0.4]
+building = "zookeeper_house_2"
+
+[[prop]]
+id = "window_moon_l2"
+model = "window_moon"
+pos = [28.0, 17.5]            # in the inner face of the west wall, above the night table
+facing = "+x"
+size_m = [1.0, 0.1]
+building = "zookeeper_house_2"
+
+[[prop]]
+id = "rug_l2"
+model = "rug_round"
+pos = [30.0, 17.4]
+facing = "-z"
+size_m = [0.0, 0.0]           # flat, no collider
+building = "zookeeper_house_2"
+
+[[prop]]
+id = "toy_chest_l2"
+model = "toy_chest"
+pos = [28.55, 18.72]
+facing = "-z"
+size_m = [0.8, 0.45]
+building = "zookeeper_house_2"
 
 # ================================================================ enclosure features
 # Same data shape as level-1 [[enclosure_feature]] (proposal Q-085): not elements, cells stay solid.
@@ -782,6 +831,22 @@ kind = "wall_lamp"
 pos = [38.95, 31.3]
 facing = "-x"
 attach = "food_storage_2"
+
+[[light]]
+id = "l2_indoor_bedside"
+kind = "indoor"
+pos = [28.28, 17.3]
+facing = "+x"
+attach = "zookeeper_house_2"
+radius_m = 2.0
+color = "#FFC46E"
+
+[[light]]
+id = "l2_wall_zookeeper_house"
+kind = "wall_lamp"
+pos = [33.05, 18.4]
+facing = "+x"
+attach = "zookeeper_house_2"
 
 [[light]]
 id = "l2_board_lamp_map"

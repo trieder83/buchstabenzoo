@@ -12,6 +12,11 @@ Front = south = glTF +Z at yaw 0. (`garden_gate` is in kit_gates.)
 - carrot_plant_{sprout,young,ripe}, potato_plant_{sprout,young,ripe}
                     the plant of one [[plant_spot]] with its little soil mound; origin = plant
                     base; place it on the bed soil (y = 0.22). "empty" = no model.
+- apple_tree_{sprout,young,ripe}, orange_tree_{sprout,young,ripe}
+                    fruit tree of one [[plant_spot]] in the level-3 fruit garden (GAME-GARDEN,
+                    ~1.5 m dwarf tree, <= 400 tris); origin = trunk base on the soil (y 0.22).
+                    sprout = sapling, young = green crown without fruit, ripe = crown with
+                    4 red apples / 4 oranges. Apple: light round crown; orange: dark crown.
 - carrot, potato    harvested items (potato = 3 potatoes); origin = bottom.
 - basket            woven basket with handle, carrots + potatoes inside (carried).
 - garden_fence / garden_fence_1m  low white picket fence 0.8 m high, 2 m / 1 m between the
@@ -121,6 +126,48 @@ def potato_plant(stage):
         potato_leaves(p, 6, 0.32, 0.22, 2)
     else:
         potato_leaves(p, 8, 0.42, 0.3, 3, flowers=5)
+    A.add(p)
+    return A
+
+
+# --------------------------------------------------------------------------- fruit trees
+
+def fruit_tree(kind, stage):
+    """Dwarf fruit tree (apple / orange) in 3 growth stages, one mesh per stage."""
+    A = nl.Asset(f"{kind}_tree_{stage}")
+    apple = kind == "apple"
+    crown_a, crown_b = ("leaf", "leaf_light") if apple else ("grove_leaf", "grove_leaf_light")
+    fruit = "apple_red" if apple else "orange_fruit"
+    seed = 11 if apple else 23
+    p = []
+    mound(p, 0.2)
+    if stage == "sprout":
+        p.append(pp.cyl(0.022, 0.0, 0.34, sides=5, r1=0.014, color="trunk", top=False))
+        for k in range(4):
+            a = math.pi / 2 * k + 0.5
+            d = (math.cos(a), math.sin(a), 0.5)
+            p.append(pp.leaf((0, 0, 0.24 + 0.03 * k), d, 0.13, 0.07, crown_a))
+        p.append(pp.leaf((0, 0, 0.34), (0.2, 0.1, 1.0), 0.1, 0.06, crown_b))
+    else:
+        young = stage == "young"
+        h = 0.62 if young else 0.74
+        p.append(pp.cyl(0.07, 0.0, h, sides=6, r1=0.045, color="trunk", top=False))
+        p.append(pp.beam((0.0, 0, h * 0.7), (0.2, 0.05, h + 0.12), 0.05, sides=4, color="trunk", taper=0.5))
+        s = 0.8 if young else 1.0
+        z0 = h + 0.2 * s
+        p += [
+            pp.blob((0.0, 0.0, z0 + 0.12), (0.5 * s, 0.5 * s, 0.4 * s), crown_a, subdiv=1, seed=seed, amp=0.1),
+            pp.blob((0.27 * s, 0.05, z0 - 0.08), (0.3 * s, 0.3 * s, 0.26 * s), crown_b, subdiv=1, seed=seed + 1,
+                    amp=0.1),
+            pp.blob((-0.25 * s, -0.12, z0 + 0.22), (0.3 * s, 0.3 * s, 0.26 * s), crown_b, subdiv=1, seed=seed + 2,
+                    amp=0.1),
+        ]
+        if not young:
+            # ripe fruit hangs on the outside of the crown, visible from the camera (south = -Y)
+            r = 0.1
+            for (x, y, z) in ((0.14, -0.5, z0 + 0.0), (-0.3, -0.42, z0 + 0.18), (0.45, -0.2, z0 - 0.06),
+                              (-0.02, -0.3, z0 + 0.5), (-0.5, 0.05, z0 + 0.0)):
+                p.append(zb.knob(r, (x, y, z), color=fruit, u=5, v=3, squash=1.0))
     A.add(p)
     return A
 
@@ -267,6 +314,12 @@ def main():
         "potato_plant_sprout": lambda: potato_plant("sprout"),
         "potato_plant_young": lambda: potato_plant("young"),
         "potato_plant_ripe": lambda: potato_plant("ripe"),
+        "apple_tree_sprout": lambda: fruit_tree("apple", "sprout"),
+        "apple_tree_young": lambda: fruit_tree("apple", "young"),
+        "apple_tree_ripe": lambda: fruit_tree("apple", "ripe"),
+        "orange_tree_sprout": lambda: fruit_tree("orange", "sprout"),
+        "orange_tree_young": lambda: fruit_tree("orange", "young"),
+        "orange_tree_ripe": lambda: fruit_tree("orange", "ripe"),
         "carrot": carrot,
         "potato": potato,
         "basket": basket,

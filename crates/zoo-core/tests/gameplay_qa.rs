@@ -135,11 +135,12 @@ fn play_020_availability_sweep_all_boards_and_boxes() {
         .filter(|i| i.readable.is_some())
         .collect();
     // (the 4 garden signs of `garden_veg` are read like boards, GAME-GARDEN 1, GARD-009;
-    // 16 food boxes = 10 outside + 6 inside the storage, Q-194 answered 2026-09-29)
+    // 16 food boxes = 10 outside + 6 inside the storage, Q-194 answered 2026-09-29;
+    // the entrance map board is read like a board too, RESC-028)
     assert_eq!(
         targets.len(),
-        3 + 16 + 4,
-        "3 info boards, 16 food boxes, 4 garden signs"
+        3 + 16 + 4 + 1,
+        "3 info boards, 16 food boxes, 4 garden signs, 1 welcome board"
     );
     let ang = |u: Vec2, v: Vec2| {
         u.normalize()
@@ -284,8 +285,8 @@ fn resc_017_every_interactable_has_texts() {
     let c = common::content();
     assert_eq!(
         g.animals.len(),
-        4,
-        "zebra pair (FAM-001), hippo and panda are in scope"
+        6,
+        "zebra, hippo and panda pairs (FAM-001, Q-308) are in scope"
     );
     let mut animals: Vec<&str> = g
         .interactables()

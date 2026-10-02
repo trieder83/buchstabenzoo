@@ -393,7 +393,7 @@ pub struct GardenBedData {
     pub id: String,
     pub garden: String,
     pub rect: Rect,
-    /// `carrot` | `potato`.
+    /// `carrot` | `potato` | `apple` | `orange` (a treat id).
     pub plant: String,
     pub sign_pos: [f32; 2],
     #[serde(default = "default_south")]
@@ -409,7 +409,7 @@ pub struct PlantSpotData {
     pub id: String,
     pub garden: String,
     pub bed: String,
-    /// `carrot` | `potato`.
+    /// `carrot` | `potato` | `apple` | `orange` (a treat id).
     pub kind: String,
     pub pos: [f32; 2],
     /// `empty` | `sprout` | `young` | `ripe` in a new game.

@@ -4,6 +4,7 @@
 pub mod ads;
 pub mod ambient;
 pub mod animals;
+pub mod baby;
 pub mod carrying;
 pub mod collision;
 pub mod content;

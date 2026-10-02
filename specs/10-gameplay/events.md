@@ -6,7 +6,7 @@ module: events
 status: draft
 depends_on: [GAME-RESCUE, GAME-NIGHT, GAME-FAMILY, GAME-GARDEN, GAME-HINT, GAME-SAVE]
 test_prefix: EVT
-updated: 2026-09-28
+updated: 2026-10-01
 ---
 
 # Zoo events
@@ -65,7 +65,7 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
     the honey pot from the zookeeper house under the hive → a few seconds of bees working →
     a honey pot fills; bees never sting, they buzz around happily).
 13. **Honey for the bears:** honey is a treat (GAME-GARDEN basket) that **bears** love.
-    Feeding the bear pair honey counts as care feeding (GAME-FAMILY) → the bears may get a
+    Feeding the bear pair honey is a liked treat (GAME-FAMILY "Special food and babies") → the bears may get a
     baby. **Bears are a new species** (not in the current animal list) — they need a
     concept, a mission and an enclosure (Q-131 answered: yes, as a new animal pair). **Bears
     go into a new level 4** (Q-174 answered 2026-09-28; GAME-LAYOUT "Levels": `level_4`
@@ -89,7 +89,7 @@ GAME-HINT priority 1), is child-friendly, never scary and never punishing.
 | EVT-005 | Given the storm event, then exactly 4 fence segments of completed enclosures break, their animals go to new hiding places and the riddles update. | unit |
 | EVT-006 | Given the storm's animals are back, then their fences are repaired. | unit |
 | EVT-007 | *Deferred until level 4 exists (Q-174).* Given the bee event, when the hive is finished and the honey pot is put under it, then honey is added to the basket; bees never hurt the player. Until then: given no `level_4` in the data, then the bee event offers no honey and hands out no honey pot. | unit |
-| EVT-008 | *Deferred until level 4 exists (Q-174).* Given honey fed to the bear pair, then it counts as a care feeding (FAM-003). | unit |
+| EVT-008 | *Deferred until level 4 exists (Q-174).* Given honey fed to the bear pair, then it counts as special food (FAM-008). | unit |
 | EVT-009 | Given any event, then all its texts exist per reading level and language, and reviewers confirm nothing is scary (manual). | unit + manual |
 | EVT-010 | Given a save during an event, when restored, then the event continues in the same state. | unit |
 

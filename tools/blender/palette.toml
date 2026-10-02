@@ -170,3 +170,5 @@ can_blue         = { index = 127, hex = "#8CC3E6" }
 potato           = { index = 202, hex = "#C49A62" }
 basket           = { index = 203, hex = "#C99A55" }
 basket_dark      = { index = 204, hex = "#A87A3E" }
+apple_red        = { index = 205, hex = "#E0413A" } # fruit trees (kit_garden, level-3 fruit garden)
+orange_fruit     = { index = 206, hex = "#F7961E" }

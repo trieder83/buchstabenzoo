@@ -608,11 +608,11 @@ fn resc_030_split_pair_outside_member_follows_grass() {
     assert_eq!(g.animals[group[0]].state, AnimalState::InEnclosure);
 }
 
-// RESC-031 / HINT-018: a split zebra pair (member 0 home, member 1 still out) must not leave the
+// RESC-032 / HINT-018: a split zebra pair (member 0 home, member 1 still out) must not leave the
 // child stuck: the 🧭 hint leads to the missing zebra's next step (board / food / search area /
 // gate), never only to optional garden work, and the night pane still lists the zebra.
 #[test]
-fn resc_031_hint_018_split_pair_is_never_a_dead_end() {
+fn resc_032_hint_018_split_pair_is_never_a_dead_end() {
     use zoo_core::hints::{candidates, night_progress, HintTracker};
     for seed in 0..10u64 {
         for read_board in [false, true] {
@@ -644,7 +644,7 @@ fn resc_031_hint_018_split_pair_is_never_a_dead_end() {
 
 // RESC-032 / HINT-019 (NEVER STUCK): a pair whose members disagree about "mission complete"
 // (a save from before the zebras became a pair: one zebra entry, complete) is an open mission
-// again: the 🌙 pane lists it, the 🧭 hint leads to the missing partner.
+// again: the compass strip lists it, the 🧭 hint leads to the missing partner.
 #[test]
 fn resc_032_hint_019_old_single_zebra_save_reopens_the_pair_mission() {
     use zoo_core::hints::{candidates, night_progress, HintTracker};
@@ -674,4 +674,32 @@ fn resc_032_hint_019_old_single_zebra_save_reopens_the_pair_mission() {
         c.first().map(|h| (&h.id, h.priority))
     );
     assert!(g2.mission("zebra").is_some_and(|m| !m.complete));
+}
+
+// NIGHT-026: the compass strip shows the animals of the level the child is IN (user request
+// 2026-10-01), not those of another unlocked level.
+#[test]
+fn night_026_progress_strip_shows_the_current_levels_animals() {
+    use zoo_core::hints::night_progress;
+    let mut g = common::zoo_game(5);
+    assert!(g.level.open_barrier("barrier_ne_tree"), "level 2 unlocked");
+    // level 1 still has missing animals; the child stands in level 2
+    let l2_spawn = g.level.data.parts[1].spawn.cell();
+    g.player.pos = zoo_core::level::cell_center(l2_spawn);
+    let p = night_progress(&g);
+    assert_eq!(p.level, "level_2", "strip level while standing in level 2");
+    let ids: Vec<&str> = p.animals.iter().map(|(id, _)| *id).collect();
+    for a in ["koala", "elephant", "giraffe", "lion"] {
+        assert!(ids.contains(&a), "{a} in {ids:?}");
+    }
+    assert!(
+        !ids.contains(&"zebra") && !ids.contains(&"hippo"),
+        "{ids:?}"
+    );
+    // back in level 1 the strip shows level 1's animals
+    g.player.pos = zoo_core::level::cell_center(g.level.data.parts[0].spawn.cell());
+    let p = night_progress(&g);
+    assert_eq!(p.level, "level_1");
+    let ids: Vec<&str> = p.animals.iter().map(|(id, _)| *id).collect();
+    assert!(ids.contains(&"zebra") && !ids.contains(&"koala"), "{ids:?}");
 }

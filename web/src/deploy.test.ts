@@ -227,3 +227,73 @@ describe('ad content hosting (GAME-ADS "External content")', () => {
     }
   });
 });
+
+// TECH-PLATFORMS "Installable and full screen": manifest, icons, meta tags (PLAT-013..016, 019).
+describe('installable web app', () => {
+  const manifest = JSON.parse(read('web/public/manifest.webmanifest'));
+  const pngSize = (rel: string) => {
+    const b = fs.readFileSync(path.join(repoRoot, 'web/public', rel));
+    expect(b.subarray(1, 4).toString()).toBe('PNG');
+    return { w: b.readUInt32BE(16), h: b.readUInt32BE(20), bytes: b.length };
+  };
+
+  it('PLAT-013 manifest fields', () => {
+    expect(manifest.name).toBe('Buchstabenzoo');
+    expect(manifest.short_name).toBe('Zoo');
+    expect(manifest.lang).toBe('de');
+    expect(manifest.start_url).toBe('./');
+    expect(manifest.scope).toBe('./');
+    expect(manifest.display_override).toEqual(['fullscreen', 'standalone']);
+    expect(manifest.display).toBe('fullscreen');
+    expect(manifest.orientation).toBe('any');
+    expect(manifest.background_color).toBe('#fff3d6');
+    expect(manifest.theme_color).toBe('#3b2314');
+  });
+
+  it('PLAT-014 icons exist with the declared sizes and stay small', () => {
+    const icons = manifest.icons as { src: string; sizes: string; purpose?: string }[];
+    expect(icons.some((i) => i.sizes === '192x192')).toBe(true);
+    expect(icons.some((i) => i.sizes === '512x512' && i.purpose === 'any')).toBe(true);
+    expect(icons.some((i) => i.sizes === '512x512' && i.purpose === 'maskable')).toBe(true);
+    for (const i of icons) {
+      const [w, h] = i.sizes.split('x').map(Number);
+      const p = pngSize(i.src);
+      expect([p.w, p.h], i.src).toEqual([w, h]);
+      expect(p.bytes, i.src).toBeLessThanOrEqual(60 * 1024);
+    }
+    expect(pngSize('icons/apple-touch-icon.png')).toMatchObject({ w: 180, h: 180 });
+    expect(pngSize('icons/favicon-32.png')).toMatchObject({ w: 32, h: 32 });
+  });
+
+  it('PLAT-015 firebase.json serves the manifest with its MIME type, no-cache, strict CSP', () => {
+    expect(header('manifest.webmanifest', 'Content-Type')).toBe('application/manifest+json');
+    expect(header('manifest.webmanifest', 'Cache-Control')).toBe('no-cache');
+    const csp = header('**', 'Content-Security-Policy') ?? '';
+    expect(csp).toContain("default-src 'self'");
+    expect(csp).not.toContain('manifest-src');
+    expect(csp).toContain("connect-src 'self'");
+  });
+
+  it('PLAT-016 index.html links the manifest and icons, sets the web-app meta tags, no service worker', () => {
+    const html = read('web/index.html');
+    expect(html).toContain('<link rel="manifest" href="manifest.webmanifest"');
+    expect(html).toMatch(/<link rel="apple-touch-icon"[^>]*href="icons\/apple-touch-icon\.png"/);
+    expect(html).toMatch(/name="apple-mobile-web-app-capable" content="yes"/);
+    expect(html).toMatch(/name="mobile-web-app-capable" content="yes"/);
+    expect(html).toMatch(/name="apple-mobile-web-app-status-bar-style" content="black-translucent"/);
+    expect(html).toMatch(/name="apple-mobile-web-app-title"/);
+    expect(html).toMatch(/name="theme-color"/);
+    expect(html).toContain('viewport-fit=cover');
+    for (const f of fs.readdirSync(path.join(repoRoot, 'web/src')).filter((n) => n.endsWith('.ts') && !n.endsWith('.test.ts'))) {
+      expect(read(`web/src/${f}`), f).not.toMatch(/serviceWorker/);
+    }
+  });
+
+  it('PLAT-019 the full-screen texts exist in de and en', () => {
+    for (const lang of ['de', 'en']) {
+      const ui = read(`assets/i18n/${lang}/ui.ftl`);
+      expect(ui, lang).toMatch(/^ui-fullscreen = .+/m);
+      expect(ui, lang).toMatch(/^ui-install-hint-ios = .+/m);
+    }
+  });
+});

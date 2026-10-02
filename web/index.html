@@ -7,6 +7,15 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no"
     />
     <title>Buchstabenzoo</title>
+    <!-- Installable web app (TECH-PLATFORMS "Installable and full screen"): no service worker. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#3b2314" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Buchstabenzoo" />
     <style>
       [hidden] {
         display: none !important;
@@ -508,6 +517,11 @@
         border-radius: 24px;
         border: 5px solid #3b2314;
         background: #fff3d6;
+        /* short landscape phones: the menu scrolls instead of leaving the screen (PLAT-021) */
+        max-height: calc(100dvh - 116px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        box-sizing: border-box;
+        overflow-y: auto;
+        touch-action: pan-y;
       }
       #settings .row {
         display: flex;
@@ -521,6 +535,14 @@
         background: #fff;
         font-size: 36px;
         font-weight: bold;
+      }
+      #settings .install-hint {
+        margin: 0;
+        max-width: 240px;
+        font-size: 18px;
+        font-weight: bold;
+        line-height: 1.25;
+        color: #5a3a22;
       }
       #settings .confirm {
         gap: 12px;

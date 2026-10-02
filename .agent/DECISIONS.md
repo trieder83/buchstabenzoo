@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-325** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-326** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-140 answered · 87 open · 10 other (partly answered / proposed / superseded).
+140 answered · 88 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -93,6 +93,7 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-323 — Art of the fruit trees: no concept sheet was generated; the six stage models (apple_tree_*, orange_tree_*) are built in kit_garden.py from … (ART-ENVIRONMENT, GAME-GARDEN)
 - Q-324 — Should fruit trees look different from the vegetable beds in the signs (picture of an apple tree) or is the fruit icon enough? (GAME-GARDEN, CONT-READING)
 - Q-313 — Positions chosen by the level designer for Q-312: zookeeper_house_2 (27, 15, 6, 5) in the south-west corner of level 2 on path_l2_sw (≈ 8 s … (GAME-LEVEL-2, GAME-LEVEL-3)
+- Q-325 — Service worker / offline cache and an in-game install prompt for the installable web app (TECH-PLATFORMS "Installable and full screen")? (TECH-PLATFORMS)
 
 ## Partly answered / other
 

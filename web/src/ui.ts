@@ -4,6 +4,7 @@
 // icons are placeholders (emoji) until the icon art exists.
 
 import { SOUND_EVENT } from './audio';
+import { browserEnv, isFullscreen, showFullscreenButton, showIosInstallHint, toggleFullscreen } from './fullscreen';
 import { dragScroll } from './scroll';
 import { pictogramCanvas } from './pictograms';
 
@@ -468,6 +469,29 @@ interface GameEventMsg {
   text?: string;
   food?: string;
   into_night_zoo?: boolean;
+}
+
+/** Corner-bracket icon (outward = enter, inward = leave); an SVG because the glyph ⛶ is missing in many fonts. */
+function fullscreenIcon(on: boolean): SVGSVGElement {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '40');
+  svg.setAttribute('height', '40');
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute(
+    'd',
+    on
+      ? 'M9 3v6H3M15 3v6h6M9 21v-6H3M15 21v-6h6'
+      : 'M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6',
+  );
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#3b2314');
+  path.setAttribute('stroke-width', '3');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+  svg.append(path);
+  return svg;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -1220,7 +1244,34 @@ export class Ui {
       this.showIntro(true);
     });
     soundRow.append(introBtn);
-    this.settings.replaceChildren(langRow, levelRow, soundRow, gameRow);
+    // Full screen (PLAT-019/020): only where the Fullscreen API exists and the app is not installed.
+    const fsEnv = browserEnv();
+    const extra: HTMLElement[] = [];
+    if (showFullscreenButton(fsEnv)) {
+      const fsBtn = el('button', 'choice', '');
+      fsBtn.id = 'fullscreen-toggle';
+      fsBtn.addEventListener('click', () => {
+        this.settings.hidden = true;
+        void toggleFullscreen(fsEnv);
+      });
+      const mark = () => {
+        const on = isFullscreen(fsEnv);
+        fsBtn.replaceChildren(fullscreenIcon(on));
+        fsBtn.classList.toggle('on', on);
+        fsBtn.setAttribute('aria-pressed', String(on));
+      };
+      document.addEventListener('fullscreenchange', mark);
+      document.addEventListener('webkitfullscreenchange', mark);
+      mark();
+      soundRow.append(fsBtn);
+    }
+    // iPhone Safari cannot install by itself: one hint line, settings menu only (no popup).
+    if (showIosInstallHint(fsEnv)) {
+      const hint = el('p', 'install-hint', '');
+      hint.id = 'install-hint';
+      extra.push(hint);
+    }
+    this.settings.replaceChildren(langRow, levelRow, soundRow, gameRow, ...extra);
     this.markSound();
   }
 
@@ -1265,7 +1316,7 @@ export class Ui {
 
   private markSettings(): void {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
-      if (b.id === 'sound-toggle' || b.id === 'intro-replay') continue;
+      if (b.id === 'sound-toggle' || b.id === 'intro-replay' || b.id === 'fullscreen-toggle') continue;
       const on = b.dataset.lang === this.app.language() || b.dataset.level === this.app.reading_level();
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
@@ -1285,6 +1336,9 @@ export class Ui {
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
     this.settings.querySelector('#sound-toggle')?.setAttribute('aria-label', this.app.t('ui-sound'));
     this.settings.querySelector('#intro-replay')?.setAttribute('aria-label', this.app.t('ui-replay-intro'));
+    this.settings.querySelector('#fullscreen-toggle')?.setAttribute('aria-label', this.app.t('ui-fullscreen'));
+    const installHint = this.settings.querySelector('#install-hint');
+    if (installHint) installHint.textContent = this.app.t('ui-install-hint-ios');
     this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));
     this.settings.querySelector('#new-game-yes')?.setAttribute('aria-label', this.app.t('ui-yes'));
     this.settings.querySelector('#new-game-no')?.setAttribute('aria-label', this.app.t('ui-no'));

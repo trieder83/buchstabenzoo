@@ -159,3 +159,6 @@ welcome-level-night_1-kiga = 🔦🌙
 welcome-level-night_1-klasse1 = It is night. Take the lantern.
 welcome-level-night_1-klasse2 = It is night in the zoo. Take your lantern with you.
 welcome-level-night_1-klasse3 = It is night in the zoo. Take your lantern with you: in its light the animals' eyes shine.
+
+ui-fullscreen = Full screen
+ui-install-hint-ios = Add to Home Screen: Share ⎙ → Add to Home Screen

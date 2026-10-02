@@ -6,7 +6,7 @@ module: platforms-and-testing
 status: draft
 depends_on: [TECH-ARCH]
 test_prefix: PLAT
-updated: 2026-10-01
+updated: 2026-10-02
 ---
 
 # Platforms, performance and testing
@@ -81,7 +81,49 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 | PLAT-010 | Given `firebase.json`, then `ads/**` is cached ≤ 10 minutes with `must-revalidate` (not immutable) and the CSP still has `connect-src 'self'`, `img-src 'self' data: blob:`, `form-action 'none'` and no external URL. | unit |
 | PLAT-011 | Given the repo's `ads/`, then only manifest, signature and images of ≤ 512 KB are served (no template / key), a shipped manifest has its signature and matches its images' size and SHA-256, and no private key file is tracked except the TEST-ONLY fixture key. | unit |
 | PLAT-012 | Given the release configuration, then it has no test-key override: `VITE_AD_TEST` is set by no npm script, `ad-keys.ts` does not contain the test key, the `adkey` parameter is read only behind the build-time switch, and a release bundle in `web/dist` does not contain `adkey`. | unit |
+| PLAT-013 | Given `web/public/manifest.webmanifest`, then it has name "Buchstabenzoo", short_name "Zoo", lang `de`, `start_url` and `scope` `./`, `display_override` `["fullscreen","standalone"]`, `orientation` `any`, cream background and brown theme colour. | unit |
+| PLAT-014 | Given the manifest, then every icon exists with exactly the declared size, 192, 512 and a `maskable` 512 are present, each PNG ≤ 60 KB, and `apple-touch-icon` (180) and favicon (32) exist. | unit |
+| PLAT-015 | Given `firebase.json`, then the manifest is served as `application/manifest+json` with `no-cache`, the CSP is unchanged (`default-src 'self'`, no `manifest-src` widening), and a release build contains the manifest and icons within the 30 MB limit. | unit |
+| PLAT-016 | Given `web/index.html`, then it links the manifest and the apple-touch-icon and sets the apple/mobile web-app meta tags, `theme-color` and `viewport-fit=cover`, and no service worker is registered in `web/src`. | unit |
+| PLAT-017 | Given the fullscreen helper, then support is detected (standard and `webkit` API), unsupported or standalone / fullscreen display mode hides the button, and the iOS install hint shows only on iPhone/iPad Safari that is not standalone. | unit |
+| PLAT-018 | Given the helper, when toggled, then `requestFullscreen({navigationUI:'hide'})` (or the webkit one) is called when not in full screen and `exitFullscreen` when in full screen; rejections and exceptions are swallowed; the orientation is never locked. | unit |
+| PLAT-019 | Given the settings menu, then `#fullscreen-toggle` (≥ 72 px, `aria-label` from `ui-fullscreen`) sits next to ❓ and `aria-pressed` follows `fullscreenchange`; de and en keys `ui-fullscreen` and `ui-install-hint-ios` exist. | unit, e2e |
+| PLAT-020 | Given Chromium, when the button is pressed, then `document.fullscreenElement` is set, `aria-pressed` is `true`, the settings menu closed and the canvas fills the viewport; pressed again, full screen ends and the game still runs. | e2e |
+| PLAT-021 | Given a 412×892 and a 892×412 viewport (also in full screen), then every visible fixed HUD control lies inside the viewport and no two controls overlap; each uses `env(safe-area-inset-*)`. | e2e, unit |
+
+## Installable and full screen
+
+User request 2026-10-02: the game should fill a phone screen (no browser bars). Two ways, both
+without a service worker, popups, network or tracking:
+
+1. **Installable web app (iPhone + Android).** `web/public/manifest.webmanifest` (copied by Vite
+   into `dist/`, served as `application/manifest+json`, `Cache-Control: no-cache`) with `name`
+   "Buchstabenzoo", `short_name` "Zoo", `lang` "de", `start_url` and `scope` `./` (relative: works under
+   any path), `display_override` `["fullscreen","standalone"]`, `display` `fullscreen` (Android
+   fallback chain), `orientation` `any` (portrait and landscape are both supported, PLAY-030),
+   `background_color` cream `#fff3d6`, `theme_color` brown `#3b2314` and icons 192, 512 and a
+   maskable 512 (PNG). `index.html` links the manifest and a 180 px `apple-touch-icon` and a 32 px
+   favicon, sets `apple-mobile-web-app-capable`, `mobile-web-app-capable`,
+   `apple-mobile-web-app-status-bar-style=black-translucent`, `apple-mobile-web-app-title` and
+   `theme-color`. The CSP is unchanged (`default-src 'self'` covers `manifest-src`). The icons are drawn
+   deterministically by `tools/make_icons.py` (Pillow; comic look: dark brown outline, yellow, green,
+   cream; "ABC" on a zebra-stripe paw motif) and reviewed in `art/index.html` ("App icon").
+   Install: iPhone Safari Share ⎙ → "Zum Home-Bildschirm"; Android Chrome menu ⋮ → "App installieren" /
+   "Zum Startbildschirm hinzufügen". Safari cannot install by itself, so the **settings menu only**
+   shows once a short hint line (Fluent `ui-install-hint-ios`) on iPhone/iPad Safari that is not
+   yet running standalone (`navigator.standalone` / `display-mode: standalone`); never a popup.
+2. **Full-screen button** (`#fullscreen-toggle`, ≥ 72 px, corner-bracket icon (SVG, outward / inward; the glyph ⛶ is missing in many fonts), `aria-label` Fluent
+   `ui-fullscreen`, `aria-pressed`) in the settings menu next to ❓. `web/src/fullscreen.ts` (injectable
+   environment like `audio.ts`) uses `requestFullscreen({ navigationUI: 'hide' })` /
+   `exitFullscreen()` with the `webkit` prefixed fallbacks; promise rejections are silent. The button is hidden when the
+   Fullscreen API is missing (iPhone Safari) or the app already runs standalone / fullscreen
+   (`display-mode`). The orientation is **never locked**. `fullscreenchange` updates the button; the settings
+   menu closes after the toggle; leaving full screen (Esc / back) changes no game state. The canvas follows
+   its `ResizeObserver` (`App.resize`).
+3. **Safe areas.** Every fixed HUD control sits inside `env(safe-area-inset-*)` (notches, rounded
+   corners, home bar) and none overlaps another (PLAT-021).
+4. Not now: service worker / offline cache and an install prompt UI (Q-325).
 
 ## Open questions
 
-- Q-011 saving, Q-012 offline, Q-013 min devices, Q-104 draw-call budget for the joined zoo.
+- Q-325 service worker / offline + install prompt (later). Q-011 saving, Q-012 offline, Q-013 min devices, Q-104 draw-call budget for the joined zoo.

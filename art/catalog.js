@@ -1969,5 +1969,26 @@ window.ART_CATALOG = {
         }
       ],
     },
+    {
+      id: "app_icon",
+      title: "App icon",
+      intro: "Home-screen icon of the installable web app (TECH-PLATFORMS 'Installable and full screen'). Drawn by tools/make_icons.py (Pillow, deterministic): green zebra-stripe square, cream ABC badge, yellow paw, dark brown outline.",
+      items: [
+        {
+          id: "app_icon_set",
+          title: "App icon set",
+          status: "in-review",
+          description: "192 / 512 px, maskable 512 (safe zone), apple-touch-icon 180, favicon 32. Change the design in tools/make_icons.py and rerun it.",
+          spec: "TECH-PLATFORMS",
+          images: [
+            { file: "../web/public/icons/icon-512.png", label: "icon-512" },
+            { file: "../web/public/icons/icon-maskable-512.png", label: "maskable 512" },
+            { file: "../web/public/icons/apple-touch-icon.png", label: "apple-touch 180" },
+            { file: "../web/public/icons/icon-192.png", label: "icon-192" },
+            { file: "../web/public/icons/favicon-32.png", label: "favicon 32" },
+          ],
+        },
+      ],
+    },
   ],
 };

@@ -101,5 +101,6 @@ language for player-facing text.
 | `intro` | Einführung † | intro | The 3 pages shown at the entrance gate at the first start of a new game; replayable from the settings (GAME-RESCUE "Intro"). |
 | `never_stuck` | Nie festgefahren † | never stuck | Rule set that guarantees the child always has a next step: hint priority, `help` hint after 120 s, animals come to the player after 180 s (GAME-HINT, GAME-LAYOUT "Level design rules" 15). Not player-facing. |
 | `ad_board` / `campaign` / `parental_gate` | Werbetafel / Kampagne / Elterngate † | ad board / campaign / parental gate | In-world billboard; the signed external content of one own cross-promotion shown on several boards; the plus/minus (or language) task + 3 s hold before a link opens (GAME-ADS). |
+| `fullscreen` / `installable` | Vollbild / installierbar | full screen / installable | Playing without browser bars: the settings button (`#fullscreen-toggle`) or the web app added to the home screen (manifest, TECH-PLATFORMS "Installable and full screen"). |
 
 † German term is a proposal until confirmed (Q-045).

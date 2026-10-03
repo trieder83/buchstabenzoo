@@ -863,22 +863,22 @@ animations = ["idle", "walk", "perch", "eat", "happy", "refuse"]
 id = "poison_dart_frog"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "poison_dart_frog_female"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "frog_froglet"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 # Landmark concept sheets (2026-10-02, art/props/kit_landmarks_l2|l3) — models follow after approval
 

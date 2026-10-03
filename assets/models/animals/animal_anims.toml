@@ -1143,3 +1143,131 @@ crossfade_in = 0.10
 events = {}
 used_for = ["refuse", "not_interested"]
 
+
+# ---- terrarium frogs (night_2; tools/blender/animals/poison_dart_frog.py, concept family_v6 approved
+# 2026-10-03). Same small `frog` rig as the ambient frog; one clip set for male / female / froglet.
+# `walk` is a looping HOP cycle (24 frames = 0.8 s, 0.8 m per hop at speed 1.0 m/s): in-place
+# hips arc, planted feet slide back at `speed`; events hop_takeoff / hop_land. Origin = feet.
+
+[poison_dart_frog.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[poison_dart_frog.walk]
+frames = 24
+loop = true
+crossfade_in = 0.10
+events = { hop_takeoff = 6, hop_land = 22 }
+speed = 1.0
+
+[poison_dart_frog.eat]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[poison_dart_frog.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[poison_dart_frog.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[poison_dart_frog.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[poison_dart_frog_female.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[poison_dart_frog_female.walk]
+frames = 24
+loop = true
+crossfade_in = 0.10
+events = { hop_takeoff = 6, hop_land = 22 }
+speed = 1.0
+
+[poison_dart_frog_female.eat]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[poison_dart_frog_female.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[poison_dart_frog_female.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[poison_dart_frog_female.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[frog_froglet.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[frog_froglet.walk]
+frames = 24
+loop = true
+crossfade_in = 0.10
+events = { hop_takeoff = 6, hop_land = 22 }
+speed = 1.0
+
+[frog_froglet.eat]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[frog_froglet.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[frog_froglet.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[frog_froglet.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]

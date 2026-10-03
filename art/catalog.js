@@ -188,6 +188,8 @@ window.ART_CATALOG = {
           brief: "animals/snake_family/brief.md",
           notes: "Chosen v4 (coiled, compact, clearly readable). v3 is similar but has unwanted MALE/FEMALE/BABY text labels; v1 and v2 are stretched-out side poses (long necks, less cute). Limbless: modelled as a segmented body on a bone chain.",
           images: [
+            { file: "animals/snake_family/family_vA1.jpg", label: "suggestion A: banded kingsnake, orange-black-cream (family sheet)" },
+            { file: "animals/snake_family/family_vB2.jpg", label: "suggestion B: chunky green python, yellow belly, blue-white speckle stripe (family sheet)" },
             { file: "animals/snake_family/family_v4.jpg", label: "family sheet: male | female | baby (chosen v4)", required: true },
             { file: "animals/snake_family/family_v3.jpg", label: "family sheet v3 (alternative)" },
             { file: "animals/snake_family/family_v1.jpg", label: "family sheet v1 (alternative)" },
@@ -203,6 +205,8 @@ window.ART_CATALOG = {
           brief: "animals/snake_family/brief.md",
           notes: "Chosen v4 (coiled, compact, clearly readable). v3 is similar but has unwanted MALE/FEMALE/BABY text labels; v1 and v2 are stretched-out side poses (long necks, less cute). Limbless: modelled as a segmented body on a bone chain.",
           images: [
+            { file: "animals/snake_family/family_vA1.jpg", label: "suggestion A: banded kingsnake, orange-black-cream (family sheet)" },
+            { file: "animals/snake_family/family_vB2.jpg", label: "suggestion B: chunky green python, yellow belly, blue-white speckle stripe (family sheet)" },
             { file: "animals/snake_family/family_v4.jpg", label: "family sheet: male | female | baby (chosen v4)", required: true },
             { file: "animals/snake_family/family_v3.jpg", label: "family sheet v3 (alternative)" },
             { file: "animals/snake_family/family_v1.jpg", label: "family sheet v1 (alternative)" },
@@ -218,6 +222,8 @@ window.ART_CATALOG = {
           brief: "animals/snake_family/brief.md",
           notes: "Chosen v4 (coiled, compact, clearly readable). v3 is similar but has unwanted MALE/FEMALE/BABY text labels; v1 and v2 are stretched-out side poses (long necks, less cute). Limbless: modelled as a segmented body on a bone chain.",
           images: [
+            { file: "animals/snake_family/family_vA1.jpg", label: "suggestion A: banded kingsnake, orange-black-cream (family sheet)" },
+            { file: "animals/snake_family/family_vB2.jpg", label: "suggestion B: chunky green python, yellow belly, blue-white speckle stripe (family sheet)" },
             { file: "animals/snake_family/family_v4.jpg", label: "family sheet: male | female | baby (chosen v4)", required: true },
             { file: "animals/snake_family/family_v3.jpg", label: "family sheet v3 (alternative)" },
             { file: "animals/snake_family/family_v1.jpg", label: "family sheet v1 (alternative)" },
@@ -266,12 +272,13 @@ window.ART_CATALOG = {
         {
           id: "poison_dart_frog",
           title: "Poison dart frog \u2014 male",
-          status: "in-review",
+          status: "approved",
           description: "NEW terrarium animal (night level). Concept: black-and-yellow \u201cbumblebee\u201d frog (black with bold yellow bands, yellow toe tips) on a leaf (left figure). Friendly only, no warning symbols.",
           spec: "GAME-FAMILY",
           brief: "animals/poison_dart_frog_family/brief.md",
           notes: "Redone 2026-10-03 after user refs (black-yellow male, orange-black female). Chosen v6; v3/v4 alternatives; v1/v2 = old blue/yellow design.",
           images: [
+            { file: "animals/poison_dart_frog/model_preview.png", label: "3D model preview (game camera | front | side | game size)" },
             { file: "animals/poison_dart_frog_family/family_v6.jpg", label: "family sheet: male | female | baby (chosen v6)", required: true },
             { file: "animals/poison_dart_frog_family/family_v3.jpg", label: "family sheet v3 (alternative)" },
             { file: "animals/poison_dart_frog_family/family_v4.jpg", label: "family sheet v4 (alternative, green fade at the bottom)" },
@@ -283,12 +290,13 @@ window.ART_CATALOG = {
         {
           id: "poison_dart_frog_female",
           title: "Poison dart frog \u2014 female",
-          status: "in-review",
+          status: "approved",
           description: "NEW terrarium animal. Concept for the female (\u2248 90 %, middle figure): orange-and-black variant (orange with black patches, yellow-green spotted legs).",
           spec: "GAME-FAMILY",
           brief: "animals/poison_dart_frog_family/brief.md",
           notes: "Redone 2026-10-03 after user refs (black-yellow male, orange-black female). Chosen v6; v3/v4 alternatives; v1/v2 = old blue/yellow design.",
           images: [
+            { file: "animals/poison_dart_frog_female/model_preview.png", label: "3D model preview (game camera | front | side | game size)" },
             { file: "animals/poison_dart_frog_family/family_v6.jpg", label: "family sheet: male | female | baby (chosen v6)", required: true },
             { file: "animals/poison_dart_frog_family/family_v3.jpg", label: "family sheet v3 (alternative)" },
             { file: "animals/poison_dart_frog_family/family_v4.jpg", label: "family sheet v4 (alternative, green fade at the bottom)" },
@@ -300,12 +308,13 @@ window.ART_CATALOG = {
         {
           id: "frog_froglet",
           title: "Poison dart frog \u2014 baby (froglet)",
-          status: "in-review",
+          status: "approved",
           description: "NEW terrarium animal. Concept for the baby (\u2248 40 %, right figure): froglet with a tail stump, orange with black blotches and yellow legs.",
           spec: "GAME-FAMILY",
           brief: "animals/poison_dart_frog_family/brief.md",
           notes: "Redone 2026-10-03 after user refs (black-yellow male, orange-black female). Chosen v6; v3/v4 alternatives; v1/v2 = old blue/yellow design.",
           images: [
+            { file: "animals/frog_froglet/model_preview.png", label: "3D model preview (game camera | front | side | game size)" },
             { file: "animals/poison_dart_frog_family/family_v6.jpg", label: "family sheet: male | female | baby (chosen v6)", required: true },
             { file: "animals/poison_dart_frog_family/family_v3.jpg", label: "family sheet v3 (alternative)" },
             { file: "animals/poison_dart_frog_family/family_v4.jpg", label: "family sheet v4 (alternative, green fade at the bottom)" },

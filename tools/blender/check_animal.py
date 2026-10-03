@@ -128,6 +128,10 @@ OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
     "duck": ("bird", BIRD_PARENTS, [], {"length": 0.45, "height": 0.34}),
     "duckling": ("bird", BIRD_PARENTS, [], {"length": 0.22, "height": 0.23}),
     "frog": ("frog", FROG_PARENTS, [], {"length": 0.18, "height": 0.17}),
+    # terrarium frogs (night_2): same frog rig; length = nose to rump (froglet incl. tail stump)
+    "poison_dart_frog": ("frog", FROG_PARENTS, [], {"length": 0.386, "height": 0.38}),
+    "poison_dart_frog_female": ("frog", FROG_PARENTS, [], {"length": 0.356, "height": 0.376}),
+    "frog_froglet": ("frog", FROG_PARENTS, [], {"length": 0.233, "height": 0.19}),
 }
 # ambient animals are not in assets/manifest.toml (their concept is approved as part of
 # kit_water); their expected clips come from here (== animal_anims.toml, kind = "ambient")
@@ -140,7 +144,8 @@ MAX_AMBIENT_TRIS = 1200
 # eye_glow material slot (NIGHT-006, art/night/README.md "Eyeshine rule"): required for the
 # night animals, allowed (as the 2nd material, same atlas as `body`) for every animal
 NIGHT_ANIMALS = {"hedgehog", "bat", "owl", "raccoon", "badger", "fennec", "kiwi", "porcupine",
-                 "slow_loris", "tarsier"}
+                 "slow_loris", "tarsier", "poison_dart_frog", "poison_dart_frog_female",
+                 "frog_froglet"}
 
 
 def check_other_rest(rig, exp, rp, mn, mx, err):

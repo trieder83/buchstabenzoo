@@ -1271,3 +1271,132 @@ loop = true
 crossfade_in = 0.40
 events = {}
 used_for = ["sleep"]
+
+
+# ---- terrarium snakes (night_2; tools/blender/animals/snake.py, concept family_vA1 approved 2026-10-03).
+# Limbless 16-joint chain rig; rest = coiled pose (origin on the ground under the coil). `walk` = SLITHER:
+# 24 frames = one wave (0.8 s) of a sine track, the model's origin advances one wavelength per loop
+# (0.70 m x size) = `speed`; the body follows the head's track, so it does not skid sideways.
+
+[snake.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[snake.walk]
+frames = 24
+loop = true
+crossfade_in = 0.25
+events = {}
+speed = 0.875
+
+[snake.eat]
+frames = 45
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[snake.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[snake.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[snake.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.50
+events = {}
+used_for = ["sleep"]
+
+[snake_female.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[snake_female.walk]
+frames = 24
+loop = true
+crossfade_in = 0.25
+events = {}
+speed = 0.805
+
+[snake_female.eat]
+frames = 45
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[snake_female.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[snake_female.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[snake_female.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.50
+events = {}
+used_for = ["sleep"]
+
+[snake_hatchling.idle]
+frames = 90
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[snake_hatchling.walk]
+frames = 24
+loop = true
+crossfade_in = 0.25
+events = {}
+speed = 0.394
+
+[snake_hatchling.eat]
+frames = 45
+loop = false
+crossfade_in = 0.15
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[snake_hatchling.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[snake_hatchling.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[snake_hatchling.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.50
+events = {}
+used_for = ["sleep"]

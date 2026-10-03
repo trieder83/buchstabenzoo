@@ -137,7 +137,9 @@ async function main(): Promise<void> {
     canvas,
     stickView: stickView(),
     onFirstTouch: () => ui.setTouch(),
-    onInteract: () => ui.interact(),
+    onInteract: () => {
+      if (!ads.interact()) ui.interact();
+    },
     onEscape: () => {
       if (!ads.closeIfOpen()) ui.escape();
     },

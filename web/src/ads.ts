@@ -22,6 +22,8 @@ export const MIN_DIM = 64;
 export const MAX_TAGLINE = 80;
 export const MAX_CAMPAIGNS = 3;
 export const FETCH_TIMEOUT_MS = 4000;
+/** The images get longer: up to 3 x 512 KB over mobile data (ADS-029, user report 2026-10-03). */
+export const IMAGE_TIMEOUT_MS = 15000;
 /** Clock skew tolerated for `issued` (ms). */
 const SKEW_MS = 24 * 3600 * 1000;
 export const VERSION_KEY = 'zoo.ads.version';
@@ -414,23 +416,27 @@ export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
       /* no storage: the rollback check then only works within the session */
     }
     const bySlot = new Map<number, VerifiedCampaign>();
-    await withDeadline(timeout, async (signal) => {
-      await Promise.all(
-        manifest.campaigns.map(async (c) => {
-          try {
-            const images: VerifiedImage[] = [];
-            for (const im of c.images) {
-              const data = await fetchBytes(o, im.path, signal, MAX_IMAGE_BYTES);
-              await checkImageBytes(im, data);
-              images.push({ ...im, data });
+    try {
+      await withDeadline(o.timeoutMs ?? IMAGE_TIMEOUT_MS, async (signal) => {
+        await Promise.all(
+          manifest.campaigns.map(async (c) => {
+            try {
+              const images: VerifiedImage[] = [];
+              for (const im of c.images) {
+                const data = await fetchBytes(o, im.path, signal, MAX_IMAGE_BYTES);
+                await checkImageBytes(im, data);
+                images.push({ ...im, data });
+              }
+              bySlot.set(c.slot, { ...c, images });
+            } catch {
+              /* this campaign keeps its placeholder */
             }
-            bySlot.set(c.slot, { ...c, images });
-          } catch {
-            /* this campaign keeps its placeholder */
-          }
-        }),
-      );
-    });
+          }),
+        );
+      });
+    } catch {
+      /* deadline: the campaigns that arrived in time are shown, the others keep the placeholder */
+    }
     return bySlot.size > 0 ? { version: manifest.version, bySlot } : null;
   } catch {
     return null;

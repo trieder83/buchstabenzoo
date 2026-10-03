@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS]
 test_prefix: ADS
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Ad billboards (in-world)
@@ -85,23 +85,41 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
      header = declared (64…2048 px), **SHA-256 equal to the signed value**, browser decode
      gives the same dimensions (ADS-012/013/014).
    Loading starts after the first frame (never blocks play), same origin only, `credentials:
-   omit`, no referrer, timeout 4 s per phase (manifest, images); offline → placeholders. The
+   omit`, no referrer, timeout **4 s for the manifest and 15 s for the images** (a phone on mobile
+   data needs more than 4 s for up to 3 × 512 KB; user report 2026-10-03, ADS-029); a failed load
+   is retried **once** after 20 s (no loop); offline → placeholders. The
    verified images live in memory only (Q-243).
 9. **Test key hook.** `?adkey=<base64 public key>` replaces the compiled keys **only** in the dev
    server and in the e2e test build (`VITE_AD_TEST=1`, `dist-adtest`, Q-245); the release build
    contains no such code path (PLAT-012, ADS-019). Test fixtures and the TEST-ONLY key live in
    `web/tests/fixtures/ads/`.
-10. **Reading panel** (GAME-PLAYER §4 pattern; Q-247): standing in front of a readable board
-    (inside 3 m of its centre, in front of the picture) opens a panel at the top (image,
-    tagline in `klasse1+` — `kiga` only the picture — and a link button ≥ 64 px with the host
-    name as text); it closes by ✖ / Esc / walking away and stays closed until the player leaves
-    and comes back. It never opens while another reading panel is open; the hint and interact
-    button ignore ad boards.
+10. **Reading panel** (GAME-PLAYER §4 pattern; Q-247; touch rules user report 2026-10-03): a
+    readable board is "near" when the player is within **3.5 m** of its centre and on its
+    readable side (in front of the picture, up to 3 m beside its centre) — **no facing
+    requirement** (the touch stick often leaves the child looking elsewhere). Then the panel
+    opens at once (image, tagline in `klasse1+` — `kiga` only the picture — and a link button
+    ≥ 64 px with the host name as text); it appears as soon as the campaign is verified, also if
+    the child arrived first. It closes by ✖ / Esc / walking away; a ✖ tap within 400 ms after
+    the panel opened is ignored (accidental touch). After closing it stays closed until the
+    player leaves and comes back **or presses the interact button**: on touch an extra button
+    (🔗, same place as the interact button) shows while a verified board is near and its panel
+    is closed (also the interact key on desktop); it (re)opens the panel. The panel never opens
+    while another reading panel is open; the hint and interact target ignore ad boards.
+    **Small screens** (landscape height ≤ 460 px, portrait width ≤ 480 px; GAME-PLAYER §3):
+    the panel is a **compact card** — picture left, tagline + link button right (landscape), or
+    below the gear/compass in portrait — and never covers the right-hand control column
+    (gear, compass, view button, interact button).
 11. **Parental gate** (Q-242): pressing the link button shows a modal gate: (1) for the maths campaign a **simple plus or
     minus task up to 20** (user request 2026-10-01: e.g. 9 + 7 or 15 − 6; numbers and result 0…20) with 4 number buttons — a wrong
-    answer or ✖ ends the gate; (2) hold the ✋ button **3 s** (progress ring; releasing resets).
-    Only then `window.open(url, '_blank', 'noopener,noreferrer')` **once**; no analytics, no query
-    parameters, no request to the campaign host by the game (ADC1-005).
+    answer or ✖ ends the gate; (2) hold the ✋ button **3 s** (progress ring; releasing resets;
+    a small finger movement does not release; no context menu / scrolling on the button). When
+    the hold is complete a big button (≥ 64 px, icon + "mathfighter.rcms.ch") appears; **the
+    child / parent TAPS it** and only that tap opens the link: an `<a href=<canonical URL>
+    target=_blank rel="noopener noreferrer">` built by the game, whose click handler calls
+    `window.open(url, '_blank', 'noopener,noreferrer')` **once** inside the user gesture (phone
+    browsers — iOS Safari, Samsung Internet — block pop-ups started from a timer, which is what
+    the end of a 3 s hold is). No analytics, no query parameters, no request to the campaign
+    host by the game (ADC1-005).
 
 ### Threat model (what the signature does and does not protect)
 
@@ -123,7 +141,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-004 | Given an ad board whose slot has no verified campaign (or any board without a verified own campaign), then it is not interactable (no panel, no interact target) and the game makes no network request for ads — in the release build (no key compiled) no request at all. | e2e |
 | ADS-005 | Given two play sessions with different seeds, then the slot-to-board assignment differs; with the same seed (and any order of the data) it is identical. | unit |
 | ADS-006 | Given the active campaigns, then every one is own cross-promotion unless a legal/child-safety check is recorded for it (rule 6, Q-128). | manual |
-| ADS-007 | Given the player position, then a board is "in front" only within 3 m in front of its picture (not behind, not beside, nearest wins). | unit |
+| ADS-007 | Given the player position, then a board is "near" only within 3.5 m, in front of its picture (not behind, not far beside, any facing, nearest wins). | unit |
 | ADS-008 | Given a manifest signed by `tools/ads/sign.py` with the matching key, then the host accepts it and its images (cross-check Python signer ↔ TypeScript verifier). | unit |
 | ADS-009 | Given a wrong key, a changed manifest byte, a changed signature, a missing domain prefix or no key, then nothing is shown and no image is fetched. | unit + e2e |
 | ADS-010 | Given a manifest `version` lower than the last accepted one, then it is refused; equal or higher is accepted and remembered; a refused manifest does not move the mark. | unit |
@@ -133,15 +151,19 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-014 | Given an image whose magic bytes differ from the declared type (or are not PNG/WebP/JPEG), or a path with traversal / scheme / outside `img/`, then the campaign is dropped. | unit |
 | ADS-015 | Given a link with http, another host, another campaign's host, user info, port, path, query, fragment or a look-alike host, then the campaign is dropped; a valid one is opened in its canonical form. | unit |
 | ADS-016 | Given a tagline with markup characters, control characters or over 80 characters, then the campaign is dropped; shown texts are set as text only. | unit |
-| ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the 4 s timeout; only same-origin `ads/` URLs are requested. | unit |
+| ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the timeout (4 s manifest, 15 s images); only same-origin `ads/` URLs are requested. | unit |
 | ADS-024 | Given a browser without Web Crypto (plain http on a LAN IP, e.g. the phone on the dev server http://192.168.x.x:5173), then the signature check and the SHA-256 image hashes use the pure-JS fallback (@noble/hashes) and give exactly the same result (a tampered manifest is still rejected), so the signed ads show there too. | unit |
 | ADS-025 | Given the gate of the reading campaign (ABC Smash), then it asks a language question instead of a sum: German a noun and its right article (e.g. "… Gabel" → der / die / das, answer die), English the right plural (one mouse → mice) with 4 answers; the maths campaign keeps the plus/minus task up to 20. | unit, e2e |
-| ADS-018 | Given the parental gate, then holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets; the task is a plus or minus task with numbers and result in 0…20 and 4 distinct answers; the gate shows no "adults only" claim (title "Zur Webseite" / "To the website"). | unit |
+| ADS-018 | Given the parental gate, then (after the right answer and 3 s holding the open button appears; `window.open` is not called before it is tapped) holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets; the task is a plus or minus task with numbers and result in 0…20 and 4 distinct answers; the gate shows no "adults only" claim (title "Zur Webseite" / "To the website"). | unit |
 | ADS-019 | Given `?adkey=` in a build without the test hook, then it is ignored. | unit |
-| ADS-020 | Given a correctly signed test manifest (test build), then the boards show the campaign pictures, the panel shows picture + tagline + link button ≥ 64 px, and the link opens (`noopener`, canonical URL) exactly once, only after the gate. | e2e |
+| ADS-020 | Given a correctly signed test manifest (test build), then the boards show the campaign pictures, the panel shows picture + tagline + link button ≥ 64 px, and the link opens (`noopener`, canonical URL) exactly once, only after the gate and the tap on the open button. | e2e |
 | ADS-021 | Given a manifest signed with a wrong key (test build) or a tampered image, then the placeholders remain / only that campaign is missing, and no panel opens. | e2e |
 | ADS-022 | Given the test build without `?adkey=`, then the test manifest is not trusted and not even requested. | e2e |
 | ADS-023 | Given the RELEASE build (production key compiled in, no `?adkey=`) and the real signed `ads/campaigns.json`, then campaigns 1, 2 and 3 are accepted and loaded (needs the owner's public key in `ad-keys.ts` and a signed manifest; `web/tests/e2e/ads_prod.spec.ts`). | e2e |
+| ADS-026 | Given an emulated phone (touch, 780×360, 360×780, 412×892), when the player stands in front of a verified board (any facing, 1…3.4 m), then the panel and the link button (≥ 56 px) are inside the viewport and tapping the button starts the gate. | e2e |
+| ADS-027 | Given a phone, a verified board is near and the panel was closed by ✖ (or the ✖ was tapped < 400 ms after opening: ignored), then the interact button (🔗) is visible and tapping it reopens the panel; leaving and coming back also reopens it; the manifest arriving late opens the panel for a child already standing there. | e2e |
+| ADS-028 | Given a small screen (780×360), then the open panel does not overlap `#settings-btn`, `#compass-btn`, `#view-btn` and `#act` (bounding boxes) and is a compact card; at 360×780 it does not overlap them either. | e2e |
+| ADS-029 | Given the gate: after the right answer + 3 s touch hold (finger moving 10 px does not release; no context menu) an open button ≥ 64 px with an anchor (`href` canonical, `target=_blank`, `rel=noopener noreferrer`) appears and `window.open` has NOT been called; tapping it calls `window.open` exactly once and closes panel and gate. A slow image download (> 4 s, < 15 s) still shows the campaign; a failed load is retried once. | e2e + unit |
 
 ## Open questions
 

@@ -24,11 +24,11 @@ pub const BOTTOM_M: f32 = 1.0;
 /// Footprint (across × along the facing, m) of the whole board, solid (GAME-PLAYER 9).
 pub const FOOTPRINT_M: Vec2 = Vec2::new(2.6, 0.3);
 /// The reading range in front of the board (m from its centre, along the facing).
-pub const READ_RANGE_M: f32 = 3.0;
+pub const READ_RANGE_M: f32 = 3.5;
 /// Closest the player can stand (the footprint ends 0.15 m in front of the centre).
 pub const READ_MIN_M: f32 = 0.3;
 /// How far beside the board's centre the player may stand (m).
-pub const READ_SIDE_M: f32 = 1.9;
+pub const READ_SIDE_M: f32 = 3.0;
 
 /// One ad board (`[[ad_board]]` in a level file, GAME-ADS rule 1).
 #[derive(Debug, Clone, Deserialize)]
@@ -103,11 +103,10 @@ pub fn near_board(boards: &[AdBoardData], p: Vec2) -> Option<usize> {
         let d = p - b.pos();
         let front = d.dot(f);
         let side = d.dot(Vec2::new(-f.y, f.x)).abs();
-        if (READ_MIN_M..=READ_RANGE_M).contains(&front) && side <= READ_SIDE_M {
-            let dist = d.length();
-            if best.is_none_or(|(_, bd)| dist < bd) {
-                best = Some((i, dist));
-            }
+        let dist = d.length();
+        let near = front >= READ_MIN_M && side <= READ_SIDE_M && dist <= READ_RANGE_M;
+        if near && best.is_none_or(|(_, bd)| dist < bd) {
+            best = Some((i, dist));
         }
     }
     best.map(|(i, _)| i)

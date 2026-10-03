@@ -208,9 +208,10 @@ fn ads_007_reading_range_is_in_front_of_the_picture_only() {
     let at = |x: f32, z: f32| near_board(&b, Vec2::new(x, z));
     assert_eq!(at(10.0, 8.5), Some(0), "in front, 1.5 m south");
     assert_eq!(at(11.5, 8.0), Some(0), "in front, a bit aside");
-    assert_eq!(at(10.0, 6.5), None, "too far");
+    assert_eq!(at(10.0, 6.8), Some(0), "3.2 m: still near (touch, ADS-007)");
+    assert_eq!(at(12.5, 7.5), None, "too far (3.9 m)");
     assert_eq!(at(10.0, 11.5), None, "behind the board");
-    assert_eq!(at(13.0, 9.0), None, "beside the board");
+    assert_eq!(at(13.5, 9.5), None, "beside the board");
     let e = [board("e", 0.0, 0.0, "+x")];
     assert_eq!(near_board(&e, Vec2::new(2.0, 0.5)), Some(0));
     assert_eq!(near_board(&e, Vec2::new(-2.0, 0.5)), None);

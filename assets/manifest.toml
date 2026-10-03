@@ -821,22 +821,22 @@ animations = ["idle", "walk", "eat", "happy", "refuse"]
 id = "snake"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "snake_female"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "snake_hatchling"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "eat", "happy", "refuse"]
+concept_approved = true
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "chameleon"

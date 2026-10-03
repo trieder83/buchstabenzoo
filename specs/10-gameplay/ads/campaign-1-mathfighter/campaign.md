@@ -48,7 +48,7 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**. C
 | ADC1-001 | Given the repo, then both served images of `mathfighter` exist in `ads/img/` (≤ 512 KB, 1024 px wide), the template manifest names them (`tools/ads/campaigns.template.json`) and the test-signed fixture manifest lists campaign `mathfighter` (slot 1, link host `mathfighter.rcms.ch`); with a signed manifest the slot appears on ≥ 2 boards (ADS-002). | unit |
 | ADC1-002 | Given the player stands in front of a Math Fighter board, then a reading panel opens with the image; in `klasse1+` also the tagline (de/en from Fluent); on `kiga` only the picture. | e2e |
 | ADC1-003 | Given the open panel, then it has a link button ≥ 64 px with the host `mathfighter.rcms.ch`; pressing it first shows the parental gate and does **not** open anything yet (test build, ADS-020). | e2e |
-| ADC1-004 | Given the parental gate was passed, then the URL opens in a new browser tab/external browser exactly once (`noopener`), with no query parameters; given the gate was failed or cancelled, nothing opens. | e2e |
+| ADC1-004 | Given the parental gate was passed (answer + 3 s hold) and the open button was tapped, then the URL opens in a new browser tab/external browser exactly once (`noopener`), with no query parameters; given the gate was failed or cancelled, nothing opens. | e2e |
 | ADC1-005 | Given the game runs for a session without pressing the link, then no network request to mathfighter.rcms.ch is made (ADS-004 still holds for all other boards). | e2e |
 | ADC1-006 | Given a slot whose campaign is not delivered or fails verification (and any board without a verified campaign), then its boards stay non-interactable (no panel, no link). | e2e |
 

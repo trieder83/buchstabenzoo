@@ -15,7 +15,7 @@
 
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
-| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 25 | — | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
+| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 29 | — | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
 | GAME-ADS-C1 | Ad campaign 1 — Math Fighter | draft | GAME-ADS, CONT-MATH, GAME-CART | 6 | — | [10-gameplay/ads/campaign-1-mathfighter/campaign.md](10-gameplay/ads/campaign-1-mathfighter/campaign.md) |
 | GAME-ADS-C2 | Ad campaign 2 — ABC Smash | draft | GAME-ADS, GAME-ADS-C1, CONT-READING | 4 | — | [10-gameplay/ads/campaign-2-abcsmash/campaign.md](10-gameplay/ads/campaign-2-abcsmash/campaign.md) |
 | GAME-ADS-C3 | Ad campaign 3 — EduGameGalaxy | draft | GAME-ADS, GAME-ADS-C1, GAME-ADS-C2 | 4 | — | [10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md](10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md) |
@@ -80,4 +80,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 46 specs — draft: 43, review: 0, approved: 0, implemented: 3, deprecated: 0; 733 test cases; questions: answered: 143, open: 103, partly answered: 7, proposed: 2.
+**Summary:** 46 specs — draft: 43, review: 0, approved: 0, implemented: 3, deprecated: 0; 737 test cases; questions: answered: 143, open: 103, partly answered: 7, proposed: 2.

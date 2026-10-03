@@ -118,6 +118,11 @@ for _s in ("l", "r"):
     BAT_PARENTS.update({f"wing_upper_{_s}": "chest", f"wing_lower_{_s}": f"wing_upper_{_s}",
                         f"wing_hand_{_s}": f"wing_lower_{_s}", f"leg_upper_{_s}": "hips",
                         f"leg_lower_{_s}": f"leg_upper_{_s}", f"foot_{_s}": f"leg_lower_{_s}"})
+SNAKE_PARENTS = {"root": None, "hips": "root", "tail_1": "hips", "spine_1": "hips", "head": "spine_5"}
+for _i in range(2, 9):
+    SNAKE_PARENTS[f"tail_{_i}"] = f"tail_{_i - 1}"
+for _i in range(2, 6):
+    SNAKE_PARENTS[f"spine_{_i}"] = f"spine_{_i - 1}"
 OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
     "owl": ("perch_bird", BIRD_PARENTS, [], {"height": 0.80}),
     "bat": ("bat", BAT_PARENTS, [], {"height": 0.80}),
@@ -132,6 +137,11 @@ OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
     "poison_dart_frog": ("frog", FROG_PARENTS, [], {"length": 0.386, "height": 0.38}),
     "poison_dart_frog_female": ("frog", FROG_PARENTS, [], {"length": 0.356, "height": 0.376}),
     "frog_froglet": ("frog", FROG_PARENTS, [], {"length": 0.233, "height": 0.19}),
+    # terrarium snakes (night_2; snake.py): limbless 16-joint chain rig, coiled rest pose, origin on the
+    # ground under the coil; length = Z extent (head forward), width = X extent, height = head top
+    "snake": ("snake", SNAKE_PARENTS, [], {"length": 0.64, "width": 0.49, "height": 0.66}),
+    "snake_female": ("snake", SNAKE_PARENTS, [], {"length": 0.58, "width": 0.47, "height": 0.61}),
+    "snake_hatchling": ("snake", SNAKE_PARENTS, [], {"length": 0.29, "width": 0.24, "height": 0.315}),
 }
 # ambient animals are not in assets/manifest.toml (their concept is approved as part of
 # kit_water); their expected clips come from here (== animal_anims.toml, kind = "ambient")
@@ -145,7 +155,7 @@ MAX_AMBIENT_TRIS = 1200
 # night animals, allowed (as the 2nd material, same atlas as `body`) for every animal
 NIGHT_ANIMALS = {"hedgehog", "bat", "owl", "raccoon", "badger", "fennec", "kiwi", "porcupine",
                  "slow_loris", "tarsier", "poison_dart_frog", "poison_dart_frog_female",
-                 "frog_froglet"}
+                 "frog_froglet", "snake", "snake_female", "snake_hatchling"}
 
 
 def check_other_rest(rig, exp, rp, mn, mx, err):
@@ -165,6 +175,17 @@ def check_other_rest(rig, exp, rp, mn, mx, err):
             err.append("AANI-005 not facing +Z (tail must be at -Z)")
         if rig == "bat" and not rp["head"][2] > rp["hips"][2]:
             err.append("AANI-005 not facing +Z (head in front of the hips)")
+        return
+    if rig == "snake":
+        if any(abs(c) > 1e-4 for c in rp["root"]):
+            err.append("AANI-005 snake root is not at the origin")
+        if abs(mn[1]) > 0.01:
+            err.append(f"AANI-005 snake min Y = {mn[1]:.4f} (expected 0: origin on the ground)")
+        for key, got in (("length", mx[2] - mn[2]), ("width", mx[0] - mn[0]), ("height", mx[1])):
+            if abs(got - exp[key]) > 0.04 * max(1.0, exp["height"] / 0.4):
+                err.append(f"AANI-005 snake {key} {got:.3f} m (expected {exp[key]} +- 0.04)")
+        if not rp["head"][2] > rp["hips"][2]:
+            err.append("AANI-005 snake not facing +Z (head in front of the hips)")
         return
     if rig in ("bird", "frog"):
         if any(abs(c) > 1e-4 for c in rp["root"]):

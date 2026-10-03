@@ -12,11 +12,16 @@
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
     <meta name="theme-color" content="#3b2314" />
+    <!-- Samsung Internet / Chrome force-dark would recolour the comic buttons dark brown -->
+    <meta name="color-scheme" content="light" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Buchstabenzoo" />
     <style>
+      :root {
+        color-scheme: light;
+      }
       [hidden] {
         display: none !important;
       }
@@ -198,9 +203,9 @@
         font-size: 0.8em;
         font-style: italic;
       }
-      /* Camera views (GAME-CAMERA-VIEWS, user decision 2026-09-27): the first-person toggle
-         sits bottom right above the interact button (right-thumb zone, also on desktop); the
-         touch eye button (look-around while held) left of the interact button. */
+      /* Camera views (GAME-CAMERA-VIEWS 3a): ONE button cycles zoo -> first person ->
+         look-around; its icon shows the CURRENT view. Bottom right above the interact button
+         (right-thumb zone, also on desktop). */
       #view-btn {
         position: fixed;
         right: calc(34px + env(safe-area-inset-right));
@@ -209,20 +214,9 @@
         height: 76px;
         font-size: 38px;
       }
-      #view-btn.on {
+      #view-btn[data-view='first_person'],
+      #view-btn[data-view='look_around'] {
         background: #ffd65c;
-      }
-      #look-btn {
-        position: fixed;
-        right: calc(136px + env(safe-area-inset-right));
-        bottom: calc(40px + env(safe-area-inset-bottom));
-        width: 76px;
-        height: 76px;
-        font-size: 38px;
-        display: none;
-      }
-      body.touch #look-btn {
-        display: flex;
       }
       #settings-btn {
         position: fixed;
@@ -442,6 +436,67 @@
           transform: translateY(-50%);
           margin: 0 10px 0 0;
           flex-direction: row;
+        }
+      }
+      /* Small screens (GAME-PLAYER §3 "Small screens": landscape height <= 460 CSS px or
+         portrait width <= 480): all right-hand controls form ONE column along the right border
+         (gear, compass, view button above the interact button, equal 8 px gaps) and the compass
+         strip is collapsed until the compass is tapped (it then shows for ~6 s, class
+         .expanded; HINT-023). */
+      @media (orientation: landscape) and (max-height: 460px), (orientation: portrait) and (max-width: 480px) {
+        #settings-btn,
+        #compass-btn,
+        #view-btn {
+          right: calc(16px + env(safe-area-inset-right));
+          width: 64px;
+          height: 64px;
+          font-size: 32px;
+        }
+        #settings-btn {
+          top: calc(8px + env(safe-area-inset-top));
+        }
+        #compass-btn {
+          top: calc(80px + env(safe-area-inset-top));
+        }
+        #act {
+          right: calc(8px + env(safe-area-inset-right));
+          bottom: calc(8px + env(safe-area-inset-bottom));
+          width: 80px;
+          height: 80px;
+          font-size: 42px;
+        }
+        #view-btn {
+          bottom: calc(96px + env(safe-area-inset-bottom));
+        }
+        #compass-btn .strip {
+          display: none;
+          top: 50%;
+          left: auto;
+          right: 100%;
+          transform: translateY(-50%);
+          margin: 0 14px 0 0;
+          flex-direction: row;
+        }
+        #compass-btn.expanded .strip {
+          display: flex;
+        }
+        /* something is missing: a pulsing dot while the strip is collapsed */
+        #compass-btn:not(.expanded):not([data-missing='0'])[data-missing]::after {
+          content: '';
+          position: absolute;
+          right: -4px;
+          top: -4px;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          border: 3px solid #3b2314;
+          background: #ffd65c;
+          animation: dotpulse 1.2s ease-in-out infinite alternate;
+        }
+      }
+      @keyframes dotpulse {
+        to {
+          transform: scale(1.35);
         }
       }
       #intro {
@@ -953,8 +1008,7 @@
     <div id="hint-edge" hidden><div class="spin"><span>➤</span></div><span class="icon"></span><span class="dots"></span><span class="line"></span></div>
     <button id="settings-btn" class="round" type="button">⚙️</button>
     <button id="compass-btn" class="round" type="button">🧭<span class="badge" hidden></span><span class="strip"></span></button>
-    <button id="view-btn" class="round" type="button" aria-pressed="false">👓</button>
-    <button id="look-btn" class="round" type="button">👁️</button>
+    <button id="view-btn" class="round" type="button" data-view="zoo">🗺️</button>
     <div id="intro" hidden><div class="intro-card"><div class="intro-pic"></div><p class="intro-text"></p><div class="intro-dots"></div><button class="intro-skip round" type="button">✖</button><button class="intro-next round" type="button">➤</button></div></div>
     <div id="settings" hidden></div>
     <button id="hint" type="button" hidden><span class="key">E</span><span class="icon"></span></button>

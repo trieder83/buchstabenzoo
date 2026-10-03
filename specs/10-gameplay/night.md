@@ -227,7 +227,7 @@ Rules for the implementation that follow from the data:
   unlocked, unfinished night level), `sleep` (night with nothing missing, or by day while
   `night_zoo_waiting`), `hidden` (sleeping, morning, or nothing left by day); one entry per
   species (a pair counts as home when both are). Host: the children `.badge` and `.strip`
-  of `#compass-btn` (strip below the button, in a row left of it on low landscape screens),
+  of `#compass-btn` (strip below the button, in a row left of it on low landscape screens; collapsed by default and opened for ~6 s by a tap on small screens, HINT-023),
   icons 30 px, polled at ≤ 4 Hz from `App::compass_json` = `{state, level, animals:[{id,
   home}], badge, badge_animal}`.
 - **Host:** 🛏 / 🌙 choice icons at night, the dusk / morning / welcome / night-complete

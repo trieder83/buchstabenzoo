@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import {
   DEAD_ZONE,
   isInteractKey,
-  LookButton,
   MouseGestures,
   pinchFactor,
   STICK_RADIUS,
@@ -206,21 +205,6 @@ describe('camera views (GAME-CAMERA-VIEWS)', () => {
     m.down(4, 2, 0, 0);
     m.reset();
     expect(sink.holds).toEqual([true, false]);
-  });
-  it('CAMV-010: the eye button holds look-around while pressed and turns when slid', () => {
-    const sink = new Sink();
-    const b = new LookButton(sink);
-    b.down(7, 300, 700);
-    expect(b.held).toBe(true);
-    b.down(8, 0, 0); // a second finger does not re-trigger
-    b.move(8, 50, 0);
-    b.move(7, 280, 690);
-    b.up(8);
-    expect(sink.holds).toEqual([true]);
-    expect(sink.looks).toEqual([[-20, -10]]);
-    b.up(7);
-    expect(sink.holds).toEqual([true, false]);
-    expect(b.held).toBe(false);
   });
 });
 

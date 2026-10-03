@@ -76,7 +76,11 @@ settings gear** shows **one next possible target** and where to walk.
    badge with the kind of the best candidate (cheap `next task`, polled at ≤ 4 Hz, does not
    show a hint). Tapping the compass is the hint plus an info bubble; while animals of the
    day level are missing the hint leads to the next missing animal's mission step (rule 3);
-   the strip icon of `hint.animal` pulses.
+   the strip icon of `hint.animal` pulses. **On small screens** (GAME-PLAYER §3) the strip
+   is collapsed (only the 🧭 and the task badge show, plus a pulsing dot while something is
+   missing); tapping the compass gives the hint **and** opens the strip to the left of the
+   compass in one row for ~6 s (max 5 icons + `+n`, ½ tags included), then it closes by
+   itself; any other tap also closes it. Large screens always show the strip (HINT-023).
 
 ## Implementation (2026-09-28)
 
@@ -141,6 +145,7 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-019 | NEVER STUCK (a): given random day states incl. split pairs and members that disagree about "complete" (an old one-zebra save), while a mission of the zoo is open, then the first hint has priority <= 3 (never only the optional garden). | unit |
 | HINT-020 | NEVER STUCK (c): given 120 s without mission progress while a mission is open, then the hint is `help` (icon 👀, `hint-help`, priority 1) at the missing animal's exact position; after 180 s the escaped animals of open missions walk to < 8 m of the player; progress (food taken, following, home...) restarts the timer. | unit |
 | HINT-021 | NEVER STUCK: given random / split-pair / old-save states and a save+restore in the middle, a child who only follows the hints (incl. pair partner steps and `help`) brings all level-1 animals home within 60 hint steps. | unit |
+| HINT-023 | Given a small screen (780×360 and 360×780), then the strip is collapsed at the start (no strip icon visible, the badge and 🧭 visible, `data-missing` > 0); a compass tap shows the hint and the strip (`.expanded`, icons left of the compass inside the viewport, overlapping no other control); it collapses after ~6 s and on a tap on the canvas; on 1280×720 the strip stays visible without a tap. | e2e |
 | HINT-022 | Given a species whose members are all in their enclosure, then no hint candidate belongs to it and the compass strip does not list it, even when its mission flags are still incomplete (RESC-033). | unit |
 | HINT-018 | NEVER STUCK (split pair): given a zebra pair with member 0 at home and member 1 still out (board read or not, several seeds), then the first hint is about the missing zebra (board / food / search area / gate), never only optional garden work, and the compass strip still lists the zebra as not home. | unit |
 | HINT-017 | Given a home animal, then the treat hint (`hint-treat`: "Geh zum Tier und gib ihm etwas zu fressen") exists only while the basket holds a treat it likes or the hands hold its food; it points at its fence (from outside) or at the animal (inside). | unit |

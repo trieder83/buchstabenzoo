@@ -5,7 +5,7 @@ import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js'
 import { AdsHost } from './ads-ui';
 import { AD_TEST_BUILD, resolveKeys, testKeyParam } from './ads';
 import { attachUiTaps, GameAudio, SOUND_EVENT } from './audio';
-import { attachInput, attachLookButton, type StickView } from './input';
+import { attachInput, type StickView } from './input';
 import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
@@ -142,7 +142,6 @@ async function main(): Promise<void> {
       if (!ads.closeIfOpen()) ui.escape();
     },
   });
-  attachLookButton(document.getElementById('look-btn')!, app);
   // sound: Web Audio starts after the first gesture, files load lazily (ASND-007)
   const audio = new GameAudio(index.filter((p) => p.startsWith('audio/')));
   audio.setEnabled(settings.sound !== false);

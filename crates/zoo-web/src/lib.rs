@@ -319,6 +319,8 @@ pub struct App {
     keys: Keys,
     stick: Vec2,
     drag_acc: f32,
+    /// Look-around entered by a hold (`F`, right mouse button): only that hold may release it.
+    look_held: bool,
     content: Option<Content>,
     placeholders: BTreeMap<String, usize>,
     player_skinned: bool,
@@ -950,6 +952,7 @@ impl App {
             renderer,
             camera,
             keys: Keys::default(),
+            look_held: false,
             stick: Vec2::ZERO,
             drag_acc: 0.0,
             content,
@@ -1183,17 +1186,40 @@ impl App {
         match (on, self.camera.mode()) {
             (true, ViewMode::Zoo) => {
                 self.camera.set_view(ViewMode::LookAround, facing);
+                self.look_held = true;
             }
-            (false, ViewMode::LookAround) => {
+            // only the hold that started look-around releases it (a look-around chosen with
+            // the view button stays until the next tap, CAMV-025)
+            (false, ViewMode::LookAround) if self.look_held => {
+                self.look_held = false;
                 self.camera.set_view(ViewMode::Zoo, facing);
             }
+            (false, _) => self.look_held = false,
             _ => {}
         }
         self.camera.mode() == ViewMode::LookAround
     }
 
+    /// The one view button (GAME-CAMERA-VIEWS 3a, CAMV-025): zoo → first person → look-around
+    /// → zoo. Returns the new view id. Look-around chosen this way stays until the next tap.
+    pub fn cycle_view(&mut self) -> String {
+        let facing = views::level_to_yaw(self.game.player.facing);
+        self.look_held = false;
+        match self.camera.mode() {
+            ViewMode::Zoo => self.set_view(ViewMode::FirstPerson),
+            ViewMode::FirstPerson => {
+                // look-around is only entered from the zoo view: glide back, then out again
+                self.set_view(ViewMode::Zoo);
+                self.camera.set_view(ViewMode::LookAround, facing);
+            }
+            ViewMode::LookAround => self.set_view(ViewMode::Zoo),
+        }
+        self.view_mode()
+    }
+
     /// Toggles first person (GAME-CAMERA-VIEWS 3; `V`, 👓 button). Returns the new view id.
     pub fn toggle_first_person(&mut self) -> String {
+        self.look_held = false;
         let next = if self.camera.mode() == ViewMode::FirstPerson {
             ViewMode::Zoo
         } else {

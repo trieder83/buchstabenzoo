@@ -17,6 +17,8 @@ import {
   targetIcon,
   type KeyValue,
   TREATS,
+  VIEW_ICONS,
+  STRIP_OPEN_MS,
 } from './ui';
 
 class MapStore implements KeyValue {
@@ -242,5 +244,12 @@ describe('entrance intro (RESC-029)', () => {
     expect(introEnabled('', true)).toBe(false);
     expect(introEnabled('?intro=1', true)).toBe(true);
     expect(introEnabled('?intro=0', false)).toBe(false);
+  });
+});
+
+describe('one view button (CAMV-025) and the small-screen compass strip (HINT-023)', () => {
+  it('has one icon per view and the strip closes after about 6 s', () => {
+    expect(VIEW_ICONS).toEqual({ zoo: '🗺️', first_person: '👓', look_around: '👁️' });
+    expect(STRIP_OPEN_MS).toBe(6000);
   });
 });

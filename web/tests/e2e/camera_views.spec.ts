@@ -4,7 +4,7 @@
 // art/environment/poc/screenshot_camera_{firstperson,lookaround}.png.
 import path from 'node:path';
 import { expect, test, type CDPSession, type Page } from '@playwright/test';
-import { goto, nextFrames, shots, waitFrames, START_URL } from './helpers';
+import { ftl, goto, nextFrames, shots, waitFrames, START_URL } from './helpers';
 
 test.describe.configure({ timeout: 180_000 });
 test.use({ viewport: { width: 1280, height: 720 } });
@@ -273,7 +273,7 @@ async function touch(cdp: CDPSession, type: 'touchStart' | 'touchMove' | 'touchE
 test.describe('touch phone portrait', () => {
   test.use({ viewport: { width: 412, height: 892 }, deviceScaleFactor: 2.625, hasTouch: true, isMobile: true });
 
-  test('CAMV-019: the 👓 button sits in the right-thumb zone and toggles first person while the left thumb walks', async ({ page }) => {
+  test('CAMV-019/025/026: the view button sits in the right-thumb zone, enters first person while the left thumb walks and cycles on to look-around and back', async ({ page }) => {
     const errors = await start(page);
     await goto(page, 0.5, 4.5);
     const cdp = await page.context().newCDPSession(page);
@@ -312,12 +312,21 @@ test.describe('touch phone portrait', () => {
     expect(Math.abs(z1 - z0), 'the left thumb keeps walking').toBeGreaterThan(0.1);
     await glide(page, 1);
     await page.screenshot({ path: path.join(shots, 'screenshot_camera_firstperson_touch.png') });
-    // tap again: back to the zoo view, like V
+    // CAMV-025/026: tap again: look-around (persistent, no hold), a third tap: back to the zoo view
+    await touch(cdp, 'touchStart', [{ ...stick, y: stick.y - 50 }, tap]);
+    await touch(cdp, 'touchEnd', [tap]);
+    await page.waitForFunction(() => window.__zoo!.app.view_mode() === 'look_around', null, { polling: 'raf', timeout: 5_000 });
+    await expect(btn).toHaveAttribute('data-view', 'look_around');
+    await glide(page, 1);
+    await nextFrames(page, 20);
+    expect(await page.evaluate(() => window.__zoo!.app.view_mode()), 'stays without a hold').toBe('look_around');
+    expect(await page.evaluate(() => window.__zoo!.app.saved_view_mode()), 'look-around is never saved').toBe('zoo');
     await touch(cdp, 'touchStart', [{ ...stick, y: stick.y - 50 }, tap]);
     await touch(cdp, 'touchEnd', [tap]);
     await page.waitForFunction(() => window.__zoo!.app.view_mode() === 'zoo', null, { polling: 'raf', timeout: 5_000 });
     await touch(cdp, 'touchEnd', []);
     await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    await expect(btn).toHaveAttribute('data-view', 'zoo');
     expect(errors).toEqual([]);
   });
 });
@@ -443,5 +452,52 @@ test('LAYOUT-043: into the food storage and out — door opens, roof hidden in t
   expect(await page.evaluate(() => window.__zoo!.app.target_key())).toBe('food_box:grass');
   expect(await page.evaluate(() => window.__zoo!.app.take_food('grass'))).toBe(true);
   expect(await page.evaluate(() => window.__zoo!.app.carry_food())).toBe('grass');
+  expect(errors).toEqual([]);
+});
+
+// CAMV-025/026/027 (desktop): one button cycles all views; F / V keep working in step with it
+test('CAMV-025/026: the one view button cycles zoo → first person → look-around → zoo; V and F stay in step', async ({ page }) => {
+  const errors = await start(page);
+  await goto(page, 0.5, 4.5);
+  const btn = page.locator('#view-btn');
+  await expect(page.locator('#look-btn')).toHaveCount(0);
+  const de = ftl('de');
+  const mode = () => page.evaluate(() => window.__zoo!.app.view_mode());
+  await expect(btn).toHaveAttribute('data-view', 'zoo');
+  await expect(btn).toHaveText('🗺️');
+  await expect(btn).toHaveAttribute('aria-label', de['ui-view-cycle-zoo']);
+  const bb = (await btn.boundingBox())!;
+  expect(bb.width).toBeGreaterThanOrEqual(64);
+  const order = [
+    ['first_person', '👓', 'ui-view-cycle-first_person'],
+    ['look_around', '👁️', 'ui-view-cycle-look_around'],
+    ['zoo', '🗺️', 'ui-view-cycle-zoo'],
+  ] as const;
+  for (const [id, icon, key] of order) {
+    await btn.click();
+    await expect.poll(mode).toBe(id);
+    await expect(btn).toHaveAttribute('data-view', id);
+    await expect(btn).toHaveText(icon);
+    await expect(btn).toHaveAttribute('aria-label', de[key]);
+    await glide(page, id === 'zoo' ? 0 : 1);
+  }
+  // V in look-around goes to first person; F pressed and released does not leave a look-around chosen with the button
+  await btn.click();
+  await btn.click();
+  await expect.poll(mode).toBe('look_around');
+  await page.keyboard.down('KeyF');
+  await page.keyboard.up('KeyF');
+  await nextFrames(page, 5);
+  expect(await mode()).toBe('look_around');
+  await page.keyboard.press('KeyV');
+  await expect.poll(mode).toBe('first_person');
+  await expect(btn).toHaveAttribute('data-view', 'first_person');
+  await page.keyboard.press('KeyV');
+  await expect.poll(mode).toBe('zoo');
+  // desktop hold still releases by itself
+  await page.keyboard.down('KeyF');
+  await expect.poll(mode).toBe('look_around');
+  await page.keyboard.up('KeyF');
+  await expect.poll(mode).toBe('zoo');
   expect(errors).toEqual([]);
 });

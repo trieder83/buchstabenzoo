@@ -292,6 +292,11 @@ for (const ph of PHONES) {
       await expect(strip).toHaveCount(3);
       await expect(c.locator('.badge')).toBeVisible();
       await expect(c.locator('.badge')).toHaveAttribute('data-badge', 'board');
+      // both phone sizes are "small screens" (HINT-023): the strip is collapsed until the compass is tapped
+      await expect(strip.first()).toBeHidden();
+      await expect(c).toHaveAttribute('data-missing', '3');
+      await c.tap();
+      await expect(strip.first()).toBeVisible();
       // the strip must not cover the interact button, the basket HUD or the stick; inside the screen
       for (const icon of await strip.all()) {
         const b = (await icon.boundingBox())!;

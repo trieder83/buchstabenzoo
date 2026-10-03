@@ -8,7 +8,7 @@ import { ftl, nextFrames, repo, START_URL, waitFrames } from './helpers';
 test.use({ hasTouch: true });
 
 const SHOTS = path.join(repo, 'qa/reports/img');
-const CONTROLS = ['#settings-btn', '#compass-btn', '#act', '#view-btn', '#look-btn', '#hud-carry', '#drop-btn', '#hint', '#compass-btn .strip'];
+const CONTROLS = ['#settings-btn', '#compass-btn', '#act', '#view-btn', '#hud-carry', '#drop-btn', '#hint', '#compass-btn .strip'];
 
 async function open(page: Page, w: number, h: number) {
   await page.setViewportSize({ width: w, height: h });
@@ -31,7 +31,7 @@ async function checkHud(page: Page, label: string) {
     const b = await loc.boundingBox();
     if (b && b.width > 0) boxes.push({ id: sel, x: b.x, y: b.y, w: b.width, h: b.height });
   }
-  expect(boxes.length, label).toBeGreaterThanOrEqual(4);
+  expect(boxes.length, label).toBeGreaterThanOrEqual(3);
   for (const b of boxes) {
     expect(b.x, `${label} ${b.id} left`).toBeGreaterThanOrEqual(0);
     expect(b.y, `${label} ${b.id} top`).toBeGreaterThanOrEqual(0);

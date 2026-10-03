@@ -214,61 +214,6 @@ export class MouseGestures {
   }
 }
 
-/**
- * The touch eye button (GAME-CAMERA-VIEWS 2): look-around while pressed; sliding the same
- * thumb from the button turns the view.
- */
-export class LookButton {
-  private id: number | null = null;
-  private last = { x: 0, y: 0 };
-
-  constructor(private readonly sink: InputSink) {}
-
-  get held(): boolean {
-    return this.id !== null;
-  }
-
-  down(id: number, x: number, y: number): void {
-    if (this.id !== null) return;
-    this.id = id;
-    this.last = { x, y };
-    this.sink.look_hold(true);
-  }
-
-  move(id: number, x: number, y: number): void {
-    if (id !== this.id) return;
-    this.sink.look_drag(x - this.last.x, y - this.last.y);
-    this.last = { x, y };
-  }
-
-  up(id: number): void {
-    if (id !== this.id) return;
-    this.id = null;
-    this.sink.look_hold(false);
-  }
-}
-
-/** Wires the eye button's pointer events to a {@link LookButton}. */
-export function attachLookButton(button: HTMLElement, sink: InputSink): LookButton {
-  const look = new LookButton(sink);
-  button.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      button.setPointerCapture(e.pointerId);
-    } catch {
-      // synthetic pointers cannot be captured
-    }
-    look.down(e.pointerId, e.clientX, e.clientY);
-  });
-  button.addEventListener('pointermove', (e) => look.move(e.pointerId, e.clientX, e.clientY));
-  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) {
-    button.addEventListener(ev, (e) => look.up(e.pointerId));
-  }
-  button.addEventListener('contextmenu', (e) => e.preventDefault());
-  return look;
-}
-
 export interface InputOptions {
   canvas: HTMLElement;
   stickView: StickView;

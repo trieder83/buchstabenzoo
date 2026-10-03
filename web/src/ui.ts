@@ -38,6 +38,7 @@ export interface UiApp {
   saved_view_mode?(): string;
   view_mode?(): string;
   toggle_first_person?(): string;
+  cycle_view?(): string;
   /** GAME-NIGHT: time of day and the dream fade of the sleep (0…1). */
   daytime?(): string;
   sleep_fade?(): number;
@@ -118,6 +119,11 @@ export function parseHint(json: string | undefined): HintView | null {
     return null;
   }
 }
+
+/** Icon of the CURRENT view on the one view button (GAME-CAMERA-VIEWS 3a). */
+export const VIEW_ICONS: Record<string, string> = { zoo: '🗺️', first_person: '👓', look_around: '👁️' };
+/** How long the compass strip stays open on small screens after a tap (HINT-023). */
+export const STRIP_OPEN_MS = 6000;
 
 /** The compass strip and task badge (GAME-NIGHT rule 11). */
 export interface NightProgress {
@@ -566,9 +572,14 @@ export class Ui {
   readonly settings = document.getElementById('settings') as HTMLDivElement;
   readonly bubble = document.getElementById('bubble') as HTMLDivElement;
   readonly celebrate = document.getElementById('celebrate') as HTMLDivElement;
-  /** First-person toggle (GAME-CAMERA-VIEWS 3) and the touch eye button (look-around, 2). */
+  /** The ONE view button (GAME-CAMERA-VIEWS 3a): zoo -> first person -> look-around -> zoo. */
   readonly viewBtn = document.getElementById('view-btn') as HTMLButtonElement | null;
-  readonly lookBtn = document.getElementById('look-btn') as HTMLButtonElement | null;
+  /** Compass strip expanded on small screens (HINT-023): collapse timer. */
+  private stripTimer: ReturnType<typeof setTimeout> | null = null;
+  private safeProbe: HTMLElement | null = null;
+  private safe = { left: 0, top: 0, right: 0, bottom: 0 };
+  private safeW = -1;
+  private safeH = -1;
   /** GAME-NIGHT: dusk cut-in text, dream fade, the night choice icons. */
   readonly nightBanner = document.getElementById('night-banner') as HTMLDivElement | null;
   readonly dream = document.getElementById('dream') as HTMLDivElement | null;
@@ -596,16 +607,25 @@ export class Ui {
     this.compass?.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      this.expandStrip();
       this.pressHint();
       this.sayProgressInfo();
     });
+    // any other tap collapses the strip again (small screens, HINT-023)
+    window.addEventListener(
+      'pointerdown',
+      (e) => {
+        if (!(e.target instanceof Node) || !this.compass?.contains(e.target)) this.collapseStrip();
+      },
+      true,
+    );
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
     // (CAMV-019)
     this.viewBtn?.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.app.toggle_first_person?.();
+      this.app.cycle_view?.();
       this.update();
     });
     this.sound = loadSettings(this.store, 'de').sound !== false;
@@ -633,6 +653,42 @@ export class Ui {
     if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign' || data.kind === 'welcome_board')
       this.openPanel(data);
     this.pollEvents();
+  }
+
+  /** Small screens: the compass strip opens for ~6 s (CSS shows it only on small screens). */
+  private expandStrip(): void {
+    this.compass?.classList.add('expanded');
+    if (this.stripTimer) clearTimeout(this.stripTimer);
+    this.stripTimer = setTimeout(() => this.collapseStrip(), STRIP_OPEN_MS);
+  }
+
+  private collapseStrip(): void {
+    if (this.stripTimer) clearTimeout(this.stripTimer);
+    this.stripTimer = null;
+    this.compass?.classList.remove('expanded');
+  }
+
+  /** Safe-area insets in CSS px (a probe element with `env()` padding; cached per window size). */
+  private safeInsets(): { left: number; top: number; right: number; bottom: number } {
+    if (this.safeW === window.innerWidth && this.safeH === window.innerHeight) return this.safe;
+    this.safeW = window.innerWidth;
+    this.safeH = window.innerHeight;
+    if (!this.safeProbe) {
+      const e = document.createElement('div');
+      e.style.cssText =
+        'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;' +
+        'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+      document.body.appendChild(e);
+      this.safeProbe = e;
+    }
+    const cs = getComputedStyle(this.safeProbe);
+    this.safe = {
+      left: parseFloat(cs.paddingLeft) || 0,
+      top: parseFloat(cs.paddingTop) || 0,
+      right: parseFloat(cs.paddingRight) || 0,
+      bottom: parseFloat(cs.paddingBottom) || 0,
+    };
+    return this.safe;
   }
 
   /** The 🧭 button (GAME-HINT rule 1/8): show the next target. */
@@ -683,10 +739,16 @@ export class Ui {
     } else {
       // keep the whole arrow (icon + step line) on screen: the edge point is clamped by the
       // size of the element, so the text is never cut off at the border
-      const halfW = this.hintEdge.offsetWidth / 2 + 8;
-      const halfH = this.hintEdge.offsetHeight / 2 + 8;
-      const ex = Math.min(Math.max(h.x, halfW), Math.max(halfW, window.innerWidth - halfW));
-      const ey = Math.min(Math.max(h.y, halfH), Math.max(halfH, window.innerHeight - halfH));
+      const halfW = this.hintEdge.offsetWidth / 2;
+      const halfH = this.hintEdge.offsetHeight / 2;
+      // inside the safe area (notch, rounded corners, system bars) plus a 16 px margin
+      const sa = this.safeInsets();
+      const loX = sa.left + 16 + halfW;
+      const hiX = window.innerWidth - sa.right - 16 - halfW;
+      const loY = sa.top + 16 + halfH;
+      const hiY = window.innerHeight - sa.bottom - 16 - halfH;
+      const ex = Math.min(Math.max(h.x, loX), Math.max(loX, hiX));
+      const ey = Math.min(Math.max(h.y, loY), Math.max(loY, hiY));
       this.hintEdge.style.transform = `translate(${ex.toFixed(0)}px, ${ey.toFixed(0)}px) translate(-50%, -50%)`;
       (this.hintEdge.querySelector('.spin') as HTMLElement).style.transform = `rotate(${h.angle.toFixed(0)}deg)`;
       if (h.dots !== this.lastHintDots) {
@@ -879,17 +941,19 @@ export class Ui {
    * stored with the settings (GAME-CAMERA-VIEWS 9).
    */
   private updateView(): void {
+    // the button shows the CURRENT view (look-around included); only the saved one is stored
+    const cur = this.app.view_mode?.() ?? 'zoo';
+    if (this.viewBtn && this.viewBtn.dataset.view !== cur) {
+      this.viewBtn.dataset.view = cur;
+      this.viewBtn.textContent = VIEW_ICONS[cur] ?? VIEW_ICONS.zoo;
+      this.viewBtn.setAttribute('aria-pressed', String(cur !== 'zoo'));
+      this.viewBtn.setAttribute('aria-label', this.app.t(`ui-view-cycle-${cur}`));
+    }
     const view = this.app.saved_view_mode?.() ?? 'zoo';
     if (view === this.lastView) return;
     const first = this.lastView === '';
     this.lastView = view;
-    const fp = view === 'first_person';
     document.body.dataset.view = view;
-    if (this.viewBtn) {
-      this.viewBtn.classList.toggle('on', fp);
-      this.viewBtn.setAttribute('aria-pressed', String(fp));
-    }
-    if (this.lookBtn) this.lookBtn.hidden = fp; // look-around only from the zoo view
     if (!first) {
       saveSettings(this.store, {
         language: this.app.language(),
@@ -1326,8 +1390,7 @@ export class Ui {
   private applyLabels(): void {
     document.documentElement.lang = this.app.language();
     this.gear.setAttribute('aria-label', this.app.t('ui-settings'));
-    this.viewBtn?.setAttribute('aria-label', this.app.t('ui-first-person'));
-    this.lookBtn?.setAttribute('aria-label', this.app.t('ui-look-around'));
+    this.viewBtn?.setAttribute('aria-label', this.app.t(`ui-view-cycle-${this.viewBtn.dataset.view ?? 'zoo'}`));
     this.act.setAttribute('aria-label', this.app.t('ui-interact'));
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
     this.dropBtn?.setAttribute('aria-label', this.app.t('ui-put-down'));

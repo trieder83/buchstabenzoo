@@ -69,10 +69,16 @@ updated: 2026-09-30
        relative to the camera (up = away from the camera).
      - **Right thumb — camera and actions:** in the right half, a horizontal swipe (≥ 40 px)
        rotates the camera by one 45° step per swipe; a two-finger pinch zooms (10–20 m). The
-       **interact button** (§4) sits bottom-right within right-thumb reach, with the **eye
-       button** 👁 (look-around while held) next to it and the **first-person toggle** 👓
-       above it (GAME-CAMERA-VIEWS 2/3); in the close views right-half drags turn the view
-       smoothly instead of in 45° steps.
+       **interact button** (§4) sits bottom-right within right-thumb reach with the **one view
+       button** above it (cycles zoo → first person → look-around, GAME-CAMERA-VIEWS 3a); in
+       the close views right-half drags turn the view smoothly instead of in 45° steps.
+     - **Small screens** (landscape viewport height ≤ 460 CSS px, or portrait width ≤ 480):
+       all right-hand controls form **one column along the right border** inside the safe
+       area, every button ≥ 64 px: ⚙ gear at the top, 🧭 compass 8 px below it, the
+       view button at the lower end **above** the interact button zone; the put-down and
+       carried-item HUD stay on the left; nothing overlaps another control or the joystick and
+       nothing leaves the viewport. The **compass strip is collapsed** there (HINT-023).
+       Larger screens keep the roomier layout.
      - Both thumbs work at the same time (walk while rotating or pressing interact).
      - Controls stay inside the safe area, touch targets ≥ 64 px (CSS), work in portrait and
        landscape; the page never scrolls, zooms or selects text while playing.
@@ -211,6 +217,7 @@ updated: 2026-09-30
 | PLAY-032 | Given an info board panel whose facts overflow, when a finger drags upward on the riddle area of the panel (not on the scrollbar) on a touch device, then the facts scroll down by the dragged distance and the player does not move. | e2e |
 | PLAY-033 | Given a panel, when the finger taps a button without moving more than 6 px, then the button's action happens and nothing scrolls. | unit |
 | PLAY-034 | Given the desktop key table of §3, then every listed key triggers exactly the action of its row in each view and no key is bound to two different actions in the same view (`E` interacts, `Q`/`R` rotate, `F` holds look-around, `V` toggles first person, `M` map). | unit (Vitest) |
+| PLAY-037 | Given viewports 780×360, 360×780, 412×892 and 892×412 (touch on, interact button shown), then every visible fixed control (⚙, 🧭, view button, interact, carried-item HUD, put-down, joystick) lies inside the viewport and none overlaps another; on the small ones (780×360, 360×780, 412×892, 892×412) ⚙, 🧭 and the view button form one column on the right border in that order (gear and compass 8 px apart) and the view button above the interact button; the hint edge arrow stays ≥ 16 px inside the safe area. User report 2026-10-03 (Samsung phone). | e2e |
 | PLAY-035 | Given every walkable cell centre of the joined zoo (day + night levels), then `ground_height` equals the top of the visible surface there (tiles, paths, garden, floors, rugs, jetty, bridge curve, platforms) within ± 2 cm; a player placed there has her feet within ± 2 cm of that surface (no sinking, no floating). User report 2026-09-27: feet sank in the garden and on some boxes. | unit |
 | PLAY-036 | Given the player walks over the bridge, the jetty, the garden path and into a building, then her feet follow the surface smoothly (height change per frame ≤ 0.25 m, no pops). | e2e |
 

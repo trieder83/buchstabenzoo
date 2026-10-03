@@ -23,6 +23,11 @@ ui-level-klasse3 = Klasse 3
 # Camera views (GAME-CAMERA-VIEWS): eye button (hold) and first-person toggle
 ui-look-around = Umschauen
 ui-first-person = Mit meinen Augen
+# One view button (GAME-CAMERA-VIEWS 3a): label = the NEXT view
+ui-view-cycle = Ansicht wechseln
+ui-view-cycle-zoo = Nächste Ansicht: Mit meinen Augen
+ui-view-cycle-first_person = Nächste Ansicht: Umschauen
+ui-view-cycle-look_around = Nächste Ansicht: Zoo von oben
 
 ## Feedback when showing food / leading animals (GAME-RESCUE §5, §7)
 

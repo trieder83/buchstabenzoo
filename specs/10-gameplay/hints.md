@@ -6,7 +6,7 @@ module: hints
 status: draft
 depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN]
 test_prefix: HINT
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Next-target hint
@@ -147,6 +147,8 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-021 | NEVER STUCK: given random / split-pair / old-save states and a save+restore in the middle, a child who only follows the hints (incl. pair partner steps and `help`) brings all level-1 animals home within 60 hint steps. | unit |
 | HINT-023 | Given a small screen (780×360 and 360×780), then the strip is collapsed at the start (no strip icon visible, the badge and 🧭 visible, `data-missing` > 0); a compass tap shows the hint and the strip (`.expanded`, icons left of the compass inside the viewport, overlapping no other control); it collapses after ~6 s and on a tap on the canvas; on 1280×720 the strip stays visible without a tap. | e2e |
 | HINT-022 | Given a species whose members are all in their enclosure, then no hint candidate belongs to it and the compass strip does not list it, even when its mission flags are still incomplete (RESC-033). | unit |
+| HINT-024 | Treats are never required: given a mission incomplete, then the treat hint (priority > 3) is never the only candidate and never ranks before a mission step; given the child carries a treat of a home species whose pair has no baby, then the treat hint leads to that animal's feed spot; empty hands: no treat hint (GAME-FEED "Basic food and treats"). | unit |
+| HINT-025 | NEVER STUCK (night_2): given the closed or open gate, the three night_2 species (pairs, split pairs, babies, wrong foods, wrong gates, save/restore) and the seeded fuzz test, then every state has a hint of priority ≤ 3 and the fuzz run reaches "all animals of night_2 home" and then dusk → bed; the 120 s / 180 s safety net works for `snake`, `chameleon`, `poison_dart_frog`. | unit |
 | HINT-018 | NEVER STUCK (split pair): given a zebra pair with member 0 at home and member 1 still out (board read or not, several seeds), then the first hint is about the missing zebra (board / food / search area / gate), never only optional garden work, and the compass strip still lists the zebra as not home. | unit |
 | HINT-017 | Given a home animal, then the treat hint (`hint-treat`: "Geh zum Tier und gib ihm etwas zu fressen") exists only while the basket holds a treat it likes or the hands hold its food; it points at its fence (from outside) or at the animal (inside). | unit |
 | HINT-015 | Given any state (new game, board read 1 s ago, board read 70 s ago, animal following, carrying the wrong food), when the hint is pressed, then it returns a target immediately (no waiting time) with a next-step key `hint-<step>` that matches the state (read / take food / search / lead home); 1 s after reading the board the target is the ≥ 12 m search area, after 60 s the ≥ 6 m circle, never the animal's position. | unit |

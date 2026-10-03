@@ -501,6 +501,7 @@ male and female 2 cells apart (FAM-023). No path, board or barrier moved; the wa
   `crates/zoo-core/tests/levels23.rs` / `zoo_game.rs`; the walking and sight tables are
   reproduced within 0.5 s / exactly. e2e: the giraffe mission (seed 4, `m5b.spec.ts`);
   LAYOUT-L2-012 (spawn view) is covered only by the entry screenshot.
+- **Models (2026-10-03, AENV-013/014):** `playground_se_slide` and `playground_se_swings` are drawn by `playground_slide` (262 tris) and `playground_swings` (142 tris) of `kit_landmarks_play`; the rect cells stay the collider; they are no longer placeholders.
 - **Placeholders** (coloured boxes with the element's height inside its solid cells — the
   cells are the collider, wander areas and paths stay free): `fountain_sw` (basin, water,
   jet, coins), `treehouse_e` (oak, porch at 3.5 m, house, ladder), `tree_giant_e` (12 m trunk,

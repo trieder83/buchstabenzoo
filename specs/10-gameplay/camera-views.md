@@ -63,8 +63,15 @@ a hiding place is never visible from its own info board), stay comfortable for c
      it had before (its 45° step and zoom are unchanged).
 3a. **One view button** (user request 2026-10-03, replaces the former 👓 `#view-btn` and 👁
    `#look-btn`). Tapping it cycles **zoo view → first person → look-around → zoo view**
-   (`App::cycle_view()` returns the new view id; from first person it goes back through the
-   zoo pose to look-around, which is only ever entered from the zoo pose). The button shows
+   (`App::cycle_view()` returns the new view id). **First person → look-around is a direct
+   zoom out** (user answer to Q-326, 2026-10-03): the camera pulls back from the eye (1.1 m)
+   along a straight line to the look-around pose (3.5 m behind, 1.6 m up) in 0.5 s
+   (`PULL_BACK_S`, smoothstep), the view direction stays, the pitch eases to −12°, the FOV
+   stays 50°, never a cut and no detour through the zoo pose. The player's body, hidden in
+   first person, reappears once the pull-back is 30 % along (`PULL_BACK_BODY_AT`, the camera
+   has left the head), so it does not pop in. Look-around → zoo is the normal 0.4 s glide
+   up, zoo → first person is unchanged. Transitions between two close views are direct
+   pose interpolations (CAMV-028). The button shows
    the icon of the **current** view (🗺️ zoo, 👓 first person, 👁️ look-around), carries
    `data-view="<id>"` and an `aria-label` naming the **next** view (Fluent
    `ui-view-cycle-<id>`: "Nächste Ansicht: …" / "Next view: …"), is **≥ 64 px** and is
@@ -189,6 +196,7 @@ render region, a building's name board with its roof.
 | CAMV-025 | Given the zoo view, when the view button is tapped three times, then `view_mode()` is `first_person`, `look_around`, `zoo` in that order, the camera mode follows and the button's `data-view` / icon (🗺️ 👓 👁️, vitest `VIEW_ICONS`) / `aria-label` (Fluent `ui-view-cycle-<id>`, de + en) show the current view and name the next; `V` and the button stay in step (`V` in look-around → first person). | e2e, unit (Vitest) |
 | CAMV-026 | Given look-around chosen with the button, then it stays after the tap (no hold needed), a right-half drag turns it, `F` pressed and released does not leave it, the next tap returns to the zoo view; a reload (or `saved_view_mode`) gives zoo / first person, never look-around. | e2e |
 | CAMV-027 | Given the 780×360, 360×780, 412×892 and 892×412 viewports, then the single view button is ≥ 64 px, inside the viewport and overlaps no other control (PLAY-037); `#look-btn` no longer exists. | e2e |
+| CAMV-028 | Given first person, when the view button is tapped (`cycle_view()`), then the camera moves from the eye to the look-around pose in ≤ 0.6 s along an eased straight path: its distance from the starting eye never shrinks, it never rises above 3 m (the zoo pose is ~11 m up and is never shown), the FOV stays 50°, the body stays hidden until 30 % of the pull-back and is shown afterwards, and the end pose is 3.5 m behind / 1.6 m up / pitch −12°. | unit (zoo-render), e2e |
 
 ## Open questions
 
@@ -226,4 +234,4 @@ render region, a building's name board with its roof.
   `web/src/{input,ui}.test.ts`; CAMV-012…014, 019 in `web/tests/e2e/camera_views.spec.ts`.
   Not yet covered: CAMV-016 (manual review), CAMV-020 (new 2026-09-27).
 
-- Q-326 (open): from first person the cycle reaches look-around through the zoo pose (look-around is only entered from the zoo pose; like CAMV-023 this is a short cut-and-glide, not a glide between two close poses). Proposal: accept; a direct close-to-close glide only if it looks bad on devices.
+- Q-326 answered 2026-10-03 (user): the transition from first person to the view behind is a zoom out (rule 3a, CAMV-028).

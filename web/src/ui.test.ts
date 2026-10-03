@@ -185,7 +185,7 @@ describe('GAME-HINT overlay data (HINT-007)', () => {
     expect(parseHint('{"kind":"board"}')).toBeNull();
   });
   it('has an icon for every hint kind of rule 2', () => {
-    for (const k of ['board', 'food', 'animal', 'gate', 'garden', 'key_box', 'bed', 'moon_door', 'event', 'pick_up', 'bamboo', 'water', 'treat']) {
+    for (const k of ['board', 'food', 'animal', 'gate', 'garden', 'potato', 'apple', 'orange', 'key_box', 'bed', 'moon_door', 'event', 'pick_up', 'bamboo', 'water', 'treat']) {
       expect(HINT_ICONS[k], k).toBeTruthy();
     }
   });

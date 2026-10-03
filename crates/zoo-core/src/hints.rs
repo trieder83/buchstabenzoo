@@ -63,8 +63,14 @@ pub enum HintKind {
     Bamboo,
     /// 💧 fill the fish bowl.
     Water,
-    /// 🥕 the vegetable garden.
+    /// 🥕 the vegetable garden (carrots).
     Garden,
+    /// 🥔 a ripe potato plant.
+    Potato,
+    /// 🍎 a ripe apple tree (level 3 fruit garden).
+    Apple,
+    /// 🍊 a ripe orange tree (level 3 fruit garden).
+    Orange,
     /// 🧺 a treat for an animal at home.
     Treat,
     /// 🛏 the bed.
@@ -88,6 +94,9 @@ impl HintKind {
             HintKind::Bamboo => "bamboo",
             HintKind::Water => "water",
             HintKind::Garden => "garden",
+            HintKind::Potato => "potato",
+            HintKind::Apple => "apple",
+            HintKind::Orange => "orange",
             HintKind::Treat => "treat",
             HintKind::Bed => "bed",
             HintKind::Help => "help",
@@ -105,7 +114,9 @@ impl HintKind {
             HintKind::PickUp => "hint-pickup",
             HintKind::Bamboo => "hint-bamboo",
             HintKind::Water => "hint-water",
-            HintKind::Garden => "hint-garden",
+            HintKind::Garden | HintKind::Potato | HintKind::Apple | HintKind::Orange => {
+                "hint-garden"
+            }
             HintKind::Treat => "hint-treat",
             HintKind::Bed => "hint-bed",
             HintKind::Help => "hint-help",
@@ -542,13 +553,30 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
         match &it.target {
             Target::Plant { spot } if room => {
                 let stand = stand_near(g, it.point, p, 0.9);
-                out.push(hint(
+                // what the child already carries is not a task: no hint to pick more of a treat
+                // that is already in the basket (user report 2026-10-03)
+                if let Some(t) = g.garden.plant(spot).map(|pl| pl.treat) {
+                    if g.garden.basket.count(t) > 0 {
+                        continue;
+                    }
+                }
+                // the icon shows WHAT grows there (user report 2026-10-03: always carrots)
+                let kind = match g.garden.plant(spot).map(|pl| pl.treat) {
+                    Some(crate::garden::Treat::Apple) => HintKind::Apple,
+                    Some(crate::garden::Treat::Orange) => HintKind::Orange,
+                    Some(crate::garden::Treat::Potato) => HintKind::Potato,
+                    _ => HintKind::Garden,
+                };
+                let mut h = hint(
                     format!("plant:{spot}"),
-                    HintKind::Garden,
+                    kind,
                     PRIO_OPTIONAL,
                     it.point,
                     stand,
-                ));
+                );
+                // the garden of the level the child is in comes first
+                h.after_area = data.part_at(cell_of(it.point)) != data.part_at(cell_of(p));
+                out.push(h);
             }
             _ => {}
         }

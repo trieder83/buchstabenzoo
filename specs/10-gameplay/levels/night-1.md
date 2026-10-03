@@ -6,12 +6,12 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1]
 test_prefix: LAYOUT-N1
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Night level 1 — the moonlit forest garden (hedgehog, bat, owl)
 
-**Contents:** Goal · Design assumptions of this level (Q-numbers: see open-questions.md) · Spawn, entry and camera · Map · Elements · Night house (GAME-NIGHT rule 4; Q-134 answered) · Night food storage · Hiding places (candidates) · Hiding places — riddle details (night clues) · Barriers · Walking distances · Night lights (GAME-NIGHT rule 1, Q-118, Q-114) · Night riddles and the haze · Behaviour · Mockups · Test cases · Open questions
+**Contents:** Goal · Design assumptions of this level (Q-numbers: see open-questions.md) · Spawn, entry and camera · Map · Elements · Night house (GAME-NIGHT rule 4; Q-134 answered) · Night food storage · Hiding places (candidates) · Hiding places — riddle details (night clues) · Terrarium house (moved to night_2) · Barriers · Walking distances · Night lights (GAME-NIGHT rule 1, Q-118, Q-114) · Night riddles and the haze · Behaviour · Mockups · Test cases · Open questions
 
 
 Owned by the `zoo-level-designer` agent. Layout data: `assets/levels/night-1.toml` (level id
@@ -298,12 +298,17 @@ Riddles of one animal never share their key detail: hedgehog = sound (rustling t
 vs. round hole in a thick trunk; owl = moon **in the water** vs. moonlight **on a bare hill** vs.
 the **top of a pointed tree**.
 
+## Terrarium house (user request 2026-10-03: moved to night_2)
+
+**Proposed elements (not in `night-1.toml` yet; they join the element table when the data is written):** `path_n1_gate` (path, side, -70, 25, 6, 2: from `path_n1_ring_w` west through the free band) and `barrier_n1_garden` (closed gate, -72, 25, 2, 2, lantern gate in the west hedge). Details in the next paragraph and in `levels/night-2.md`.
+
+The terrarium house with the snake, chameleon and poison dart frog (three glass terrariums, `indoor = true`, `terrarium = true`) does **not** fit into `night_1`: the level has 591 free grass cells outside the nine hiding-place rects, and a search for nine new spots ≥ 12 m from the existing nine and ≥ 22 m (haze rule) from the new boards finds **one** (house in the east block; **zero** with the house in the west block (−46…−40, 17…25)). The hiding places cannot be moved to another level. Decision (Q-330, proposal): **second night level `night_2` "terrarium garden"**, GAME-LEVEL-NIGHT-2, behind a lantern gate in the west hedge of this level (`barrier_n1_garden`). `night_1` keeps its three animals (hedgehog, bat, owl: "all night animals home" = 6 animals) and its night house unchanged. The only edits here are the gate, the short path and one lantern post. New foods are **not** needed in this storage (the night_1 treats reuse the four existing boxes: hedgehog fruit, bat nectar, owl worms — GAME-FEED "Basic food and treats"; `worms` and `nectar` are no longer pure distractors).
+
 ## Barriers
 
 `night_1` has **no barriers of its own**; it is sealed by hedges on all sides. Its only entry is
 the level-1 barrier `moon_door` (GAME-LEVEL-1 "Moon door"): open at night after level 1's
-nightfall, closed by day. A later night level (`night_2`, Q-023) would join behind a new barrier
-of this level (e.g. a closed garden gate in `hedge_n1_north`), not designed yet.
+nightfall, closed by day. **Proposal (2026-10-03, Q-331):** `barrier_n1_garden` (closed gate, kind "closed gate"), cells (−72, 25, 2, 2) in the west hedge, `unlock_after = "night_1"`, `opens_at = "night"`; in-world: a wooden garden gate with a moon sign, three small animal silhouettes (snake, chameleon, frog) and a padlock; the lantern turns green and the padlock opens when the night zoo is complete. Leads to `night_2` (GAME-LEVEL-NIGHT-2). LAYOUT-N1-002 then reads: every border cell is solid except the entry cells and, while the gate is closed, the gate cells count as solid.
 
 ## Walking distances
 
@@ -409,10 +414,12 @@ light.
 | LAYOUT-N1-010 | Given the `[[food_box]]` list, then the foods it has are exactly `beetles`, `fruit`, `worms`, `nectar`; 2–6 more boxes stand inside the hut and may repeat a food; every box has a walkable cell centre within 2 m in front of it reachable from the entry. | unit |
 | LAYOUT-N1-011 | Given the `[[light]]` list, then every post / string end is on a walkable cell outside hiding-place rects and scenery, every board and the map board has exactly one `board_lamp`, every `attach` id exists, and the night house has an `indoor` light per enclosure with the Q-116 colours. | unit |
 | LAYOUT-N1-012 | Given the player walks through the open moon door from level 1, then she stands on `path_n1_entry` in `night_1` and the night missions are in scope; walking back east returns her to `path_moon` (NIGHT-004). | e2e |
+| LAYOUT-N1-014 | Given `night-1.toml` with `path_n1_gate` and `barrier_n1_garden` (proposal), then LAYOUT-N1-002/003/006/007/008 stay green (the gate band holds no wander cell), the gate is closed and solid until night_1 is complete and opens at that moment (NIGHT-030). | unit |
 | LAYOUT-N1-013 | Given the layout-true night mockups (after approval), then a reviewer can name each place's night clue without text and confirms nothing is scary (NIGHT-009). | manual |
 
 ## Open questions
 
+- Q-330…Q-333 (open, proposals 2026-10-03): night_2, the gate `barrier_n1_garden`, optional, terrarium look (GAME-LEVEL-NIGHT-2).
 - Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
 - Q-133 answered 2026-09-27: night level data (`time = "night"`, moon door `opens_at` / `unlock_after`), open every night — also after the night zoo is done.
 - Q-134 answered 2026-09-27: night house structure (hall + indoor enclosures + `model_rect`, boards outside).

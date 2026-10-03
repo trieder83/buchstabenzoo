@@ -445,6 +445,7 @@ and foxes keep 1 m; their feeding-spot cells are adjacent (1 cell).
   inside (PLAY-028/029); a table (`table_wood` placeholder with a collider), shelves and the
   bed `bed_l3` (`kit_bedroom` `bed` model, the sleeping bed of level 3, 2026-10-01) inside.
 - Unit tests: LAYOUT-L3-001…013, 015 in `levels23.rs`; RESC-018…023 in `zoo_game.rs`.
+- **Models (2026-10-03, AENV-013/014/015):** `carousel_sw` is drawn by `carousel` (599 tris, the `rotor` node turns, one turn per 20 s) and `ice_cream_kiosk` (kind `kiosk`, still a counter-style building without a door or interior) by `ice_cream_kiosk` (592 tris, glass-lidded freezer chest in front; cold mist is a later effect); the rect cells stay the collider. Both are no longer placeholders.
 - **Placeholders:** `waterfall_rocks` (ledge, rocks = kit `rock`, falling water and foam),
   `mill_hut` + water wheel (turning in the water, not solid, LAYOUT-L3-017/018: a procedural placeholder wheel with a spinning `wheel` part until `mill_hut_wheel` has an approved concept — `loc_water_wheel` `concept_approved = false`), `tree_willow` (trunk, crown,
   hanging branches), `pirate_ship` (hull, deck, mast, crow's nest at the perch point, sail,

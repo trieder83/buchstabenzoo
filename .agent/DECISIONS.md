@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-327** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-353** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-140 answered · 89 open · 10 other (partly answered / proposed / superseded).
+142 answered · 103 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -83,7 +83,6 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-251 — Footstep realism (ART-SOUND, redo 2026-09-30): path and grass are cut from CC0 real recordings (Fantozzi stone / "sand", which the author … (ART-SOUND)
 - Q-262 — NEVER STUCK stall rescue (GAME-LAYOUT "Level design rules" 15, HINT-020): proposal 120 s without mission progress -> the hint points at the … (GAME-HINT, GAME-LAYOUT)
 - Q-280 — All-pairs implementation proposals (GAME-FAMILY "Pairs for every species", level specs, 2026-10-01). (GAME-FAMILY, GAME-ANIMALS, GAME-LEVEL-1 …)
-- Q-281 — Babies for pairs whose species likes no garden treat (koala, lion, snow fox, goldfish, hedgehog, bat, owl): they can get no baby yet (a … (GAME-FAMILY, GAME-GARDEN)
 - Q-282 — Art: 11 species have no female / baby model (hippo, panda, elephant, giraffe, lion, monkey, snow fox, goldfish, hedgehog, bat, owl … (cub)
 - Q-283 — Riddle wording: the klasse2/3 riddles of the 11 species still speak of one animal ("Der Elefant ..."); only zebra and koala were rewritten … (CONT-MISSIONS, GAME-FAMILY)
 - Q-284 — Night pair details: do two bats hang side by side on the same branch and do two owls sit on one perch (implemented: 0.7 m apart on a wider … (GAME-NIGHT, GAME-FAMILY)
@@ -94,7 +93,22 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-324 — Should fruit trees look different from the vegetable beds in the signs (picture of an apple tree) or is the fruit icon enough? (GAME-GARDEN, CONT-READING)
 - Q-313 — Positions chosen by the level designer for Q-312: zookeeper_house_2 (27, 15, 6, 5) in the south-west corner of level 2 on path_l2_sw (≈ 8 s … (GAME-LEVEL-2, GAME-LEVEL-3)
 - Q-325 — Service worker / offline cache and an in-game install prompt for the installable web app (TECH-PLATFORMS "Installable and full screen")? (TECH-PLATFORMS)
-- Q-326 — Camera views (GAME-CAMERA-VIEWS 3a): the one view button goes first person → look-around through the zoo pose (look-around is only entered … (GAME-CAMERA-VIEWS)
+- Q-340 — Visitor concept (5 types: mother, father, grandmother, girl ~7, boy ~5; briefs in art/characters/visitor_*/): approve the five designs and … (ART-CHARACTERS, ART-RIG, GAME-ECON)
+- Q-341 — Visitors' props (balloon, ice-cream cone, plush lion, camera, tote, backpack, sun hat/cap): separate rigid prop models on sockets … (ART-RIG, ART-CHARACTERS)
+- Q-342 — Adult proportions: the comic style keeps big heads, so the adults are ~1 : 5.5 (mother, father) and ~1 : 5 (grandmother) against the … (ART-CHARACTERS)
+- Q-330 — Terrarium house + snake, chameleon, poison dart frog (user request 2026-10-03): where? (GAME-LEVEL-NIGHT-2, GAME-LEVEL-NIGHT-1, GAME-NIGHT)
+- Q-331 — How does the child get to night_2? (GAME-LEVEL-NIGHT-1, GAME-LEVEL-NIGHT-2, GAME-NIGHT)
+- Q-332 — Is night_2 optional? Recommendation: yes — sleeping, the morning and level 2 never wait for it (barrier_ne_tree stays unlock_after = … (GAME-NIGHT, GAME-HINT)
+- Q-333 — Look of the terrarium house: enterable warm-lit house, three glass terrariums as indoor enclosures with a new flag terrarium = true, glass … (GAME-LEVEL-NIGHT-2, ART-ENVIRONMENT)
+- Q-334 — Food model (user request 2026-10-03): every species has BASIC food (box food that makes the escaped animal follow; hearts at home) and a … (GAME-FEED, GAME-FAMILY, GAME-GARDEN, GAME-ANIMALS)
+- Q-335 — Game sizes of the new animals: snake 1.2 m long, chameleon 0.5 m (concept brief 0.35 m), poison dart frog 0.4 m (real 4 cm; comic scale … (ART-ANIMALS)
+- Q-336 — Where do treat boxes stand? (GAME-FEED, GAME-LEVEL-NIGHT-2)
+- Q-337 — Bed near the terrarium garden? (GAME-NIGHT, GAME-LAYOUT)
+- Q-338 — Mark treat boxes with a star on the lid? (GAME-FEED)
+- Q-339 — Treat hint: keep the existing hint only when the child carries a treat of a home species without a baby (priority > 3, never the only … (GAME-HINT, GAME-FEED)
+- Q-350 — Treats of the species that had none (proposal, all from boxes already stocked in the species' level, except bone and the night_2 foods) … (GAME-FEED)
+- Q-351 — A treat shown to an ESCAPED animal: recommendation gentle "Hmm, später!" (no refusal sound, no follow, no penalty) — only the basic food … (GAME-RESCUE, GAME-FEED)
+- Q-352 — Info board and names: panel order name → riddle → basic line → treat line (⭐ marker, 🌱 garden / 📦 box source icon on kiga) → facts → pair … (GAME-FEED, GAME-ANIMALS, GAME-FAMILY)
 
 ## Partly answered / other
 
@@ -111,6 +125,7 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-326 — Camera views (GAME-CAMERA-VIEWS 3a): the one view button goes first … → user 2026-10-03: zoom out (direct pull-back from the eye to the view behind, CAMV-028)
 - Q-312 — Every bed inside an enterable building (user request 2026-10-01) … → 2026-10-01: "the bed should be inside the building, not outside".
 - Q-308 — Pairs for all animals (GAME-FAMILY): does every animal species … → 2026-10-01: yes — every animal incl. goldfish and night animals has a partner (pair = true for every enclosure; supersedes the …
 - Q-307 — Art for the economy: visitor/doctor models (character-artist), food … → 2026-10-01: later — keep it a spec until level 3, pairs, ads and never-stuck are finished.
@@ -121,6 +136,7 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-302 — Coin cap and prices for the maths shop (animal food, doctor fee) and … → 2026-10-01: coins buy animal food, the doctor and also garden seeds (more garden plants / treats); cap 999.
 - Q-301 — Do visitors feed the animals with the machine's food (animals at the … → 2026-10-01: yes — a visitor uses the machine's food at a fence, a liking animal comes over and eats (hearts).
 - Q-300 — Visitors (GAME-ECON): how many, when (daytime schedule) … → 2026-10-01: families, 2–5 visitors (parents + children) at a time, daytime only, from level 3.
+- Q-281 — Babies for pairs whose species likes no garden treat (koala, lion … → 2026-10-03: species without a garden treat get their baby from their own favourite food (FAM-030).
 - Q-261 — Camera auto-align / first-person steering constants (GAME-PLAYER §3 … → 2026-10-01: the navigation rework (smooth look stick, auto-align, first-person steering) was not better — reverted to the …
 - Q-260 — Walking while turning the zoo view with the right-thumb look stick … → 2026-10-01: the navigation rework (smooth look stick, auto-align, first-person steering) was not better — reverted to the …
 - Q-249 — Pair at the gate (GARD-014). → 2026-10-01: confirmed as implemented.

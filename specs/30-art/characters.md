@@ -6,7 +6,7 @@ module: characters
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, ART-RIG, GAME-PLAYER]
 test_prefix: ACHAR
-updated: 2026-09-28
+updated: 2026-10-03
 ---
 
 # Characters — concept and models
@@ -22,7 +22,12 @@ one looks like. Skeleton, clips, sockets, expressions and export rules are in AR
 |---|---|---|---|---|
 | `player_girl` | Player character (girl) | required | `idle`, `walk`, `run`, `pick_up`, `give`, `talk`, `cheer`, `wave`, `carry` | model v1 (review) |
 | `player_boy` | Player character (boy) | required | same as `player_girl` (shared rig, identical clips) | concept |
-| `visitor_*` | Visitors giving hints (see GAME-QUESTS) | required per visitor type | `idle`, `talk`, `point` | concept |
+| `visitor_*` | Visitors giving hints (see GAME-QUESTS) | required per visitor type | `idle`, `talk`, `point` (+ `walk`, `wave`, `buy`, optional `eat_ice` for GAME-ECON, Q-340) | concept |
+| `visitor_adult_1` | Mother, ~35, 1.68 m (sun hat, coral dress, tote) | 4 views + in-game view in review (2026-10-03) | visitor set | concept in review |
+| `visitor_adult_2` | Father, ~38, 1.75 m (glasses, teal polo, orange backpack) | same | visitor set | concept in review |
+| `visitor_adult_3` | Grandmother, ~65, 1.60 m (silver curls, ochre cardigan, camera) | same | visitor set | concept in review |
+| `visitor_child_1` | Girl, ~7, 1.22 m (braids, magenta dress) | same | visitor set | concept in review |
+| `visitor_child_2` | Boy, ~5, 1.08 m (orange cap, violet shirt, red backpack, plush lion) | same | visitor set | concept in review |
 | `pirate` | Pirate on the pirate ship (if an NPC — Q-015) | required | `idle`, `talk` | blocked |
 
 ## Behaviour

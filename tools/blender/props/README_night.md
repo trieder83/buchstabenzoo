@@ -14,6 +14,7 @@ $B tools/blender/props/kit_gates.py        # garden gate, glass door, door, turn
 $B tools/blender/props/kit_buildings.py    # houses                      -> assets/models/buildings/
 $B tools/blender/props/kit_landmarks.py    # night-1 landmarks           -> assets/models/props/
 $B tools/blender/props/kit_garden.py       # vegetable garden            -> assets/models/props/
+$B tools/blender/props/kit_landmarks_play.py  # kiosk, carousel, slide, swings -> assets/models/props/
 $B tools/blender/props/kit_night.py -- moon_door lantern_post   # only these; focused preview to
                                            # $PREVIEW_DIR (default: the kit's art folder, focus_*.png)
 python3 tools/blender/check_glb.py         # export rules + expected sizes of every kit
@@ -167,6 +168,20 @@ the 17 × 13 m night house (≈ one animal) — still one draw per material slot
 `food_hut` is in kit_buildings. `tree_crooked` / `tree_old` / `tree_hollow` / `fir_tree` /
 `hill` / `mushroom_ring` level kinds map to `crooked_tree` / `old_tree` / `hollow_tree` /
 `fir_tree` / `rock_hill` / `mushroom_patch`.
+
+### kit_landmarks_play (props, ≤ 600) — level 2 + 3 (concepts approved 2026-10-03)
+
+| Asset | Tris | Size | Level element | Notes |
+|---|---|---|---|---|
+| `ice_cream_kiosk` | 592 | 4.00 · 4.12 · 2.99 | `ice_cream_kiosk` (15, 83, 4, 3), building kind `kiosk` | cream booth, striped pink awning over the service window + counter, flat roof with a big cone icon (no text), freezer chest with a `glass` lid + cone stand in front (cold mist = later effect), decorative back door (**no interior**) |
+| `carousel` | 599 | 4.00 · 4.06 · 4.10 | `carousel_sw` (−16, 52, 4, 4) | static base ring + steps, child node **`rotor`** (pivot = the centre on the ground; the renderer spins it about +Y, one turn per 20 s: `NodeBehaviour` "rotor"): floor, hub, 6 poles with 6 horses, striped roof, gold finial |
+| `playground_slide` | 262 | 1.09 · 1.81 · 3.03 | `playground_se_slide` (66, 15, 2, 3), kind `slide` | platform + ladder at the back (north), red/yellow chute to the front |
+| `playground_swings` | 142 | 3.90 · 2.25 · 1.62 | `playground_se_swings` (69, 15, 4, 2), kind `swings` | two A-frames, top beam, two blue seats on chains (static) |
+
+`carousel` / `slide` / `swings` / `kiosk` level kinds map to these models (`scene::landmark_model`,
+kiosk in `scene.rs`); the rect cells stay the solid footprint. Previews:
+`art/props/kit_landmarks_play/model_preview.png` (game camera, day / night) and
+`model_preview_front.png` (low front view).
 
 ### kit_garden (props, ≤ 500)
 

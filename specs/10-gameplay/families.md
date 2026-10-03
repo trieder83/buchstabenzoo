@@ -6,7 +6,7 @@ module: families
 status: draft
 depends_on: [GAME-ANIMALS, GAME-RESCUE, GAME-FEED, GAME-SAVE]
 test_prefix: FAM
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Animal pairs and babies
@@ -35,9 +35,12 @@ get a baby later** — a long-term reward that makes caring for the animals wort
 | `hedgehog` | night 1 | male + female | Igelbaby / hoglet | fallback |
 | `bat` | night 1 | male + female | Fledermausbaby / pup | fallback |
 | `owl` | night 1 | male + female | Eulenküken / owlet | fallback |
+| `snake` | night 2 | male + female | Schlangenbaby / baby snake (`snake_hatchling`) | own models (concept sheet in review) |
+| `chameleon` | night 2 | male + female | Chamäleonbaby / baby chameleon (`chameleon_baby`) | own models (concept sheet in review) |
+| `poison_dart_frog` | night 2 | male + female | Fröschlein / froglet (`frog_froglet`; the tadpole is only a board fact) | own models (concept sheet in review) |
 
 No species stays single (Q-308). The goldfish pair swims in one pond, is caught with **one** food
-and carried in **one** bowl (rule 9); the night animals are two in each indoor enclosure (rule 10).
+and carried in **one** bowl (rule 9); the night animals (hedgehog, bat, owl, snake, chameleon, poison dart frog) are two in each indoor enclosure (rule 10).
 
 ## Behaviour
 
@@ -125,9 +128,8 @@ and carried in **one** bowl (rule 9); the night animals are two in each indoor e
       the animals walk to the middle of their spot cell;
     - perched pairs (koala, bat, owl): member 1 sits `PERCH_PAIR_OFFSET_M` = 0.7 m beside member
       0 across the branch; a pair species' branch / platform is 1.5 m wide.
-13. **Babies:** the baby rules (Special food and babies) apply to every pair. Species with no
-    liked garden treat today (koala, lion, snow fox, goldfish, hedgehog, bat, owl) cannot get a
-    baby yet (Q-281: treats for them); babies are never required.
+13. **Babies:** the baby rules (Special food and babies) apply to every pair. Every species has a treat
+    (GAME-FEED "Basic food and treats"), so every pair can get a baby; babies are never required.
 
 ## Look without own models (fallback, Q-280)
 
@@ -149,7 +151,7 @@ missing models are art tasks (manifest `<species>_female`, `<species>_calf|cub|�
 - **Mission complete:** `mission-<animal>-home` is plural for all species ("Die Flusspferde sind
   wieder zu Hause." / "The hippos are home again."; also the night animals and the goldfish).
 
-## Special food and babies (user request 2026-09-29)
+## Special food and babies (user request 2026-09-29; two-role model 2026-10-03)
 
 **Special food** (a liked treat such as a carrot — GAME-GARDEN "Treats" — or another food the
 species loves, data per species, Q-100) makes an animal **happy**: it comes over, eats it,
@@ -162,6 +164,8 @@ nothing. This **replaces the former counting rule** ("3 care feedings on 3 sessi
 happy-making special food is what triggers the baby; feeding the correct storage food only gives a happy reaction (hearts), never a baby (Q-198 answered 2026-09-30). Babies are a reward
 for care, never required for the mission or blocking. All species are pairs (Q-308); koalas take no garden treats, so they need their own special food
 (eucalyptus treat, Q-100).
+
+**Treats for every species (user request 2026-10-03, replaces the Q-281 fallback "own favourite food"; proposal Q-334…Q-352):** every species has an explicit **treat**: a garden treat (carrot, potato, apple, orange) or a **box food** that is *not* its basic food (snow fox: meat, lion: bone, koala: leaves, goldfish: leaves, hedgehog: fruit, bat: nectar, owl: worms, snake: eggs, chameleon: frozen insects, poison dart frog: crickets). Master table, giving rules (basic = hearts, treat = hearts + baby, other = gentle refusal) and the info board lines: GAME-FEED "Basic food and treats". The baby is still once per pair and species, optional, saved; a baby already born by the old fallback is kept (FAM-032).
 
 ## Implementation status (2026-10-01)
 
@@ -214,6 +218,10 @@ character costs its parts' draw calls like any animal, measured in the performan
 | FAM-027 | Given a liked treat, then one baby per pair with a liked treat; looks: dedicated models scale 1, fallback 0.92 / 0.45. | unit |
 | FAM-028 | Given every pair species' info board, then the pair note exists in all reading levels (kiga = ♂ ♀) and de/en; home texts are plural. | unit |
 | FAM-029 | Given two goldfish, then fish food + filled bowl puts both into the bowl, save/restore keeps both, delivery brings both home; an old one-fish save reopens the mission. | unit |
+| FAM-030 | *Retired 2026-10-03 (user request: explicit treats, see FAM-031 and FEED-036…040; the code test is rewritten).* Was: Given a pair at home of a species that likes no garden treat (snow fox, koala, lion), when the child gives it its own favourite food carried from the box, then exactly one baby is born (once); given a species with a liked garden treat (zebra), then its box food gives no baby (user report 2026-10-03). | unit |
+| FAM-031 | Given every species of the master table (16), then a pair at home given its treat (garden basket or box in the hands) gets exactly one baby (once, saved), given its basic food only hearts, given any other food a gentle refusal; the baby model / name of the new species are `snake_hatchling`, `chameleon_baby`, `frog_froglet` (fallback 0.45 scale until the models exist). | unit |
+| FAM-032 | Given a save in which a baby was born by the retired own-favourite-food rule (FAM-030), then the baby stays and is not born twice; FAM-030 itself is retired (superseded by FEED-036..040). | unit |
+| FAM-033 | Given the new pairs `snake`, `chameleon`, `poison_dart_frog` at their hiding place and at home, then pair gaps 1.0 / 0.7 (perch offset) / 0.5 m, home wander areas ≥ 12 cells, split pairs and a waiting partner are fetched like every pair (GARD-014), group look-ups use the species and never the first member. | unit |
 | FAM-007 | Given male and female models side by side from the default camera, then children can tell they are a pair of the same species and spot the difference (manual review). | manual |
 
 ## Open questions

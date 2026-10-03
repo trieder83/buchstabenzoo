@@ -41,6 +41,12 @@ impl Default for CameraParams {
     }
 }
 
+/// Duration of the direct first person → look-around zoom out (CAMV-028).
+pub const PULL_BACK_S: f32 = 0.5;
+/// The player's body reappears once the pull-back is this far along (the camera has left
+/// the head, CAMV-028).
+pub const PULL_BACK_BODY_AT: f32 = 0.3;
+
 /// Height above the player's feet the camera looks at (keeps the character centred).
 pub const LOOK_AT_HEIGHT_M: f32 = 0.7;
 pub const NEAR_M: f32 = 0.5;
@@ -71,6 +77,10 @@ pub struct FollowCamera {
     /// First-person pitch (radians, positive = up) and its dragged target.
     look_pitch: f32,
     look_pitch_target: f32,
+    /// Direct first person → look-around pull-back (CAMV-028): progress 0…1 (1 = none /
+    /// done) and the first-person pitch it starts from.
+    link: f32,
+    link_from_pitch: f32,
 }
 
 /// One camera pose (the zoo pose, a close pose or a blend of both).
@@ -135,6 +145,8 @@ impl FollowCamera {
             look_origin: 0.0,
             look_pitch: 0.0,
             look_pitch_target: 0.0,
+            link: 1.0,
+            link_from_pitch: 0.0,
         }
     }
 
@@ -204,6 +216,7 @@ impl FollowCamera {
         let goal = if self.mode.is_close() { 1.0 } else { 0.0 };
         let step = dt.max(0.0) / TRANSITION_S;
         self.blend += (goal - self.blend).clamp(-step, step);
+        self.link = (self.link + dt.max(0.0) / PULL_BACK_S).min(1.0);
         let k = 1.0 - (-TURN_EASE_RATE * dt.max(0.0)).exp();
         self.look_yaw += (self.look_yaw_target - self.look_yaw) * k;
         self.look_pitch += (self.look_pitch_target - self.look_pitch) * k;
@@ -215,6 +228,7 @@ impl FollowCamera {
         self.distance = self.target_distance;
         self.target = player_world + Vec3::Y * LOOK_AT_HEIGHT_M;
         self.blend = if self.mode.is_close() { 1.0 } else { 0.0 };
+        self.link = 1.0;
         self.look_yaw = self.look_yaw_target;
         self.look_pitch = self.look_pitch_target;
     }
@@ -228,11 +242,19 @@ impl FollowCamera {
 
     /// The view the glide currently shows most (the requested one once it is past halfway).
     pub fn shown(&self) -> ViewMode {
-        if self.blend >= 0.5 {
+        if self.pulling_back() && self.link < PULL_BACK_BODY_AT {
+            // the camera is still at the head: the body stays hidden (no pop, CAMV-028)
+            ViewMode::FirstPerson
+        } else if self.blend >= 0.5 {
             self.close
         } else {
             ViewMode::Zoo
         }
+    }
+
+    /// A direct first person → look-around pull-back is running (CAMV-028).
+    pub fn pulling_back(&self) -> bool {
+        self.link < 1.0 && self.close == ViewMode::LookAround
     }
 
     /// Glide progress 0 (zoo pose) … 1 (close pose), eased.
@@ -249,6 +271,18 @@ impl FollowCamera {
         }
         match mode {
             ViewMode::Zoo => {}
+            ViewMode::LookAround if self.mode == ViewMode::FirstPerson => {
+                // zoom out: glide straight from the eye to the look-around pose (CAMV-028);
+                // the view direction stays, only the pitch eases down
+                self.link_from_pitch = self.look_pitch;
+                self.link = 0.0;
+                let yaw = self.look_yaw;
+                self.set_look(yaw, -LOOK_PITCH_DEG.to_radians());
+                self.look_origin = yaw;
+                self.close = mode;
+                self.mode = mode;
+                return true;
+            }
             ViewMode::LookAround => {
                 if self.mode != ViewMode::Zoo {
                     return false;
@@ -259,6 +293,7 @@ impl FollowCamera {
             }
             ViewMode::FirstPerson => self.set_look(facing_yaw, 0.0),
         }
+        self.link = 1.0;
         if mode.is_close() {
             if self.blend > 0.0 && self.close != mode {
                 self.blend = 0.0; // never blend two close poses into each other
@@ -350,7 +385,15 @@ impl FollowCamera {
         if s <= 0.0 {
             return zoo;
         }
-        let close = self.close_pose(self.close);
+        let mut close = self.close_pose(self.close);
+        if self.pulling_back() {
+            // zoom out: blend the first-person pose into the look-around pose
+            let feet = self.target - Vec3::Y * LOOK_AT_HEIGHT_M;
+            let t = smoothstep(self.link);
+            let eye0 = feet + Vec3::Y * FP_EYE_HEIGHT_M;
+            close.eye = eye0.lerp(close.eye, t);
+            close.pitch = self.link_from_pitch + (close.pitch - self.link_from_pitch) * t;
+        }
         Pose {
             eye: zoo.eye.lerp(close.eye, s),
             yaw: zoo.yaw + angle_diff(close.yaw, zoo.yaw) * s,
@@ -657,8 +700,52 @@ mod tests {
         cam.turn(1.0, 0.0);
         assert!((cam.view_yaw() - start).abs() < 1e-5);
         cam.set_view(ViewMode::FirstPerson, 0.0);
-        assert!(!cam.set_view(ViewMode::LookAround, 0.0));
-        assert_eq!(cam.mode(), ViewMode::FirstPerson);
+        // first person → look-around is a direct zoom out now (CAMV-028)
+        assert!(cam.set_view(ViewMode::LookAround, 0.0));
+        assert_eq!(cam.mode(), ViewMode::LookAround);
+    }
+
+    // CAMV-028: first person → look-around is one continuous pull-back (no zoo pose)
+    #[test]
+    fn camv_028_first_person_to_look_around_zooms_out() {
+        let feet = Vec3::new(3.0, 0.0, -5.0);
+        let mut cam = zoo_cam();
+        cam.set_view(ViewMode::FirstPerson, 1.0);
+        run(&mut cam, 0.5, feet);
+        cam.turn(0.0, 0.2);
+        run(&mut cam, 0.5, feet);
+        let head = cam.eye();
+        let zoo_h = cam.zoo_pose().eye.y;
+        assert!(cam.hides_player());
+        assert!(cam.set_view(ViewMode::LookAround, 1.0));
+        let mut prev = 0.0f32;
+        let mut frames = 0;
+        let mut body_back_at = None;
+        while cam.pulling_back() {
+            cam.update(DT, feet);
+            frames += 1;
+            let e = cam.eye();
+            let d = e.distance(head);
+            assert!(d >= prev - 1e-4, "distance not monotonic: {d} < {prev}");
+            prev = d;
+            assert!(e.y < 3.0 && e.y < zoo_h - 3.0, "eye rose to {e}");
+            assert!((cam.fov_deg() - CLOSE_FOV_DEG).abs() < 1e-3);
+            if body_back_at.is_none() && !cam.hides_player() {
+                body_back_at = Some(d);
+            }
+        }
+        assert!(frames as f32 * DT <= 0.6, "took {} s", frames as f32 * DT);
+        // body reappears only after the camera left the head, and by the end
+        assert!(body_back_at.expect("body shown") > 0.3);
+        assert!(!cam.hides_player());
+        let eye = cam.eye();
+        let back = Vec2::new(eye.x - feet.x, eye.z - feet.z).length();
+        assert!((back - LOOK_BACK_M).abs() < 0.05 && (eye.y - LOOK_UP_M).abs() < 0.05);
+        assert!((pitch_of(view_dir(&cam)) + LOOK_PITCH_DEG).abs() < 0.5);
+        // the next step (zoo) is the normal glide
+        cam.set_view(ViewMode::Zoo, 0.0);
+        run(&mut cam, 0.5, feet);
+        assert!(cam.blend() < 1e-6);
     }
 
     // CAMV-003

@@ -1738,23 +1738,31 @@ impl Game {
                 treat,
             });
             // a male + female pair at home that gets a liked special food makes a baby
-            let group = self.group(&id);
-            if group.len() >= 2
-                && group
-                    .iter()
-                    .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
-                && !self.babies.contains(&id)
-            {
-                self.babies.push(id.clone());
-                self.spawn_baby(&id);
-                self.events.push(GameEvent::BabyBorn { animal: id });
-            }
+            self.maybe_baby(&id);
         } else {
             self.events
                 .push(GameEvent::TreatRefused { animal: id, treat });
         }
         self.group_faces_player(self.animals[i].id());
         Some(accepted)
+    }
+
+    /// A pair at home (both members in the enclosure) that was given a special food has its
+    /// baby — once per species (GAME-FAMILY "Special food and babies").
+    fn maybe_baby(&mut self, id: &str) {
+        let group = self.group(id);
+        if group.len() >= 2
+            && group
+                .iter()
+                .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
+            && !self.babies.iter().any(|b| b == id)
+        {
+            self.babies.push(id.to_owned());
+            self.spawn_baby(id);
+            self.events.push(GameEvent::BabyBorn {
+                animal: id.to_owned(),
+            });
+        }
     }
 
     /// All members of an animal's group at home turn to the child.
@@ -1826,6 +1834,16 @@ impl Game {
                 food,
             }
         });
+        // a species that likes no garden treat (koala, lion, snow fox, goldfish, night animals,
+        // Q-281) gets its baby from its own favourite food — the special food of that species
+        // (user report 2026-10-03: the snow fox did not accept food to make a baby)
+        if accepted
+            && !crate::garden::Treat::ALL
+                .iter()
+                .any(|&t| crate::garden::likes(&id, t))
+        {
+            self.maybe_baby(&id);
+        }
         self.group_faces_player(&id);
         Some(accepted)
     }

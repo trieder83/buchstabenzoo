@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG]
 test_prefix: AANI
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Animals — concept and models
@@ -75,6 +75,9 @@ animals are scaled up (user decision). Height = top of head/ears standing; the p
 | `porcupine` | 0.8 m (quills), 1.1 m long | night; model v1 (0.77 m, 1.07 m long) |
 | `slow_loris` | 0.7 m on all fours | night; model v1 (0.69 m) |
 | `tarsier` | 0.7 m sitting upright | night; model v1 (0.72 m) |
+| `snake` | **1.2 m long** (coiled 0.35 m high) | night_2 terrarium; limbless: segmented body on a simple bone chain (proposal), concept sheet `art/animals/snake_family` in review |
+| `chameleon` | **0.5 m** with crest and curled tail (concept brief 0.35 m: comic scale, Q-335) | night_2; perched like koala/owl; quadruped rig, curled tail chain |
+| `poison_dart_frog` | **0.4 m** (comic; real ≈ 4 cm, Q-335) | night_2; small quadruped hop |
 
 Night-animal sizes are the comic sizes of their approved briefs (user decision Q-143).
 
@@ -294,6 +297,18 @@ origin at the water surface; they replace the static `duck` / `frog` props of `k
 | `butterfly` | built-in renderer mesh (12 triangles, no `.glb`) | — | wing beat as instance scale | ≈ 0.34 m wingspan | implemented |
 
 Game scale of duckling / frog: Q-108. Manifest entries (Q-122 answered): added with `concept_approved = true` only after the user confirms the `kit_water` sheet counts; the static `duck` / `frog` props are removed from `kit_water`.
+
+## Terrarium animals (night_2, proposal 2026-10-03; concept sheets in review in `art/animals/*_family`)
+
+Not modelled yet. Manifest entries added with `concept_approved = false`: `snake`, `snake_female`, `snake_hatchling`, `chameleon`, `chameleon_female`, `chameleon_baby`, `poison_dart_frog`, `poison_dart_frog_female`, `frog_froglet`. Concept sheet per family (male | female | baby) exists in `art/animals/<species>_family/`; no approved adult yet, so the males are designed on the sheets.
+
+| Species | Rig | Look | `animal_anims` entries needed |
+|---|---|---|---|
+| `snake` (+ female 0.9, hatchling 0.35) | **new simple limbless rig** (`snake_rig.py`: 10–14 bone chain, spline-like body, wave `slither` driven by the chain), origin at the belly | green with yellow-orange saddles, cream belly, friendly face, no fangs, no forked-tongue drama | `idle` (sway), `slither` (clip name `walk`, speed 1.2 m/s, `loop`), `eat`, `happy`, `refuse`, `sleep` (coil) |
+| `chameleon` (+ female 0.9 pastel, baby 0.4) | `quadruped` (quad_kit) + curled `tail_3` chain, perched pose like koala (`perch`) | leaf-green with turquoise/yellow/orange patches (flat vertex colours/decal), big independent eyes, small crest | `idle` (eyes turn), `walk` (rocking steps, speed 0.9), `perch`, `eat` (tongue flick), `happy` (colour flash), `refuse`, `sleep` |
+| `poison_dart_frog` (+ female orange-black, froglet 0.4) | `quadruped` small, hop | black with bold yellow bands (male, "bumblebee"), orange with black patches and yellow-green spotted legs (female), froglet orange with black blotches and yellow legs (4–6 big pattern shapes, vertex colours/decal); sits on a leaf; no skulls, no warning signs | `idle` (throat pulse), `hop` (clip `walk`, speed 1.0), `eat`, `happy`, `refuse`, `sleep` |
+
+Budget notes (PERF): ≈ 1 500–2 500 tris per animal like the other night animals; 6 more animals + 6 babies in a level of the same size; the glass terrarium fronts add one blended pass (≈ 24 quads); eyeshine reuses `eye_glow`. Perf check after the models exist.
 
 ## Family models still missing (Q-280, Q-282, 2026-10-01)
 

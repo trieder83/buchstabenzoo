@@ -139,7 +139,21 @@ impl Game {
                     .and_then(|t| t.split("->").next())
                     .map(str::to_owned)
             });
-            let open_nights = after.is_none_or(|l| self.daytime.nightfalls.contains(&l));
+            // the night level is open once its day level had its nightfall — or once that level is
+            // complete (user request 2026-10-03: with the night level open the child can sleep by
+            // day to advance to the night, however the completion was recorded)
+            let open_nights = after.is_none_or(|l| {
+                self.daytime.nightfalls.contains(&l)
+                    || data.part_index(&l).is_some_and(|k| {
+                        self.animals.iter().any(|a| a.part == k)
+                            && self
+                                .animals
+                                .iter()
+                                .zip(&self.missions)
+                                .filter(|(a, _)| a.part == k)
+                                .all(|(_, m)| m.complete)
+                    })
+            });
             let night_part = data
                 .entries
                 .iter()

@@ -256,6 +256,9 @@ fn follow_one(s: &mut Sim) {
         | HintKind::Bed
         | HintKind::MoonDoor
         | HintKind::Garden
+        | HintKind::Potato
+        | HintKind::Apple
+        | HintKind::Orange
         | HintKind::Treat => {
             s.walk_to(cell_of(h.stand), 150.0);
             s.face(h.pos);

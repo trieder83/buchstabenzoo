@@ -617,3 +617,118 @@ fn gard_regrow_fruit_in_three_steps_and_save() {
     fresh.garden.update(120.0);
     assert_eq!(fresh.garden.plant("orange_1").unwrap().stage(), Stage::Ripe);
 }
+
+// GARD-024 (user report 2026-10-03: the target indicator always showed carrots): the garden
+// hint shows WHAT grows at its target (apple / orange / potato / carrot icon kinds) and, in
+// level 3, prefers the fruit garden of the level the child stands in.
+#[test]
+fn gard_024_garden_hint_shows_the_fruit_of_the_level_the_child_is_in() {
+    use zoo_core::hints::{candidates, HintKind, HintTracker};
+    let data = common::zoo();
+    let mut g = Game::new(data.clone(), 3).unwrap();
+    for b in [
+        "barrier_ne_tree",
+        "barrier_l2_construction",
+        "barrier_north_gate",
+    ] {
+        g.level.open_barrier(b);
+    }
+    // stand in level 3 (where the apple and orange trees are)
+    let k = data.part_index("level_3").unwrap();
+    g.player.pos = zoo_core::level::cell_center(data.parts[k].spawn.cell());
+    let c = candidates(&g, &HintTracker::default());
+    let garden: Vec<_> = c.iter().filter(|h| h.id.starts_with("plant:")).collect();
+    assert!(!garden.is_empty(), "plants are offered");
+    let first = garden[0];
+    assert!(
+        matches!(first.kind, HintKind::Apple | HintKind::Orange),
+        "level 3: the first garden target is a fruit tree, got {:?} {}",
+        first.kind,
+        first.id
+    );
+    // every plant hint carries the icon of what grows there
+    for h in &garden {
+        let want = match h.id.as_str() {
+            s if s.contains("apple") => HintKind::Apple,
+            s if s.contains("orange") => HintKind::Orange,
+            s if s.contains("potato") => HintKind::Potato,
+            _ => HintKind::Garden,
+        };
+        assert_eq!(h.kind, want, "{}", h.id);
+    }
+}
+
+// FAM-030 (user report 2026-10-03: the snow fox did not accept food to make a baby): species
+// that like no garden treat get their baby from their own favourite food at home (once).
+#[test]
+fn fam_030_species_without_a_garden_treat_get_a_baby_from_their_own_food() {
+    use zoo_core::{Food, GameEvent};
+    for species in ["snow_fox", "koala", "lion"] {
+        let mut g = common::zoo_game(3);
+        let group = g.group(species);
+        assert_eq!(group.len(), 2, "{species}");
+        assert!(g.debug_send_home(species));
+        g.drain_events();
+        let food = g.animals[group[0]].info.foods[0];
+        g.carry.take(&zoo_core::FoodBox { food: food as Food });
+        assert_eq!(g.give_food(species), Some(true), "{species}");
+        let ev = g.drain_events();
+        assert_eq!(
+            ev.iter()
+                .filter(|e| matches!(e, GameEvent::BabyBorn { .. }))
+                .count(),
+            1,
+            "{species}: baby"
+        );
+        // once only
+        assert_eq!(g.give_food(species), Some(true));
+        assert!(!g
+            .drain_events()
+            .iter()
+            .any(|e| matches!(e, GameEvent::BabyBorn { .. })));
+    }
+    // a species WITH a liked garden treat does not get a baby from its box food
+    let mut g = common::zoo_game(3);
+    assert!(g.debug_send_home("zebra"));
+    g.drain_events();
+    g.carry.take(&zoo_core::FoodBox { food: Food::Grass });
+    assert_eq!(g.give_food("zebra"), Some(true));
+    assert!(!g
+        .drain_events()
+        .iter()
+        .any(|e| matches!(e, GameEvent::BabyBorn { .. })));
+}
+
+// GARD-025 (user report 2026-10-03): what the child already carries is not a task — with apples
+// in the basket the garden hint no longer sends her to the apple trees (oranges still).
+#[test]
+fn gard_025_no_hint_to_fetch_what_is_already_in_the_basket() {
+    use zoo_core::garden::Treat;
+    use zoo_core::hints::{candidates, HintKind, HintTracker};
+    let data = common::zoo();
+    let mut g = Game::new(data.clone(), 3).unwrap();
+    for b in [
+        "barrier_ne_tree",
+        "barrier_l2_construction",
+        "barrier_north_gate",
+    ] {
+        g.level.open_barrier(b);
+    }
+    let k = data.part_index("level_3").unwrap();
+    g.player.pos = zoo_core::level::cell_center(data.parts[k].spawn.cell());
+    let kinds = |g: &Game| -> Vec<HintKind> {
+        candidates(g, &HintTracker::default())
+            .iter()
+            .filter(|h| h.id.starts_with("plant:"))
+            .map(|h| h.kind)
+            .collect()
+    };
+    assert!(kinds(&g).contains(&HintKind::Apple));
+    g.garden.basket.add(Treat::Apple, 1);
+    let after = kinds(&g);
+    assert!(!after.contains(&HintKind::Apple), "{after:?}");
+    assert!(
+        after.contains(&HintKind::Orange),
+        "oranges are still offered: {after:?}"
+    );
+}

@@ -6,7 +6,7 @@ module: environment
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS]
 test_prefix: AENV
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Environment — mockups and models
@@ -59,6 +59,8 @@ zoo-park simulation game — `overview.png` at ≈ 60–65° pitch with the whol
 | `env_zookeeper_house_1` | Zookeeper house of level 1 (`zookeeper_house_1`, west of the entrance plaza — GAME-LEVEL-1, GAME-NIGHT, GAME-CART) | closed house + roof cut-away: child-size bed with the blue star blanket, night table with bedside lamp, window, rug, toy chest, desk with one blank sheet (the "Math Fighter" note), key box with a 3-wheel lock outside by the door; plus a night view of the bedroom corner — no fish bowl, no bamboo at the house |
 | `env_zookeeper_house_2` | Zookeeper house of level 2 (`zookeeper_house_2`, south-west corner on `path_l2_sw` — GAME-LEVEL-2, GAME-NIGHT; user request 2026-10-01: every bed indoors) | closed house + roof cut-away: same model and room as the level-1 house with the child-size bed, night table with bedside lamp, moon window, rug, toy chest; no desk, no key box |
 | `env_night1_overview` | Whole night level 1 (GAME-LEVEL-NIGHT-1), layout-true (the approved `env_night_overview` is the mood image) | at night, camera yaw west: open moon door at the bottom, plaza with string lights, food hut, night house with three lit boards, lantern-lit loop around an old-tree grove, and all 9 night hiding places with their clues (twig heap, flowerpots with white flowers, mushroom ring, hill with a big stone, fir, windmill, firefly meadow, pond mirroring the moon, knothole tree); + orthographic `top_down.png` |
+| `env_night2_overview` | Whole night level 2 / terrarium garden (GAME-LEVEL-NIGHT-2, proposal 2026-10-03), layout-true | night bird's-eye `overview.png` + `top_down.png` matching the night-2 ASCII map: plaza with string lights, food hut with fridge, terrarium house (glowing amber / violet / teal glass fronts), the nine riddle places (stone wall, pumpkins, upturned boat, lantern tree, palm, vine arch, stepping plates, fern glade, rain barrel), the lantern gate on the east edge. Mood: tropical, cosy, never dark-scary. **Brief not written yet** (art agent). |
+| `env_terrarium_house` | Terrarium house `terrarium_house` of `night_2` | closed house + roof cut-away: warm-lit visitor hall, three glass-front terrariums (snake: warm rock + branch + heat lamp; chameleon: tall leafy branches + UV violet lamp; frog: big leaves + mossy log + mist), door on the street, boards outside; props from the modular list plus `terrarium_front`, `terrarium_frame`, `terrarium_lamp`, `terrarium_rock_warm`, `terrarium_branch`, `terrarium_leaf_big`, `terrarium_moss_log`, `terrarium_dish`, `mist_puff`. **Brief not written yet** (art agent; no concept images made here). |
 | `env_garden` | Vegetable garden `garden_veg`, level 1 (north, between the panda enclosure and the river — GAME-LEVEL-1, GAME-GARDEN) | low picket fence with a small open gate, 2 m path, two carrot beds and two potato beds (clearly different from above), a picture stake sign per bed, empty wheelbarrow and watering can at the hedge, the girl pulling a carrot — dry soil (not `loc_mud`), no rake, butterflies, wildflowers or water spray (riddle guards) |
 | `loc_treehouse` | Koala hiding place, level 2 (east wall, east of the music stage — FIX-056) | old oak with a wooden tree house (roof, round window) at 3.5 m and a rope ladder; the koala pair on the porch |
 | `loc_tallest_tree` | Koala hiding place, level 2 (east) | a 12 m giant tree, twice as tall as all other trees, thick trunk; the koala pair at the very top |
@@ -177,10 +179,10 @@ with fish — carried with `socket_carry`), `washing_line` (two posts, line, she
 
 Unique (non-modular) models needed for levels 2 and 3: `treehouse_oak`, `tree_giant` (12 m),
 `tree_blossom`, `fountain_stone`, `log_pile`, `play_ball`, `lookout_tower`, `zoo_train`
-(engine + 2 wagons + track piece + platform), `slide`, `swings`, `music_stage`,
+(engine + 2 wagons + track piece + platform), `slide` + `swings` (built 2026-10-03 as `playground_slide` / `playground_swings`), `music_stage`,
 `deckchairs_sunshade`, `koala_shelter`, `elephant_house`, `giraffe_house` + `giraffe_feeding_rack`,
 `lion_sun_deck`, `waterfall_ledge`, `mill_hut_wheel` (animated wheel), `willow`, `pirate_ship`,
-`carousel` (turning), `ice_cream_kiosk` + `freezer_chest`, `zookeeper_house` (closed + cut-away,
+`carousel` (turning; built 2026-10-03 as `carousel` with a `rotor` node), `ice_cream_kiosk` (built 2026-10-03, freezer chest included, `kit_landmarks_play`), `zookeeper_house` (closed + cut-away,
 concept in `kit_buildings`), `pond_stone_rim`, `monkey_climbing_frame`, `snow_fox_den`, `eucalyptus_tree`, `hay_rack`,
 `monkey_house`, `pine_tree`.
 
@@ -296,6 +298,9 @@ tints them with blue moonlight and adds lamp point lights and emissive areas.
 | AENV-010 | Given level 1 on a mid-range phone, then enabling water animation costs ≤ 1 ms GPU time per frame and no extra draw calls. | manual |
 | AENV-011 | Given the level with the zebra enclosure, then its enclosure sign panel shows the zebra silhouette decal, facing the path (visible in a screenshot from the default camera on the path in front of the gate). | e2e |
 | AENV-012 | Given the food storage, then a sign above the food boxes shows the `sign-food-storage` text of the current language ("Futter" in `de`), readable from the default camera (letter height ≥ 3 % of the viewport height). | e2e |
+| AENV-013 | Given the exported `kit_landmarks_play` models `ice_cream_kiosk`, `carousel`, `playground_slide` and `playground_swings`, then each loads, has ≤ 600 triangles, stands on y = 0, fits its level rect (kiosk 4 × 3, carousel 4 × 4, slide 2 × 3, swings 4 × 2; slide ≤ 1.9 m, swings ≤ 2.3 m high) and the carousel has a `rotor` node with its pivot at the centre; `check_glb.py` passes. | asset |
+| AENV-014 | Given the zoo scene, then the kinds `carousel`, `kiosk` (building, counter-style, not enterable), `slide` and `swings` are drawn by `carousel`, `ice_cream_kiosk`, `playground_slide` and `playground_swings` at their rect centres (front south, one each) with a placeholder fallback, and their rect cells stay solid (collision unchanged, LAYOUT-017). | unit |
+| AENV-015 | Given level 3 unlocked, when the player looks at the kiosk, the carousel and the slide + swings, then the models are on screen without console errors and two screenshots 2 s of game time apart show a turned carousel (`rotor` spins). | e2e |
 
 ## Open questions
 

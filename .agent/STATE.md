@@ -127,3 +127,8 @@ Done: `#night-progress` removed; `#compass-btn` carries `.badge` (kind of the be
 
 ### 2026-10-02 gameplay-qa — pairs/baby/fruit garden/welcome/ads re-check
 - Done: all requested specs green (34 + audio 6 + ads 10 + m5b level2/goldfish/PLAY-028 3). New test `web/tests/e2e/gameplay/welcome-scroll.spec.ts` (RESC-028 QA, green). Findings: welcome panel scroll is undiscoverable (no cue); m5b goldfish review shot is covered by an ad panel (test stands at the ad board).
+
+### 2026-10-03 level designer — terrarium house / night_2 + two-role food model (spec only, uncommitted)
+- Done: new `specs/10-gameplay/levels/night-2.md` (GAME-LEVEL-NIGHT-2: terrarium garden, 9 riddle places with texts, terrarium house, gate in night_1); GAME-FEED "Basic food and treats" (16-species table, rules, info board lines, FEED-036..044); families/garden/animals/night/night-1/hints/glossary/layout/environment/ART-ANIMALS updated; 9 manifest entries (`concept_approved = false`). No toml, no code, no art/ touched.
+- Questions: Q-330..Q-339 and Q-350..Q-352 (proposals, all open; my 340-342 clashed with the visitor questions and were renumbered 350-352 — spec ranges "Q-334…Q-352" include the visitor Q-340..342 by accident).
+- Next: user answers; then night-2.toml + night-1 gate rows (LAYOUT-N1-014/N2-*), zoo-core food/treat model (FEED-036..044, FAM-031..033, HINT-024/025, NIGHT-030..032, ANIM-014/015), pictograms ×6, models, i18n texts.

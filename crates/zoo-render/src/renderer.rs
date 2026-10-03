@@ -125,6 +125,13 @@ impl NodeBehaviour {
                 mode: 1.0,
                 ..Self::STATIC
             },
+            // carousel rotor (level 3): turns about +Y with the clock, one turn per 20 s
+            "rotor" => Self {
+                axis: 2.0,
+                angle: std::f32::consts::TAU / 20.0,
+                mode: 1.0,
+                ..Self::STATIC
+            },
             "roof" => Self {
                 hide_bit: HIDE_ROOF as f32,
                 ..Self::STATIC
@@ -3444,6 +3451,8 @@ mod tests {
         assert!(!static_vertices(&tile.mesh, &tile.materials, &tile.nodes).is_rich());
         // behaviours by name
         assert_eq!(NodeBehaviour::of("sails").mode, 1.0);
+        assert_eq!(NodeBehaviour::of("rotor").mode, 1.0);
+        assert_eq!(NodeBehaviour::of("rotor").axis, 2.0);
         assert_eq!(NodeBehaviour::of("night_sky").mode, 2.0);
         assert_eq!(NodeBehaviour::of("glass"), NodeBehaviour::STATIC);
     }
@@ -3497,6 +3506,7 @@ mod tests {
         );
         assert!(!can("assets/models/props/window_moon.glb"), "night sky");
         assert!(!can("assets/models/props/windmill.glb"), "sails spin");
+        assert!(!can("assets/models/props/carousel.glb"), "rotor spins");
     }
 
     #[test]

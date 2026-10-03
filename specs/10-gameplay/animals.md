@@ -6,7 +6,7 @@ module: animals
 status: draft
 depends_on: [GAME-WORLD]
 test_prefix: ANIM
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Animals and enclosures
@@ -32,8 +32,18 @@ Proposal of 10 animals pending Q-002. Each hiding place needs a location riddle 
 | `giraffe` | Blätter | `loc_playground` | tall feeding rack |
 | `lion` | Fleisch | `loc_sun_rocks` | rocks |
 | `snow_fox` | Beeren | `loc_ice_cream_kiosk` | shade, cool den |
+| `hedgehog` | Käfer | night_1 places (GAME-LEVEL-NIGHT-1) | straw nest, log tunnel |
+| `bat` | Obst | night_1 places | branches, ropes |
+| `owl` | Käfer | night_1 places | perch poles, owl box |
+| `snake` (user request 2026-10-03) | Fisch | `loc_stone_wall`, `loc_pumpkins`, `loc_rowing_boat` (night_2, GAME-LEVEL-NIGHT-2) | terrarium: sand, warm rock, branch, water dish |
+| `chameleon` (perched) | Grillen | `loc_lanterns`, `loc_palm`, `loc_vine_arch` (night_2) | terrarium: tall leafy branches, hanging vine |
+| `poison_dart_frog` | Fliegen | `loc_stepping_stones`, `loc_ferns`, `loc_rain_barrel` (night_2) | terrarium: big leaves, mossy log, shallow dish, mist |
 
 Riddles and math per animal: CONT-MISSIONS (`specs/20-content/missions/start-missions.md`).
+
+## Basic food and treats (user request 2026-10-03)
+
+The column "Correct food" above is the **basic food**: it makes the escaped animal follow. Each species also has a **treat** (garden treat or another box food) that makes happy hearts **and the baby** at home; the same food can be basic for one species and a treat for another. Full table (16 species), rules and the info board lines: GAME-FEED "Basic food and treats". The three terrarium animals: snake (basic fish, treat eggs), chameleon (basic crickets, treat frozen insects), poison dart frog (basic flies, treat crickets). Their info boards (and every board) show both lines (ANIM-014).
 
 ## Animal states
 
@@ -115,6 +125,8 @@ too.
 | ANIM-011 | Given the same seed and inputs, then wandering is identical (deterministic); after save/restore it continues identically (GAME-SAVE). | unit |
 | ANIM-012 | Given the hippo `in_enclosure` in level 1 over 600 s (seeded), then it stood only on cells of its home wander area (`home_wander_on = ["grass", "water"]`), crossed between grass and pool only over ramp cells, and spent more than half of the time on pool cells (Q-085, confirmed 2026-10-01). | unit |
 | ANIM-013 | Given a level that has just started (new game, barrier opened), then every one of its animals is `escaped`, visible and simulated from the first frame; no animal appears later (LAYOUT-044). | unit |
+| ANIM-014 | Given every species at every reading level and language, then the info board data has the basic food(s) and ≥ 1 treat (GAME-FEED "Info board"); the words equal the label words of the matching boxes or garden words; the facts of `poison_dart_frog` may say "giftig" only as a fact and nothing on any panel is frightening. | unit |
+| ANIM-015 | Given the new species `snake`, `chameleon`, `poison_dart_frog` (pairs), then each has foods, treat, hiding places in night_2, a pair gap and wander rules like every species; the chameleon is a perched species (`perch_height_m`, 0.7 m pair offset) and does not wander at its hiding place. | unit |
 
 ## Open questions
 

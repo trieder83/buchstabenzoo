@@ -6,7 +6,7 @@ module: garden
 status: draft
 depends_on: [GAME-FEED, GAME-FAMILY, GAME-LAYOUT, GAME-SAVE, CONT-READING]
 test_prefix: GARD
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Vegetable garden, fruit garden and treats
@@ -75,9 +75,7 @@ only; the two gardens never share a level.
    | apple (🍎) | level 3 fruit garden | **monkey**, elephant, giraffe, zebra, panda | hippo, koala, lion, snow fox, goldfish |
    | orange (🍊) | level 3 fruit garden | **monkey**, elephant, giraffe | zebra, hippo, panda, koala, lion, snow fox, goldfish |
 
-   Bananas are the monkey's **food** (food box, GAME-FEED), not a treat. Koala (only
-   eucalyptus), lion, snow fox and the goldfish still take no garden treat (proposal: they
-   get their own later, Q-100). Realistic, and the treat list per animal is data.
+   Bananas are the monkey's **food** (food box, GAME-FEED), not a treat. Koala, lion, snow fox, goldfish and the night animals take no garden treat: since 2026-10-03 (proposal Q-334…Q-352) each has a **box-food treat** (GAME-FEED "Basic food and treats": koala leaves, lion bone, snow fox meat, goldfish leaves, hedgehog fruit, bat nectar, owl worms, snake eggs, chameleon frozen insects, poison dart frog crickets). Garden treats and box treats are one concept, `treat` (a treat is whatever the species' treat list holds); only the carrying differs (basket vs. hands). Realistic, and the treat list per animal is data.
    The info board facts may mention the favourite treat (reading hint).
 6. **Giving (user report 2026-09-30):** giving works **directly at the animal**: a home animal
    is an interactable (`Target::Treat`) **at its own position** when the player is within 2 m
@@ -175,6 +173,8 @@ only; the two gardens never share a level.
 | GARD-021 | Given the monkeys at home and an apple in the basket, then `gift_liked("monkey")` is true and the hint list holds `treat:monkey`; with only a potato it does not. | unit |
 | GARD-022 | Given level 3 in a browser, when the child stands at an apple tree and presses interact, then the basket HUD shows 🍎1; at an orange tree 🍊1; when she gives the fruit to the monkeys at home, both eat and the HUD count drops. | e2e |
 | GARD-023 | Given `apple_tree_{sprout,young,ripe}` and `orange_tree_{sprout,young,ripe}`, then the six `.glb` files exist, load, have ≤ 400 triangles each and are in the asset list of level 3 (`required_assets`); the ripe models are taller than the sprouts. | unit |
+| GARD-024 | Given the child stands in level 3, then the garden hint prefers the plants of that level and its icon shows what grows at the target (🍎 apple, 🍊 orange, 🥔 potato, 🥕 carrot) instead of always carrots (user report 2026-10-03). | unit |
+| GARD-025 | Given the basket already holds a treat (e.g. an apple), then the 🧭 garden hint does not offer the plants of that treat any more (apple trees) but still offers the others (oranges); what the child already carries is never a task (user report 2026-10-03). | unit |
 | GARD-007 | Given the player carries a food box item or the fish bowl, then she can still harvest into the basket (separate slot). | unit |
 | GARD-008 | Given a save with basket contents and growing plants, when restored, then both are unchanged. | unit |
 | GARD-009 | Given the garden signs, then their texts come from Fluent per reading level and language (`garden-carrot`, `garden-potato`). | unit |

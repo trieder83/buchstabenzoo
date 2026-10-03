@@ -1203,14 +1203,12 @@ impl App {
     /// The one view button (GAME-CAMERA-VIEWS 3a, CAMV-025): zoo → first person → look-around
     /// → zoo. Returns the new view id. Look-around chosen this way stays until the next tap.
     pub fn cycle_view(&mut self) -> String {
-        let facing = views::level_to_yaw(self.game.player.facing);
         self.look_held = false;
         match self.camera.mode() {
             ViewMode::Zoo => self.set_view(ViewMode::FirstPerson),
             ViewMode::FirstPerson => {
-                // look-around is only entered from the zoo view: glide back, then out again
-                self.set_view(ViewMode::Zoo);
-                self.camera.set_view(ViewMode::LookAround, facing);
+                // zoom out straight from the eye to the view behind (CAMV-028)
+                self.set_view(ViewMode::LookAround);
             }
             ViewMode::LookAround => self.set_view(ViewMode::Zoo),
         }

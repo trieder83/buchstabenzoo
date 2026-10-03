@@ -103,6 +103,11 @@ pub fn landmark_model(kind: &str) -> Option<(&'static str, f32)> {
         "fir_tree" => ("fir_tree", 0.0),
         "hill" => ("rock_hill", 0.0),
         "potting_bench" => ("potting_bench", 90.0),
+        // kit_landmarks_play (user-approved concepts 2026-10-03); the carousel's `rotor` node
+        // spins in the renderer (NodeBehaviour "rotor")
+        "carousel" => ("carousel", 0.0),
+        "slide" => ("playground_slide", 0.0),
+        "swings" => ("playground_swings", 0.0),
         _ => return None,
     })
 }
@@ -2211,7 +2216,20 @@ impl LevelScene {
                     }
                 }
             }
-            (ElementType::Building, "kiosk") => self.kiosk(e),
+            (ElementType::Building, "kiosk") => {
+                // the `ice_cream_kiosk` model (kit_landmarks_play); the boxes are its fallback
+                let first_box = self.boxes.len();
+                let first = self.placements.len();
+                self.kiosk(e);
+                let boxes: Vec<BoxPlacement> = self.boxes.drain(first_box..).collect();
+                let placements: Vec<Placement> = self.placements.drain(first..).collect();
+                self.model_at("ice_cream_kiosk", rect_center(e.rect), 0.0);
+                self.fallbacks.push(Fallback {
+                    model: "ice_cream_kiosk",
+                    boxes,
+                    placements,
+                });
+            }
             (ElementType::Landmark | ElementType::Decoration, _)
                 if placeholder_kind(kind).is_some() =>
             {

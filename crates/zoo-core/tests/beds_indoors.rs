@@ -202,3 +202,41 @@ fn night_027_wakes_up_next_to_the_bed_not_in_it() {
         }
     }
 }
+
+/// NIGHT-011 (re-check 2026-10-03): by day, while the night level is open (its day level had its
+/// nightfall) and not done, the bed is offered at its stand cell in EVERY level's house and
+/// sleeping brings the evening; also from level 2 and 3.
+#[test]
+fn night_011_bed_works_by_day_while_the_night_level_is_waiting() {
+    use zoo_core::game::Target;
+    let data = common::zoo_with_night();
+    let mut g = Game::new(data.clone(), 5).unwrap();
+    for b in L3_OPEN {
+        g.level.open_barrier(b);
+    }
+    // level 1 is done and had its nightfall; the child slept: it is day again, night_1 waits
+    for a in ["zebra", "hippo", "panda"] {
+        assert!(g.debug_send_home(a), "{a}");
+    }
+    for _ in 0..((CELEBRATION_S + DUSK_S + 1.0) * 60.0) as usize {
+        g.update(1.0 / 60.0, Vec2::ZERO);
+    }
+    g.debug_next_morning();
+    assert_eq!(g.daytime.phase, Phase::Day);
+    assert!(g.night_zoo_waiting(), "night zoo waiting");
+    for bed_id in ["bed_l1", "bed_l2", "bed_l3"] {
+        let bed = data.items.iter().find(|it| it.id == bed_id).unwrap();
+        let stand = cell_center(IVec2::from(bed.stand.unwrap()));
+        g.player.pos = stand;
+        g.player.facing = (bed.pos() - stand).normalize();
+        assert!(g.bed_usable(), "{bed_id}: bed usable by day");
+        assert_eq!(
+            g.available_target(),
+            Some(Target::Bed),
+            "{bed_id}: bed offered by day"
+        );
+    }
+    // sleeping by day at the last bed brings the evening (dusk → night)
+    assert!(g.sleep());
+    g.debug_next_morning();
+}

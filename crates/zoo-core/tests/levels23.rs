@@ -1155,3 +1155,47 @@ fn layout_046_first_step_within_15_s_and_gates_on_streets() {
         "gates without a street within 2 m (rule 8): {no_street:?}"
     );
 }
+
+// AENV-014: the carousel, the ice cream kiosk, the slide and the swings are drawn by their
+// `kit_landmarks_play` models (centred on the element rect, front south), each with a
+// placeholder fallback; the footprint stays the solid element rect (cell collision).
+#[test]
+fn aenv_014_play_landmarks_use_their_models() {
+    let zoo = common::zoo();
+    let scene = zoo_core::scene::LevelScene::build(&zoo);
+    for (id, model) in [
+        ("carousel_sw", "carousel"),
+        ("ice_cream_kiosk", "ice_cream_kiosk"),
+        ("playground_se_slide", "playground_slide"),
+        ("playground_se_swings", "playground_swings"),
+    ] {
+        let e = zoo.element(id).unwrap();
+        let c = Vec2::new(
+            e.rect.x as f32 + e.rect.w as f32 / 2.0,
+            e.rect.z as f32 + e.rect.d as f32 / 2.0,
+        );
+        let n = scene
+            .placements
+            .iter()
+            .filter(|p| p.model == model)
+            .inspect(|p| {
+                let l = zoo_core::coords::world_to_level(p.pos);
+                assert!(l.distance(c) < 0.01, "{model} at the centre of {id}");
+                assert_eq!(p.yaw, 0.0, "{model}: front south");
+            })
+            .count();
+        assert_eq!(n, 1, "{model} placed once");
+        assert!(
+            scene.fallbacks.iter().any(|f| f.model == model),
+            "{model}: placeholder fallback"
+        );
+        // solid for the player: the element's cells
+        let grid = Level::new(common::zoo());
+        assert!(
+            e.rect
+                .cells()
+                .all(|cell| grid.grid().kind(cell) == CellKind::Solid),
+            "{id}: solid cells"
+        );
+    }
+}

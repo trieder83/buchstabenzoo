@@ -6,7 +6,7 @@ module: feeding
 status: draft
 depends_on: [GAME-WORLD, CONT-READING, GAME-PLAYER]
 test_prefix: FEED
-updated: 2026-10-02
+updated: 2026-10-03
 ---
 
 # Food boxes and carrying food
@@ -180,6 +180,62 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 - The hint targets of §13/§16 are implemented in GAME-HINT (`zoo_core::hints`, HINT-011).
 - **Not yet:** golf carts (GAME-CART) do not exist yet, the `pick_up` clip and the rustle sound of §14.
 
+## Basic food and treats (user request 2026-10-03, proposal — Q-334…Q-352)
+
+Every food has **two possible roles per species**, and the same food may be the basic food of one species and the treat of another (meat: basic for the lion, treat for the snow fox; crickets: basic for the chameleon, treat for the poison dart frog).
+
+- **Basic food** (*Grundfutter*) — the food from the food box that makes the **escaped** animal follow in the mission (today `info.foods`, GAME-RESCUE) and gives only hearts at home (no baby).
+- **Treat** (*Leckerli*) — the special food given to the **pair at home**: hearts **and the baby** (once per species, GAME-FAMILY). A treat is either a **garden treat** (carrot, potato, apple, orange: carried in the basket, GAME-GARDEN) or a **box food** (carried in the hands). **Both are one concept, `treat`**, in the rule and in the data: `Role::{Basic, Treat, None}` per (species, food-or-garden-item); a species lists its basic foods and its treats; one item is never both roles for the same species. This **replaces** the former fallback "the species' own favourite food is its special food" (FAM-030, Q-281).
+
+### Master table (all 16 species)
+
+| Species | Level | Basic food (box) | Treat(s) | Treat source |
+|---|---|---|---|---|
+| `zebra` | 1 | Gras / grass | carrot, apple | garden (level 1 beds; level-3 orchard) |
+| `hippo` | 1 | Melonen / melons | carrot, potato | garden (level 1) |
+| `panda` | 1 | Bambus / bamboo | carrot, potato, apple | garden |
+| `koala` | 2 | Eukalyptus / eucalyptus | **Blätter / leaves** (young leaves) | box `leaves` (level-2 storage; already stocked) |
+| `elephant` | 2 | Heu / hay | carrot, potato, apple, orange | garden |
+| `giraffe` | 2 | Blätter / leaves | carrot, apple, orange | garden |
+| `lion` | 2 | Fleisch / meat | **Knochen / bone** (new) | box `bone` inside the level-2 storage |
+| `monkey` | 3 | Bananen / bananas | carrot, apple, orange | garden |
+| `snow_fox` | 3 | Beeren / berries | **Fleisch / meat** (user) | box `meat` (level-3 storage; already stocked) |
+| `goldfish` | 3 | Fischfutter / fish food | **Blätter / leaves** (lettuce leaf) | box `leaves` (level-3 storage; already stocked) |
+| `hedgehog` | night 1 | Käfer / beetles | **Obst / fruit** (apple pieces) | box `fruit` (night_1 storage) |
+| `bat` | night 1 | Obst / fruit | **Nektar / nectar** | box `nectar` (night_1 storage) |
+| `owl` | night 1 | Käfer / beetles | **Würmer / worms** | box `worms` (night_1 storage) |
+| `snake` | night 2 | Fisch / fish (new) | **Eier / eggs** (user, new) | box `eggs` inside the night_2 storage |
+| `chameleon` | night 2 | Grillen / crickets (new) | **Frostinsekten / frozen insects** (user, new) | box at the fridge inside the night_2 storage |
+| `poison_dart_frog` | night 2 | Fliegen / flies (new) | **Grillen / crickets** | box `crickets` (night_2 storage, outside) |
+
+**Where the treats come from:** (1) garden treats as today (GAME-GARDEN). (2) Box treats are ordinary boxes of the same level's storage: the three day storages already hold all ten day foods (so `leaves`, `meat` need no data change); `bone` is **one new box inside the level-2 storage**; the night_1 storage already holds `fruit`, `nectar`, `worms`; the night_2 storage holds the new foods (GAME-LEVEL-NIGHT-2 "Night food storage"). **Treat-only foods stand inside** the storage (the child reads "Leckerli" on the board and goes in), basic foods outside, so a distractor row never hides the basic food. (3) `frozen_insects` stands at a **fridge** prop inside the night_2 hut (GAME-ECON `fridge`, never runs out, snowflake sticker) — a box like any other (interact → label panel → take). No box is star-marked: the role belongs to the animal, not to the box (Q-338).
+**New foods (6, total 20):** `fish`, `crickets`, `flies`, `eggs`, `frozen_insects`, `bone`; ids lowercase, word keys `food-<id>`: de Fisch, Grillen, Fliegen, Eier, Frostinsekten, Knochen; en fish, crickets, flies, eggs, frozen insects, bone. **Pictograms to draw** (`web/src/pictograms.ts`, 128 × 128, flat colours + dark outline, one drawer each; FEED-031 counts 20): fish (side-on, orange, smile-free), cricket (green, long hind leg, antennae), fly (round dark body, two clear wings, big eyes), eggs (two cream eggs, one speckled), frozen_insects (a cricket silhouette in a pale-blue ice cube with a small snowflake), bone (cartoon bone, cream). No prey-animal pictures that look scary (Q-077): the fish is a plain cartoon fish; eggs, no chicks; no mice.
+
+### Rules (GAME-RESCUE, GAME-GARDEN 6, GAME-FAMILY)
+
+1. **Escaped animal, mission:** only its **basic food** makes it follow. A **treat** shown to an escaped animal gets a gentle "Hmm, später!" (no refusal sound, no penalty, same gentle bubble as RESC-005) and it does **not** follow; neither does a wrong food (RESC-005). The mission and the hints never require a treat.
+2. **Animal at home, giving** (GAME-GARDEN 6 giving rules unchanged: at the animal, ≤ 2 m facing it, or at the fence with the animal walking over):
+   - **basic food** → `eat`, hearts, "Mmh, lecker!", **no baby**;
+   - **its treat** → `eat`, more hearts, and for a **pair at home** (male + female) the baby celebration; **one baby per pair, once per species**, saved (FAM-009), never twice; a second treat gives hearts only;
+   - **neither** → gentle refusal (`refuse`, "Hmm, das mag ich nicht.", RESC-005), the item stays.
+3. **Carrying:** box foods (basic or treat) stay in the hands after giving (boxes never run out, FEED-023); garden treats leave the basket as today. The child picks a box food by reading the label, the same way as for the mission.
+4. **Hints:** the existing 🧭 treat hint (GAME-GARDEN 6a, `hint-treat`) fires when the child **carries a treat of a home species whose pair has no baby yet** (garden basket or box in the hands) and leads to that animal's feed spot — priority > 3, **never the only hint** while a mission is incomplete (HINT-024). There is **no** hint that fetches a treat with empty hands (babies are optional, Q-339). The info board is where the child learns the treat.
+5. **Never stuck:** treats and babies are optional; no mission, gate or morning waits for them.
+6. **Saves:** the saved baby flags are unchanged; a game that already got a baby by the old own-favourite-food fallback keeps it (no loss, no refund); only the new rule applies from now on (FAM-032).
+
+### Info board (user request 2026-10-03: "it needs to be clear on the info board")
+
+The panel order stays riddle first (RESC, QA finding F2): name → **riddle** → **basic food line** → **treat line** → facts → pair note. The riddle never names a food; the board names both roles by the **exact words of the box labels** (`food-<id>`) and the garden words (`garden-<id>`).
+
+| Reading level | Basic food line | Treat line |
+|---|---|---|
+| `kiga` | big pictogram (`pictogram_scale` 0.62), no text | big pictogram(s) with a **⭐ marker** and a small source icon (🌱 garden / 📦 box); no text required |
+| `klasse1` | pictogram + "Grundfutter: Beeren" | ⭐ pictogram + "Leckerli: Fleisch" |
+| `klasse2` | "Grundfutter: Beeren" + small pictogram | "Leckerli für ein Baby: Fleisch" + small ⭐ pictogram |
+| `klasse3` | "Grundfutter: Beeren. Damit folgt dir das Tier." | "Leckerli: Fleisch. Damit bekommt ein Paar ein Baby." |
+
+en: "Basic food: berries" / "Treat: meat" (klasse2 "Treat for a baby: meat"; klasse3 "Basic food: berries. The animal follows you for it." / "Treat: meat. A pair gets a baby for it."). Several treats are listed separated by " · " (elephant: Karotten · Kartoffeln · Äpfel · Orangen, at most 4 pictograms in a row). Keys: `board-basic-<reading_level>`, `board-treat-<reading_level>` (prefix words) + `food-<id>` / `garden-<id>` (the food words); species data `foods` (basic) and `treats` (list) feed both lines; fits next to the existing food-word line on phones (Q-070: the treat line is the same height as the basic line, the facts follow below). ANIM-003 is extended: every basic **and** treat word equals the label word of that item.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -215,10 +271,19 @@ make an escaped animal follow (GAME-RESCUE) and is eaten when it arrives home.
 | FEED-029 | Given every food (day and night) and every reading level, then `FoodBox::label` gives a non-empty pictogram id equal to the food id, a `pictogram_scale` from the §1 table, and the word key of that food. | unit |
 | FEED-030 | Given a level, then every `[[food_box]]` (outside and inside) has a lid decal (facing up) and a front decal (facing the box facing), all cells of the one atlas `text:food-atlas`; lids are adjacent in the decal list (1 draw), fronts are grouped by facing (<= 4 runs); changing the reading level re-requests the atlas. Start view: the decals add <= 5 draw calls (e2e log). | unit + e2e |
 | FEED-035 | Given the atlas, then every food has a lid cell (128 x 128) and a front cell (256 x 64) inside 1024 x 512, without overlap, UVs inside 0..1, <= 2 MB. | unit |
-| FEED-031 | Given the host's pictogram set, then there is one distinct drawer per food (all 14), deterministic (same draw calls twice) and drawn inside the 128 x 128 grid. | vitest |
+| FEED-031 | Given the host's pictogram set, then there is one distinct drawer per food (all 20 once the six new foods exist: 14 now), deterministic (same draw calls twice) and drawn inside the 128 x 128 grid. | vitest |
 | FEED-032 | Given a lid cell, then the host draws the pictogram (share `pictogram_scale` of the height) above the word (rest), the word fitted to the width; the front cell has a smaller pictogram left of the word. | vitest |
 | FEED-033 | Given the box panel of a food box, then it shows the vector pictogram and the word on every reading level; the pictogram is bigger on `kiga` than on `klasse3`. | e2e |
 | FEED-034 | Given the zoo camera in front of the food box row on `kiga` and `klasse3`, then the labels are legible (screenshots `qa/reports/img/`). | e2e |
+| FEED-36 | Given the master table of "Basic food and treats", then every one of the 16 species has ≥ 1 basic food and ≥ 1 treat, no item is both for the same species, every box-food treat has a box in the species' own level storage (outside or inside), and meat is basic for the lion and a treat for the snow fox. | unit |
+| FEED-37 | Given an escaped animal and its basic food, then it follows; given one of its treats or a wrong food, then it does not follow and shows the gentle bubble. | unit |
+| FEED-38 | Given a pair at home and its basic food, then hearts and no baby; given its treat (garden basket or box in the hands), then hearts and exactly one baby (once per species, saved); given a second treat, then hearts only; given a neither-food, then gentle refusal. | unit |
+| FEED-39 | Given the snow fox pair at home and a meat box in the hands, then one baby is born and the meat stays in the hands; given the lion pair and the same meat, then hearts only (basic). | unit |
+| FEED-40 | Given a species with a garden treat (zebra) and its basic food gras, then no baby (unchanged); given the old own-favourite-food rule (FAM-030), then it is retired (the species' treat per the table is the only baby trigger). | unit |
+| FEED-41 | Given the info board of every species at every reading level and language, then it has a basic food line and a treat line with the words of the matching box labels / garden words (extends ANIM-003); `kiga` shows pictograms with a ⭐ on the treat and no text. | unit |
+| FEED-42 | Given the board panel on a phone portrait and landscape, then riddle, basic line, treat line are visible without scrolling on `klasse3` and the treat line has the star marker. | e2e |
+| FEED-43 | Given the host's pictogram set, then drawers exist for `fish`, `crickets`, `flies`, `eggs`, `frozen_insects`, `bone` (distinct, inside the 128 × 128 grid). | vitest |
+| FEED-44 | Given the hands hold a treat of a home pair without a baby, then the 🧭 offers the treat hint with priority > 3; with empty hands no treat hint exists; with a mission incomplete the mission step stays the first hint. | unit |
 
 ## Open questions
 

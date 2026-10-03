@@ -501,3 +501,42 @@ test('CAMV-025/026: the one view button cycles zoo → first person → look-aro
   await expect.poll(mode).toBe('zoo');
   expect(errors).toEqual([]);
 });
+
+// CAMV-028: first person → look-around is a direct zoom out (no detour through the zoo pose)
+test('CAMV-028: the view button from first person zooms out to the view behind in ≤ 0.6 s without the zoo pose', async ({ page }) => {
+  const errors = await start(page);
+  await goto(page, 0.5, 4.5);
+  const btn = page.locator('#view-btn');
+  await btn.click();
+  await expect.poll(() => page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
+  await glide(page, 1);
+  await nextFrames(page, 5);
+  const r = await page.evaluate(() => {
+    const a = window.__zoo!.app;
+    const head = Array.from(a.camera_eye());
+    const eyes: number[][] = [];
+    a.cycle_view();
+    let frames = 0;
+    // step deterministically until the camera has settled (≤ 40 frames)
+    for (; frames < 40; frames++) {
+      a.frame(1 / 60);
+      eyes.push(Array.from(a.camera_eye()));
+    }
+    return { head, eyes, mode: a.view_mode(), blend: a.camera_blend() };
+  });
+  expect(r.mode).toBe('look_around');
+  expect(r.blend).toBeCloseTo(1, 3);
+  const dist = (e: number[]) => Math.hypot(e[0] - r.head[0], e[1] - r.head[1], e[2] - r.head[2]);
+  let prev = 0;
+  let settled = r.eyes.length;
+  r.eyes.forEach((e, i) => {
+    const d = dist(e);
+    expect(d, `frame ${i} moves away from the eye`).toBeGreaterThanOrEqual(prev - 1e-3);
+    expect(e[1], `frame ${i} stays low (no zoo pose)`).toBeLessThan(3);
+    if (d > prev + 1e-4) settled = i + 1;
+    prev = d;
+  });
+  expect(settled / 60, 'zoom out takes at most 0.6 s').toBeLessThanOrEqual(0.6);
+  expect(dist(r.eyes[r.eyes.length - 1]), 'ends 3.5 m behind, 0.5 m above the eye').toBeGreaterThan(3);
+  expect(errors).toEqual([]);
+});

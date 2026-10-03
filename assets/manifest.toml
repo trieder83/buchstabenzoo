@@ -815,6 +815,71 @@ spec = "GAME-FAMILY"
 concept_approved = false
 animations = ["idle", "walk", "eat", "happy", "refuse"]
 
+# Terrarium animals of night_2 (2026-10-03, GAME-LEVEL-NIGHT-2) — concept sheets in review (art/animals/*_family); clip `walk` = slither / crawl / hop
+
+[[asset]]
+id = "snake"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
+
+[[asset]]
+id = "snake_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "snake_hatchling"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "chameleon"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "perch", "eat", "happy", "refuse", "sleep"]
+
+[[asset]]
+id = "chameleon_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "perch", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "chameleon_baby"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "perch", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "poison_dart_frog"
+kind = "animals"
+spec = "ART-ANIMALS"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
+
+[[asset]]
+id = "poison_dart_frog_female"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
+[[asset]]
+id = "frog_froglet"
+kind = "animals"
+spec = "GAME-FAMILY"
+concept_approved = false
+animations = ["idle", "walk", "eat", "happy", "refuse"]
+
 # Landmark concept sheets (2026-10-02, art/props/kit_landmarks_l2|l3) — models follow after approval
 
 [[asset]]
@@ -877,7 +942,7 @@ animations = []
 id = "landmark_playground"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
@@ -905,7 +970,7 @@ animations = []
 id = "landmark_carousel"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
@@ -940,7 +1005,7 @@ animations = []
 id = "landmark_ice_cream_kiosk"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]

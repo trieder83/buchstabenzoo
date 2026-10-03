@@ -182,3 +182,41 @@ fn gard_023_fruit_tree_models_exist_load_and_grow() {
         );
     }
 }
+
+// AENV-013: the four `kit_landmarks_play` models (kiosk, carousel, slide, swings) exist, load,
+// stay within 600 triangles, fit their level rects and the carousel has its `rotor` node.
+#[test]
+fn aenv_013_play_landmark_models() {
+    // (model, rect w, rect d, max height)
+    for (name, w, d, h) in [
+        ("ice_cream_kiosk", 4.0, 3.0, 4.2),
+        ("carousel", 4.0, 4.0, 4.2),
+        ("playground_slide", 2.0, 3.0, 1.9),
+        ("playground_swings", 4.0, 2.0, 2.3),
+    ] {
+        let m = load(&format!("assets/models/props/{name}.glb"));
+        let tris = m.mesh.indices.len() / 3;
+        assert!(tris > 50 && tris <= 600, "{name}: {tris} triangles");
+        let (mut lo, mut hi) = ([f32::MAX; 3], [f32::MIN; 3]);
+        for p in &m.mesh.positions {
+            for k in 0..3 {
+                lo[k] = lo[k].min(p[k]);
+                hi[k] = hi[k].max(p[k]);
+            }
+        }
+        assert!(lo[1].abs() < 0.02, "{name}: origin at the feet");
+        assert!(hi[1] <= h, "{name}: {} m high", hi[1]);
+        assert!(
+            hi[0] - lo[0] <= w + 0.15 && hi[2] - lo[2] <= d + 0.25,
+            "{name}: fits {w} x {d} (got {} x {})",
+            hi[0] - lo[0],
+            hi[2] - lo[2]
+        );
+    }
+    let carousel = load("assets/models/props/carousel.glb");
+    let rotor = carousel.node_index("rotor").expect("carousel rotor node");
+    assert!(
+        carousel.nodes[rotor].pivot.length() < 0.01,
+        "rotor turns about the centre"
+    );
+}

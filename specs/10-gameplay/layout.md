@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Zoo layout and level boundaries
@@ -360,7 +360,7 @@ always has an `interior` rect (LAYOUT-041). Today: `zookeeper_house_1`, `zookeep
 - Night levels are their own **riddle scope** (Q-136 answered): scenery kinds and riddle
   landmarks are unique among the night levels (LAYOUT-024 per scope); night riddles still
   avoid every `kiga` word of the day levels (CONT-MISSIONS MISS-013).
-- **Enterable house with indoor enclosures** (first used by `night_house`, Q-134 answered):
+- **Enterable house with indoor enclosures** (first used by `night_house`, Q-134 answered; the `terrarium_house` of `night_2` adds the flag `terrarium = true`: glass front, lit case, Q-333):
   the building's `interior` is the visitor hall; `enclosure` elements with `indoor = true`
   lie directly next to it with their gate edge-adjacent to an interior cell; `model_rect` is
   the footprint of the whole house model (roof cut away while the player is on a hall/door
@@ -411,7 +411,8 @@ condition, spawn point, and a top-down ASCII or SVG map.
 | `level_3` | [levels/level-3.md](levels/level-3.md) (GAME-LEVEL-3): behind `barrier_l2_construction` (north of level 1, second entry through `barrier_north_gate`, Q-090); zookeeper house with the fish bowl, a bed `bed_l3` and a tap, food storage 3, stream with waterfall, monkey, goldfish (pond) and snow fox enclosures, adventure playground with the pirate ship, and their 9 candidate hiding places (`loc_pirate_ship`, `loc_carousel`, `loc_trampoline`; `loc_waterfall`, `loc_water_wheel`, `loc_willow`; `loc_ice_cream_kiosk`, `loc_sprinkler`, `loc_laundry`) | draft — proposal (Q-017, Q-088…Q-095) |
 | `night_1` | [levels/night-1.md](levels/night-1.md) (GAME-LEVEL-NIGHT-1): the night zoo west of level 1 behind the level-1 `moon_door` (open at night); plaza with string lights, night food hut, night house with the indoor enclosures of hedgehog, bat and owl, loop path around dense old-tree groves, and 9 candidate hiding places (`loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms`; `loc_windmill`, `loc_fireflies`, `loc_hollow_tree`; `loc_moon_pond`, `loc_hilltop`, `loc_fir`) | draft (Q-133…Q-138 answered) |
 | `level_4` | *planned (Q-174 answered 2026-09-28), not specified yet:* the only known content is the **bear enclosure** (bear pair, needed for the honey part of the bee event, GAME-EVENTS); its place in the map, entry, other enclosures and hiding places are open (Q-175) | planned |
-| later levels | further night levels (`night_2`…) and day areas after Q-023 | — |
+| `night_2` | [levels/night-2.md](levels/night-2.md) (GAME-LEVEL-NIGHT-2, **proposal 2026-10-03**): the terrarium garden west of `night_1` behind the lantern gate `barrier_n1_garden` (opens when night_1 is done); plaza, night food hut with a fridge, terrarium house with three glass terrariums (snake, chameleon, poison dart frog) and their nine hiding places; optional, 48 × 48 at x −120…−73, z 6…53. | not in data yet |
+| later levels | further night levels (`night_3`…) and day areas after Q-023 | — |
 
 ## Behaviour
 

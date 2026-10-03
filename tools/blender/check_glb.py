@@ -29,7 +29,9 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 BUDGETS = {"props": 500, "buildings": 4000, "characters": 3000, "animals": 3000}
 # per-asset budgets above the kind budget (brief / README_night.md justifies each)
-BUDGET_OVERRIDES = {"moon_door": 1500, "moon_door_open": 1500}
+BUDGET_OVERRIDES = {"moon_door": 1500, "moon_door_open": 1500,
+                    # kit_landmarks_play: level landmarks (<= 600, user brief 2026-10-03)
+                    "ice_cream_kiosk": 600, "carousel": 600, "playground_slide": 600, "playground_swings": 600}
 
 # expected extents (x, y = height, z) in metres; None = not checked. Tolerance 0.06 m.
 EXPECTED_SIZES = {
@@ -124,6 +126,11 @@ EXPECTED_SIZES = {
     "flower_pots": ((0.8, 0.9), (0.45, 0.55), (0.5, 0.6)),
     "potting_bench": (1.9, 1.34, 0.62),
     "telescope": ((0.85, 1.0), (1.5, 1.65), (0.9, 1.05)),
+    # kit_landmarks_play (rects: kiosk 4 x 3, carousel 4 x 4, slide 2 x 3, swings 4 x 2)
+    "ice_cream_kiosk": (4.0, (4.0, 4.2), (2.9, 3.0)),
+    "carousel": (4.0, (4.0, 4.15), (4.0, 4.2)),
+    "playground_slide": ((1.0, 1.2), (1.75, 1.9), (3.0, 3.1)),
+    "playground_swings": (3.9, (2.2, 2.3), (1.55, 1.7)),
     "garden_bed": (0.82, 0.25, 2.9),
     "carrot_plant_sprout": ((0.25, 0.35), (0.1, 0.16), (0.25, 0.35)),
     "carrot_plant_young": ((0.25, 0.35), (0.28, 0.36), (0.25, 0.35)),

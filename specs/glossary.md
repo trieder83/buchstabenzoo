@@ -6,7 +6,7 @@ module: glossary
 status: draft
 depends_on: []
 test_prefix: GLOS
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Glossary
@@ -70,6 +70,11 @@ language for player-facing text.
 | `daytime` (phases `day`, `dusk`, `night`, `sleeping`, `morning`) | Tageszeit † | time of day | Saved day/night state of the zoo (`zoo_core::daytime`, GAME-NIGHT "Implementation", GAME-SAVE). Not "level". |
 | `night_level` (data `[level] time = "night"`, id `night_<N>`) | Nachtlevel † | night level | A level of the night zoo, reached only through a moon door (GAME-LAYOUT "Moon door and night levels", GAME-LEVEL-NIGHT-1). |
 | `night_house` / `indoor_enclosure` (data `indoor = true`) | Nachthaus / Innengehege † | night house / indoor enclosure | Enterable building of a night level whose dim indoor enclosures open into its visitor hall (GAME-LEVEL-NIGHT-1, Q-134 answered). |
+| `terrarium` (data `terrarium = true` on an `indoor` enclosure) | Terrarium | terrarium | Glass-fronted indoor enclosure of the terrarium house (snake, chameleon, poison dart frog); never "cage" (GAME-LEVEL-NIGHT-2). |
+| `terrarium_house` | Terrarienhaus | terrarium house | Enterable warm-lit building of `night_2` with the three terrariums along its north wall (GAME-LEVEL-NIGHT-2). |
+| `snake` | Schlange | snake | Friendly green-yellow corn snake; basic fish, treat eggs; baby `snake_hatchling` (night_2). |
+| `chameleon` | Chamäleon | chameleon | Colour-changing perched lizard; basic crickets, treat frozen insects; baby `chameleon_baby` (night_2). |
+| `poison_dart_frog` | Pfeilgiftfrosch | poison dart frog | Tiny very colourful frog shown friendly ("giftig" only as a board fact); basic flies, treat crickets; baby `frog_froglet` (night_2). |
 | `fish_bowl` | Goldfischglas | fish bowl | Big glass bowl the player carries, fills with water and uses to bring the goldfish home (GAME-RESCUE); found in the zookeeper house of level 3 (Q-093, confirmed 2026-10-01). |
 | `water_source` | Wasserstelle † | water source | Place where the fish bowl can be filled: a tap or the bank of a stream, river, pond or fountain (Q-093, confirmed 2026-10-01). |
 | `level_entry` (data `[[entry]]`) | Levelzugang † | level entry | Cells of a level directly behind a barrier of an earlier level; the only walkable border cells of a level (GAME-LAYOUT "Joining levels", proposal Q-088). |
@@ -93,7 +98,8 @@ language for player-facing text.
 | `ambient_animal` (`duck`, `duckling`, `frog`, `butterfly`) | Umgebungstier † | ambient animal | Small decorative animal with behaviour but no mission, food or collision; never saved (GAME-AMBIENT). Not an `animal` in the sense above. |
 | `pair` (data `pair = true` on an enclosure) | Paar † | pair | Male + female of one species that hide together, follow as one group and enter their enclosure together (GAME-FAMILY; decision 2026-10-01: every species is a pair). |
 | `baby` (`game.babies`) | Baby (Fohlen, Joey, …) † | baby | Young animal that appears when a pair at home is given a liked treat; always stays with the female, never a mission requirement (GAME-FAMILY). |
-| `treat` | Leckerli | treat | Special food from the vegetable garden (carrot, potato) or the level-3 fruit garden (apple, orange) given to an animal at home; makes it happy and, for a pair, makes a baby (GAME-GARDEN, GAME-FAMILY). Not a `food` of the rescue mission. |
+| `treat` | Leckerli | treat | The special food of a species that makes a pair at home happy **and** gives it a baby (once): a garden treat (carrot, potato, apple, orange; basket) or a box food that is not its basic food (GAME-FEED "Basic food and treats", proposal 2026-10-03). Not a `food` of the rescue mission; the same food can be basic for one species and a treat for another. |
+| `basic_food` | Grundfutter | basic food | The box food that makes an escaped animal follow in the mission and gives hearts at home (no baby); shown on the info board together with the treat (GAME-FEED "Basic food and treats"). |
 | `fruit_garden` (`garden_fruit`) | Obstgarten | fruit garden | Fenced garden of level 3 with two apple and two orange trees; fruit is a treat (GAME-GARDEN "Fruit garden", Q-320). |
 | `basket` | Korb † | basket | Carry slot for harvested treats, separate from the food hands (GAME-GARDEN, Q-172). |
 | `feeding_spot` (data `feed_spot`) | Futterplatz † | feeding spot | Cells just inside an enclosure's fence on the gate side where the pair and the baby gather when the child stands outside with a liked treat (GAME-GARDEN rule 6a). |

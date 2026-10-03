@@ -172,3 +172,19 @@ basket           = { index = 203, hex = "#C99A55" }
 basket_dark      = { index = 204, hex = "#A87A3E" }
 apple_red        = { index = 205, hex = "#E0413A" } # fruit trees (kit_garden, level-3 fruit garden)
 orange_fruit     = { index = 206, hex = "#F7961E" }
+# ---- play landmarks (kit_landmarks_play: ice cream kiosk, carousel, slide, swings;
+# art/props/kit_landmarks_l3/sheet_ice_cream_kiosk_v1, sheet_carousel_v2, kit_landmarks_l2/sheet_playground_v4)
+kiosk_wall       = { index = 207, hex = "#F3E3B3" } # kiosk cream planks
+kiosk_pink       = { index = 208, hex = "#EE7FA8" } # awning pink stripes
+kiosk_pink_light = { index = 209, hex = "#FCE6EE" } # awning light stripes
+scoop_pink       = { index = 210, hex = "#F28DB2" } # ice cream scoop strawberry
+scoop_mint       = { index = 211, hex = "#9ADBB5" } # ice cream scoop mint
+scoop_cream      = { index = 212, hex = "#FBEFC4" } # ice cream scoop vanilla
+cone_wafer       = { index = 213, hex = "#D9A15A" } # waffle cone
+cone_wafer_dark  = { index = 214, hex = "#B97D3A" }
+carousel_blue    = { index = 215, hex = "#3F73C2" } # carousel roof / hub blue
+horse_brown      = { index = 216, hex = "#8C5A3A" }
+horse_cream      = { index = 217, hex = "#F0DDB0" }
+horse_grey       = { index = 218, hex = "#9A9AA6" }
+slide_red        = { index = 219, hex = "#DD4B3F" } # slide rims and ladder trim
+swing_blue       = { index = 220, hex = "#3E78D0" } # swing seats

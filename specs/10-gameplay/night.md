@@ -6,7 +6,7 @@ module: night
 status: draft
 depends_on: [GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION]
 test_prefix: NIGHT
-updated: 2026-10-01
+updated: 2026-10-03
 ---
 
 # Nightfall and the night zoo
@@ -85,10 +85,16 @@ all day animals home ──▶ celebration ──▶ nightfall (dusk → night, 
    | 8 | `porcupine` | Stachelschwein / porcupine | Rinde / bark | by the fallen logs |
    | 9 | `slow_loris` | Plumplori / slow loris | Nektar / nectar | slowly climbing in the flowering bush |
    | 10 | `tarsier` | Koboldmaki / tarsier | Grillen / crickets | with giant eyes in the bamboo |
+   | 11 | `snake` | Schlange / snake | Fisch / fish (treat: Eier / eggs) | warm stones, pumpkins, an upturned boat (terrarium, `night_2`) |
+   | 12 | `chameleon` | Chamäleon / chameleon | Grillen / crickets (treat: Frostinsekten / frozen insects) | lanterns tree, palm, creeper arch (terrarium, `night_2`) |
+   | 13 | `poison_dart_frog` | Pfeilgiftfrosch / poison dart frog | Fliegen / flies (treat: Grillen / crickets) | wet plates, ferns, rain barrel (terrarium, `night_2`) |
+
+   **Night level 2 (`night_2`, user request 2026-10-03, proposal Q-330…Q-333):** the **terrarium garden** with the **terrarium house** (glass terrariums) for the three exotic animals 11–13 (nocturnal in the game; lit warm/UV interior): GAME-LEVEL-NIGHT-2. The list of ten is now thirteen; the planned tarsier (also crickets) stays in a later night level. Each night animal shows **basic food and treat** on its board (GAME-FEED "Basic food and treats"; table of treats for the night_1 animals: hedgehog fruit, bat nectar, owl worms).
 
 7. **After the night zoo:** when all night animals of `night_1` are home, the child goes to
    sleep (bed) → morning → the **next day-zoo level** (level 2 behind the fallen tree opens);
    day and night levels alternate (Q-078).
+   **Night level 2 (proposal, Q-331/Q-332):** a lantern gate in the west hedge of `night_1` (`barrier_n1_garden`, `unlock_after = "night_1"`, `opens_at = "night"`) opens as soon as the three night_1 animals are home and stays open every later night. `night_2` is **optional**: the morning, level 2 (`barrier_ne_tree`, `unlock_after = "night_1"`) and sleeping never wait for it; a night level counts as "unfinished" for the day-sleep rule (NIGHT-011) only for the level the child is currently in when the night ends, never for `night_2` as a requirement. "All night animals home" is per night level (night_1: 6 animals, night_2: 6 animals; the compass strip lists the current level's missing species, at most 3 here).
    **No pressure (Q-079):** the child can sleep at any time; the moon door stays open every
    night until the night zoo is complete, and progress there is kept (it also opens every
    night after completion: Q-133 (d) answered).
@@ -144,6 +150,7 @@ Where the night lives in the level data (owner `zoo-level-designer`; details in 
 | Lanterns (rule 1) | `[[light]]` in all four level files: lantern posts (main paths ≈ 10 m + every gate), string lights (level-1 entrance plaza, `night_1` plaza), wall lamps, board lamps (rule 5), indoor lights | Q-118 answered; data shape Q-137 |
 | Fireflies | only `firefly_meadow_n1` (`loc_fireflies`, Q-115) | `night_1` |
 | Texts | `assets/i18n/{de,en}/night.ftl`: night riddles, facts, names, home texts, `night-dusk` / `night-bed` / `night-moon-door` / `night-welcome` / `night-complete` / `night-morning` per reading level, `sign-night-house`, `food-beetles` … | CONT-MISSIONS "Night level 1" |
+| Night level 2 (rule 6, proposal) | `assets/levels/night-2.toml` (`night_2`, bounds (−120, 6, 48, 48)), gate `barrier_n1_garden` in `night_1` (−72, 25, 2, 2), `path_n1_gate`, missions `snake`, `chameleon`, `poison_dart_frog`, terrarium house + 3 indoor terrariums (`terrarium = true`), new foods `fish`, `crickets`, `flies`, `eggs`, `frozen_insects` | GAME-LEVEL-NIGHT-2 (draft, not in data yet) |
 | Next day level (rule 7) | `barrier_ne_tree`: `unlock_after = "night_1"`, `opens_at = "morning"` | level 1 (Q-078 answered) |
 
 Rules for the implementation that follow from the data:
@@ -265,6 +272,9 @@ Rules for the implementation that follow from the data:
 | NIGHT-027 | Given the child sleeps at the bed of any level (from the stand cell or even from the bed's centre) and gets up in the morning, then she stands on the bed's free `stand` cell NEXT to the bed (0.7–2.3 m from its centre), outside every collider and the bed's footprint, on a walkable cell with her feet on the floor — never inside or on top of the bed (user report 2026-10-02: she woke up inside the bed). | unit |
 | NIGHT-021 | Given all level-1 missions played to the end (scripted child following the hints, real movement), then the compass badge shows night coming (🌙), dusk turns into night, the moon door opens, the bed works with `E` and the next morning comes (the whole night cycle is reachable end to end). | e2e |
 | NIGHT-024 | Given dusk or night (day zoo or night zoo), then a quiet cricket loop plays (ART-SOUND "Ambient loops", ASND-022/027, gain ≤ 0.12, 3 s fade in); it fades out when sleeping starts; none by day. | unit (ASND-022), e2e (ASND-027) |
+| NIGHT-030 | Given night_1 complete (all six animals home), then `barrier_n1_garden` is open from that moment (not only the next morning) and every later night; before that it is closed and solid, with its sign, lock and lantern; the morning rules (`barrier_ne_tree`, NIGHT-010) are unchanged. | unit |
+| NIGHT-031 | Given night, night_1 complete and night_2 missions incomplete, when the player is in night_1 or night_2, then the 🧭 candidates are the gate 🚪 (priority 3) and the bed 🛏, the gate first; in night_2 the first candidate is the next mission step; once night_2 is complete the bed. | unit |
+| NIGHT-032 | Given night_2 never visited or half played, then sleeping, the morning and level 2 work unchanged (optional level); progress of night_2 is saved and restored (animals, pairs, babies) and a save from before night_2 opens it fresh. | unit |
 
 ## Open questions
 
@@ -279,4 +289,5 @@ Rules for the implementation that follow from the data:
 - Q-188 (open, proposal): the 🌙 progress also shows the night-zoo animals at night and 🛏 when nothing is missing (rule 11).
 - Q-147 (open) String-light spans ≤ 6 m by stretching the model.
 - Q-143 answered 2026-09-27: night animals, `sleep` and `eye_glow` are in ART-ANIMALS (models v1).
+- Q-330…Q-352 (open, proposals 2026-10-03): night level 2 / terrarium house, gate, optional, foods, basic food and treats model (GAME-LEVEL-NIGHT-2, GAME-FEED).
 - Q-152 shelter over `bed_l2` (obsolete since 2026-10-01: the bed is indoors). Q-153 / Q-154 night models: manifest entries and ART-ENVIRONMENT listing.

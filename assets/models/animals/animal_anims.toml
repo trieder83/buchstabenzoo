@@ -1400,3 +1400,150 @@ loop = true
 crossfade_in = 0.50
 events = {}
 used_for = ["sleep"]
+
+
+# ---- terrarium chameleons (night_2; tools/blender/animals/chameleon.py, concept family_vA2 approved
+# 2026-10-03). 30-joint rig (eye / lid / jaw bones, 9-bone spiral tail). `walk` = slow diagonal-gait
+# crawl, speed 0.20 m/s at male size (x scale: female 0.184, baby 0.09), no foot slides. `perch` =
+# clinging to a branch whose top is the origin (feet wrap it, belly hugs it, tail curled tighter).
+
+[chameleon.idle]
+frames = 120
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[chameleon.walk]
+frames = 32
+loop = true
+crossfade_in = 0.15
+events = {}
+speed = 0.2
+
+[chameleon.perch]
+frames = 90
+loop = true
+crossfade_in = 0.30
+events = {}
+
+[chameleon.eat]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[chameleon.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[chameleon.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[chameleon.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[chameleon_female.idle]
+frames = 120
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[chameleon_female.walk]
+frames = 32
+loop = true
+crossfade_in = 0.15
+events = {}
+speed = 0.184
+
+[chameleon_female.perch]
+frames = 90
+loop = true
+crossfade_in = 0.30
+events = {}
+
+[chameleon_female.eat]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[chameleon_female.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[chameleon_female.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[chameleon_female.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]
+
+[chameleon_baby.idle]
+frames = 120
+loop = true
+crossfade_in = 0.20
+events = {}
+
+[chameleon_baby.walk]
+frames = 32
+loop = true
+crossfade_in = 0.15
+events = {}
+speed = 0.09
+
+[chameleon_baby.perch]
+frames = 90
+loop = true
+crossfade_in = 0.30
+events = {}
+
+[chameleon_baby.eat]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { eat_bite = 20 }
+used_for = ["eat"]
+
+[chameleon_baby.happy]
+frames = 45
+loop = false
+crossfade_in = 0.10
+events = { happy_peak = 15 }
+used_for = ["happy"]
+
+[chameleon_baby.refuse]
+frames = 36
+loop = false
+crossfade_in = 0.10
+events = {}
+used_for = ["refuse", "not_interested"]
+
+[chameleon_baby.sleep]
+frames = 90
+loop = true
+crossfade_in = 0.40
+events = {}
+used_for = ["sleep"]

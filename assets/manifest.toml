@@ -842,22 +842,22 @@ animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 id = "chameleon"
 kind = "animals"
 spec = "ART-ANIMALS"
-concept_approved = false
+concept_approved = true
 animations = ["idle", "walk", "perch", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "chameleon_female"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "perch", "eat", "happy", "refuse"]
+concept_approved = true
+animations = ["idle", "walk", "perch", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "chameleon_baby"
 kind = "animals"
 spec = "GAME-FAMILY"
-concept_approved = false
-animations = ["idle", "walk", "perch", "eat", "happy", "refuse"]
+concept_approved = true
+animations = ["idle", "walk", "perch", "eat", "happy", "refuse", "sleep"]
 
 [[asset]]
 id = "poison_dart_frog"

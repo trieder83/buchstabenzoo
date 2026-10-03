@@ -123,6 +123,15 @@ for _i in range(2, 9):
     SNAKE_PARENTS[f"tail_{_i}"] = f"tail_{_i - 1}"
 for _i in range(2, 6):
     SNAKE_PARENTS[f"spine_{_i}"] = f"spine_{_i - 1}"
+CHAM_PARENTS = {"root": None, "hips": "root", "spine": "hips", "head": "spine", "jaw": "head",
+                "tail_1": "hips"}
+for _s in ("l", "r"):
+    CHAM_PARENTS.update({f"eye_{_s}": "head", f"lid_{_s}": "head", f"arm_upper_{_s}": "spine",
+                         f"arm_lower_{_s}": f"arm_upper_{_s}", f"hand_{_s}": f"arm_lower_{_s}",
+                         f"leg_upper_{_s}": "hips", f"leg_lower_{_s}": f"leg_upper_{_s}",
+                         f"foot_{_s}": f"leg_lower_{_s}"})
+for _i in range(2, 10):
+    CHAM_PARENTS[f"tail_{_i}"] = f"tail_{_i - 1}"
 OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
     "owl": ("perch_bird", BIRD_PARENTS, [], {"height": 0.80}),
     "bat": ("bat", BAT_PARENTS, [], {"height": 0.80}),
@@ -142,6 +151,14 @@ OTHER_RIGS = {  # asset: (rig, parents, feet for AANI-008, rest expectations)
     "snake": ("snake", SNAKE_PARENTS, [], {"length": 0.64, "width": 0.49, "height": 0.66}),
     "snake_female": ("snake", SNAKE_PARENTS, [], {"length": 0.58, "width": 0.47, "height": 0.61}),
     "snake_hatchling": ("snake", SNAKE_PARENTS, [], {"length": 0.29, "width": 0.24, "height": 0.315}),
+    # terrarium chameleons (night_2; chameleon.py): 30-joint rig with eye / lid / jaw bones and a 9-bone
+    # spiral tail; origin on the ground between the feet; length = Y extent incl. the coil, height = casque
+    "chameleon": ("chameleon", CHAM_PARENTS, ["hand_l", "hand_r", "foot_l", "foot_r"],
+                  {"length": 0.536, "height": 0.40}),
+    "chameleon_female": ("chameleon", CHAM_PARENTS, ["hand_l", "hand_r", "foot_l", "foot_r"],
+                         {"length": 0.493, "height": 0.348}),
+    "chameleon_baby": ("chameleon", CHAM_PARENTS, ["hand_l", "hand_r", "foot_l", "foot_r"],
+                       {"length": 0.241, "height": 0.173}),
 }
 # ambient animals are not in assets/manifest.toml (their concept is approved as part of
 # kit_water); their expected clips come from here (== animal_anims.toml, kind = "ambient")
@@ -155,7 +172,8 @@ MAX_AMBIENT_TRIS = 1200
 # night animals, allowed (as the 2nd material, same atlas as `body`) for every animal
 NIGHT_ANIMALS = {"hedgehog", "bat", "owl", "raccoon", "badger", "fennec", "kiwi", "porcupine",
                  "slow_loris", "tarsier", "poison_dart_frog", "poison_dart_frog_female",
-                 "frog_froglet", "snake", "snake_female", "snake_hatchling"}
+                 "frog_froglet", "snake", "snake_female", "snake_hatchling", "chameleon",
+                 "chameleon_female", "chameleon_baby"}
 
 
 def check_other_rest(rig, exp, rp, mn, mx, err):
@@ -175,6 +193,21 @@ def check_other_rest(rig, exp, rp, mn, mx, err):
             err.append("AANI-005 not facing +Z (tail must be at -Z)")
         if rig == "bat" and not rp["head"][2] > rp["hips"][2]:
             err.append("AANI-005 not facing +Z (head in front of the hips)")
+        return
+    if rig == "chameleon":
+        if any(abs(c) > 1e-4 for c in rp["root"]):
+            err.append("AANI-005 chameleon root is not at the origin")
+        if abs(mn[1]) > 0.01:
+            err.append(f"AANI-005 chameleon min Y = {mn[1]:.4f} (expected 0: origin at the feet)")
+        # glTF: the animal faces +Z; length is the Z extent (nose to the back of the coil)
+        for key, got in (("length", mx[2] - mn[2]), ("height", mx[1])):
+            if abs(got - exp[key]) > 0.03 * max(1.0, exp["height"] / 0.4):
+                err.append(f"AANI-005 chameleon {key} {got:.3f} m (expected {exp[key]} +- 0.03)")
+        if not rp["head"][2] > rp["hips"][2]:
+            err.append("AANI-005 chameleon not facing +Z (head in front of the hips)")
+        for a in ("leg_upper", "arm_upper", "eye", "lid"):
+            if not rp[f"{a}_l"][0] > 0 > rp[f"{a}_r"][0]:
+                err.append(f"AANI-005 {a}_l is not at +X")
         return
     if rig == "snake":
         if any(abs(c) > 1e-4 for c in rp["root"]):

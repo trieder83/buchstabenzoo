@@ -138,6 +138,8 @@ export interface NightProgress {
   /** Kind of the next task (the best hint candidate), `night_coming`, or '' for none. */
   badge: string;
   badgeAnimal: string;
+  /** Only optional things left (HINT-028): '' | 'explore' | 'all_done'. */
+  next: string;
 }
 
 /** Strip icons shown at most; the rest is a "+n" chip. */
@@ -158,11 +160,14 @@ export function stripView(p: NightProgress): { ids: string[]; more: number } {
 export function badgeIcon(kind: string): string {
   if (kind === 'moon_door') return '🚪🌙';
   if (kind === 'night_coming') return '🌙';
+  if (kind === 'all_done') return '🎉';
+  if (kind === 'explore') return '🔍';
   return kind ? (HINT_ICONS[kind] ?? '⭐') : '';
 }
 
 /** Fluent key of the info bubble shown when the compass is tapped (NIGHT-023). */
 export function progressInfoKey(p: NightProgress, readingLevel: string): string {
+  if (p.next !== '') return `night-progress-info-next-${p.next}-${readingLevel}`;
   const mid = p.state === 'night_coming' || (p.state === 'missing' && missingAnimals(p).length === 0)
     ? 'done-'
     : p.state === 'night'
@@ -189,9 +194,10 @@ export function parseProgress(json: string | undefined): NightProgress {
       partial: Array.isArray(p.partial) ? p.partial.filter((x): x is string => typeof x === 'string') : [],
       badge: typeof p.badge === 'string' ? p.badge : '',
       badgeAnimal: typeof p.badge_animal === 'string' ? p.badge_animal : '',
+      next: typeof p.next === 'string' ? p.next : '',
     };
   } catch {
-    return { state: 'hidden', level: '', animals: [], partial: [], badge: '', badgeAnimal: '' };
+    return { state: 'hidden', level: '', animals: [], partial: [], badge: '', badgeAnimal: '', next: '' };
   }
 }
 
@@ -349,6 +355,11 @@ export const TARGET_ICONS: Record<string, string> = {
  * `lying_food:<food>:<uid>`), everything else the kind's icon.
  */
 export function targetIcon(kind: string, key: string): string {
+  if (kind === 'plant') {
+    // the interact button shows WHAT grows at the plant (user report 2026-10-04: always a carrot)
+    const spot = key.split(':')[1] ?? '';
+    return spot.includes('apple') ? '🍎' : spot.includes('orange') ? '🍊' : spot.includes('potato') ? '🥔' : TARGET_ICONS.plant;
+  }
   if (kind === 'lying_food') {
     const food = key.split(':')[1] ?? '';
     return FOOD_ICONS[food] ?? TARGET_ICONS.lying_food;
@@ -1209,7 +1220,7 @@ export class Ui {
   /** Tapping the compass explains it in a bubble next to it for ~4 s (NIGHT-023). */
   private sayProgressInfo(): void {
     const p = parseProgress(this.app.compass_json?.() ?? this.lastProgress);
-    if (p.state === 'hidden') return;
+    if (p.state === 'hidden' && p.next === '') return;
     const key = progressInfoKey(p, this.app.reading_level());
     this.say(this.app.t(key), key, 4000, 'compass');
   }

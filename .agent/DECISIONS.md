@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-353** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-355** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-142 answered · 103 open · 10 other (partly answered / proposed / superseded).
+142 answered · 105 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -109,6 +109,8 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-350 — Treats of the species that had none (proposal, all from boxes already stocked in the species' level, except bone and the night_2 foods) … (GAME-FEED)
 - Q-351 — A treat shown to an ESCAPED animal: recommendation gentle "Hmm, später!" (no refusal sound, no follow, no penalty) — only the basic food … (GAME-RESCUE, GAME-FEED)
 - Q-352 — Info board and names: panel order name → riddle → basic line → treat line (⭐ marker, 🌱 garden / 📦 box source icon on kiga) → facts → pair … (GAME-FEED, GAME-ANIMALS, GAME-FAMILY)
+- Q-353 — The stall help hint (priority 1, after 120 s without progress) points at the missing animal even when the child holds no food … (GAME-HINT)
+- Q-354 — End of content (all animals of all levels home, level 4 not built): minimal friendly message next-all_done + 🎉 badge + free play (garden … (GAME-HINT, GAME-RESCUE (Q-031, Q-078))
 
 ## Partly answered / other
 

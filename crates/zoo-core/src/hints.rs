@@ -552,11 +552,21 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
     for it in &its {
         match &it.target {
             Target::Plant { spot } if room => {
-                let stand = stand_near(g, it.point, p, 0.9);
+                // the spot's own stand cell (the scripted child / a real one can stand there)
+                let stand = data
+                    .plant_spots
+                    .iter()
+                    .find(|sp| sp.id == *spot)
+                    .map_or_else(
+                        || stand_near(g, it.point, p, 0.9),
+                        |sp| cell_center(IVec2::from(sp.stand)),
+                    );
                 // what the child already carries is not a task: no hint to pick more of a treat
                 // that is already in the basket (user report 2026-10-03)
+                // and only a treat some pair at home still wants for its baby (HINT-026: a plant
+                // hint is a task, never a loop)
                 if let Some(t) = g.garden.plant(spot).map(|pl| pl.treat) {
-                    if g.garden.basket.count(t) > 0 {
+                    if g.garden.basket.count(t) > 0 || !g.treat_wanted(t) {
                         continue;
                     }
                 }
@@ -584,8 +594,11 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
     if leading.is_none() {
         let mut seen: HashSet<&'static str> = HashSet::new();
         for a in &g.animals {
+            // No hint loops (HINT-026): only while the species' baby is still possible, the
+            // special gift is in the hands and it was not just fed; never for hearts.
             if a.state != AnimalState::InEnclosure
                 || !g.in_scope(a)
+                || !g.treat_hint_due(a.id())
                 || !g.gift_liked(a.id())
                 || !seen.insert(a.id())
             {
@@ -640,7 +653,9 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
     // (from the night zoo the door back is only a way to a target over there)
     let doors = open_moon_doors(g);
     let here_night = in_night_zone(g, p);
-    if g.daytime.is_night() && !here_night {
+    // (only while something over there is still to do: with the night zoo finished the bed is
+    // the way forward and the moon door would be a loop, HINT-027)
+    if g.daytime.is_night() && !here_night && g.night_zoo_waiting() {
         out.extend(doors.iter().cloned());
     }
 
@@ -661,6 +676,10 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
         }
     }
     let mut out = fixed;
+    // repeat guard (HINT-027): an optional hint reached twice without any change of the game
+    // is dropped until something changes — a hint can never loop. Mission steps and the bed /
+    // moon door are exempt (the stall net of NEVER STUCK covers them).
+    out.retain(|h| h.priority != PRIO_OPTIONAL || t.reached_count(g, &h.id) < REPEAT_GUARD);
 
     // --- never stuck (HINT-008): read the nearest board again, else the bed / moon door
     if out.is_empty() {
@@ -706,6 +725,9 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
     out.retain(|h| ids.insert(h.id.clone()));
     out
 }
+
+/// A hint reached this often with an unchanged game state is dropped (HINT-027).
+pub const REPEAT_GUARD: u32 = 2;
 
 fn lying(uid: u32, food: Food) -> Target {
     Target::LyingFood { uid, food }
@@ -765,6 +787,13 @@ pub struct HintTracker {
     idle_s: f32,
     visited: HashSet<IVec2>,
     pulses: u32,
+    /// Repeat guard: how often a hint was reached while the game state (`guard_sig`) stayed
+    /// the same (HINT-027).
+    reached: BTreeMap<String, u32>,
+    guard_sig: u64,
+    /// The optional hint last shown and where it points: the next time the child stands there
+    /// counts as "she did it" for the repeat guard (even if the 12 s were over by then).
+    pending: Option<(String, Vec2)>,
 }
 
 impl HintTracker {
@@ -796,12 +825,31 @@ impl HintTracker {
             }
         };
         self.index = index;
+        self.pending = (h.priority == PRIO_OPTIONAL).then(|| (h.id.clone(), h.pos));
         self.left_s = HINT_SHOW_S;
         self.refresh_s = REFRESH_S;
         self.walk_s = 0.0;
         self.walk_m = walking_distance(g, h.pos);
         self.shown = Some(h);
         self.shown.as_ref()
+    }
+
+    /// How often the hint `id` was reached without any change of the game since (repeat guard).
+    pub fn reached_count(&self, g: &Game, id: &str) -> u32 {
+        if self.guard_sig != g.hint_signature() {
+            return 0;
+        }
+        self.reached.get(id).copied().unwrap_or(0)
+    }
+
+    /// The child reached the shown hint: counts for the repeat guard.
+    fn note_reached(&mut self, g: &Game, id: &str) {
+        let sig = g.hint_signature();
+        if sig != self.guard_sig {
+            self.reached.clear();
+            self.guard_sig = sig;
+        }
+        *self.reached.entry(id.to_owned()).or_insert(0) += 1;
     }
 
     /// Hides the hint.
@@ -872,6 +920,12 @@ impl HintTracker {
                 }
             } else {
                 self.searching.remove(a.id());
+            }
+        }
+        if let Some((id, pos)) = self.pending.clone() {
+            if g.player.pos.distance(pos) <= REACHED_M {
+                self.pending = None;
+                self.note_reached(g, &id);
             }
         }
         if self.visited.insert(cell_of(g.player.pos)) {
@@ -1173,5 +1227,51 @@ pub fn compass_badge(g: &Game, t: &HintTracker) -> Option<(&'static str, Option<
     if g.daytime.phase == Phase::Day && g.daytime.dusk_in.is_some() {
         return Some(("night_coming", None));
     }
-    candidates(g, t).first().map(|h| (h.kind.id(), h.animal))
+    // nothing but optional things left: the badge agrees with the "what next" line
+    let list = candidates(g, t);
+    if let Some(n) = what_next_in(g, &list) {
+        return Some((n, None));
+    }
+    list.first().map(|h| (h.kind.id(), h.animal))
+}
+
+/// "What to do next" when there is no mission step, no bed and no moon door (HINT-028, GAME-HINT
+/// "No hint loops"): `Some("all_done")` when every animal of every level is home (the
+/// celebration, nothing more to do yet), `Some("explore")` when the missions are done but the
+/// day goes on. `None` = a normal target exists (the hint's own step line applies). Fluent keys
+/// `next-<id>` (`next-all_done`, `next-explore`, per reading level for the compass bubble).
+pub fn what_next(g: &Game, t: &HintTracker) -> Option<&'static str> {
+    what_next_in(g, &candidates(g, t))
+}
+
+fn what_next_in(g: &Game, list: &[Hint]) -> Option<&'static str> {
+    if matches!(g.daytime.phase, Phase::Sleeping | Phase::Morning)
+        || g.daytime.dusk_in.is_some()
+        || g.any_mission_open()
+    {
+        return None;
+    }
+    let best = list.first().map_or(u8::MAX, |h| h.priority);
+    if best <= PRIO_NIGHT {
+        return None;
+    }
+    let all = !g.missions.is_empty() && g.missions.iter().all(|m| m.complete);
+    Some(if all { "all_done" } else { "explore" })
+}
+
+/// Fluent key of the next-step line shown with a hint: the hint's own step, except the bed by
+/// day (the night zoo waits: "sleep, then the night zoo goes on") and the fallback / optional
+/// hints when nothing is left to do (the "what next" line).
+pub fn step_key_for(g: &Game, t: &HintTracker, h: &Hint) -> &'static str {
+    if h.kind == HintKind::Bed && g.daytime.phase == Phase::Day && g.daytime.dusk_in.is_none() {
+        return "hint-bed-night-zoo";
+    }
+    if h.priority >= PRIO_OPTIONAL {
+        match what_next(g, t) {
+            Some("all_done") => return "next-all_done",
+            Some(_) => return "next-explore",
+            None => {}
+        }
+    }
+    h.kind.step_key()
 }

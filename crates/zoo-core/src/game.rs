@@ -512,6 +512,9 @@ pub fn pick_hiding_places(
 /// NEVER STUCK: seconds without mission progress until the hint points at the missing animal
 /// itself, and until the animal walks to the player (Q-097 proposal).
 pub const STALL_HELP_S: f32 = 120.0;
+/// After an animal group accepted a treat or food there is no treat hint for this species for
+/// this long (s of play, GAME-HINT "No hint loops", HINT-026).
+pub const GIFT_COOLDOWN_S: f32 = 180.0;
 pub const STALL_WALK_S: f32 = 180.0;
 const STALL_COME_M: f32 = 5.0;
 const STALL_SPEED: f32 = 1.6;
@@ -599,6 +602,9 @@ pub struct Game {
     pub babies: Vec<String>,
     /// Where the baby of each pair species is (a real member of the group at home, GARD-013).
     pub baby_states: BTreeMap<String, Baby>,
+    /// Seconds left of the feeding cooldown per species (GAME-HINT "No hint loops", HINT-026):
+    /// set when a treat / food was accepted, no treat hint meanwhile. Not saved.
+    pub(crate) gift_cooldown: BTreeMap<String, f32>,
     /// Feeding spot per element index (enclosures with a gate), GAME-GARDEN §6.
     pub feed_spots: Vec<Option<wander::FeedSpot>>,
     /// Automatic reading panel (GAME-PLAYER §4).
@@ -871,6 +877,7 @@ impl Game {
             intro_seen: false,
             babies: Vec::new(),
             baby_states: BTreeMap::new(),
+            gift_cooldown: BTreeMap::new(),
             feed_spots,
             panel: ReadingPanel::default(),
             seed,
@@ -1733,6 +1740,7 @@ impl Game {
         let id = self.animals[i].id().to_owned();
         if accepted {
             self.garden.basket.take(treat);
+            self.note_gift(&id);
             self.events.push(GameEvent::TreatEaten {
                 animal: id.clone(),
                 treat,
@@ -1763,6 +1771,55 @@ impl Game {
                 animal: id.to_owned(),
             });
         }
+    }
+
+    /// A gift was accepted: the feeding cooldown of the species starts (HINT-026).
+    fn note_gift(&mut self, id: &str) {
+        self.gift_cooldown.insert(id.to_owned(), GIFT_COOLDOWN_S);
+    }
+
+    /// Seconds left of the feeding cooldown of a species (0 = none, GAME-HINT "No hint loops").
+    pub fn gift_cooldown_s(&self, id: &str) -> f32 {
+        self.gift_cooldown.get(id).copied().unwrap_or(0.0)
+    }
+
+    /// Whether a baby is still possible for a species: a pair, both members at home, no baby yet.
+    pub fn baby_possible(&self, id: &str) -> bool {
+        let group = self.group(id);
+        group.len() >= 2
+            && group
+                .iter()
+                .all(|&j| self.animals[j].state == AnimalState::InEnclosure)
+            && !self.babies.iter().any(|b| b == id)
+    }
+
+    /// Whether the child holds the species' SPECIAL gift that makes its baby (FAM-008/009): a
+    /// garden treat it likes, or — for a species that likes no garden treat — its own food.
+    pub fn special_gift_in_hand(&self, id: &str) -> bool {
+        use crate::garden::{likes, Treat};
+        if Treat::ALL.iter().any(|&t| likes(id, t)) {
+            return Treat::ALL
+                .iter()
+                .any(|&t| likes(id, t) && self.garden.basket.count(t) > 0);
+        }
+        self.carry
+            .food()
+            .zip(animal_info(id))
+            .is_some_and(|(f, i)| i.eats(f))
+    }
+
+    /// Whether a treat hint for the species is a real task now: a baby is possible, the special
+    /// gift is in the hands and the feeding cooldown is over (HINT-026).
+    pub fn treat_hint_due(&self, id: &str) -> bool {
+        self.baby_possible(id) && self.gift_cooldown_s(id) <= 0.0 && self.special_gift_in_hand(id)
+    }
+
+    /// Whether a garden treat is still wanted by a species of the zoo whose baby is possible
+    /// (so a plant hint for it is a real task, not a loop).
+    pub fn treat_wanted(&self, t: crate::garden::Treat) -> bool {
+        self.animals.iter().any(|a| {
+            self.in_scope(a) && crate::garden::likes(a.id(), t) && self.baby_possible(a.id())
+        })
     }
 
     /// All members of an animal's group at home turn to the child.
@@ -1823,6 +1880,9 @@ impl Game {
         }
         let id = self.animals[i].id().to_owned();
         let accepted = self.animals[i].info.eats(food);
+        if accepted {
+            self.note_gift(&id);
+        }
         self.events.push(if accepted {
             GameEvent::FoodEaten {
                 animal: id.clone(),
@@ -2208,6 +2268,10 @@ impl Game {
         self.update_stall(dt);
         self.update_wander(dt);
         self.update_babies(dt);
+        self.gift_cooldown.retain(|_, s| {
+            *s -= dt;
+            *s > 0.0
+        });
         self.update_daytime(dt);
         self.update_panel(dt);
         self.time_s += f64::from(dt);
@@ -2809,6 +2873,22 @@ impl Game {
             && self.animals[i].state == AnimalState::Escaped
             && self.in_scope(&self.animals[i])
             && !self.missions[i].complete
+    }
+
+    /// The hint signature (GAME-HINT "No hint loops"): the mission progress plus the basket
+    /// and the time of day — the state a hint action must change (giving a gift that only
+    /// brings hearts is NOT a change).
+    pub fn hint_signature(&self) -> u64 {
+        let mut h = self.progress_signature();
+        let mut mix = |v: u64| h = (h ^ v).wrapping_mul(1099511628211);
+        let b = &self.garden.basket;
+        for t in crate::garden::Treat::ALL {
+            mix(u64::from(b.count(t)));
+        }
+        mix(self.daytime.phase as u64 + 7);
+        mix(u64::from(self.daytime.dusk_in.is_some()));
+        mix(self.daytime.nightfalls.len() as u64);
+        h
     }
 
     fn progress_signature(&self) -> u64 {

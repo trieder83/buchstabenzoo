@@ -202,7 +202,7 @@ describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
     // a pair with one animal home and its partner out is marked (½), see GAME-NIGHT rule 11
     const half = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"hippo","home":false}],"partial":["hippo","x",3],"badge":"animal","badge_animal":"hippo"}');
     expect(half.partial).toEqual(['hippo', 'x']);
-    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [], partial: [], badge: '', badgeAnimal: '' });
+    expect(parseProgress('nope')).toEqual({ state: 'hidden', level: '', animals: [], partial: [], badge: '', badgeAnimal: '', next: '' });
   });
   it('NIGHT-022: shows only the animals still missing; none missing = empty list', () => {
     const p = parseProgress('{"state":"missing","level":"level_1","animals":[{"id":"zebra","home":true},{"id":"hippo","home":false},{"id":"panda","home":false}]}');
@@ -223,6 +223,8 @@ describe('GAME-NIGHT rule 11: night progress (NIGHT-019)', () => {
     expect(badgeIcon('bed')).toBe('🛏️');
     expect(badgeIcon('moon_door')).toBe('🚪🌙');
     expect(badgeIcon('')).toBe('');
+    expect(badgeIcon('all_done')).toBe('🎉');
+    expect(badgeIcon('explore')).toBe('🔍');
   });
 });
 
@@ -235,6 +237,14 @@ describe('NIGHT-023: tapping the compass explains it', () => {
     expect(progressInfoKey(mk('night_coming', true), 'kiga')).toBe('night-progress-info-done-kiga');
     expect(progressInfoKey(mk('night', false), 'klasse3')).toBe('night-progress-info-night-klasse3');
     expect(progressInfoKey(mk('sleep', true), 'klasse2')).toBe('night-progress-info-sleep-klasse2');
+  });
+  it('HINT-028: only optional things left -> the what-next line (also while the strip is hidden)', () => {
+    const p = parseProgress('{"state":"hidden","level":"","animals":[],"badge":"all_done","next":"all_done"}');
+    expect(p.next).toBe('all_done');
+    expect(progressInfoKey(p, 'kiga')).toBe('night-progress-info-next-all_done-kiga');
+    expect(progressInfoKey(parseProgress('{"state":"hidden","next":"explore"}'), 'klasse1')).toBe(
+      'night-progress-info-next-explore-klasse1',
+    );
   });
 });
 
@@ -251,5 +261,14 @@ describe('one view button (CAMV-025) and the small-screen compass strip (HINT-02
   it('has one icon per view and the strip closes after about 6 s', () => {
     expect(VIEW_ICONS).toEqual({ zoo: '🗺️', first_person: '👓', look_around: '👁️' });
     expect(STRIP_OPEN_MS).toBe(6000);
+  });
+});
+
+describe('interact button icon of a plant (GARD-026)', () => {
+  it('shows the fruit that grows at the plant, not always a carrot', () => {
+    expect(targetIcon('plant', 'plant:apple_1')).toBe('🍎');
+    expect(targetIcon('plant', 'plant:orange_2')).toBe('🍊');
+    expect(targetIcon('plant', 'plant:potato_w1')).toBe('🥔');
+    expect(targetIcon('plant', 'plant:carrot_w1')).toBe('🥕');
   });
 });

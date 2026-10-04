@@ -57,6 +57,9 @@ hint-water = Hol Wasser
 hint-garden = Ernte im Garten
 hint-treat = Geh zum Tier und gib ihm etwas zu fressen
 hint-bed = Zeit zum Schlafen
+hint-bed-night-zoo = Schlafe im Bett, dann geht es im Nachtzoo weiter
+next-all_done = Alle Tiere sind zu Hause! Du hast den Zoo gerettet. Bald gibt es mehr zu entdecken.
+next-explore = Alle Tiere sind zu Hause. Gönn den Tieren etwas oder erkunde den Zoo – bald ist Nacht.
 hint-moon = Geh durch das Mondtor
 
 # Intro at the entrance gate (GAME-RESCUE, RESC-029): three pages per reading level
@@ -104,6 +107,14 @@ night-progress-info-night-kiga = 🔍🐾 🌙
 night-progress-info-night-klasse1 = Finde die Nachttiere.
 night-progress-info-night-klasse2 = Finde die übrigen Tiere im Nachtzoo.
 night-progress-info-night-klasse3 = Es ist Nacht im Zoo. Finde die übrigen Tiere und bring sie in ihr Gehege.
+night-progress-info-next-all_done-kiga = 🏠🏠🏠 🎉
+night-progress-info-next-all_done-klasse1 = Alle Tiere sind zu Hause! Gut gemacht.
+night-progress-info-next-all_done-klasse2 = Alle Tiere sind zu Hause! Du hast den Zoo gerettet.
+night-progress-info-next-all_done-klasse3 = Alle Tiere sind zu Hause – du hast den ganzen Zoo gerettet! Bald gibt es mehr zu entdecken.
+night-progress-info-next-explore-kiga = 🏠🏠🏠 → 🍎🐒 🔍 → 🌙
+night-progress-info-next-explore-klasse1 = Alle Tiere sind zu Hause. Erkunde den Zoo.
+night-progress-info-next-explore-klasse2 = Alle Tiere sind zu Hause. Gönn den Tieren etwas oder erkunde den Zoo.
+night-progress-info-next-explore-klasse3 = Alle Tiere sind zu Hause. Gönn den Tieren etwas oder erkunde den Zoo – bald ist Nacht.
 night-progress-info-sleep-kiga = 🛏️
 night-progress-info-sleep-klasse1 = Zeit zum Schlafen.
 night-progress-info-sleep-klasse2 = Alle Tiere sind zu Hause. Zeit zum Schlafen.

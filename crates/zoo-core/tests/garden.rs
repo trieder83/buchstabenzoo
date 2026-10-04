@@ -636,6 +636,9 @@ fn gard_024_garden_hint_shows_the_fruit_of_the_level_the_child_is_in() {
     // stand in level 3 (where the apple and orange trees are)
     let k = data.part_index("level_3").unwrap();
     g.player.pos = zoo_core::level::cell_center(data.parts[k].spawn.cell());
+    // a plant hint is a task only while a pair at home still wants the treat for its baby
+    // (HINT-026): the monkeys like apples and oranges
+    assert!(g.debug_send_home("monkey"));
     let c = candidates(&g, &HintTracker::default());
     let garden: Vec<_> = c.iter().filter(|h| h.id.starts_with("plant:")).collect();
     assert!(!garden.is_empty(), "plants are offered");
@@ -716,6 +719,9 @@ fn gard_025_no_hint_to_fetch_what_is_already_in_the_basket() {
     }
     let k = data.part_index("level_3").unwrap();
     g.player.pos = zoo_core::level::cell_center(data.parts[k].spawn.cell());
+    // a plant hint is a task only while a pair at home still wants the treat for its baby
+    // (HINT-026): the monkeys like apples and oranges
+    assert!(g.debug_send_home("monkey"));
     let kinds = |g: &Game| -> Vec<HintKind> {
         candidates(g, &HintTracker::default())
             .iter()

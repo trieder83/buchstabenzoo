@@ -4204,7 +4204,7 @@ impl App {
             h.stand.x,
             h.stand.y,
             js(h.animal.unwrap_or("")),
-            js(h.kind.step_key())
+            js(zoo_core::hints::step_key_for(&self.game, &self.hints, h))
         )
     }
 
@@ -4215,7 +4215,8 @@ impl App {
 
     /// The compass strip and task badge (GAME-NIGHT rule 11): JSON `{"state": "hidden" |
     /// "missing" | "night_coming" | "night" | "sleep", "level", "animals": [{"id", "home"}],
-    /// "badge" (kind of the next task, "" = none), "badge_animal"}`. Computed without showing
+    /// "badge" (kind of the next task, "" = none), "badge_animal", "next" ("" | "explore" |
+    /// "all_done": nothing but optional things left, HINT-028)}`. Computed without showing
     /// a hint; the host polls it at <= 4 Hz.
     pub fn compass_json(&self) -> String {
         let p = zoo_core::hints::night_progress(&self.game);
@@ -4231,14 +4232,16 @@ impl App {
         let (badge, animal) = zoo_core::hints::compass_badge(&self.game, &self.hints)
             .map(|(k, a)| (k, a.unwrap_or("")))
             .unwrap_or(("", ""));
+        let next = zoo_core::hints::what_next(&self.game, &self.hints).unwrap_or("");
         format!(
-            "{{\"state\":{},\"level\":{},\"animals\":[{}],\"partial\":[{}],\"badge\":{},\"badge_animal\":{}}}",
+            "{{\"state\":{},\"level\":{},\"animals\":[{}],\"partial\":[{}],\"badge\":{},\"badge_animal\":{},\"next\":{}}}",
             js(p.state.id()),
             js(&p.level),
             animals.join(","),
             partial.join(","),
             js(badge),
-            js(animal)
+            js(animal),
+            js(next)
         )
     }
 

@@ -34,6 +34,9 @@ struct Sim {
     g: Game,
     t: HintTracker,
     events: Vec<GameEvent>,
+    /// Loop detector (HINT-027): the last hint id, the game's hint signature then and how often
+    /// that pair was shown in a row.
+    run: (String, u64, u32),
 }
 
 impl Sim {
@@ -42,7 +45,32 @@ impl Sim {
             g,
             t: HintTracker::default(),
             events: Vec::new(),
+            run: (String::new(), 0, 0),
         }
+    }
+
+    /// HINT-027 "no hint loops": the same hint shown more than 3 times in a row while nothing
+    /// changed in the game is a bug. Exempt: the read-again fallback (priority 6) while the
+    /// "what next" line says what is left (HINT-028).
+    fn check_loop(&mut self, h: &hints::Hint) {
+        let sig = self.g.hint_signature();
+        if self.run.0 == h.id && self.run.1 == sig {
+            self.run.2 += 1;
+        } else {
+            self.run = (h.id.clone(), sig, 1);
+        }
+        // (the dusk is a bounded wait for the night: the bed is right, sleeping starts at night)
+        let waiting = self.g.daytime.phase == Phase::Dusk || self.g.daytime.dusk_in.is_some();
+        let exempt = waiting
+            || (h.priority == hints::PRIO_FALLBACK && hints::what_next(&self.g, &self.t).is_some());
+        assert!(
+            self.run.2 <= 3 || exempt,
+            "hint loop: {} shown {} times without any change (phase {:?}, pos {})",
+            h.id,
+            self.run.2,
+            self.g.daytime.phase,
+            self.g.player.pos
+        );
     }
 
     fn tick(&mut self, dir: Vec2) {
@@ -181,7 +209,12 @@ impl Sim {
 
 /// One step of the child following the hint.
 fn follow_one(s: &mut Sim) {
+    // asleep (the bed was used): the child waits for the morning, no hint is asked meanwhile
+    if matches!(s.g.daytime.phase, Phase::Sleeping | Phase::Morning) {
+        s.idle(zoo_core::daytime::SLEEP_S + zoo_core::daytime::MORNING_S + 0.5);
+    }
     let h = s.press();
+    s.check_loop(&h);
     let animal = h.animal;
     match h.kind {
         HintKind::Board => {
@@ -231,6 +264,15 @@ fn follow_one(s: &mut Sim) {
         HintKind::Help => {
             // the animal itself: walk up, show the food it likes (the board's food)
             let a = animal.expect("help for a mission");
+            // the line says "show it its food": the child fetches the right food first
+            let food = s.g.animal(a).unwrap().info.foods[0];
+            if s.g
+                .carry
+                .food()
+                .is_none_or(|f| !s.g.animal(a).unwrap().info.eats(f))
+            {
+                s.g.carry.take(&zoo_core::FoodBox { food });
+            }
             s.walk_to(cell_of(h.stand), 150.0);
             s.reach_animal(a);
             s.face(s.g.animal(a).unwrap().pos);
@@ -241,6 +283,12 @@ fn follow_one(s: &mut Sim) {
             let a = animal.expect("gate of a mission");
             s.walk_to(cell_of(h.stand), 150.0);
             s.idle(2.0);
+            if s.g.needs_container(a) {
+                // the carried fish bowl cannot walk the gate cell with this scripted player
+                s.g.debug_send_home(a);
+                s.idle(0.5);
+                return;
+            }
             let gate = s.g.level.data.elements[s.g.animal(a).unwrap().enclosure]
                 .gate
                 .unwrap()
@@ -262,6 +310,12 @@ fn follow_one(s: &mut Sim) {
         | HintKind::Treat => {
             s.walk_to(cell_of(h.stand), 150.0);
             s.face(h.pos);
+            if h.kind == HintKind::Bed
+                && (s.g.daytime.dusk_in.is_some() || s.g.daytime.phase == Phase::Dusk)
+            {
+                // the child waits at the bed until night falls
+                s.idle(CELEBRATION_S + DUSK_S + 0.5);
+            }
             s.idle(0.1);
             s.g.interact();
             s.idle(0.2);
@@ -779,8 +833,9 @@ fn hint_014_night_021_following_the_hints_leads_to_the_night() {
     assert_eq!(places.len(), 9, "{places:?}");
 }
 
-// HINT-017: the treat hint points at the animal's fence (outside) or at the animal (inside)
-// only while the child holds something the animal likes; carried own food counts too.
+// HINT-017 / HINT-026: the treat hint points at the animal's fence (outside) or at the animal
+// (inside) only while the species' baby is still possible and the child holds its SPECIAL gift
+// (a liked garden treat; for a species without a liked treat its own food). Hearts are no task.
 #[test]
 fn hint_017_treat_hint_follows_what_is_liked() {
     let mut g = common::game(1);
@@ -798,9 +853,243 @@ fn hint_017_treat_hint_follows_what_is_liked() {
     assert!(!has(&g), "a disliked treat: no hint");
     let own = g.animal("zebra").unwrap().info.foods[0];
     g.carry.take(&zoo_core::FoodBox { food: own });
-    assert!(has(&g), "the zebra's own carried food");
+    assert!(
+        !has(&g),
+        "the zebra's own food only gives hearts: no task (HINT-026)"
+    );
 }
 
+/// The zoo with every day animal home and the day running (the night zoo not done).
+fn day_all_home(seed: u64, with_night: bool) -> Sim {
+    let mut s = Sim::new(night_game(seed));
+    let ids: Vec<&'static str> = s.g.animals.iter().map(|a| a.id()).collect();
+    for id in ids {
+        let part = s.g.animals[s.g.animal_index(id).unwrap()].part;
+        if with_night || !s.g.level.data.is_night_part(part) {
+            s.g.debug_send_home(id);
+        }
+    }
+    s.g.drain_events();
+    let _ = s.g.debug_set_daytime("day");
+    s.idle(0.5);
+    s
+}
+
+// HINT-026 (reproduces the user report 2026-10-04): the monkeys were fed and have their baby,
+// the child still holds food and apples — the treat hint must be gone, not offered again.
+#[test]
+fn hint_026_treat_hint_disappears_after_feeding_and_once_the_baby_exists() {
+    let mut s = day_all_home(3, false);
+    let has = |s: &Sim| {
+        candidates(&s.g, &s.t)
+            .iter()
+            .any(|h| h.kind == HintKind::Treat && h.animal == Some("monkey"))
+    };
+    // own food only: hearts, no task (the old stateless hint offered it for ever)
+    let own = s.g.animal("monkey").unwrap().info.foods[0];
+    s.g.carry.take(&zoo_core::FoodBox { food: own });
+    assert!(!has(&s), "carrying its food is no task");
+    s.g.carry.consume();
+    // an apple in the basket: the baby is the task
+    s.g.garden.basket.apples = 2;
+    assert!(has(&s), "apple for the monkey pair without a baby");
+    let h = candidates(&s.g, &s.t)
+        .into_iter()
+        .find(|h| h.id == "treat:monkey")
+        .unwrap();
+    s.walk_to(cell_of(h.stand), 200.0);
+    s.face(h.pos);
+    assert_eq!(
+        s.g.give_treat("monkey", zoo_core::garden::Treat::Apple),
+        Some(true)
+    );
+    assert!(s.g.babies.iter().any(|b| b == "monkey"), "the baby is born");
+    assert!(!has(&s), "baby exists: never again");
+    assert!(s.g.gift_cooldown_s("monkey") > 170.0);
+    // the second apple does not bring the hint back
+    assert!(!has(&s));
+    // cooldown (without a baby, e.g. an old state): no treat hint for 180 s, then it is due again
+    s.g.babies.clear();
+    s.g.baby_states.clear();
+    assert!(!has(&s), "just fed: cooldown");
+    s.idle(179.0);
+    assert!(!has(&s), "still cooling down at 179 s");
+    s.idle(2.0);
+    assert!(has(&s), "after 180 s a baby is possible again");
+}
+
+// HINT-027: the repeat guard. An optional hint reached twice while nothing changed is dropped
+// until the game state changes; the follow-the-hints fuzz (loop detector in `follow_one`) never
+// shows one hint more than 3 times in a row without a change, over many seeds and 400 steps.
+#[test]
+fn hint_027_repeat_guard_drops_a_repeated_optional_hint() {
+    let mut s = day_all_home(5, true);
+    s.g.garden.basket.apples = 1; // an apple for a baby that is possible
+    let first = s.press();
+    assert_eq!(first.priority, hints::PRIO_OPTIONAL, "{first:?}");
+    let id = first.id.clone();
+    for round in 0..2 {
+        assert!(
+            candidates(&s.g, &s.t).iter().any(|h| h.id == id),
+            "round {round}: the hint is there"
+        );
+        s.t.hide();
+        s.g.player.pos = first.stand;
+        s.t.press(&s.g);
+        s.idle(0.5); // reached: counted
+        s.t.hide();
+        // (the child does nothing with it: no change of the game)
+    }
+    assert!(
+        !candidates(&s.g, &s.t).iter().any(|h| h.id == id),
+        "reached twice without a change: dropped"
+    );
+    // a change of the game state (a new item) brings it back
+    s.g.garden.basket.oranges = 1;
+    assert!(candidates(&s.g, &s.t).iter().any(|h| h.id == id));
+}
+
+#[test]
+fn hint_027_no_loops_when_following_the_hints_for_400_steps() {
+    // from the end state (all animals home, food in the hands, treats in the basket) over
+    // several seeds, then from messy states through the whole day (loop detector: follow_one)
+    for seed in [1u64, 2, 3] {
+        let mut s = day_all_home(seed, true);
+        let own = s.g.animal("monkey").unwrap().info.foods[0];
+        s.g.carry.take(&zoo_core::FoodBox { food: own });
+        s.g.garden.basket.carrots = 2;
+        for i in 0..400 {
+            s.t.hide();
+            if candidates(&s.g, &s.t).is_empty() {
+                panic!(
+                    "step {i}: no candidates, phase {:?} pos {}",
+                    s.g.daytime.phase, s.g.player.pos
+                );
+            }
+            follow_one(&mut s);
+        }
+    }
+    for seed in 0..6u64 {
+        let mut s = messy_state(seed);
+        let _ = s.g.debug_set_daytime("day");
+        s.g.player.pos = s.g.level.data.spawn.cell().as_vec2() + Vec2::splat(0.5);
+        for _ in 0..400 {
+            s.t.hide();
+            follow_one(&mut s);
+        }
+    }
+}
+
+// HINT-028: nothing but optional things left -> the compass says what is left in plain words
+// (key present, badge agrees); everything home = the celebration, never a dead end.
+#[test]
+fn hint_028_only_optional_left_the_what_next_text() {
+    // all animals home, night zoo not done: the bed by day leads on (Q-140), no "what next" needed
+    let s = day_all_home(3, false);
+    assert_eq!(hints::what_next(&s.g, &s.t), None);
+    let first = candidates(&s.g, &s.t).remove(0);
+    assert_eq!(first.kind, HintKind::Bed);
+    assert_eq!(
+        hints::step_key_for(&s.g, &s.t, &first),
+        "hint-bed-night-zoo"
+    );
+    // everything home including the night zoo: celebration text, badge agrees, no monkey hint
+    let mut s = day_all_home(3, true);
+    s.g.garden.basket.carrots = 2;
+    assert_eq!(hints::what_next(&s.g, &s.t), Some("all_done"));
+    assert_eq!(compass_badge(&s.g, &s.t).map(|b| b.0), Some("all_done"));
+    let h = s.press();
+    assert_eq!(hints::step_key_for(&s.g, &s.t, &h), "next-all_done");
+    // the texts exist in every reading level and language
+    for lang in ["de", "en"] {
+        let ftl = common::ftl_text(lang);
+        for k in ["hint-bed-night-zoo", "next-all_done", "next-explore"] {
+            assert!(ftl.contains(&format!("{k} =")), "{lang} {k}");
+        }
+        for n in ["all_done", "explore"] {
+            for l in ["kiga", "klasse1", "klasse2", "klasse3"] {
+                let k = format!("night-progress-info-next-{n}-{l} =");
+                assert!(ftl.contains(&k), "{lang} {k}");
+            }
+        }
+    }
+}
+
+// HINT-029: the full flow level 3 -> dusk -> bed -> morning with hints only; babies and treats
+// given on the way; the 🧭 never points at the monkeys again once they have their baby.
+#[test]
+fn hint_029_level_3_done_then_dusk_bed_morning_with_hints_only() {
+    let mut s = Sim::new(night_game(3));
+    let ids: Vec<&'static str> = s.g.animals.iter().map(|a| a.id()).collect();
+    for id in ids {
+        let part = s.g.animals[s.g.animal_index(id).unwrap()].part;
+        let name = s.g.level.data.parts[part].id.clone();
+        if name == "level_1" || name == "level_2" {
+            s.g.debug_send_home(id);
+        }
+    }
+    s.g.drain_events();
+    let _ = s.g.debug_set_daytime("day");
+    // level 3: follow the hints until its animals are home; the monkeys get their baby on the way
+    let l3 = |s: &Sim| {
+        s.g.animals
+            .iter()
+            .zip(&s.g.missions)
+            .filter(|(a, _)| s.g.level.data.parts[a.part].id == "level_3")
+            .all(|(_, m)| m.complete)
+    };
+    follow_hints(&mut s, 120, l3);
+    s.g.garden.basket.apples = 2;
+    let c = candidates(&s.g, &s.t);
+    assert!(
+        c.iter().any(|h| h.id == "treat:monkey"),
+        "an apple: the baby is the task"
+    );
+    assert!(s
+        .g
+        .give_treat("monkey", zoo_core::garden::Treat::Apple)
+        .unwrap());
+    s.g.carry.take(&zoo_core::FoodBox {
+        food: s.g.animal("monkey").unwrap().info.foods[0],
+    });
+    assert!(s
+        .events
+        .iter()
+        .any(|e| matches!(e, GameEvent::LevelComplete { level } if level == "level_3")));
+    // celebration, dusk: from now on every press is the bed, never the monkeys or the garden
+    for _ in 0..4 {
+        s.t.hide();
+        let h = s.press();
+        assert_eq!(h.kind, HintKind::Bed, "{h:?}");
+        assert!(candidates(&s.g, &s.t)
+            .iter()
+            .all(|h| h.id != "treat:monkey"));
+        s.idle(CELEBRATION_S / 4.0);
+    }
+    s.idle(DUSK_S + 0.5);
+    assert_eq!(s.g.daytime.phase, Phase::Night);
+    let mut bed = None;
+    for _ in 0..4 {
+        let h = s.press();
+        if h.kind == HintKind::Bed {
+            bed = Some(h);
+            break;
+        }
+    }
+    let bed = bed.expect("the bed is among the top hints at night");
+    s.walk_to(cell_of(bed.stand), 300.0);
+    s.face(bed.pos);
+    s.idle(0.1);
+    assert_eq!(s.g.interact(), Some(zoo_core::Interaction::Sleep));
+    s.idle(zoo_core::daytime::SLEEP_S + 0.5);
+    assert!(s.events.contains(&GameEvent::Morning));
+    s.idle(zoo_core::daytime::MORNING_S + 0.5);
+    // the new day: the night zoo waits -> the bed again (never the monkeys), with its line
+    s.t.hide();
+    let h = s.press();
+    assert_eq!(h.kind, HintKind::Bed, "{h:?}");
+    assert_eq!(hints::step_key_for(&s.g, &s.t, &h), "hint-bed-night-zoo");
+}
 /// A random state with split pairs and disagreeing members (NEVER STUCK).
 fn messy_state(seed: u64) -> Sim {
     let mut s = random_state(seed);

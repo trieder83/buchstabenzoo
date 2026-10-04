@@ -55,6 +55,9 @@ hint-water = Fetch water
 hint-garden = Harvest in the garden
 hint-treat = Walk up to the animal and give it something to eat
 hint-bed = Time to sleep
+hint-bed-night-zoo = Sleep in the bed, then the night zoo goes on
+next-all_done = All animals are home! You saved the zoo. There will be more to discover soon.
+next-explore = All animals are home. Treat the animals or explore the zoo – night is coming soon.
 hint-moon = Go through the moon door
 
 # Intro at the entrance gate (GAME-RESCUE, RESC-029): three pages per reading level
@@ -102,6 +105,14 @@ night-progress-info-night-kiga = 🔍🐾 🌙
 night-progress-info-night-klasse1 = Find the night animals.
 night-progress-info-night-klasse2 = Find the remaining animals in the night zoo.
 night-progress-info-night-klasse3 = It is night in the zoo. Find the remaining animals and bring them to their enclosure.
+night-progress-info-next-all_done-kiga = 🏠🏠🏠 🎉
+night-progress-info-next-all_done-klasse1 = All animals are home! Well done.
+night-progress-info-next-all_done-klasse2 = All animals are home! You saved the zoo.
+night-progress-info-next-all_done-klasse3 = All animals are home – you saved the whole zoo! There will be more to discover soon.
+night-progress-info-next-explore-kiga = 🏠🏠🏠 → 🍎🐒 🔍 → 🌙
+night-progress-info-next-explore-klasse1 = All animals are home. Explore the zoo.
+night-progress-info-next-explore-klasse2 = All animals are home. Treat the animals or explore the zoo.
+night-progress-info-next-explore-klasse3 = All animals are home. Treat the animals or explore the zoo – night is coming soon.
 night-progress-info-sleep-kiga = 🛏️
 night-progress-info-sleep-klasse1 = Time to sleep.
 night-progress-info-sleep-klasse2 = All animals are home. Time to sleep.

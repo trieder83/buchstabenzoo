@@ -83,3 +83,20 @@ guarantee with tests, the invariants in GAME-LAYOUT "Level design rules" and GAM
 - Whenever a new mechanic can leave an animal or item in a new state (feeding, babies, events,
   carts, new levels), extend the fuzz test and the invariants **in the same change**, and report
   explicitly whether the child can still get stuck.
+
+## No hint loops (user instruction 2026-10-04, binding; counterpart of "Never stuck")
+
+A hint target must lead to a **state change** when its action is done. After the child did it,
+the same hint must not come again until the state changed (mission step, new item, new baby,
+time-based regrowth). For every hint kind you add or change (GAME-HINT "No hint loops"):
+
+- State when it is offered and when it **stops** (baby exists, item in the basket, cooldown,
+  mission step done). Optional hints (treats, garden) only for a real task (a baby is still
+  possible for a pair at home), never merely because the child holds something liked.
+- A feeding cooldown (180 s) and the generic repeat guard (an optional hint reached twice with an
+  unchanged `Game::hint_signature` is dropped) exist; do not bypass them.
+- When only optional hints are left the compass says in plain words what is left (`what_next`,
+  `next-*` texts per reading level); when everything is done a celebration, never a dead end.
+- Tests: extend the follow-the-hints fuzz (the loop detector in `follow_one`: the same hint more
+  than 3 times in a row with an unchanged signature fails) over the new states, and report
+  explicitly whether a loop is still possible.

@@ -57,6 +57,12 @@ latest reports in `qa/reports/`.
    - Camera: follows smoothly, occluders fade, never shows sky, player always visible.
    - Touch: controls only on touch devices, left thumb walks, right thumb swipes/pinches/
      interacts, both at once, no page scroll/zoom/selection, safe areas respected.
+   - No hint loops (binding, user instruction 2026-10-04): play with the 🧭 only for N (>= 40)
+     steps from several states (mid-level, all animals home, treats in the basket, babies born,
+     item in the hands, end of content) and assert no hint target repeats more than 3 times in a
+     row without a progress change (mission step, item, baby, time of day); when only optional
+     hints are left the compass must show the "what next" line (`next-*`). Report a loop as
+     **major** and add a regression test (HINT-027).
    - Mission flow: every step possible, wrong actions give gentle feedback, no dead ends,
      completion triggers once.
    - Child-friendliness: targets big enough, nothing requires fast reactions, no confusing

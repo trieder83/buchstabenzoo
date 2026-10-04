@@ -6,7 +6,7 @@ module: hints
 status: draft
 depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN]
 test_prefix: HINT
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Next-target hint
@@ -39,8 +39,10 @@ settings gear** shows **one next possible target** and where to walk.
       board was read, also the nearest ripe cut spot — GAME-FEED §16); board not read yet →
       the nearest unread info board,
    3. an **unstarted mission**: the nearest unread info board,
-   4. **optional activities**: garden (if the basket has room and plants are ripe), treats for
-      animals at home, the golf-cart key box, the map board,
+   4. **optional activities**: garden (if the basket has room, plants are ripe and a pair at
+      home still wants that treat for its baby), the special treat for a pair at home that has no
+      baby yet, the golf-cart key box, the map board — only while they lead to a state change
+      (see "No hint loops"),
    5. at night: the bed or the moon door (GAME-NIGHT); from the end of the celebration of a
       day level (dusk) the bed. They are only offered when they are the way forward (dusk,
       night, or by day while the night zoo waits, Q-140), so they rank **before** the optional
@@ -149,8 +151,12 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-022 | Given a species whose members are all in their enclosure, then no hint candidate belongs to it and the compass strip does not list it, even when its mission flags are still incomplete (RESC-033). | unit |
 | HINT-024 | Treats are never required: given a mission incomplete, then the treat hint (priority > 3) is never the only candidate and never ranks before a mission step; given the child carries a treat of a home species whose pair has no baby, then the treat hint leads to that animal's feed spot; empty hands: no treat hint (GAME-FEED "Basic food and treats"). | unit |
 | HINT-025 | NEVER STUCK (night_2): given the closed or open gate, the three night_2 species (pairs, split pairs, babies, wrong foods, wrong gates, save/restore) and the seeded fuzz test, then every state has a hint of priority ≤ 3 and the fuzz run reaches "all animals of night_2 home" and then dusk → bed; the 120 s / 180 s safety net works for `snake`, `chameleon`, `poison_dart_frog`. | unit |
+| HINT-026 | No hint loops (user report 2026-10-04, monkeys): given the monkey pair at home, no baby, then own carried food gives no treat hint, an apple in the basket gives `treat:monkey`; after the apple was given (baby born) the hint is gone for good, also with food in the hands; the feeding cooldown (`GIFT_COOLDOWN_S` 180 s of play) suppresses it for 179 s even if a baby were possible again, and it is due again at 181 s; plant hints exist only for treats a pair at home still wants. | unit |
+| HINT-027 | No hint loops, repeat guard: given an optional hint (priority 4) reached twice (the child stood at its target) while `Game::hint_signature` stayed the same, then it is not a candidate any more until the signature changes (new item in the basket, mission step, new baby, time of day); a follow-the-hints fuzz (end state with food in the hands and treats in the basket, 3 seeds, and messy states, 6 seeds, 400 steps each, `follow_one` loop detector) never shows the same hint id more than 3 times in a row with an unchanged signature (exempt: the bounded dusk wait for the night, the read-again fallback while the "what next" line is shown). | unit |
+| HINT-028 | Given only optional hints left (no mission step, no bed, no moon door), then `what_next` is `all_done` (every mission of every level complete, nothing more to do) or `explore`, the compass badge is that id (🎉 / 🔍), the hint's step line is `next-all_done` / `next-explore` and the compass bubble `night-progress-info-next-<id>-<reading level>` (kiga: pictograms) exists in de and en; with the night zoo still waiting by day the bed is the hint with the line `hint-bed-night-zoo`; with the night zoo finished no moon door hint is offered at night (the bed is). | unit + vitest |
+| HINT-029 | Given level 3 completed (babies and treats given on the way), then every hint during the celebration and dusk is the bed (never the monkeys, never the garden), the bed brings the morning, and on the new day the bed is hinted again with `hint-bed-night-zoo` while the night zoo waits. | unit |
 | HINT-018 | NEVER STUCK (split pair): given a zebra pair with member 0 at home and member 1 still out (board read or not, several seeds), then the first hint is about the missing zebra (board / food / search area / gate), never only optional garden work, and the compass strip still lists the zebra as not home. | unit |
-| HINT-017 | Given a home animal, then the treat hint (`hint-treat`: "Geh zum Tier und gib ihm etwas zu fressen") exists only while the basket holds a treat it likes or the hands hold its food; it points at its fence (from outside) or at the animal (inside). | unit |
+| HINT-017 | Given a home animal, then the treat hint (`hint-treat`: "Geh zum Tier und gib ihm etwas zu fressen") exists only while the child holds the species' SPECIAL gift (a garden treat it likes; for a species that likes no garden treat its own food) and its baby is still possible (HINT-026); it points at its fence (from outside) or at the animal (inside). Carried basic food of a species with a liked treat (hearts only) is no task. | unit |
 | HINT-015 | Given any state (new game, board read 1 s ago, board read 70 s ago, animal following, carrying the wrong food), when the hint is pressed, then it returns a target immediately (no waiting time) with a next-step key `hint-<step>` that matches the state (read / take food / search / lead home); 1 s after reading the board the target is the ≥ 12 m search area, after 60 s the ≥ 6 m circle, never the animal's position. | unit |
 | HINT-016 | Given a hint is shown, then the indicator shows the step icon and the line (Fluent, `de` and `en`); on `kiga` the line is read aloud; pressed while a reading panel is open, the panel closes and the hint shows. | e2e |
 | HINT-014 | Given a child who only follows the hints (several seeds, every level-1 hiding place at least once), then all level-1 animals come home, night falls, and the bed is among the top 3 hints and brings the morning. | unit |
@@ -166,7 +172,59 @@ changing state, a mission started/complete, food taken/put down, a lying food) t
 escaped animals of open missions walk to the player (Q-262). The timer is not saved and does not
 run in the dark.
 
+## No hint loops (user instruction 2026-10-04, binding)
+
+User report (level 3, monkeys): the target kept pointing at the monkeys to feed them although they
+had their baby and had just been fed, and nothing else was left to do. Root cause: the treat hint was
+stateless — offered whenever the child carried anything a home animal likes (also its basic food,
+which stays in the hands, FEED-023), so it never went away.
+
+**Invariant:** a hint target leads to a **state change** when its action is done; after the child
+did it, the same hint is not offered again until the state changed (progress event: mission step,
+new item, new baby, time-based regrowth). Implemented as:
+
+1. **Real tasks only (`Game::treat_hint_due`)**: the treat hint exists only while a baby is still
+   possible for that pair (both members at home, no baby yet), the species' SPECIAL gift is in the
+   hands (a garden treat it likes in the basket; a species that likes no garden treat: its own
+   food) and the feeding cooldown is over. Never again once the species has its baby. Basic food
+   that only gives hearts is not a task. Plant hints (`plant:<spot>`) only for a treat that a
+   pair at home still wants (`Game::treat_wanted`) and that is not already in the basket.
+2. **Feeding cooldown**: after a group accepted a treat or food, no treat hint for that species
+   for `GIFT_COOLDOWN_S` = 180 s of play (not saved).
+3. **Repeat guard** (`HintTracker`, `REPEAT_GUARD` = 2): the tracker remembers the last optional
+   hint shown (priority 4) and counts how often the child then stood at its target
+   (≤ 2.5 m, also after the 12 s were over) while `Game::hint_signature` (mission progress, carried
+   food, lying food, babies, basket, time of day) stayed unchanged; at 2 the hint is dropped from the
+   candidates (and so from the compass badge) until the signature changes. Mission steps, the bed and
+   the moon door are exempt — the stall net (HINT-020) covers them.
+4. **What next** (`hints::what_next`, HINT-028): when the best candidate is only optional (or the
+   read-again fallback) and no mission is open, the compass says what is left in plain words —
+   `next-explore` ("Alle Tiere sind zu Hause. Gönn den Tieren etwas oder erkunde den Zoo – bald ist
+   Nacht.") or, when every animal of every level is home, `next-all_done` ("Alle Tiere sind zu Hause!
+   Du hast den Zoo gerettet. Bald gibt es mehr zu entdecken."). The compass bubble has a text per
+   reading level (`night-progress-info-next-<id>-<level>`, kiga = pictograms, de/en), the badge is 🎉 /
+   🔍 and the hint's step line is the same text. By day while the night zoo waits the bed is the hint
+   (priority 3) with the line `hint-bed-night-zoo` ("Schlafe im Bett, dann geht es im Nachtzoo
+   weiter"); at night the moon door is only hinted while something over there is still to do (else it
+   would loop with the bed).
+5. **Badge and strip agree**: `compass_badge` is `night_coming` / `all_done` / `explore` / the best
+   candidate; the strip lists the missing animals only (empty at the end).
+
+**What the child sees after level 3:** all animals home → celebration → dusk → 🛏 bed (never the
+monkeys) → sleep → morning → the night zoo waits: 🛏 "Schlafe im Bett, dann geht es im Nachtzoo
+weiter" (sleep by day until the evening) → night: 🚪🌙 moon door → the night animals (night_1). When
+night_1 is done too, nothing is missing: 🎉 "Alle Tiere sind zu Hause! … Bald gibt es mehr zu entdecken."
+(the minimal friendly end-of-content message, Q-031/Q-078; level 4 is not built); the free-play garden
+and treats stay possible. The hint button still answers (HINT-008: the read-again board arrow) and
+is never a loop because the step line is the celebration.
+
+Known gap (not fixed, see Q-353): the stall `help` hint (priority 1) points at the missing animal even
+when the child does not hold its food.
+
 ## Open questions
+
+- Q-353 open (2026-10-04): the stall `help` hint points at the animal although the child may hold no
+  food; should it lead to the storage first when the right food is not in the hands?
 
 - Q-195 answered 2026-09-30 (yes): right after the board was read the hint shows the wide area (≥ 12 m), the exact circle after 60 s (rule 4a).
 - Q-262 open: stall rescue times (120 s `help` hint, 180 s animals walk to the player; NEVER STUCK).

@@ -37,7 +37,10 @@ fi
 cd "$ROOT/web"
 # E2E_DIST=dist-adtest: the test build for the ad-signature tests (GAME-ADS, Q-245) — the same
 # bundle plus the ?adkey= test-key hook; the release `dist` never has it (PLAT-012).
-DIST="${E2E_DIST:-dist}"
+# the analytics spec needs the test build too (fake measurement id, PLAT-029)
+DEFAULT_DIST=dist
+[[ "$*" == *analytics.spec* ]] && DEFAULT_DIST=dist-adtest
+DIST="${E2E_DIST:-$DEFAULT_DIST}"
 export E2E_DIST="$DIST"
 if [[ $BUILD -eq 1 || ! -f "$DIST/index.html" ]]; then
   if [[ "$DIST" == "dist" ]]; then
@@ -47,7 +50,7 @@ if [[ $BUILD -eq 1 || ! -f "$DIST/index.html" ]]; then
   else
     echo "e2e: building test bundle $DIST once ..."
     { [[ $BUILD -eq 0 && -d ../crates/zoo-web/pkg ]] || PATH="$HOME/.cargo/bin:$PATH" npm run wasm; } >"$ROOT/.run/e2e-build.log" 2>&1 \
-      && VITE_AD_TEST=1 npx vite build --outDir "$DIST" --emptyOutDir >>"$ROOT/.run/e2e-build.log" 2>&1 \
+      && VITE_AD_TEST=1 VITE_ANALYTICS_TEST_ID=G-TEST000000 npx vite build --outDir "$DIST" --emptyOutDir >>"$ROOT/.run/e2e-build.log" 2>&1 \
       || { echo "e2e: build failed — see .run/e2e-build.log"; tail -20 "$ROOT/.run/e2e-build.log"; exit 1; }
   fi
 fi

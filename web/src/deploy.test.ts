@@ -21,6 +21,10 @@ interface Hosting {
   rewrites?: unknown[];
   redirects?: unknown[];
 }
+// PLAT-028: the CSP allowlist of the opt-in analytics (exactly this and nothing else)
+const CONNECT_SRC = "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com";
+const SCRIPT_SRC = "script-src 'self' 'wasm-unsafe-eval' https://www.googletagmanager.com";
+const IMG_SRC = "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com";
 const hosting: Hosting = JSON.parse(read('firebase.json')).hosting;
 
 /** Value of `key` set by the rule whose source is exactly `source`. */
@@ -56,7 +60,7 @@ describe('firebase.json', () => {
         .map((d) => d.trim())
         .find((d) => d.startsWith(name + ' '));
     expect(directive('media-src')).toMatch(/^media-src 'self'( data: blob:)?$/);
-    expect(directive('connect-src')).toBe("connect-src 'self'");
+    expect(directive('connect-src')).toBe(CONNECT_SRC);
   });
 
   it('ASND-018 the build lists and serves the audio files', () => {
@@ -79,8 +83,26 @@ describe('firebase.json', () => {
   });
 });
 
-describe('no tracking, no external network', () => {
-  it('PLAT-006 CSP allows only own files', () => {
+describe('no external network except the opt-in analytics', () => {
+  it('PLAT-028 the CSP allowlist is exactly the analytics hosts', () => {
+    const csp = header('**', 'Content-Security-Policy') ?? '';
+    const directive = (name: string) =>
+      csp
+        .split(';')
+        .map((d) => d.trim())
+        .find((d) => d.startsWith(name + ' '));
+    expect(directive('script-src')).toBe(SCRIPT_SRC);
+    expect(directive('connect-src')).toBe(CONNECT_SRC);
+    expect(directive('img-src')).toBe(IMG_SRC);
+    for (const strict of ["default-src 'self'", "style-src 'self' 'unsafe-inline'", "media-src 'self' data: blob:", "font-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'none'", "frame-ancestors 'none'"]) {
+      expect(csp.split(';').map((d) => d.trim())).toContain(strict);
+    }
+    // every http(s) source of the whole policy is one of the analytics hosts
+    const hosts = csp.match(/https:\/\/[^\s;]+/g) ?? [];
+    expect(new Set(hosts)).toEqual(new Set(['https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com']));
+  });
+
+  it('PLAT-006 default-src is own files only', () => {
     const csp = header('**', 'Content-Security-Policy') ?? '';
     const directive = (name: string) =>
       csp
@@ -88,8 +110,7 @@ describe('no tracking, no external network', () => {
         .map((d) => d.trim())
         .find((d) => d.startsWith(name + ' '));
     expect(directive('default-src')).toBe("default-src 'self'");
-    expect(directive('connect-src')).toBe("connect-src 'self'");
-    expect(csp).not.toMatch(/https?:/);
+    expect(csp).not.toMatch(/http:/);
   });
 
   it('PLAT-006 host sources load no external URL or analytics SDK', () => {
@@ -100,7 +121,9 @@ describe('no tracking, no external network', () => {
         .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
         .map((f) => `web/src/${f}`),
     );
-    for (const f of files) {
+    // the opt-in analytics module is the one place that names the Google script URL (PLAT-006/028)
+    const analyticsFiles = ['web/src/analytics.ts', 'web/src/analytics-config.ts'];
+    for (const f of files.filter((f) => !analyticsFiles.includes(f))) {
       const text = read(f);
       expect(text, f).not.toMatch(/https?:\/\/(?!www\.w3\.org\/)/);
       expect(text, f).not.toMatch(/firebase|gtag|googletagmanager|google-analytics/i);
@@ -165,10 +188,13 @@ describe('ad content hosting (GAME-ADS "External content")', () => {
         .split(';')
         .map((d) => d.trim())
         .find((d) => d.startsWith(name + ' '));
-    expect(directive('connect-src')).toBe("connect-src 'self'");
-    expect(directive('img-src')).toBe("img-src 'self' data: blob:");
+    // ads load only same-origin content; the CSP widening is the analytics allowlist only (PLAT-028)
+    expect(directive('connect-src')).toBe(CONNECT_SRC);
+    expect(directive('img-src')).toBe(IMG_SRC);
     expect(directive('form-action')).toBe("form-action 'none'");
-    expect(csp).not.toMatch(/https?:/);
+    expect(csp).not.toMatch(/http:/);
+    const ads = read('web/src/ads.ts') + read('web/src/ads-ui.ts');
+    expect(ads).not.toMatch(/https?:\/\/(?!www\.w3\.org\/)/);
   });
 
   it('PLAT-011 the served ads are the manifest, its signature and images of at most 512 KB', () => {
@@ -295,5 +321,42 @@ describe('installable web app', () => {
       expect(ui, lang).toMatch(/^ui-fullscreen = .+/m);
       expect(ui, lang).toMatch(/^ui-install-hint-ios = .+/m);
     }
+  });
+});
+
+// Opt-in analytics (TECH-PLATFORMS "Analytics (opt-in)", PLAT-029, PLAT-032).
+describe('analytics configuration', () => {
+  it('PLAT-029 the id is empty or a G- id; the test id only comes from the build define', () => {
+    const cfg = read('web/src/analytics-config.ts');
+    const m = /export const ANALYTICS_MEASUREMENT_ID = '([^']*)';/.exec(cfg);
+    expect(m).not.toBeNull();
+    expect(m![1]).toMatch(/^(G-[A-Z0-9]{6,12})?$/);
+    expect(m![1]).not.toMatch(/TEST/);
+    const pkg = JSON.parse(read('web/package.json')) as { scripts: Record<string, string> };
+    for (const [name, cmd] of Object.entries(pkg.scripts)) expect(cmd, name).not.toMatch(/VITE_ANALYTICS_TEST_ID/);
+    expect(read('web/vite.config.ts')).toContain('process.env.VITE_ANALYTICS_TEST_ID');
+    for (const f of ['scripts/deploy-preview.sh']) expect(read(f)).not.toMatch(/VITE_ANALYTICS_TEST_ID/);
+  });
+
+  it.skipIf(!fs.existsSync(path.join(repoRoot, 'web', 'dist', 'index.html')))('PLAT-029 a release bundle in web/dist has no test id', () => {
+    const dir = path.join(repoRoot, 'web', 'dist', 'bundle');
+    for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js'))) {
+      expect(fs.readFileSync(path.join(dir, f), 'utf8'), f).not.toMatch(/G-TEST/);
+    }
+  });
+
+  it('PLAT-032 the consent texts exist in de and en, the privacy page has both languages', () => {
+    for (const lang of ['de', 'en']) {
+      const ui = read(`assets/i18n/${lang}/ui.ftl`);
+      for (const k of ['ui-analytics', 'analytics-title', 'analytics-note', 'analytics-detail', 'analytics-allow', 'analytics-deny']) {
+        expect(ui, `${lang} ${k}`).toMatch(new RegExp(`^${k} = .+`, 'm'));
+      }
+    }
+    expect(read('assets/i18n/de/ui.ftl')).toContain('Es werden keine Namen, keine Texte und keine persönlichen Daten gespeichert.');
+    const page = read('web/public/privacy.html');
+    expect(page).toMatch(/lang="de"/);
+    expect(page).toMatch(/lang="en"/);
+    for (const w of ['Eltern', 'parent', '📊', '2 Monate', '2 months', 'Verantwortliche', 'controller']) expect(page, w).toContain(w);
+    expect(page).not.toMatch(/<script/i);
   });
 });

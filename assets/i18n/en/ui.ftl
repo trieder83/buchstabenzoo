@@ -178,3 +178,12 @@ welcome-level-night_1-klasse3 = It is night in the zoo. Take your lantern with y
 
 ui-fullscreen = Full screen
 ui-install-hint-ios = Add to Home Screen: Share ⎙ → Add to Home Screen
+
+ui-analytics = Statistics (parents only)
+analytics-title = Anonymous statistics
+analytics-note = Anonymous statistics help us improve the game. No names, no texts and no personal data are stored.
+analytics-detail = Only counted: language, reading level, play time, levels played and the rough country. No ads. You can switch it off at any time with the 📊 button in the settings.
+analytics-allow = Allow
+analytics-deny = No thanks
+
+analytics-notice = 📊 Anonymous statistics are off. Parents can allow them in the menu ⚙️.

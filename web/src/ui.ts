@@ -481,7 +481,8 @@ interface PanelData {
   level?: string;
 }
 
-interface GameEventMsg {
+export interface GameEventMsg {
+  level?: string;
   type: string;
   panel?: PanelData;
   animal?: string;
@@ -1051,9 +1052,21 @@ export class Ui {
     this.hud.setAttribute('aria-label', `${this.app.t('ui-carrying')} ${this.app.carry_text()}`);
   }
 
+  /** Optional consumer of the game events (opt-in analytics, PLAT-030): type + ids only. */
+  onGameEvent: ((e: GameEventMsg) => void) | null = null;
+  private settingsRelabel: (() => void) | null = null;
+
+  /** Adds a row to the settings menu (analytics consent, PLAT-031); `relabel` follows language changes. */
+  addSettingsRow(row: HTMLElement, relabel: () => void): void {
+    this.settings.append(row);
+    this.settingsRelabel = relabel;
+    relabel();
+  }
+
   private pollEvents(): void {
     const events = JSON.parse(this.app.poll_events()) as GameEventMsg[];
     for (const e of events) {
+      this.onGameEvent?.(e);
       if (e.type === 'say' && e.text) this.say(e.text, e.key ?? '');
       else if (e.type === 'mission_complete' && e.text) this.celebrateMission(e.text, e.key ?? '');
       else if (e.type === 'panel_open' && e.panel) this.openPanel(e.panel);
@@ -1394,7 +1407,7 @@ export class Ui {
 
   private markSettings(): void {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
-      if (b.id === 'sound-toggle' || b.id === 'intro-replay' || b.id === 'fullscreen-toggle') continue;
+      if (b.id === 'sound-toggle' || b.id === 'intro-replay' || b.id === 'fullscreen-toggle' || b.id === 'analytics-toggle') continue;
       const on = b.dataset.lang === this.app.language() || b.dataset.level === this.app.reading_level();
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
@@ -1416,6 +1429,7 @@ export class Ui {
     this.settings.querySelector('#fullscreen-toggle')?.setAttribute('aria-label', this.app.t('ui-fullscreen'));
     const installHint = this.settings.querySelector('#install-hint');
     if (installHint) installHint.textContent = this.app.t('ui-install-hint-ios');
+    this.settingsRelabel?.();
     this.settings.querySelector('#new-game')?.setAttribute('aria-label', this.app.t('ui-new-game'));
     this.settings.querySelector('#new-game-yes')?.setAttribute('aria-label', this.app.t('ui-yes'));
     this.settings.querySelector('#new-game-no')?.setAttribute('aria-label', this.app.t('ui-no'));

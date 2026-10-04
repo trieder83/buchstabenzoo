@@ -180,3 +180,12 @@ welcome-level-night_1-klasse3 = Es ist Nacht im Zoo. Nimm deine Laterne mit: Im 
 
 ui-fullscreen = Vollbild
 ui-install-hint-ios = Zum Home-Bildschirm hinzufügen: Teilen ⎙ → Zum Home-Bildschirm
+
+ui-analytics = Statistik (nur für Eltern)
+analytics-title = Anonyme Statistik
+analytics-note = Anonyme Statistik hilft uns, das Spiel zu verbessern. Es werden keine Namen, keine Texte und keine persönlichen Daten gespeichert.
+analytics-detail = Gezählt werden nur: Sprache, Lesestufe, Spielzeit, gespielte Level und das ungefähre Land. Keine Werbung. Ausschalten geht jederzeit mit dem Knopf 📊 in den Einstellungen.
+analytics-allow = Erlauben
+analytics-deny = Nein danke
+
+analytics-notice = 📊 Anonyme Statistik ist aus. Eltern können sie im Menü ⚙️ erlauben.

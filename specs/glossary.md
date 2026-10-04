@@ -38,6 +38,7 @@ language for player-facing text.
 | `hiding_place` (ids `loc_*`) | Versteck † | hiding place | Location where an escaped animal waits until it is found (GAME-ANIMALS, CONT-MISSIONS). |
 | `location_riddle` | Ortsrätsel † | location riddle | Riddle on the info board that describes an animal's hiding place without naming it (`klasse1`+). A kind of `riddle`. |
 | `info_board` | Infotafel | info board | Board next to each enclosure sign with the animal's name, its location riddle and its food word. |
+| `analytics_consent` | Statistik-Einwilligung | analytics consent | Opt-in of a parent (parental gate + "Erlauben") to anonymous usage statistics (TECH-PLATFORMS "Analytics (opt-in)"); stored in `zoo.analytics`; off by default. Never "tracking" in player-facing text. |
 | `food_storage` | Futterlager † | food storage | Building that holds all food boxes. |
 | `escaped` / `following` / `in_enclosure` | entlaufen / folgt / im Gehege † | escaped / following / in enclosure | The three animal states (GAME-ANIMALS). "Following" = walks behind the player after being shown its correct food. |
 | `math_task` | Matheaufgabe † | math task | Optional arithmetic task embedded in the world (CONT-MATH). |

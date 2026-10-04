@@ -3,6 +3,9 @@
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
 import { AdsHost } from './ads-ui';
+import { Analytics, browserAnalyticsEnv } from './analytics';
+import { MEASUREMENT_ID } from './analytics-config';
+import { createAnalyticsRow } from './analytics-ui';
 import { AD_TEST_BUILD, resolveKeys, testKeyParam } from './ads';
 import { attachUiTaps, GameAudio, SOUND_EVENT } from './audio';
 import { attachInput, type StickView } from './input';
@@ -29,6 +32,8 @@ export interface ZooDebug {
   slot: SaveSlot;
   /** Ad billboards (GAME-ADS): content state for tests. */
   ads: AdsHost;
+  /** Opt-in analytics (PLAT-022). */
+  analytics: Analytics;
   frames: number;
   /** Average CPU time of `app.frame()` in ms (exponential moving average). */
   frameMs: number;
@@ -131,6 +136,31 @@ async function main(): Promise<void> {
     slot.reset();
     window.location.reload();
   }, introEnabled(window.location.search, navigator.webdriver === true));
+  // opt-in analytics (PLAT-022..032): nothing happens until a parent allowed it; an empty id = off entirely
+  const analytics = new Analytics(
+    browserAnalyticsEnv(() => ({ language: app.language(), readingLevel: app.reading_level() })),
+    MEASUREMENT_ID,
+  );
+  if (analytics.available) {
+    const { row, relabel, showNotice } = createAnalyticsRow(app, analytics);
+    ui.addSettingsRow(row, relabel);
+    ui.onGameEvent = (e) => analytics.onGameEvent(e);
+    // the level part the player stands in, once a second and only while analytics is on (no per-frame code)
+    window.setInterval(() => {
+      if (analytics.on) analytics.observeLevel(app.player_level());
+    }, 1000);
+    analytics.init();
+    // a small 3 s notice at the bottom (non-blocking) when no decision was made yet: after the intro
+    let waited = 0;
+    const timer = window.setInterval(() => {
+      waited += 1;
+      const intro = document.getElementById('intro');
+      if (waited > 90 || !intro || intro.hidden) {
+        window.clearInterval(timer);
+        if (waited <= 90) showNotice();
+      }
+    }, 1000);
+  }
   // ad billboards (GAME-ADS): signed external campaigns load after the first frame
   const ads = new AdsHost(app, { keys: resolveKeys(AD_TEST_BUILD ? testKeyParam(window.location.search) : null), store });
   attachInput(app, {
@@ -152,7 +182,7 @@ async function main(): Promise<void> {
   window.addEventListener(SOUND_EVENT, (e) => audio.setEnabled((e as CustomEvent<{ on: boolean }>).detail.on));
   canvas.focus();
 
-  const debug: ZooDebug = { app, ui, audio, slot, ads, frames: 0, frameMs: 0, intervalMs: 0 };
+  const debug: ZooDebug = { app, ui, audio, slot, ads, analytics, frames: 0, frameMs: 0, intervalMs: 0 };
   window.__zoo = debug;
   let last = performance.now();
   const loop = (now: number) => {

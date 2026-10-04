@@ -69,7 +69,7 @@
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
 | TECH-ARCH | Technical architecture | draft | — | 8 | Q-026, Q-050 | [40-tech/architecture.md](40-tech/architecture.md) |
-| TECH-PLATFORMS | Platforms, performance and testing | draft | TECH-ARCH | 21 | Q-011, Q-012, Q-013, Q-104, Q-325 | [40-tech/platforms-and-testing.md](40-tech/platforms-and-testing.md) |
+| TECH-PLATFORMS | Platforms, performance and testing | draft | TECH-ARCH | 33 | Q-011, Q-012, Q-013, Q-104, Q-325, Q-355, Q-356, Q-357, Q-358 | [40-tech/platforms-and-testing.md](40-tech/platforms-and-testing.md) |
 | TECH-WATER | Animated cartoon water (rendering) | implemented | ART-ENVIRONMENT, TECH-ARCH, GAME-LAYOUT | 16 | — | [40-tech/water-rendering.md](40-tech/water-rendering.md) |
 
 ## Performance
@@ -80,4 +80,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 46 specs — draft: 43, review: 0, approved: 0, implemented: 3, deprecated: 0; 741 test cases; questions: answered: 143, open: 105, partly answered: 7, proposed: 2.
+**Summary:** 46 specs — draft: 43, review: 0, approved: 0, implemented: 3, deprecated: 0; 753 test cases; questions: answered: 143, open: 105, partly answered: 7, proposed: 2.

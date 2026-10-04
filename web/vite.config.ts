@@ -126,7 +126,11 @@ export default defineConfig(({ command }) => ({
   base: './',
   // `?adkey=` (test public key for the ad signature) exists only in the dev server and in the
   // e2e test build (`VITE_AD_TEST=1`), never in the release bundle (PLAT-012, Q-245).
-  define: { __AD_TEST__: JSON.stringify(command === 'serve' || process.env.VITE_AD_TEST === '1') },
+  define: {
+    __AD_TEST__: JSON.stringify(command === 'serve' || process.env.VITE_AD_TEST === '1'),
+    // fake GA4 id for the e2e test build only (PLAT-029); '' in the release build
+    __ANALYTICS_TEST_ID__: JSON.stringify(process.env.VITE_ANALYTICS_TEST_ID ?? ''),
+  },
   appType: 'mpa', // no SPA fallback: unknown paths are 404, never index.html
   plugins: [zooAssets()],
   server: { fs: { allow: [repoRoot] } },

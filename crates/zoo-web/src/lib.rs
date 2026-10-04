@@ -2666,6 +2666,15 @@ impl App {
             .unwrap_or_default()
     }
 
+    /// Id of the level part the player stands in (`level_1` …), empty if outside every part
+    /// (host analytics `level_started`, PLAT-030; polled at most once a second, never per frame).
+    pub fn player_level(&self) -> String {
+        let data = &self.game.level.data;
+        data.part_at(zoo_core::level::cell_of(self.game.player.pos))
+            .map(|k| data.parts[k].id.clone())
+            .unwrap_or_default()
+    }
+
     /// Whether a barrier is open (removed).
     pub fn barrier_open(&self, id: &str) -> bool {
         self.game.level.is_barrier_open(id)
@@ -3463,6 +3472,7 @@ impl App {
                     ));
                 }
                 GameEvent::NightFell => self.outbox.push("{\"type\":\"night\"}".to_owned()),
+                GameEvent::AllAnimalsHome => self.outbox.push("{\"type\":\"all_home\"}".to_owned()),
                 GameEvent::PutDownRefused => self
                     .outbox
                     .push("{\"type\":\"put_down_refused\"}".to_owned()),
@@ -3520,6 +3530,10 @@ impl App {
                     self.say(&animal, "garden-treat-yum");
                 }
                 GameEvent::BabyBorn { animal } => {
+                    self.outbox.push(format!(
+                        "{{\"type\":\"baby_born\",\"animal\":{}}}",
+                        js(&animal)
+                    ));
                     // no baby model yet (FAM-007, ART-ANIMALS): the celebration is the message
                     self.queue(&animal, &["happy"], false);
                     self.say(&animal, "family-baby");

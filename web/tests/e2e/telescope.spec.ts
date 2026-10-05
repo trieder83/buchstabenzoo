@@ -138,8 +138,10 @@ async function expectLineOrder(page: Page, boxes?: Record<string, { x: number; y
   const sun = (await page.locator('.tele-sun').boundingBox())!;
   const scx = sun.x + sun.width / 2;
   const scy = sun.y + sun.height / 2;
-  expect(Math.abs(scx - sky.x)).toBeLessThan(2);
-  expect(Math.abs(scy - (sky.y + sky.height))).toBeLessThan(2);
+  // the Sun's centre lies just outside the lower-left corner: only a part of it shows
+  expect(scx).toBeLessThanOrEqual(sky.x + 2);
+  expect(scy).toBeGreaterThanOrEqual(sky.y + sky.height - 2);
+  expect(sky.x - scx).toBeLessThan(sky.width * 0.2);
   const c: { x: number; y: number }[] = [];
   for (const id of ids) {
     const b = boxes?.[id] ?? (await page.locator(`.tele-planet[data-planet="${id}"]`).boundingBox())!;

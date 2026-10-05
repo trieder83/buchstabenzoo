@@ -115,6 +115,9 @@ pub fn landmark_model(kind: &str) -> Option<(&'static str, f32)> {
         "carousel" => ("carousel", 0.0),
         "slide" => ("playground_slide", 0.0),
         "swings" => ("playground_swings", 0.0),
+        // kit_landmarks_l2 (user order 2026-10-04): the train stands along X, its station north
+        "zoo_train" => ("zoo_train", 0.0),
+        "blossom_tree" => ("blossom_tree", 0.0),
         _ => return None,
     })
 }

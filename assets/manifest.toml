@@ -886,7 +886,7 @@ animations = ["idle", "walk", "eat", "happy", "refuse", "sleep"]
 id = "landmark_zoo_train"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]
@@ -914,7 +914,7 @@ animations = []
 id = "landmark_blossom_tree"
 kind = "props"
 spec = "ART-ENVIRONMENT"
-concept_approved = false
+concept_approved = true
 animations = []
 
 [[asset]]

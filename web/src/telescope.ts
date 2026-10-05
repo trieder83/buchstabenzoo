@@ -60,15 +60,16 @@ export function lineLayout(w: number, h: number, n = 8): LineLayout {
     const by = m;
     const dyStep = (ay - by) / (n - 1);
     // a tall sky has room for a big Sun; a low one (landscape phone) keeps it small
-    const r = dyStep >= 64 ? clamp(Math.min(w, h) * 0.24, 56, 150) : clamp(Math.min(w, h) * 0.13, 44, 130);
-    const ax = dyStep >= 64 ? Math.max(m + 8, r + 26) : m + 8;
+    const r = dyStep >= 64 ? clamp(Math.min(w, h) * 0.24, 56, 150) : clamp(Math.min(w, h) * 0.105, 34, 130);
+    // Mercury keeps a clear gap to the Sun's rim (user report 2026-10-04: too near the Sun)
+    const ax = dyStep >= 64 ? Math.max(m + 8, r + 50) : m + 8;
     const bx = w - m;
     const centres: { x: number; y: number }[] = [];
     for (let i = 0; i < n; i++) {
       const t = i / (n - 1);
       centres.push({ x: ax + (bx - ax) * t, y: ay + (by - ay) * t });
     }
-    return { centres, sun: { x: 0, y: h, r }, step: Math.max((bx - ax) / (n - 1), dyStep) };
+    return { centres, sun: { x: -0.45 * r, y: h + 0.45 * r, r }, step: Math.max((bx - ax) / (n - 1), dyStep) };
   };
   // margin: half a 64 px box plus a little; larger discs on big skies need more so they stay inside
   const first = place(34);

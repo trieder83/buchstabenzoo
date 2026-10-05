@@ -98,7 +98,7 @@ helps. Only words that fit the level (CONT-L10N, reading levels).
 | TELE-001 | Given the planet table, then it has eight planets in order 1..8 named Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune with unique ids. | unit |
 | TELE-002 | Given the table, then the kinds are right: Mercury, Venus, Earth, Mars rocky; Jupiter, Saturn gas; Uranus, Neptune ice. | unit |
 | TELE-003 | Given the de and en Fluent content, then every planet has a name and one sentence at each of the four reading levels, and every kind has a label, in both languages. | unit |
-| TELE-004 | Given the sentences, then the kiga sentence has at most 6 words and each is non-empty and not longer than 160 characters; only Saturn has `ring`. | unit |
+| TELE-004 | Given the sentences, then the kiga sentence has at most 6 words and each is non-empty and not longer than 250 characters (klasse2 / klasse3 are richer: 2–3 sentences with extra facts, user request 2026-10-04); only Saturn has `ring`. | unit |
 | TELE-005 | Given the day, then the telescope offers no interaction; given the night with `night_1` unlocked and the player next to the telescope, then the available target is `telescope` and `interact` returns the telescope result. | unit |
 | TELE-006 | Given the telescope view data (`telescope_json`), then it lists the eight planets with their visual parameters and keys. | unit |
 | TELE-007 | Given the night and the player at the telescope, when she interacts, then `#telescope-view` is open with eight `.tele-planet` (each >= 64 px) and the game is paused (a held movement key does not move her); closing (✖, `Esc`) resumes it. | e2e |

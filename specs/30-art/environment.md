@@ -303,6 +303,7 @@ tints them with blue moonlight and adds lamp point lights and emissive areas.
 | AENV-013 | Given the exported `kit_landmarks_play` models `ice_cream_kiosk`, `carousel`, `playground_slide` and `playground_swings`, then each loads, has ≤ 600 triangles, stands on y = 0, fits its level rect (kiosk 4 × 3, carousel 4 × 4, slide 2 × 3, swings 4 × 2; slide ≤ 1.9 m, swings ≤ 2.3 m high) and the carousel has a `rotor` node with its pivot at the centre; `check_glb.py` passes. | asset |
 | AENV-014 | Given the zoo scene, then the kinds `carousel`, `kiosk` (building, counter-style, not enterable), `slide` and `swings` are drawn by `carousel`, `ice_cream_kiosk`, `playground_slide` and `playground_swings` at their rect centres (front south, one each) with a placeholder fallback, and their rect cells stay solid (collision unchanged, LAYOUT-017). | unit |
 | AENV-015 | Given level 3 unlocked, when the player looks at the kiosk, the carousel and the slide + swings, then the models are on screen without console errors and two screenshots 2 s of game time apart show a turned carousel (`rotor` spins). | e2e |
+| AENV-016 | Given the exported `kit_landmarks_l2` models `zoo_train` (≤ 2200 triangles, ≤ 2.5 m, fits 8 × 2, nodes `wheel_e0..e2`, `wheel_w1a/w1b/w2a/w2b`, `smoke`) and `blossom_tree` (≤ 1800 triangles, ≤ 6.4 m, nodes `petals`, `bees`), then each loads and stands on y = 0; and the zoo scene draws them for `train_se` / `tree_blossom_ne` at the rect centre with a placeholder fallback (AENV-014 list); `check_glb.py` passes. | asset |
 
 ## Open questions
 

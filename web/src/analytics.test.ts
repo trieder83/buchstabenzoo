@@ -43,7 +43,7 @@ function setup(id = 'G-TEST000000', stored?: string) {
 }
 
 describe('default: nothing before consent', () => {
-  it('PLAT-022 init without a stored choice loads nothing and sends nothing', () => {
+  it('PLAT-022 init without a stored choice sends only the anonymous cookie-less page ping', () => {
     const s = setup();
     s.a.init();
     s.a.track('level_started', { level_id: 'level_1' });
@@ -51,9 +51,26 @@ describe('default: nothing before consent', () => {
     s.a.onGameEvent({ type: 'mission_complete', animal: 'zebra' });
     expect(s.a.consent()).toBe('unset');
     expect(s.a.on).toBe(false);
-    expect(s.scripts).toEqual([]);
-    expect(s.calls).toEqual([]);
+    expect(s.scripts).toEqual([GTAG_SCRIPT + 'G-TEST000000']);
+    expect(s.calls[0]).toEqual(['consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' }]);
+    const cfg = s.calls.find((c) => c[0] === 'config')!;
+    expect(cfg[2]).toMatchObject({ client_storage: 'none', allow_google_signals: false, allow_ad_personalization_signals: false, send_page_view: true });
+    expect(s.calls.some((c) => c[0] === 'consent' && c[1] === 'update')).toBe(false);
+    expect(s.events()).toEqual([]); // no game events before consent
     expect(s.timer()).toBeNull();
+    expect(s.mem.get(CONSENT_KEY)).toBeUndefined();
+  });
+
+  it('PLAT-022 granting after the anonymous ping: consent update, no second page view, one script', () => {
+    const s = setup();
+    s.a.init();
+    s.a.grant();
+    expect(s.scripts).toEqual([GTAG_SCRIPT + 'G-TEST000000']);
+    const cfgs = s.calls.filter((c) => c[0] === 'config');
+    expect(cfgs).toHaveLength(2);
+    expect(cfgs[1][2]).toMatchObject({ send_page_view: false });
+    expect(s.calls.filter((c) => c[0] === 'consent' && c[1] === 'default')).toHaveLength(1);
+    expect(s.events()).toEqual([['event', 'zoo_session', { app_language: 'de', reading_level: 'klasse1' }]]);
   });
 
   it('PLAT-022 a stored denied stays off', () => {
@@ -228,8 +245,10 @@ describe('play minutes', () => {
     const s = setup();
     s.a.init();
     expect(s.st.intervals).toBe(0);
+    const before = s.calls.length; // (the anonymous page ping only)
     s.advance(10 * 60_000);
-    expect(s.calls).toEqual([]);
+    expect(s.calls.length).toBe(before);
+    expect(s.events()).toEqual([]);
   });
 });
 

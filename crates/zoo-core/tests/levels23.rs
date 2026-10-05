@@ -1168,6 +1168,9 @@ fn aenv_014_play_landmarks_use_their_models() {
         ("ice_cream_kiosk", "ice_cream_kiosk"),
         ("playground_se_slide", "playground_slide"),
         ("playground_se_swings", "playground_swings"),
+        // AENV-016
+        ("train_se", "zoo_train"),
+        ("tree_blossom_ne", "blossom_tree"),
     ] {
         let e = zoo.element(id).unwrap();
         let c = Vec2::new(

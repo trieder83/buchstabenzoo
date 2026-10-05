@@ -111,14 +111,14 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
     (gear, compass, view button, interact button).
 11. **Parental gate** (Q-242): pressing the link button shows a modal gate: (1) for the maths campaign a **simple plus or
     minus task up to 20** (user request 2026-10-01: e.g. 9 + 7 or 15 − 6; numbers and result 0…20) with 4 number buttons — a wrong
-    answer or ✖ ends the gate; (2) hold the ✋ button **3 s** (progress ring; releasing resets;
+    answer or ✖ ends the gate; (2) hold the ✋ button **2 s** (user request 2026-10-04, was 3 s) (progress ring; releasing resets;
     a small finger movement does not release; no context menu / scrolling on the button). When
     the hold is complete a big button (≥ 64 px, icon + "mathfighter.rcms.ch") appears; **the
     child / parent TAPS it** and only that tap opens the link: an `<a href=<canonical URL>
     target=_blank rel="noopener noreferrer">` built by the game, whose click handler calls
     `window.open(url, '_blank', 'noopener,noreferrer')` **once** inside the user gesture (phone
     browsers — iOS Safari, Samsung Internet — block pop-ups started from a timer, which is what
-    the end of a 3 s hold is). No analytics, no query parameters, no request to the campaign
+    the end of a 2 s hold is). No analytics, no query parameters, no request to the campaign
     host by the game (ADC1-005).
 
 12. **All-done carousel** (user request 2026-10-04, Q-364): when the 🧭 compass reports
@@ -132,7 +132,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
     (≥ 40 px horizontal) turns the page, wraps around, shows the tagline (`klasse1+`, hidden on
     very small landscape screens) and a ✖ (same 400 ms accidental-touch guard) / Esc closes it.
     Tapping the picture starts the **same parental gate** as rule 11 (campaign-specific question,
-    3 s hold, release opens the link directly, ADS-030) — the link is never opened without it. With
+    2 s hold, release opens the link directly, ADS-030) — the link is never opened without it. With
     **no verified campaign** the panel is not offered and the normal all-done bubble shows. It
     uses the images already in memory: no extra request, no tracking. While it is open the board
     reading panels stay closed. Small screens: a compact card left of the control column
@@ -147,7 +147,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | Someone who can write only `ads/**` on the hosting (leaked upload token, bad content deploy) | delete the content | publish content without the private key; swap images (hash), change links/taglines (signed), add a campaign, point a link elsewhere (compiled allowlist) |
 | Someone who controls the **whole hosting origin** (incl. the game bundle) | replace the game, its compiled key and its code | — the signature cannot help here (same as for any web game); the store apps (Capacitor) carry the key inside the signed binary and run the packaged bundle |
 | Holder of the private key | show any content of a **known campaign id** (images, taglines, `active`) | add a new campaign id or another link host without a game release (Q-241) |
-| A child | tap / hold the gate by accident (needs the right plus/minus task **and** 3 s holding) | — (a grade-1/2 child can solve the task, so the gate only stops accidental taps, not a determined child; Q-242) |
+| A child | tap / hold the gate by accident (needs the right plus/minus task **and** 2 s holding) | — (a grade-1/2 child can solve the task, so the gate only stops accidental taps, not a determined child; Q-242) |
 
 ## Test cases
 
@@ -172,7 +172,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the timeout (4 s manifest, 15 s images); only same-origin `ads/` URLs are requested. | unit |
 | ADS-024 | Given a browser without Web Crypto (plain http on a LAN IP, e.g. the phone on the dev server http://192.168.x.x:5173), then the signature check and the SHA-256 image hashes use the pure-JS fallback (@noble/hashes) and give exactly the same result (a tampered manifest is still rejected), so the signed ads show there too. | unit |
 | ADS-025 | Given the gate of the reading campaign (ABC Smash), then it asks a language question instead of a sum: German a noun and its right article (e.g. "… Gabel" → der / die / das, answer die), English the right plural (one mouse → mice) with 4 answers; the maths campaign keeps the plus/minus task up to 20. | unit, e2e |
-| ADS-018 | Given the parental gate, then (after the right answer and 3 s holding the open button appears; `window.open` is not called before it is tapped) holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets; the task is a plus or minus task with numbers and result in 0…20 and 4 distinct answers; the gate shows no "adults only" claim (title "Zur Webseite" / "To the website"). | unit |
+| ADS-018 | Given the parental gate, then (after the right answer and 2 s holding the open button appears; `window.open` is not called before it is tapped) holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets; the task is a plus or minus task with numbers and result in 0…20 and 4 distinct answers; the gate shows no "adults only" claim (title "Zur Webseite" / "To the website"). | unit |
 | ADS-019 | Given `?adkey=` in a build without the test hook, then it is ignored. | unit |
 | ADS-020 | Given a correctly signed test manifest (test build), then the boards show the campaign pictures, the panel shows picture + tagline + link button ≥ 64 px, and the link opens (`noopener`, canonical URL) exactly once, only after the gate and the tap on the open button. | e2e |
 | ADS-021 | Given a manifest signed with a wrong key (test build) or a tampered image, then the placeholders remain / only that campaign is missing, and no panel opens. | e2e |
@@ -181,11 +181,11 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-026 | Given an emulated phone (touch, 780×360, 360×780, 412×892), when the player stands in front of a verified board (any facing, 1…3.4 m), then the panel and the link button (≥ 56 px) are inside the viewport and tapping the button starts the gate. | e2e |
 | ADS-027 | Given a phone, a verified board is near and the panel was closed by ✖ (or the ✖ was tapped < 400 ms after opening: ignored), then the interact button (🔗) is visible and tapping it reopens the panel; leaving and coming back also reopens it; the manifest arriving late opens the panel for a child already standing there. | e2e |
 | ADS-028 | Given a small screen (780×360), then the open panel does not overlap `#settings-btn`, `#compass-btn`, `#view-btn` and `#act` (bounding boxes) and is a compact card; at 360×780 it does not overlap them either. | e2e |
-| ADS-029 | Given the gate: after the right answer + 3 s touch hold (finger moving 10 px does not release; no context menu) an open button ≥ 64 px with an anchor (`href` canonical, `target=_blank`, `rel=noopener noreferrer`) appears and `window.open` has NOT been called; tapping it calls `window.open` exactly once and closes panel and gate. A slow image download (> 4 s, < 15 s) still shows the campaign; a failed load is retried once. | e2e + unit |
-| ADS-030 | Given the gate (user request 2026-10-04: "the link should open directly, not show the link again"): after the right answer + 3 s touch hold the hold button shows ✔ (`#ad-hold.ready`) and `window.open` has NOT been called (a timer is no user gesture); releasing the finger then opens the link directly, exactly once (`_blank`, `noopener,noreferrer`) and closes panel and gate; an early release opens nothing; there is no second "open" button. Replaces the tap-button part of ADS-029. | e2e |
+| ADS-029 | Given the gate: after the right answer + 2 s touch hold (finger moving 10 px does not release; no context menu) an open button ≥ 64 px with an anchor (`href` canonical, `target=_blank`, `rel=noopener noreferrer`) appears and `window.open` has NOT been called; tapping it calls `window.open` exactly once and closes panel and gate. A slow image download (> 4 s, < 15 s) still shows the campaign; a failed load is retried once. | e2e + unit |
+| ADS-030 | Given the gate (user request 2026-10-04: "the link should open directly, not show the link again"): after the right answer + 2 s touch hold the hold button shows ✔ (`#ad-hold.ready`) and `window.open` has NOT been called (a timer is no user gesture); releasing the finger then opens the link directly, exactly once (`_blank`, `noopener,noreferrer`) and closes panel and gate; an early release opens nothing; there is no second "open" button. Replaces the tap-button part of ADS-029. | e2e |
 | ADS-031 | Carousel logic (`carouselItems`, `Carousel`): items = verified campaigns in slot order, one image each for the language, empty without content; `next`/`prev` wrap, `go` wraps, auto-advance after exactly 4 s, a manual move restarts the timer, a paused timer never advances, a single slide never advances. | unit |
 | ADS-032 | Given all levels solved (`next = all_done`) and a verified campaign set, when the compass is tapped, then the carousel opens with the headline (de / en) and the first campaign, ◀ ▶ are ≥ 64 px, there is one dot per campaign; ▶ / ◀ / a dot / the 4 s timer change the slide and wrap; ✖ and Esc close it. | e2e |
-| ADS-033 | Given the carousel, when the picture is tapped, then the parental gate starts and `window.open` is not called; after the right answer + 3 s hold + release the link of the shown campaign opens exactly once and the carousel closes; the timer does not advance while the gate is up. | e2e |
+| ADS-033 | Given the carousel, when the picture is tapped, then the parental gate starts and `window.open` is not called; after the right answer + 2 s hold + release the link of the shown campaign opens exactly once and the carousel closes; the timer does not advance while the gate is up. | e2e |
 | ADS-034 | Given `next = all_done` but no verified campaign (no key / failed load) or `next` is not `all_done`, when the compass is tapped, then no carousel opens (the normal bubble shows). On 780x360 and 360x780 the carousel is inside the viewport, its buttons are ≥ 64 px and it overlaps none of `#settings-btn`, `#compass-btn`, `#view-btn`, `#act`. | e2e |
 
 ## Open questions

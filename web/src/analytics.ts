@@ -93,6 +93,7 @@ export class Analytics {
   private lastTick = 0;
   private levelsSeen = new Set<string>();
   private sessionSent = false;
+  private anonymousSent = false;
 
   constructor(
     private readonly env: AnalyticsEnv,
@@ -119,9 +120,48 @@ export class Analytics {
     return this.active;
   }
 
-  /** At page start: resume only a stored consent; otherwise nothing happens at all. */
+  /**
+   * At page start: a stored consent is resumed; with NO decision yet only the anonymous, cookie-less
+   * page ping runs (consent mode: storage denied, `client_storage: none`, no game events, user
+   * request 2026-10-04); an explicit "denied" stays off.
+   */
   init(): void {
-    if (this.available && this.consent() === 'granted') this.start();
+    if (!this.available) return;
+    const c = this.consent();
+    if (c === 'granted') this.start();
+    else if (c === 'unset') this.startAnonymous();
+  }
+
+  /** Loads gtag once with every storage denied (consent mode). */
+  private load(): void {
+    if (this.loaded) return;
+    this.loaded = true;
+    const { gtag } = this.env;
+    gtag('consent', 'default', {
+      analytics_storage: 'denied',
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'restricted_data_processing', true);
+    this.env.loadScript(GTAG_SCRIPT + encodeURIComponent(this.id));
+    gtag('js', new Date(this.env.now()));
+  }
+
+  /** The anonymous ping before any decision: page view only, no cookies, no custom events. */
+  private startAnonymous(): void {
+    this.load();
+    this.env.setDisabled(this.id, false);
+    this.env.gtag('config', this.id, {
+      allow_google_signals: false,
+      allow_ad_personalization_signals: false,
+      client_storage: 'none',
+      send_page_view: true,
+      page_referrer: '',
+      page_location: this.pageLocation(),
+    });
+    this.anonymousSent = true;
   }
 
   /** The parent opted in (called only after the gate). */
@@ -149,26 +189,15 @@ export class Analytics {
     if (this.active) return;
     this.active = true;
     const { gtag } = this.env;
-    if (!this.loaded) {
-      this.loaded = true;
-      gtag('consent', 'default', {
-        analytics_storage: 'denied',
-        ad_storage: 'denied',
-        ad_user_data: 'denied',
-        ad_personalization: 'denied',
-      });
-      gtag('set', 'ads_data_redaction', true);
-      gtag('set', 'restricted_data_processing', true);
-      this.env.loadScript(GTAG_SCRIPT + encodeURIComponent(this.id));
-      gtag('js', new Date(this.env.now()));
-    }
+    this.load();
     this.env.setDisabled(this.id, false);
     gtag('consent', 'update', { analytics_storage: 'granted' });
     gtag('config', this.id, {
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
       cookie_flags: 'SameSite=Lax;Secure',
-      send_page_view: true,
+      client_storage: 'cookie',
+      send_page_view: !this.anonymousSent,
       page_referrer: '',
       page_location: this.pageLocation(),
     });

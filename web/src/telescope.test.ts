@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lineLayout, parsePlanets, planetSvg, type PlanetData } from './telescope';
+import { lineLayout, discBase, parsePlanets, planetSvg, type PlanetData } from './telescope';
 
 // TELE-011 (line layout maths)
 const SKIES: [number, number][] = [
@@ -40,12 +40,15 @@ describe('telescope line layout', () => {
     }
   });
 
-  it('puts the sun centre at the lower-left corner, left of the first planet', () => {
+  it('puts the sun just outside the lower-left corner and Mercury clear of its rim', () => {
     for (const [w, h] of SKIES) {
-      const { sun, centres } = lineLayout(w, h, 8);
-      expect(sun).toEqual({ x: 0, y: h, r: expect.any(Number) });
+      const { sun, centres, step } = lineLayout(w, h, 8);
+      expect(sun.x).toBeLessThan(0);
+      expect(sun.y).toBeGreaterThan(h);
       expect(centres[0].x).toBeGreaterThan(0);
-      expect(Math.hypot(centres[0].x, h - centres[0].y)).toBeGreaterThan(sun.r * 0.9);
+      // gap between the Sun's rim and Mercury's disc (radius ~ 0.2 x disc base) is at least 20 px
+      const dist = Math.hypot(centres[0].x - sun.x, centres[0].y - sun.y);
+      expect(dist - sun.r - 0.2 * discBase(step), `${w}x${h}`).toBeGreaterThanOrEqual(20);
     }
   });
 

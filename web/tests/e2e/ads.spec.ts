@@ -159,7 +159,7 @@ test.describe('signed campaigns (test build)', () => {
     await link.click();
     await expect(page.locator('#ad-gate')).toBeVisible();
     expect(await opens(page)).toEqual([]);
-    // the sum: the right answer, then 3 s of holding
+    // the sum: the right answer, then 2 s of holding
     const q = (await page.locator('#ad-gate-question').textContent())!;
     const answer = gateAnswer(q);
     await page.locator('.ad-choice', { hasText: new RegExp(`^${answer}$`) }).click();
@@ -173,7 +173,7 @@ test.describe('signed campaigns (test build)', () => {
     await page.mouse.up();
     expect(await opens(page)).toEqual([]);
     await expect(page.locator('#ad-gate')).toBeVisible();
-    // holding for 3 s opens the link exactly once, in a new tab without opener
+    // holding for 2 s opens the link exactly once, in a new tab without opener
     await page.mouse.down();
     // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
     await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });

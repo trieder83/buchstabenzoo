@@ -1,4 +1,4 @@
-// TECH-PLATFORMS "Analytics (opt-in)": PLAT-022 (nothing before consent), PLAT-023 (parental gate),
+// TECH-PLATFORMS "Analytics (opt-in)": PLAT-022 (only the anonymous cookie-less ping before consent), PLAT-023 (parental gate),
 // PLAT-024 (grant: script + gtag setup), PLAT-027 (switch off), PLAT-030 (events), PLAT-031 (button, small screens).
 // Runs on the test build `dist-adtest` (fake measurement id G-TEST000000, PLAT-029); scripts/e2e.sh picks it.
 import { expect, test, type Page } from '@playwright/test';
@@ -52,19 +52,24 @@ async function grantByButton(page: Page) {
   await page.click('#analytics-toggle');
 }
 
-test('PLAT-022 nothing is loaded and no request is made before consent; the button shows off', async ({ page }) => {
+test('PLAT-022 before any decision only the anonymous cookie-less page ping runs; the button shows off', async ({ page }) => {
   const urls = await spy(page);
   await open(page);
   await nextFrames(page, 30);
   await page.waitForTimeout(1500);
-  expect(urls).toEqual([]);
-  expect(await page.evaluate(() => 'dataLayer' in window)).toBe(false);
-  expect(await page.locator('script[src*="googletagmanager"]').count()).toBe(0);
+  // gtag loads once, with every storage denied
+  expect(urls.filter((u) => u.includes('/gtag/js'))).toEqual([`https://www.googletagmanager.com/gtag/js?id=${ID}`]);
+  const c = await calls(page);
+  expect(c[0]).toEqual(['consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' }]);
+  const cfg = c.find((x) => x[0] === 'config')!;
+  expect(cfg[2]).toMatchObject({ client_storage: 'none', allow_google_signals: false, allow_ad_personalization_signals: false });
+  expect(c.some((x) => x[0] === 'consent' && x[1] === 'update')).toBe(false);
+  expect((await events(page)).length).toBe(0); // no game events before consent
+  expect(await page.evaluate(() => document.cookie)).not.toContain('_ga');
   expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBeNull();
   expect(await page.locator('#analytics-dialog').isVisible()).toBe(false); // no consent dialog at start
   await openSettings(page);
   await expect(page.locator('#analytics-toggle')).toHaveAttribute('aria-pressed', 'false');
-  expect(urls).toEqual([]);
 });
 
 test('PLAT-023 one tap on the settings 📊 grants consent at once (no question, no hold) and the button then disappears', async ({ page }) => {
@@ -97,7 +102,7 @@ test('PLAT-024 PLAT-030 PLAT-027 grant loads the script and sends allowlisted ev
   const c = await calls(page);
   expect(c[0]).toEqual(['consent', 'default', { analytics_storage: 'denied', ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied' }]);
   expect(c).toContainEqual(['consent', 'update', { analytics_storage: 'granted' }]);
-  const cfg = c.find((x) => x[0] === 'config')!;
+  const cfg = c.filter((x) => x[0] === 'config').at(-1)!; // the 2nd config (after consent); the 1st is the anonymous ping
   expect(cfg[1]).toBe(ID);
   expect(cfg[2]).toMatchObject({ allow_google_signals: false, allow_ad_personalization_signals: false, cookie_flags: 'SameSite=Lax;Secure' });
   expect(String((cfg[2] as { page_location: string }).page_location)).not.toContain('?');
@@ -173,7 +178,7 @@ for (const [name, w, h] of [
     expect(s.y).toBeGreaterThanOrEqual(0);
     expect(s.x + s.width).toBeLessThanOrEqual(w + 0.5);
     expect(s.y + s.height).toBeLessThanOrEqual(h + 0.5);
-    expect(urls).toEqual([]);
+    expect(urls.filter((u) => !u.includes('/gtag/js'))).toEqual([]);
   });
 }
 
@@ -190,7 +195,7 @@ test('PLAT-033 first start: welcome dialog with story, data note, light "No" and
   for (const b of [yes, no]) expect((await b.boundingBox())!.height).toBeGreaterThanOrEqual(64);
   expect(await no.evaluate((e) => getComputedStyle(e).fontWeight)).not.toBe('700'); // light
   expect(await yes.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(124, 196, 106)'); // green
-  expect(urls).toEqual([]); // nothing before the answer
+  expect(urls.filter((u) => !u.includes('/gtag/js'))).toEqual([]); // nothing before the answer
   await yes.click();
   await expect(w).toHaveCount(0);
   expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBe('granted');
@@ -213,7 +218,7 @@ test('PLAT-033 "No, I don\'t want to play" stores nothing, sends nothing, shows 
   expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBeNull();
   await page.click('#welcome-back');
   await expect(page.locator('#welcome-yes')).toBeVisible();
-  expect(urls).toEqual([]);
+  expect(urls.filter((u) => !u.includes('/gtag/js'))).toEqual([]);
   await page.click('#welcome-yes');
   await page.reload(); // decided: no welcome any more
   await waitFrames(page, 3);

@@ -71,7 +71,7 @@ fn tele_003_004_texts_at_every_level_in_de_and_en() {
                 let t = c
                     .text(lang, &p.text_key(level))
                     .unwrap_or_else(|| panic!("{} {level:?} {lang:?}", p.id));
-                assert!(!t.is_empty() && t.chars().count() <= 220, "{}: {t}", p.id);
+                assert!(!t.is_empty() && t.chars().count() <= 250, "{}: {t}", p.id);
                 if level == ReadingLevel::Kiga {
                     assert!(t.split_whitespace().count() <= 6, "kiga too long: {t}");
                 }

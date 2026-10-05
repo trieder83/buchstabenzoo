@@ -507,7 +507,7 @@ describe('parental gate (ADS-018)', () => {
     expect(g.answer(85)).toBe('failed');
   });
 
-  it('ADS-018 the right answer then 3 s of holding opens; releasing early resets', () => {
+  it('ADS-018 the right answer then 2 s of holding opens; releasing early resets', () => {
     const g = gate();
     expect(g.answer(85)).toBe('hold');
     g.holdStart(1000);

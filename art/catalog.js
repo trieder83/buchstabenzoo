@@ -1309,7 +1309,7 @@ window.ART_CATALOG = {
         {
           id: "landmark_zoo_train",
           title: "Zoo train at its station",
-          status: "in-review",
+          status: "approved",
           description: "Zoo train at its station \u2014 riddle features: locomotive, chimney, bell, two wagons, rails. Today a placeholder box in the game. Approve: shape, parts, colours, readable from the 55\u00b0 camera.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_landmarks_l2/brief.md",
@@ -1317,6 +1317,7 @@ window.ART_CATALOG = {
           images: [
             { file: "props/kit_landmarks_l2/sheet_zoo_train_v1.jpg", label: "sheet \u2014 5 views (chosen v1)", required: true },
             { file: "props/kit_landmarks_l2/sheet_zoo_train_v2.jpg", label: "sheet v2 (alternative)" },
+            { file: "props/kit_landmarks_l2/model_preview.png", label: "3D model preview (2026-10-05: zoo_train + blossom_tree, day / night)" },
           ],
         },
         {
@@ -1359,13 +1360,14 @@ window.ART_CATALOG = {
         {
           id: "landmark_blossom_tree",
           title: "Blossom tree",
-          status: "in-review",
+          status: "approved",
           description: "Blossom tree \u2014 riddle features: pink blossoms, falling petals, bees. Today a placeholder box in the game. Approve: shape, parts, colours, readable from the 55\u00b0 camera.",
           spec: "ART-ENVIRONMENT",
           brief: "props/kit_landmarks_l2/brief.md",
           notes: "Element tree_blossom_ne, 2 x 2 m (70,55). Good; bees included.",
           images: [
             { file: "props/kit_landmarks_l2/sheet_blossom_tree_v4.jpg", label: "sheet \u2014 5 views (chosen v4)", required: true },
+            { file: "props/kit_landmarks_l2/model_preview.png", label: "3D model preview (2026-10-05: zoo_train + blossom_tree, day / night)" },
           ],
         },
         {

@@ -220,3 +220,53 @@ fn aenv_013_play_landmark_models() {
         "rotor turns about the centre"
     );
 }
+
+// AENV-016: the `kit_landmarks_l2` models (zoo train at its station, blossom tree) load, stay in
+// their triangle budgets, stand on y = 0, fit their rects and keep their animated child nodes.
+#[test]
+fn aenv_016_l2_landmark_models() {
+    // (model, max triangles, rect w, rect d, max height, nodes)
+    for (name, max_tris, w, d, h, nodes) in [
+        (
+            "zoo_train",
+            2200,
+            8.0,
+            2.0,
+            2.5,
+            &[
+                "wheel_e0",
+                "wheel_e1",
+                "wheel_e2",
+                "wheel_w1a",
+                "wheel_w1b",
+                "wheel_w2a",
+                "wheel_w2b",
+                "smoke",
+            ][..],
+        ),
+        ("blossom_tree", 1800, 2.0, 2.0, 6.4, &["petals", "bees"][..]),
+    ] {
+        let m = load(&format!("assets/models/props/{name}.glb"));
+        let tris = m.mesh.indices.len() / 3;
+        assert!(tris > 300 && tris <= max_tris, "{name}: {tris} triangles");
+        let (mut lo, mut hi) = ([f32::MAX; 3], [f32::MIN; 3]);
+        for p in &m.mesh.positions {
+            for k in 0..3 {
+                lo[k] = lo[k].min(p[k]);
+                hi[k] = hi[k].max(p[k]);
+            }
+        }
+        assert!(lo[1].abs() < 0.02, "{name}: origin at the feet");
+        assert!(hi[1] <= h, "{name}: {} m high", hi[1]);
+        // the tree crown is wider than its 2 x 2 rect (like the other trees); the train fits
+        if name == "zoo_train" {
+            assert!(
+                hi[0] - lo[0] <= w + 0.2 && hi[2] - lo[2] <= d + 0.25,
+                "{name}: fits {w} x {d}"
+            );
+        }
+        for n in nodes {
+            assert!(m.node_index(n).is_some(), "{name}: node {n}");
+        }
+    }
+}

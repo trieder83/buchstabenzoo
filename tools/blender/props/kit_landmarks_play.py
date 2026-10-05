@@ -211,10 +211,10 @@ def playground_slide():
         y = 1.5 - 0.48 * z / PZ
         p.append(zb.box((0.6, 0.06, 0.05), (0, y, z), color="wood_dark"))
     # chute (south): yellow bed, red side rims, curved
-    path = [(0.2, PZ), (-0.15, PZ - 0.22), (-0.6, PZ - 0.62), (-1.05, 0.38), (-1.42, 0.22), (-1.5, 0.2)]
-    p.append(strip_yz(path, 0.05, 0.0, -0.3, 0.3, "barrow_yellow"))
+    path = [(0.2, PZ), (-0.15, PZ - 0.22), (-0.6, PZ - 0.62), (-1.0, 0.42), (-1.3, 0.25), (-1.5, 0.2)]
+    p.append(strip_yz(path, 0.07, 0.0, -0.34, 0.34, "barrow_yellow"))
     for sx in (-1, 1):
-        p.append(strip_yz(path, 0.05, 0.1, 0.3 if sx > 0 else -0.38, 0.38 if sx > 0 else -0.3, "slide_red"))
+        p.append(strip_yz(path, 0.07, 0.15, 0.34 if sx > 0 else -0.44, 0.44 if sx > 0 else -0.34, "slide_red"))
     # support leg under the chute
     for sx in (-1, 1):
         p.append(pp.beam((sx * 0.42, -0.5, 0.0), (sx * 0.42, -0.4, 0.62), 0.07, sides=4, color="wood"))
@@ -231,15 +231,21 @@ def playground_swings():
     for sx in (-1, 1):
         x = sx * 1.6
         for sy in (-1, 1):
-            p.append(pp.beam((x, sy * 0.75, 0.0), (x, 0.0, TOP - 0.02), 0.13, sides=4, color="wood"))
-    p.append(zb.box((3.9, 0.15, 0.15), (0, 0, TOP + 0.03), color="wood_light"))
-    for dx in (-0.6, 0.6):
-        x0 = dx
-        p.append(zb.box((0.5, 0.22, 0.05), (x0, 0, 0.45), color="swing_blue", bevel=0.01))
-        for sx in (-1, 1):
-            p.append(pp.beam((x0 + sx * 0.2, 0, 0.47), (x0 + sx * 0.2, 0, TOP - 0.04), 0.03, sides=3, color="iron",
-                             caps=False))
+            p.append(pp.beam((x, sy * 0.75, 0.0), (x, 0.0, TOP - 0.02), 0.15, sides=4, color="wood"))
+        p.append(zb.box((0.12, 0.9, 0.08), (x, 0.0, 0.62), color="wood_dark"))   # cross brace between the legs
+    p.append(zb.box((3.95, 0.17, 0.17), (0, 0, TOP + 0.03), color="wood_light"))
     A.add(p)
+    pivot_z = TOP - 0.04
+    for name, x0 in (("swing_l", -0.6), ("swing_r", 0.6)):
+        A.node(name, pivot=(x0, 0, pivot_z))
+        s = [zb.box((0.56, 0.26, 0.06), (x0, 0, 0.45), color="swing_blue", bevel=0.015),
+             zb.box((0.56, 0.05, 0.04), (x0, -0.12, 0.49), color="swing_blue"),
+             zb.box((0.56, 0.05, 0.04), (x0, 0.12, 0.49), color="swing_blue")]
+        for sx in (-1, 1):
+            s.append(pp.beam((x0 + sx * 0.22, 0, 0.48), (x0 + sx * 0.22, 0, pivot_z), 0.045, sides=4, color="iron"))
+            for z in (0.8, 1.15, 1.5):    # chain link blocks
+                s.append(zb.box((0.07, 0.03, 0.09), (x0 + sx * 0.22, 0, z), color="metal"))
+        A.add(s, node=name, keep_down=True)
     return A
 
 

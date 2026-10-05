@@ -188,3 +188,17 @@ horse_cream      = { index = 217, hex = "#F0DDB0" }
 horse_grey       = { index = 218, hex = "#9A9AA6" }
 slide_red        = { index = 219, hex = "#DD4B3F" } # slide rims and ladder trim
 swing_blue       = { index = 220, hex = "#3E78D0" } # swing seats
+# ---- train + blossom landmarks (kit_landmarks_l2: zoo_train, blossom_tree;
+# art/props/kit_landmarks_l2/sheet_zoo_train_v1, sheet_blossom_tree_v4)
+train_red        = { index = 221, hex = "#D8392F" } # engine cab, cowcatcher
+train_red_dark   = { index = 222, hex = "#A82A24" }
+train_cream      = { index = 223, hex = "#F3E7C4" } # boiler
+train_blue       = { index = 224, hex = "#3F72C4" } # wagon 1
+train_yellow     = { index = 225, hex = "#F2C53D" } # wagon 2
+train_black      = { index = 226, hex = "#2E2A30" } # chimney, wheels, undercarriage
+rail_steel       = { index = 227, hex = "#A9ABB4" }
+gravel           = { index = 228, hex = "#E3C98E" } # track bed
+blossom_pink     = { index = 229, hex = "#F39CB8" } # crown
+blossom_pink_dk  = { index = 230, hex = "#D26C94" } # crown shade clumps
+blossom_pink_lt  = { index = 231, hex = "#F9BDD0" } # light blossoms / petals
+bee_yellow       = { index = 232, hex = "#F5C432" }

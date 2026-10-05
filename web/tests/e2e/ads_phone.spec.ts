@@ -243,8 +243,8 @@ test('ADS-029 ADC1-004 phone: gate by touch, full hold, release opens the link d
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForTimeout(200);
   expect(await page.locator('#ad-hold.ready').count()).toBe(0);
-  // 3 s with a moving finger: the ✔ shows, nothing has been opened yet
-  await touchHold(page, cdp, 3400, true);
+  // 2 s with a moving finger: the ✔ shows, nothing has been opened yet
+  await touchHold(page, cdp, 2400, true);
   await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 4000 });
   expect(await opens(page), 'no window.open from the hold timer').toEqual([]);
   await page.screenshot({ path: '../qa/reports/img/2026-10-03-ad-phone-open-780x360.png' });

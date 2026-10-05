@@ -514,7 +514,7 @@ export class Carousel {
 
 // ------------------------------------------------------------------ parental gate
 
-export const GATE_HOLD_MS = 3000;
+export const GATE_HOLD_MS = 2000; // user request 2026-10-04: 2 s (was 3 s)
 
 /** A plus or minus task the gate asks (numbers and result 0…20) and 4 answers. */
 export interface GateQuestion {

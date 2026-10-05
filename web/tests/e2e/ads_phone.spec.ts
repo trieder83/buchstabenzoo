@@ -121,7 +121,7 @@ test('ADS-027 phone: accidental ✖ ignored, interact button reopens, walking aw
   await verified(page);
   const b = (await boards(page)).find((x) => x.slot === 1)!;
   await walkAway(page, b);
-  await page.locator('canvas').tap({ position: { x: 300, y: 200 } }); // first touch: touch controls on
+  await page.locator('#game').tap({ position: { x: 300, y: 200 } }); // first touch: touch controls on
   await expect(page.locator('#ad-act')).toBeHidden();
   // walk in and tap ✖ straight after the panel opened (the first-contact touch): ignored
   const stillOpen = await page.evaluate(
@@ -189,7 +189,7 @@ for (const vp of [
     const { ctx, page } = await phone(browser, vp.width, vp.height);
     await verified(page);
     const b = (await boards(page)).find((x) => x.slot === 1)!;
-    await page.locator('canvas').tap({ position: { x: 100, y: 100 } });
+    await page.locator('#game').tap({ position: { x: 100, y: 100 } });
     await standAt(page, b, 2.0);
     await expect(page.locator('#ad-panel')).toBeVisible();
     await page.waitForTimeout(300);
@@ -223,7 +223,7 @@ async function touchHold(page: Page, cdp: import('@playwright/test').CDPSession,
   }
 }
 
-test('ADS-029 ADC1-004 phone: gate by touch, then a TAP on the open button opens the link once', async ({ browser }) => {
+test('ADS-029 ADC1-004 phone: gate by touch, full hold, release opens the link directly once (ADS-030)', async ({ browser }) => {
   const { ctx, page, errors } = await phone(browser, 780, 360);
   await verified(page);
   const b = (await boards(page)).find((x) => x.slot === 1)!;
@@ -242,25 +242,14 @@ test('ADS-029 ADC1-004 phone: gate by touch, then a TAP on the open button opens
   await touchHold(page, cdp, 800, false);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForTimeout(200);
-  expect(await page.locator('#ad-open').count()).toBe(0);
-  // 3 s with a moving finger: the open button appears, nothing has been opened yet
+  expect(await page.locator('#ad-hold.ready').count()).toBe(0);
+  // 3 s with a moving finger: the ✔ shows, nothing has been opened yet
   await touchHold(page, cdp, 3400, true);
-  await expect(page.locator('#ad-open')).toBeVisible({ timeout: 4000 });
+  await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 4000 });
   expect(await opens(page), 'no window.open from the hold timer').toEqual([]);
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  await page.waitForTimeout(150);
-  const open = page.locator('#ad-open');
-  await expect(open).toBeVisible();
-  expect(await opens(page), 'releasing the finger on the spot opens nothing').toEqual([]);
-  const ob = (await open.boundingBox())!;
-  expect(ob.height).toBeGreaterThanOrEqual(64);
-  expect(ob.x + ob.width).toBeLessThanOrEqual(780);
-  expect(ob.y + ob.height).toBeLessThanOrEqual(360);
-  expect(await open.getAttribute('href')).toBe('https://mathfighter.rcms.ch/');
-  expect(await open.getAttribute('target')).toBe('_blank');
-  expect(await open.getAttribute('rel')).toBe('noopener noreferrer');
   await page.screenshot({ path: '../qa/reports/img/2026-10-03-ad-phone-open-780x360.png' });
-  await open.tap();
+  // releasing the finger opens the link directly, once (ADS-030)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForTimeout(400);
   expect(await opens(page)).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
   await expect(page.locator('#ad-gate')).toBeHidden();

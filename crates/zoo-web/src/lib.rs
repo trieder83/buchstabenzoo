@@ -374,6 +374,10 @@ pub struct App {
     butterflies: Vec<Instance>,
     /// Debug/e2e: the clock stands still (frames render, `debug_step` advances time).
     paused: bool,
+    /// The overview map is open (GAME-MAP, MAP-006): the game does not advance.
+    map_open: bool,
+    /// The telescope view is open (GAME-TELESCOPE, TELE-007): the game does not advance.
+    telescope_open: bool,
     /// Debug/e2e: the camera looks at this level point instead of the player.
     look_at: Option<Vec2>,
     /// Debug/e2e: ambient animals simulated and drawn (AMB-007 A/B measurement).
@@ -994,6 +998,8 @@ impl App {
             butterfly_poses: Vec::with_capacity(8),
             butterflies: Vec::with_capacity(8),
             paused: false,
+            map_open: false,
+            telescope_open: false,
             look_at: None,
             ambient_on: true,
             night_regions,
@@ -1849,7 +1855,11 @@ impl App {
         if self.quality.sample(dt) {
             self.apply_quality();
         }
-        let dt = if self.paused { 0.0 } else { dt.clamp(0.0, 0.1) };
+        let dt = if self.paused || self.map_open || self.telescope_open {
+            0.0
+        } else {
+            dt.clamp(0.0, 0.1)
+        };
         self.time += dt as f64;
         self.simulate(dt);
 
@@ -1917,7 +1927,8 @@ impl App {
         let mode = self.camera.mode();
         for (id, region) in &self.roof_regions {
             // first person keeps the roof and its ceiling (CAMV-022)
-            let hide = views::roof_hidden(self.inside.as_deref() == Some(id.as_str()), mode);
+            let hide = views::roof_hidden(self.inside.as_deref() == Some(id.as_str()), mode)
+                || self.game.house_cutaway(id);
             if hide != self.renderer.region_hidden(*region) {
                 self.renderer.set_region_hidden(*region, hide);
             }
@@ -3189,13 +3200,24 @@ impl App {
                 js(&self.text_now(&b.name_key)),
                 js(&self.text_now(&b.more_key)),
                 // a pair species: the generic pair note after the facts (GAME-FAMILY, Q-308)
-                js(&match &b.pair_note_key {
-                    Some(k) => format!(
-                        "{} {}",
-                        self.text_now(&b.facts_key),
-                        self.text_now(k)
-                    ),
-                    None => self.text_now(&b.facts_key),
+                js(&{
+                    let facts = match &b.pair_note_key {
+                        Some(k) => format!(
+                            "{} {}",
+                            self.text_now(&b.facts_key),
+                            self.text_now(k)
+                        ),
+                        None => self.text_now(&b.facts_key),
+                    };
+                    // box-food treat line before the facts (GAME-FEED "Basic food and treats")
+                    match &b.treat {
+                        Some((prefix, food)) => format!(
+                            "{} {}. {facts}",
+                            self.text_now(prefix),
+                            self.text_now(food)
+                        ),
+                        None => facts,
+                    }
                 }),
                 js(&self.text_now(&b.riddle_key)),
                 b.picture.as_deref().map_or("null".to_owned(), js),
@@ -3303,6 +3325,9 @@ impl App {
             ),
             Interaction::MoonDoor { into_night_zoo } => {
                 format!("{{\"kind\":\"moon_door\",\"into_night_zoo\":{into_night_zoo}}}")
+            }
+            Interaction::Telescope { id } => {
+                format!("{{\"kind\":\"telescope\",\"id\":{}}}", js(id))
             }
         }
     }
@@ -4222,6 +4247,38 @@ impl App {
         )
     }
 
+    /// The overview map data (GAME-MAP): JSON from `zoo_core::overview::Overview::to_json`
+    /// (level parts with progress, shapes, enclosures, the player, the next mark).
+    pub fn overview_json(&self) -> String {
+        zoo_core::overview::overview(&self.game, &self.hints).to_json()
+    }
+
+    /// The overview map opens / closes: while open the game is paused and the held movement
+    /// keys and the stick are released (MAP-006).
+    pub fn set_map_open(&mut self, open: bool) {
+        self.map_open = open;
+        if open {
+            self.keys = Keys::default();
+            self.stick = Vec2::ZERO;
+        }
+    }
+
+    /// The telescope view data (GAME-TELESCOPE): the eight planets with their look and the
+    /// Fluent keys (JSON from `zoo_core::telescope::to_json`).
+    pub fn telescope_json(&self) -> String {
+        zoo_core::telescope::to_json()
+    }
+
+    /// The telescope view opens / closes: while open the game is paused and the held
+    /// movement keys and the stick are released (TELE-007).
+    pub fn set_telescope_open(&mut self, open: bool) {
+        self.telescope_open = open;
+        if open {
+            self.keys = Keys::default();
+            self.stick = Vec2::ZERO;
+        }
+    }
+
     /// How often the 🧭 button should have pulsed so far (idle nudge, GAME-HINT rule 6).
     pub fn hint_pulses(&self) -> u32 {
         self.hints.pulses()
@@ -4362,6 +4419,7 @@ fn target_key(t: &Target) -> String {
         Target::GardenSign { bed } => format!("garden_sign:{bed}"),
         Target::WelcomeBoard { level } => format!("welcome_board:{level}"),
         Target::Treat { animal } => format!("treat:{animal}"),
+        Target::Telescope { id } => format!("telescope:{id}"),
     }
 }
 
@@ -4414,7 +4472,7 @@ mod tests {
     }
 
     fn level_tomls() -> Vec<String> {
-        ["level-1", "level-2", "level-3", "night-1"]
+        ["level-1", "level-2", "level-3", "night-1", "night-2"]
             .iter()
             .map(|n| {
                 std::fs::read_to_string(format!(
@@ -4436,6 +4494,18 @@ mod tests {
         for a in zoo_core::ANIMALS.iter().map(|a| a.id) {
             assert!(list.contains(&format!("models/animals/{a}.glb")), "{a}");
         }
+        // the terrarium garden (GAME-LEVEL-NIGHT-2): the three species with female and baby
+        for m in [
+            "snake_female",
+            "snake_hatchling",
+            "chameleon_female",
+            "chameleon_baby",
+            "poison_dart_frog_female",
+            "frog_froglet",
+        ] {
+            assert!(list.contains(&format!("models/animals/{m}.glb")), "{m}");
+        }
+        assert!(list.contains(&"models/buildings/night_house.glb".to_owned()));
         // AENV-011 for the new enclosures, placeholder props of levels 2-3
         assert!(list.contains(&"textures/signs/silhouette_goldfish.png".to_owned()));
         assert!(list.contains(&"models/props/tree_eucalyptus.glb".to_owned()));

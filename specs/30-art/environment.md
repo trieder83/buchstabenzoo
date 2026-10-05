@@ -6,7 +6,7 @@ module: environment
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS]
 test_prefix: AENV
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Environment — mockups and models
@@ -191,6 +191,8 @@ Added for the vegetable garden (proposal, zoo-level-designer, 2026-09-26 — GAM
 Unique (non-modular) models needed for level 1: `entrance_arch`, `food_storage_building`,
 `stone_arch_shelter` (zebra), `hut_wood` and `pool_tiled` (hippo), `panda_platform` and
 `panda_shelter`, `rock_hill_cave`, `river_grate`.
+
+**Animal houses (GAME-HOUSE, 2026-10-04):** `stone_arch_shelter`, `hut_wood`, `panda_shelter`, `koala_shelter`, `elephant_house`, `giraffe_house`, `monkey_house` are built to the footprint, interior and **doorway** of the `animal_house` data (walls on the footprint outline, doorway exactly the `door` cells wide, no door leaf, clear height `door_height_m` — giraffe house >= 5.0 m, ridge about 7 m; footprints and doors: GAME-HOUSE "Houses per level"). Briefs must state doorway width and height; a placeholder box with a door cut-out is used until the model exists.
 
 Concept sheets (2026-09-26, in review — `art/props/`): `kit_buildings` (`entrance_arch`,
 `zookeeper_house` closed + roof-removed cutaway), `food_storage_building` (closed + cutaway),

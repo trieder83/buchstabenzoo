@@ -47,10 +47,32 @@ barrier = "moon_door"
 id = "hedge_n1_west"
 type = "decoration"
 kind = "hedge"
-rect = [-72, 6, 2, 48]
+rect = [-72, 6, 2, 19]
 blocks_view = true
 height_m = 3.0
-notes = "Level edge, permanent."
+notes = "Level edge south of the garden gate, permanent (split for `barrier_n1_garden`, GAME-LEVEL-NIGHT-2)."
+
+[[element]]
+id = "hedge_n1_west_n"
+type = "decoration"
+kind = "hedge"
+rect = [-72, 27, 2, 27]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge north of the garden gate, permanent."
+
+# The lantern gate to the terrarium garden `night_2` (GAME-LEVEL-NIGHT-2, Q-331 answered 2026-10-04):
+# open the moment all night_1 animals are home (not the next morning), stays open every later night.
+[[element]]
+id = "barrier_n1_garden"
+type = "barrier"
+kind = "closed_gate"
+rect = [-72, 25, 2, 2]
+transition = "night_1->night_2"
+unlock_after = "night_1"
+opens_at = "night"
+unlock = "opens as soon as the three night_1 animals are home (Q-331); the terrarium garden is optional (Q-332)"
+notes = "Small wooden garden gate with a lantern, a moon sign and a padlock in the west hedge (stand-in: the gate_zoo model); the padlock springs open when night_1 is complete."
 
 [[element]]
 id = "hedge_n1_south"
@@ -229,7 +251,7 @@ kind = "telescope"
 rect = [-52, 38, 1, 1]
 blocks_view = false
 height_m = 1.4
-notes = "Toy star telescope on a wooden stand, pointing at the moon — a resting point halfway along the north ring (keeps the boards -> north-west walk <= 10 s per leg). Not a riddle detail; interactive use (look at the moon) is a proposal (Q-138)."
+notes = "Toy star telescope on a wooden stand, pointing at the moon — a resting point halfway along the north ring (keeps the boards -> north-west walk <= 10 s per leg). Not a riddle detail; interactive at night: the planet view (GAME-TELESCOPE, Q-138)."
 
 # ---------------------------------------------------------------- the loop: ring north / west / south around the hidden middle
 [[element]]
@@ -261,6 +283,13 @@ rect = [-39, 16, 3, 8]
 notes = "From the south ring north to the plaza."
 
 [[element]]
+id = "path_n1_gate"
+type = "path"
+kind = "main"
+rect = [-72, 25, 8, 2]
+notes = "From the west ring (x -64) through the free band between loc_flowerpots (z 18..23) and loc_mushrooms (z 27..33) west to the garden gate `barrier_n1_garden`, the street runs under the gate cells (LAYOUT-040); holds no wander cell."
+
+[[element]]
 id = "path_n1_nw"
 type = "path"
 kind = "side"
@@ -282,15 +311,105 @@ rect = [-33, 12, 2, 1]
 notes = "Small wooden jetty deck on the pond's north shore (look-out point over the mirrored moon). The owl of loc_moon_pond sits on a wooden post at the pond's west shore, (-35.6, 10.5)."
 
 [[element]]
-id = "grove_n1_center"
+id = "grove_n1_center_a"
 type = "decoration"
 kind = "tree_grove"
-rect = [-59, 18, 13, 15]
+rect = [-59, 18, 9, 2]
 density = "dense"
 edge = "bushes"
 blocks_view = true
 height_m = 6.0
-notes = "The hidden middle: old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+notes = "Part a of the hidden middle (grove_n1_center, cut by the secret trail): old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "grove_n1_center_b"
+type = "decoration"
+kind = "tree_grove"
+rect = [-59, 20, 2, 13]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Part b of the hidden middle (grove_n1_center, cut by the secret trail): old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "grove_n1_center_c"
+type = "decoration"
+kind = "tree_grove"
+rect = [-55, 22, 7, 4]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Part c of the hidden middle (grove_n1_center, cut by the secret trail): old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "grove_n1_center_d"
+type = "decoration"
+kind = "tree_grove"
+rect = [-52, 26, 4, 7]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Part d of the hidden middle (grove_n1_center, cut by the secret trail): old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "grove_n1_center_e"
+type = "decoration"
+kind = "tree_grove"
+rect = [-57, 28, 3, 5]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Part e of the hidden middle (grove_n1_center, cut by the secret trail): old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "grove_n1_center_f"
+type = "decoration"
+kind = "tree_grove"
+rect = [-48, 18, 2, 15]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Part f of the hidden middle (grove_n1_center, cut by the secret trail): old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides."
+
+[[element]]
+id = "path_n1_secret_a"
+type = "path"
+kind = "side"
+rect = [-54, 28, 2, 5]
+notes = "Secret trail through the grove (part a), 2 m wide, winds from the north ring (entrance (-54..-53, 33)) to the south ring (exit (-50..-49, 17)); optional shortcut, never needed. Hidden under the crowns."
+
+[[element]]
+id = "path_n1_secret_b"
+type = "path"
+kind = "side"
+rect = [-57, 26, 5, 2]
+notes = "Secret trail through the grove (part b), 2 m wide, winds from the north ring (entrance (-54..-53, 33)) to the south ring (exit (-50..-49, 17)); optional shortcut, never needed. Hidden under the crowns."
+
+[[element]]
+id = "path_n1_secret_c"
+type = "path"
+kind = "side"
+rect = [-57, 22, 2, 4]
+notes = "Secret trail through the grove (part c), 2 m wide, winds from the north ring (entrance (-54..-53, 33)) to the south ring (exit (-50..-49, 17)); optional shortcut, never needed. Hidden under the crowns."
+
+[[element]]
+id = "path_n1_secret_d"
+type = "path"
+kind = "side"
+rect = [-57, 20, 9, 2]
+notes = "Secret trail through the grove (part d), 2 m wide, winds from the north ring (entrance (-54..-53, 33)) to the south ring (exit (-50..-49, 17)); optional shortcut, never needed. Hidden under the crowns."
+
+[[element]]
+id = "path_n1_secret_e"
+type = "path"
+kind = "side"
+rect = [-50, 18, 2, 2]
+notes = "Secret trail through the grove (part e), 2 m wide, winds from the north ring (entrance (-54..-53, 33)) to the south ring (exit (-50..-49, 17)); optional shortcut, never needed. Hidden under the crowns."
 
 [[element]]
 id = "grove_n1_north"
@@ -622,6 +741,12 @@ id = "n1_lantern_sw"
 kind = "lantern_post"
 pos = [-63.75, 13.25]
 facing = "+x"
+
+[[light]]
+id = "n1_lantern_gate"
+kind = "lantern_post"
+pos = [-66.5, 25.25]
+facing = "-z"
 
 [[light]]
 id = "n1_lantern_ring_s_w"

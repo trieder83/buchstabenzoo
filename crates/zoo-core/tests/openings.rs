@@ -12,7 +12,7 @@ use zoo_core::AnimalState;
 
 #[test]
 fn layout_031_every_opening_has_its_gate_or_door_model() {
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
     let model_of = |o: &zoo_core::scene::Opening| s.placements[o.placement].model;
     for o in &s.openings {
@@ -94,7 +94,7 @@ fn layout_031_every_opening_has_its_gate_or_door_model() {
 
 #[test]
 fn layout_031_gates_and_doors_open_by_the_rules() {
-    let mut g = common::night_game(1);
+    let mut g = common::night2_game(1);
     let openings = g.level.openings().to_vec();
     let find =
         |f: &dyn Fn(&OpeningKind) -> bool| openings.iter().find(|o| f(&o.kind)).unwrap().clone();
@@ -157,7 +157,7 @@ fn camv_022_roof_hidden_only_in_the_zoo_view() {
 fn layout_032_doors_and_gates_keep_a_free_walkway() {
     use zoo_core::collision::PLAYER_RADIUS_M;
     use zoo_core::scene::rot_level;
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
     let level = zoo_core::Level::new(data.clone());
     let owner = |o: &zoo_core::scene::Opening| -> Option<(zoo_core::Rect, bool)> {
@@ -239,7 +239,7 @@ fn layout_032_doors_and_gates_keep_a_free_walkway() {
 fn layout_033_enclosure_signs_stand_beside_the_gate() {
     use zoo_core::collision::PLAYER_RADIUS_M;
     use zoo_core::coords::world_to_level;
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
     let level = zoo_core::Level::new(data.clone());
     let mut bad = Vec::new();
@@ -324,7 +324,7 @@ fn layout_032_no_lamp_box_item_or_prop_in_a_walkway() {
     use zoo_core::collision::PLAYER_RADIUS_M;
     use zoo_core::coords::world_to_level;
     use zoo_core::night_scene::NightScene;
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
     let night = NightScene::build(&data);
     // (what, position): everything that stands on the ground and is not a mounted lamp
@@ -438,7 +438,7 @@ fn rot_level_neg_y(yaw: f32) -> Vec2 {
 #[test]
 fn layout_034_openings_reachable_from_the_front_and_at_an_angle() {
     use zoo_core::collision::PLAYER_RADIUS_M;
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
     let mut bad = Vec::new();
     let mut checked = 0;
@@ -463,7 +463,7 @@ fn layout_034_openings_reachable_from_the_front_and_at_an_angle() {
             (1.5, -3.0),
             (1.5, 3.0),
         ] {
-            let mut g = common::night_game(1);
+            let mut g = common::night2_game(1);
             let start = o.center + n * out + a * aside;
             if !g
                 .level
@@ -532,8 +532,8 @@ fn layout_038_no_pocket_beside_a_door_or_gate() {
     use glam::IVec2;
     use zoo_core::collision::Shape;
     use zoo_core::level::cell_of;
-    let data = common::zoo_with_night();
-    let g = common::night_game(1);
+    let data = common::zoo_with_night2();
+    let g = common::night2_game(1);
     let s = LevelScene::build(&data);
     let grid = g.level.grid();
     const BESIDE_M: f32 = 0.9;
@@ -658,7 +658,7 @@ fn layout_038_no_pocket_beside_a_door_or_gate() {
 // finding F4 of qa/reports/2026-09-27-doors-blocked.md, fixed).
 #[test]
 fn layout_035_lantern_posts_are_solid_at_night_only() {
-    let mut g = common::night_game(1);
+    let mut g = common::night2_game(1);
     let post = g
         .level
         .data
@@ -698,9 +698,9 @@ fn layout_039_no_wall_gap_near_a_door_or_gate() {
     use zoo_core::collision::Shape;
     const NEAR_M: f32 = 3.0;
     const GAP_M: (f32, f32) = (0.1, 0.6);
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
-    let mut g = common::night_game(1);
+    let mut g = common::night2_game(1);
     g.level.set_night_solid(true); // lantern posts are solid at night (LAYOUT-035)
     let grid = g.level.grid();
     let thin = |sh: &Shape| match *sh {
@@ -821,9 +821,9 @@ fn layout_039_no_wall_gap_near_a_door_or_gate() {
 #[test]
 fn layout_041_every_building_with_a_door_is_enterable() {
     use zoo_core::level::{cell_of, CellKind, Surface};
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let s = LevelScene::build(&data);
-    let g = common::night_game(1);
+    let g = common::night2_game(1);
     let grid = g.level.grid();
     let mut n = 0;
     for e in data.elements_of(ElementType::Building) {
@@ -879,7 +879,7 @@ fn layout_041_every_building_with_a_door_is_enterable() {
             .iter()
             .find(|o| matches!(&o.kind, OpeningKind::BuildingDoor { building, enterable: true } if *building == e.id))
             .unwrap_or_else(|| panic!("{}: no enterable door model", e.id));
-        let mut gg = common::night_game(1);
+        let mut gg = common::night2_game(1);
         gg.player.pos = o.center;
         assert!(gg.opening_open(o), "{}: door stays shut", e.id);
         gg.player.pos = o.center + Vec2::new(3.0, 3.0);
@@ -892,8 +892,9 @@ fn layout_041_every_building_with_a_door_is_enterable() {
             e.id
         );
     }
-    // 8 since the zookeeper house of level 2 (every bed is indoors, LAYOUT-047)
-    assert_eq!(n, 8, "buildings with a door");
+    // 8 since the zookeeper house of level 2 (every bed is indoors, LAYOUT-047), 10 with the
+    // terrarium house and food hut of night_2
+    assert_eq!(n, 10, "buildings with a door");
     // the stock boxes inside a building are solid (never walked through, Q-194); the labelled
     // food boxes stand outside (Q-181 answered)
     for p in data

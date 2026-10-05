@@ -209,7 +209,12 @@ pub fn home_area(level: &Level, enclosure: usize) -> WanderArea {
                     area.insert(c, k);
                 }
             }
-            Some(_) => {}
+            Some(f) => {
+                // animal house: interior and door cells are land, walls are skipped (HOUSE rule 2)
+                if grass && crate::house::House::from_feature(f).is_some_and(|h| h.is_open(c)) {
+                    area.insert(c, AreaCell::Land);
+                }
+            }
             None => {
                 if grass && !grid.is_prop_blocked(c) {
                     area.insert(c, AreaCell::Land);
@@ -341,10 +346,12 @@ pub fn feed_spot(level: &Level, enclosure: usize, area: &WanderArea) -> Option<F
     // male and female wait a pair gap apart (whole cells) so they do not overlap
     let want =
         (crate::animals::pair_gap_m(enc.animal.as_deref().unwrap_or("")).ceil() as i32).max(1);
+    let house = crate::house::house_of(&level.data, &enc.id);
     let spot_at = |first: IVec2, step: i32| -> Option<FeedSpot> {
         let cells = [first, first + tangent * step];
         let ok = cells.iter().all(|&c| {
             area.contains(c)
+                && house.as_ref().is_none_or(|h| !h.footprint.contains(c))
                 && (1..=2).all(|k| {
                     let o = c - inward * k;
                     [o, o + tangent, o - tangent]
@@ -393,6 +400,8 @@ pub fn feed_spot(level: &Level, enclosure: usize, area: &WanderArea) -> Option<F
 pub struct Wander {
     /// Seconds left in the current pause.
     pub pause_s: f32,
+    /// Seconds left of a rest inside the animal house (0 = not resting there, GAME-HOUSE).
+    pub rest_s: f32,
     /// Remaining cells to walk through (cell centres); empty = resting.
     pub route: Vec<IVec2>,
 }

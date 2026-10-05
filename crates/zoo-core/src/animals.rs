@@ -8,8 +8,14 @@ use crate::food::Food;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AnimalInfo {
     pub id: &'static str,
+    /// Basic foods: the box food that makes the escaped animal follow (GAME-FEED "Basic food
+    /// and treats").
     pub foods: &'static [Food],
     pub hiding_places: &'static [&'static str],
+    /// Box-food treats that give the pair at home its baby (GAME-FEED "Basic food and
+    /// treats"). Empty = the species still uses the older rule: a garden treat it likes, else
+    /// its own food (FAM-008/009).
+    pub treats: &'static [Food],
 }
 
 /// Model id of the female (member 1) of a pair species (GAME-FAMILY §3); member 0 is the male
@@ -18,6 +24,9 @@ pub fn female_model(species: &str) -> Option<&'static str> {
     match species {
         "zebra" => Some("zebra_female"),
         "koala" => Some("koala_female"),
+        "snake" => Some("snake_female"),
+        "chameleon" => Some("chameleon_female"),
+        "poison_dart_frog" => Some("poison_dart_frog_female"),
         _ => None,
     }
 }
@@ -27,6 +36,9 @@ pub fn baby_model(species: &str) -> Option<&'static str> {
     match species {
         "zebra" => Some("zebra_foal"),
         "koala" => Some("koala_joey"),
+        "snake" => Some("snake_hatchling"),
+        "chameleon" => Some("chameleon_baby"),
+        "poison_dart_frog" => Some("frog_froglet"),
         _ => None,
     }
 }
@@ -87,56 +99,66 @@ pub fn pair_gap_m(species: &str) -> f32 {
     }
 }
 
-pub const ANIMALS: [AnimalInfo; 13] = [
+pub const ANIMALS: [AnimalInfo; 16] = [
     AnimalInfo {
         id: "zebra",
         foods: &[Food::Grass],
         hiding_places: &["loc_river", "loc_meadow", "loc_sand"],
+        treats: &[],
     },
     AnimalInfo {
         id: "hippo",
         foods: &[Food::Melons],
         hiding_places: &["loc_pond", "loc_mud", "loc_shade"],
+        treats: &[],
     },
     AnimalInfo {
         id: "panda",
         foods: &[Food::Bamboo],
         hiding_places: &["loc_cave", "loc_bamboo", "loc_leaves"],
+        treats: &[],
     },
     AnimalInfo {
         id: "koala",
         foods: &[Food::Eucalyptus],
         hiding_places: &["loc_treehouse", "loc_tallest_tree", "loc_blossom_tree"],
+        treats: &[],
     },
     AnimalInfo {
         id: "elephant",
         foods: &[Food::Hay],
         hiding_places: &["loc_fountain", "loc_log_pile", "loc_big_ball"],
+        treats: &[],
     },
     AnimalInfo {
         id: "goldfish",
         foods: &[Food::FishFood],
         hiding_places: &["loc_waterfall", "loc_water_wheel", "loc_willow"],
+        treats: &[],
     },
     AnimalInfo {
         id: "monkey",
         foods: &[Food::Bananas],
         hiding_places: &["loc_pirate_ship", "loc_carousel", "loc_trampoline"],
+        treats: &[],
     },
     AnimalInfo {
         id: "giraffe",
         foods: &[Food::Leaves],
         hiding_places: &["loc_lookout_tower", "loc_train", "loc_playground"],
+        treats: &[],
     },
     AnimalInfo {
         id: "lion",
         foods: &[Food::Meat],
         hiding_places: &["loc_sun_rocks", "loc_stage", "loc_deckchairs"],
+        treats: &[],
     },
     AnimalInfo {
         id: "snow_fox",
         foods: &[Food::Berries],
         hiding_places: &["loc_ice_cream_kiosk", "loc_sprinkler", "loc_laundry"],
+        treats: &[],
     },
     // Night zoo `night_1` (GAME-NIGHT rule 6, Q-076/Q-077); candidate places from the
     // level data (`assets/levels/night-1.toml`).
@@ -144,16 +166,39 @@ pub const ANIMALS: [AnimalInfo; 13] = [
         id: "hedgehog",
         foods: &[Food::Beetles],
         hiding_places: &["night_1"],
+        treats: &[],
     },
     AnimalInfo {
         id: "bat",
         foods: &[Food::Fruit],
         hiding_places: &["night_1"],
+        treats: &[],
     },
     AnimalInfo {
         id: "owl",
         foods: &[Food::Beetles],
         hiding_places: &["night_1"],
+        treats: &[],
+    },
+    // Night zoo `night_2`, the terrarium garden (GAME-LEVEL-NIGHT-2, Q-330..339 answered
+    // 2026-10-04): basic food from the outside boxes, the treat (baby) from inside the storage.
+    AnimalInfo {
+        id: "snake",
+        foods: &[Food::Fish],
+        hiding_places: &["night_2"],
+        treats: &[Food::Eggs],
+    },
+    AnimalInfo {
+        id: "chameleon",
+        foods: &[Food::Crickets],
+        hiding_places: &["night_2"],
+        treats: &[Food::FrozenInsects],
+    },
+    AnimalInfo {
+        id: "poison_dart_frog",
+        foods: &[Food::Flies],
+        hiding_places: &["night_2"],
+        treats: &[Food::Crickets],
     },
 ];
 
@@ -258,6 +303,16 @@ pub fn animal_info(id: &str) -> Option<&'static AnimalInfo> {
 impl AnimalInfo {
     pub fn eats(&self, food: Food) -> bool {
         self.foods.contains(&food)
+    }
+
+    /// Whether `food` is one of the species' box-food treats.
+    pub fn is_treat(&self, food: Food) -> bool {
+        self.treats.contains(&food)
+    }
+
+    /// Whether the animal at home takes `food` (basic food or treat).
+    pub fn accepts(&self, food: Food) -> bool {
+        self.eats(food) || self.is_treat(food)
     }
 }
 

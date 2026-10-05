@@ -734,16 +734,48 @@ rect = [11, 15, 8, 7]         # x 11-18, z 15-21: 56 of 130 inner cells (43 %), 
 water = "still"
 ramp = [11, 16, 1, 3]         # west side, facing the gate and the path in front of it
 ramp_side = "-x"
-edge_stones = [[10.4, 21.6], [11.4, 14.4], [13.6, 14.3]]   # NW corner and south rim; never in the 1 m strips east (x 19) and north (z 22) of the pool
+edge_stones = [[10.4, 21.6], [11.4, 14.4], [12.6, 14.4]]   # NW corner and south rim; never in the 1 m strips east (x 19) and north (z 22) of the pool
 model = "pool_tiled"
 notes = "Square tiled pool (light blue/white tiles, 0.4 m rim), clear still water, no plants. Seen from the path in front of the gate (8, 15-16) 3-10 m to the east. The hippo spends most of its home time in it with only eyes, ears and back showing."
 
 [[enclosure_feature]]
+id = "zebra_shelter"
+enclosure = "enc_zebra"
+kind = "animal_house"
+model = "stone_arch_shelter"
+rect = [-20, 15, 5, 4]
+interior = [-19, 16, 3, 2]
+door = [-19, 15, 2, 1]
+door_side = "-z"
+door_height_m = 2.8
+roof_height_m = 3.2
+notes = "Stone arch shelter, NW corner (GAME-HOUSE; open archway, placeholder box until the model exists)"
+
+[[enclosure_feature]]
+id = "panda_shelter"
+enclosure = "enc_panda"
+kind = "animal_house"
+model = "panda_shelter"
+rect = [-6, 37, 5, 5]
+interior = [-5, 38, 3, 3]
+door = [-2, 38, 1, 2]
+door_side = "+x"
+door_height_m = 1.8
+roof_height_m = 2.2
+notes = "Wooden panda shelter, NW corner (GAME-HOUSE; open archway, placeholder box until the model exists)"
+
+[[enclosure_feature]]
 id = "hippo_hut"
 enclosure = "enc_hippo"
-kind = "hut"                  # reserved building area (wooden hut, model to come); not part of the home wander area
-rect = [15, 11, 4, 4]         # x 15-18, z 11-14 (GAME-LEVEL-1 "Hippo enclosure pool": hut area reserved south of the pool)
-notes = "Wooden hippo hut (hut_wood, ~4 x 3.5 m); placeholder box until the model exists."
+kind = "animal_house"
+model = "hut_wood"
+rect = [14, 11, 5, 4]
+interior = [15, 12, 3, 2]
+door = [14, 12, 1, 2]
+door_side = "-x"
+door_height_m = 2.3
+roof_height_m = 2.7
+notes = "Wooden hippo hut at the south fence, not facing the pool (GAME-HOUSE; open archway, placeholder box until the model exists)"
 
 # ================================================================ hiding places (candidates)
 # Discovery (user decision 2026-09-26, GAME-RESCUE §1): every animal has >= 3 candidate hiding

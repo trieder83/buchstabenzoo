@@ -3,6 +3,8 @@
 // parental gate before the link. All content checks live in ads.ts; this file only draws.
 // Every text from outside is set with `textContent` (never HTML).
 import {
+  Carousel,
+  carouselItems,
   GATE_HOLD_MS,
   loadAds,
   ParentalGate,
@@ -72,6 +74,16 @@ const STYLE = `
 #ad-hold span{display:flex;width:112px;height:112px;border-radius:50%;background:#ffd65c;align-items:center;justify-content:center;pointer-events:none}
 #ad-hold,#ad-gate{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
 #ad-open{min-height:72px;max-width:100%;box-sizing:border-box;border-radius:36px;border:5px solid #3b2314;background:#7cc46a;color:#3b2314;font-size:max(2.6vh,19px);font-weight:bold;padding:8px 22px;display:inline-flex;gap:12px;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 5px 0 rgba(59,35,20,.55)}
+#ad-carousel{position:fixed;left:0;right:0;top:0;z-index:5;display:flex;justify-content:center;pointer-events:none;padding:calc(10px + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#ad-carousel[hidden]{display:none}
+#ad-car-title{margin:0;padding:0 70px;font-size:max(2.8vh,18px);line-height:1.2;color:#3b2314}
+#ad-car-image{display:block;max-width:100%;max-height:30dvh;border:4px solid #3b2314;border-radius:12px;background:${CREAM};cursor:pointer;touch-action:pan-y;-webkit-user-drag:none}
+#ad-car-tagline{margin:0;font-weight:bold;color:#3b2314;font-size:max(2.4vh,16px)}
+.ad-car-nav{display:flex;align-items:center;justify-content:center;gap:14px}
+.ad-car-arrow{width:64px;height:64px;border-radius:50%;border:5px solid #3b2314;background:#ffd65c;font-size:30px;color:#3b2314;touch-action:manipulation;box-shadow:0 5px 0 rgba(59,35,20,.55)}
+.ad-car-dots{display:flex;gap:10px;align-items:center}
+.ad-car-dot{width:16px;height:16px;border-radius:50%;border:3px solid #3b2314;background:#fff;padding:0}
+.ad-car-dot.on{background:#e8604c}
 /* small screens (GAME-PLAYER 3): a compact card that leaves the right-hand control column free */
 @media (orientation:landscape) and (max-height:460px){
 #ad-panel{justify-content:flex-start;padding:calc(8px + env(safe-area-inset-top)) calc(96px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left))}
@@ -81,6 +93,11 @@ const STYLE = `
 #ad-tagline{padding:0;font-size:16px}
 #ad-link{min-height:64px;font-size:17px}
 #ad-act{right:calc(8px + env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:42px}
+#ad-carousel{justify-content:flex-start;padding:calc(6px + env(safe-area-inset-top)) calc(96px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left))}
+#ad-carousel .ad-body{width:auto;max-width:560px;flex-direction:column;gap:4px;padding:6px 10px;text-align:center}
+#ad-car-title{font-size:15px;padding:0 70px 0 0}
+#ad-car-image{max-height:min(24dvh,92px);max-width:60vw}
+#ad-car-tagline{display:none}
 .ad-gate-card{padding:10px 14px;gap:6px;font-size:16px}
 #ad-gate-question{font-size:1.5em}
 .ad-choices{grid-template-columns:repeat(4,1fr);gap:8px}
@@ -90,6 +107,8 @@ const STYLE = `
 @media (orientation:portrait) and (max-width:480px){
 #ad-panel{padding-top:calc(152px + env(safe-area-inset-top))}
 #ad-act{right:calc(8px + env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:42px}
+#ad-carousel{padding-top:calc(152px + env(safe-area-inset-top))}
+#ad-car-image{max-height:24dvh}
 }
 `;
 
@@ -119,6 +138,10 @@ export class AdsHost {
   readonly actBtn = el('button', 'ad-act', '🔗');
   readonly panel = el('div', 'ad-panel');
   readonly gateView = el('div', 'ad-gate');
+  /** The all-done carousel of the verified campaigns (ADS-031). */
+  readonly carouselView = el('div', 'ad-carousel');
+  private carousel: Carousel | null = null;
+  private carouselOpenedAt = 0;
   /** Links opened so far (debug / tests). */
   opened: string[] = [];
 
@@ -131,6 +154,7 @@ export class AdsHost {
     document.head.appendChild(style);
     this.panel.hidden = true;
     this.gateView.hidden = true;
+    this.carouselView.hidden = true;
     this.actBtn.className = 'round';
     this.actBtn.type = 'button';
     this.actBtn.hidden = true;
@@ -140,11 +164,11 @@ export class AdsHost {
       e.stopPropagation();
       this.interact();
     });
-    for (const e of [this.panel, this.gateView]) {
+    for (const e of [this.panel, this.gateView, this.carouselView]) {
       e.addEventListener('pointerdown', (ev) => ev.stopPropagation());
       e.addEventListener('contextmenu', (ev) => ev.preventDefault());
     }
-    document.body.append(this.panel, this.gateView, this.actBtn);
+    document.body.append(this.panel, this.carouselView, this.gateView, this.actBtn);
   }
 
   /** Uploads the placeholders at once, then loads the external campaigns (never blocks play). */
@@ -191,13 +215,17 @@ export class AdsHost {
   }
 
   get panelOpen(): boolean {
-    return !this.panel.hidden;
+    return !this.panel.hidden || this.carousel !== null;
   }
 
   /** Esc / ✖: closes the gate, else the panel. True if something was closed. */
   closeIfOpen(): boolean {
     if (this.gate) {
       this.closeGate();
+      return true;
+    }
+    if (this.carousel) {
+      this.closeCarousel();
       return true;
     }
     if (this.shown) {
@@ -280,6 +308,11 @@ export class AdsHost {
       this.level = level;
       if (this.shown) this.render();
     }
+    if (this.carousel) {
+      // auto-advance, frozen while the gate is up (ADS-031)
+      if (this.carousel.tick(performance.now(), this.gate !== null)) this.renderCarousel();
+      return;
+    }
     const id = this.app.ad_near();
     if (!id) {
       this.dismissed = null;
@@ -298,7 +331,7 @@ export class AdsHost {
     const board = this.boards.get(id);
     const campaign = board ? this.content?.bySlot.get(board.slot) : undefined;
     // placeholders stay passive (ADS-004); a riddle / food panel is open
-    return !!board && !!campaign && this.app.panel_key() === '';
+    return !!board && !!campaign && this.app.panel_key() === '' && !this.carousel;
   }
 
   private open(id: string): void {
@@ -396,6 +429,127 @@ export class AdsHost {
     this.syncButton(this.dismissed);
   }
 
+  // ------------------------------------------------------------ all-done carousel (ADS-031..)
+
+  /** Whether a carousel can be offered: at least one verified campaign (never placeholders). */
+  canCarousel(): boolean {
+    return carouselItems(this.content, this.app.language() === 'en' ? 'en' : 'de').length > 0;
+  }
+
+  /**
+   * Opens the carousel of the verified campaigns (compass tap when everything is done).
+   * False (nothing shown) when no campaign is verified.
+   */
+  openCarousel(): boolean {
+    if (!this.started || !this.canCarousel()) return false;
+    if (this.carousel) return true;
+    if (this.shown) this.hide();
+    this.carousel = new Carousel(carouselItems(this.content, this.lang).length, performance.now());
+    this.carouselOpenedAt = performance.now();
+    this.renderCarousel();
+    return true;
+  }
+
+  private closeCarousel(): void {
+    if (!this.carousel) return;
+    this.closeGate();
+    this.carousel = null;
+    this.carouselView.hidden = true;
+    this.carouselView.replaceChildren();
+    this.dismissed = this.app.ad_near() || null;
+  }
+
+  private renderCarousel(): void {
+    const car = this.carousel;
+    if (!car) return;
+    const lang = this.app.language() === 'en' ? 'en' : 'de';
+    const items = carouselItems(this.content, lang);
+    if (items.length === 0) {
+      this.closeCarousel();
+      return;
+    }
+    if (items.length !== car.count) {
+      this.carousel = new Carousel(items.length, performance.now());
+      return this.renderCarousel();
+    }
+    const { campaign, image } = items[car.index];
+    const now = () => performance.now();
+    const body = el('div');
+    body.className = 'ad-body';
+    body.dataset.campaign = campaign.id;
+    body.dataset.index = String(car.index);
+    const close = el('button', 'ad-car-close', '✖');
+    close.className = 'ad-x';
+    close.type = 'button';
+    close.setAttribute('aria-label', this.app.t('ad-close'));
+    close.addEventListener('click', () => {
+      if (now() - this.carouselOpenedAt < CLOSE_GUARD_MS) return;
+      this.closeCarousel();
+    });
+    const title = el('h2', 'ad-car-title', this.app.t('ad-carousel-title'));
+    const img = el('img', 'ad-car-image') as HTMLImageElement;
+    img.alt = '';
+    img.draggable = false;
+    img.src = URL.createObjectURL(new Blob([image.data as BlobPart], { type: image.mime }));
+    img.dataset.campaign = campaign.id;
+    img.addEventListener('load', () => URL.revokeObjectURL(img.src), { once: true });
+    // a tap opens the parental gate; a horizontal swipe turns the page (no link then)
+    let down: { x: number; y: number } | null = null;
+    img.addEventListener('pointerdown', (e) => {
+      down = { x: e.clientX, y: e.clientY };
+    });
+    img.addEventListener('pointerup', (e) => {
+      if (!down) return;
+      const dx = e.clientX - down.x;
+      const dy = e.clientY - down.y;
+      down = null;
+      if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) car.next(now());
+        else car.prev(now());
+        this.renderCarousel();
+      } else if (Math.hypot(dx, dy) < 12) {
+        car.go(car.index, now());
+        this.startGate(campaign.link, campaign.id === 'abcsmash');
+      }
+    });
+    const mk = (id: string, text: string, key: string, step: () => void): HTMLButtonElement => {
+      const b = el('button', id, text);
+      b.className = 'ad-car-arrow';
+      b.type = 'button';
+      b.setAttribute('aria-label', this.app.t(key));
+      b.addEventListener('click', () => {
+        step();
+        this.renderCarousel();
+      });
+      return b;
+    };
+    const dots = el('div', 'ad-car-dots');
+    dots.className = 'ad-car-dots';
+    items.forEach((_, i) => {
+      const d = el('button');
+      d.className = i === car.index ? 'ad-car-dot on' : 'ad-car-dot';
+      d.type = 'button';
+      d.setAttribute('aria-label', String(i + 1));
+      d.addEventListener('click', () => {
+        car.go(i, now());
+        this.renderCarousel();
+      });
+      dots.append(d);
+    });
+    const nav = el('div');
+    nav.className = 'ad-car-nav';
+    nav.append(
+      mk('ad-car-prev', '◀', 'ad-carousel-prev', () => car.prev(now())),
+      dots,
+      mk('ad-car-next', '▶', 'ad-carousel-next', () => car.next(now())),
+    );
+    body.append(close, title, img);
+    if (this.app.reading_level() !== 'kiga') body.append(el('p', 'ad-car-tagline', campaign.tagline[lang]));
+    body.append(nav);
+    this.carouselView.replaceChildren(body);
+    this.carouselView.hidden = false;
+  }
+
   // ------------------------------------------------------------ parental gate
 
   private startGate(url: string, language = false): void {
@@ -433,19 +587,29 @@ export class AdsHost {
     hold.type = 'button';
     hold.append(el('span', undefined, '✋'));
     const now = () => performance.now();
+    let ready = false;
     const frame = () => {
       const p = gate.progress(now());
       hold.style.setProperty('--p', String(p));
       if (gate.stage === 'open') {
         // the end of the hold is a timer, not a tap: pop-up blockers (iOS Safari, Samsung Internet)
-        // would stop a window.open here. The child taps the open button instead (ADS-029).
+        // would stop a window.open here. So the link opens at the RELEASE of the finger (a real
+        // user gesture, ADS-029/030); the ✔ shows that the hold is complete.
         this.raf = 0;
-        this.showOpen(card, url);
+        ready = true;
+        hold.classList.add('ready');
+        hold.replaceChildren(el('span', undefined, '✔'));
         return;
       }
       this.raf = requestAnimationFrame(frame);
     };
     const end = () => {
+      if (ready) {
+        // released after the full hold: the link opens directly (user gesture, ADS-030)
+        ready = false;
+        this.openLink(url);
+        return;
+      }
       gate.holdEnd();
       cancelAnimationFrame(this.raf);
       this.raf = 0;
@@ -473,35 +637,6 @@ export class AdsHost {
     card.replaceChildren(card.querySelector('.ad-x')!, el('h2', 'ad-gate-title', this.app.t('ad-gate-title')), hint, hold);
   }
 
-  /** The gate is passed: a big anchor the child TAPS; its click opens the link once (a real user gesture). */
-  private showOpen(card: HTMLElement, url: string): void {
-    const a = el('a', 'ad-open');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.append(el('span', undefined, '🔗'), el('span', undefined, new URL(url).hostname));
-    a.setAttribute('aria-label', this.app.t('ad-link-open'));
-    let done = false;
-    // The finger that held the ✋ is still down when this button appears right under it: the click
-    // that its release may synthesise must not count. Armed 300 ms after that release (ADS-029).
-    let armed = false;
-    const arm = () => {
-      window.removeEventListener('pointerup', arm, true);
-      window.removeEventListener('pointercancel', arm, true);
-      window.setTimeout(() => (armed = true), 300);
-    };
-    window.addEventListener('pointerup', arm, true);
-    window.addEventListener('pointercancel', arm, true);
-    a.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (done || !armed) return;
-      done = true;
-      this.closeGate();
-      this.openLink(url);
-    });
-    card.replaceChildren(card.querySelector('.ad-x')!, el('h2', 'ad-gate-title', this.app.t('ad-gate-title')), a);
-  }
-
   private closeGate(): void {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
@@ -510,12 +645,14 @@ export class AdsHost {
     this.gateView.replaceChildren();
   }
 
-  /** Opens the link once (only reached after the gate). */
+  /** Opens the link once (only reached after the gate and the full hold). */
   private openLink(url: string): void {
     this.opened.push(url);
+    this.closeGate();
     if (this.o.open) this.o.open(url);
     else window.open(url, '_blank', 'noopener,noreferrer');
     this.dismiss();
+    this.closeCarousel();
   }
 }
 

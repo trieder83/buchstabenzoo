@@ -31,10 +31,12 @@ pub const AHEAD_M: (f32, f32) = (-3.5, 3.5);
 /// Sideways offset magnitude (min, max) from a walking mother, metres.
 pub const LATERAL_M: (f32, f32) = (1.0, 2.5);
 /// Speed factors, multiples of the follow speed on the surface under the baby.
-pub const AMBLE_FACTOR: f32 = 0.7;
-pub const TROT_FACTOR: f32 = 1.25;
-pub const CATCHUP_FACTOR: f32 = 1.6;
-pub const BURST_FACTOR: f32 = 2.2;
+/// All baby speeds are 15 % slower than the first design (user request 2026-10-04, FAM-034).
+pub const BABY_SLOWDOWN: f32 = 0.85;
+pub const AMBLE_FACTOR: f32 = 0.7 * BABY_SLOWDOWN;
+pub const TROT_FACTOR: f32 = 1.25 * BABY_SLOWDOWN;
+pub const CATCHUP_FACTOR: f32 = 1.6 * BABY_SLOWDOWN;
+pub const BURST_FACTOR: f32 = 2.2 * BABY_SLOWDOWN;
 /// Leg length (s) while the mother stands / walks (min, max).
 pub const LEG_STAND_S: (f32, f32) = (3.0, 5.0);
 pub const LEG_WALK_S: (f32, f32) = (1.5, 3.0);

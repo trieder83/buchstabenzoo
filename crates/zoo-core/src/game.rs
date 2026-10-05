@@ -282,6 +282,11 @@ pub enum Target {
     Treat {
         animal: &'static str,
     },
+    /// The toy telescope (only at night, GAME-TELESCOPE): opens the planet view. `id` is the
+    /// level element id (`telescope_n1`).
+    Telescope {
+        id: String,
+    },
 }
 
 /// What the child gives to an animal at home.
@@ -323,6 +328,7 @@ impl Target {
             Target::GardenSign { .. } => "garden_sign",
             Target::WelcomeBoard { .. } => "welcome_board",
             Target::Treat { .. } => "treat",
+            Target::Telescope { .. } => "telescope",
         }
     }
 }
@@ -369,6 +375,8 @@ pub enum Interaction {
         level: String,
         animals: Vec<&'static str>,
     },
+    /// Looked through the telescope (GAME-TELESCOPE): the host opens the planet view.
+    Telescope { id: String },
     /// Gave the carried food to an animal at home (it stays in the hands).
     FoodGift {
         animal: &'static str,
@@ -560,6 +568,10 @@ pub struct InfoBoard {
     /// A pair species (male + female, GAME-FAMILY): the generic pair note
     /// (`mission-pair-note-<level>`, Q-308) shown after the facts.
     pub pair_note_key: Option<String>,
+    /// A species with a box-food treat (GAME-FEED "Basic food and treats"): the treat line
+    /// prefix key (`board-treat-<level>`) and the food label key of the (first) treat; shown
+    /// before the facts so the child learns what makes the baby.
+    pub treat: Option<(String, String)>,
 }
 
 #[derive(Debug)]
@@ -607,6 +619,8 @@ pub struct Game {
     pub(crate) gift_cooldown: BTreeMap<String, f32>,
     /// Feeding spot per element index (enclosures with a gate), GAME-GARDEN §6.
     pub feed_spots: Vec<Option<wander::FeedSpot>>,
+    /// Animal house per element index (enclosures with one, GAME-HOUSE).
+    pub houses: Vec<Option<crate::house::House>>,
     /// Automatic reading panel (GAME-PLAYER §4).
     pub panel: ReadingPanel,
     /// Seed of this playthrough and the RNG after the setup (GAME-SAVE).
@@ -819,6 +833,16 @@ impl Game {
                     .flatten()
             })
             .collect();
+        let houses = level
+            .data
+            .elements
+            .iter()
+            .map(|e| {
+                (e.ty == ElementType::Enclosure)
+                    .then(|| crate::house::house_of(&level.data, &e.id))
+                    .flatten()
+            })
+            .collect();
         for a in &mut animals {
             a.area = wander_area_of(&level, a);
             a.facing = rest_facing(&level, a);
@@ -879,6 +903,7 @@ impl Game {
             baby_states: BTreeMap::new(),
             gift_cooldown: BTreeMap::new(),
             feed_spots,
+            houses,
             panel: ReadingPanel::default(),
             seed,
             rng,
@@ -1035,6 +1060,11 @@ impl Game {
             picture: (level == ReadingLevel::Kiga).then(|| a.hiding_place.clone()),
             food_key: a.info.foods[0].label_key(),
             pair_note_key: (self.group(a.id()).len() >= 2).then(|| pair_note_key(level)),
+            treat: a
+                .info
+                .treats
+                .first()
+                .map(|f| (format!("board-treat-{}", level.id()), f.label_key())),
         })
     }
 
@@ -1447,6 +1477,22 @@ impl Game {
                 }
             }
         }
+        // the toy telescope shows the planets, only at night (GAME-TELESCOPE, Q-365)
+        if self.daytime.is_night() {
+            for e in &data.elements {
+                if e.kind.as_deref() == Some("telescope") && self.part_unlocked(e.part) {
+                    let r = e.rect;
+                    out.push(Interactable {
+                        target: Target::Telescope { id: e.id.clone() },
+                        point: Vec2::new(
+                            r.x as f32 + r.w as f32 / 2.0,
+                            r.z as f32 + r.d as f32 / 2.0,
+                        ),
+                        readable: None,
+                    });
+                }
+            }
+        }
         // vegetable gardens (GAME-GARDEN): ripe plants, the signs
         for sp in &data.plant_spots {
             let ripe = self
@@ -1650,6 +1696,7 @@ impl Game {
             Target::MoonDoor { id } => self
                 .go_through_moon_door(&id)
                 .map(|into_night_zoo| Interaction::MoonDoor { into_night_zoo }),
+            Target::Telescope { id } => Some(Interaction::Telescope { id }),
             Target::Plant { spot } => self.harvest(&spot),
             Target::GardenSign { bed } => {
                 let b = self.level.data.garden_beds.iter().find(|b| b.id == bed)?;
@@ -1797,6 +1844,10 @@ impl Game {
     /// garden treat it likes, or — for a species that likes no garden treat — its own food.
     pub fn special_gift_in_hand(&self, id: &str) -> bool {
         use crate::garden::{likes, Treat};
+        // a species with box-food treats (night_2: snake, chameleon, poison dart frog): its treat
+        if let Some(info) = animal_info(id).filter(|i| !i.treats.is_empty()) {
+            return self.carry.food().is_some_and(|f| info.is_treat(f));
+        }
         if Treat::ALL.iter().any(|&t| likes(id, t)) {
             return Treat::ALL
                 .iter()
@@ -1851,7 +1902,7 @@ impl Game {
             .filter(liked)
             .or_else(|| Treat::ALL.into_iter().find(liked));
         let food = self.carry.food();
-        let food_liked = food.filter(|f| animal_info(animal).is_some_and(|i| i.eats(*f)));
+        let food_liked = food.filter(|f| animal_info(animal).is_some_and(|i| i.accepts(*f)));
         liked_treat
             .map(Gift::Treat)
             .or(food_liked.map(Gift::Food))
@@ -1863,7 +1914,7 @@ impl Game {
     pub fn gift_liked(&self, animal: &str) -> bool {
         match self.gift_for(animal) {
             Some(Gift::Treat(t)) => crate::garden::likes(animal, t),
-            Some(Gift::Food(f)) => animal_info(animal).is_some_and(|i| i.eats(f)),
+            Some(Gift::Food(f)) => animal_info(animal).is_some_and(|i| i.accepts(f)),
             None => false,
         }
     }
@@ -1879,7 +1930,7 @@ impl Game {
             return None;
         }
         let id = self.animals[i].id().to_owned();
-        let accepted = self.animals[i].info.eats(food);
+        let accepted = self.animals[i].info.accepts(food);
         if accepted {
             self.note_gift(&id);
         }
@@ -1897,10 +1948,17 @@ impl Game {
         // a species that likes no garden treat (koala, lion, snow fox, goldfish, night animals,
         // Q-281) gets its baby from its own favourite food — the special food of that species
         // (user report 2026-10-03: the snow fox did not accept food to make a baby)
+        let info = self.animals[i].info;
         if accepted
-            && !crate::garden::Treat::ALL
-                .iter()
-                .any(|&t| crate::garden::likes(&id, t))
+            && if info.treats.is_empty() {
+                !crate::garden::Treat::ALL
+                    .iter()
+                    .any(|&t| crate::garden::likes(&id, t))
+            } else {
+                // box-food treats (GAME-FEED "Basic food and treats"): only the treat makes the
+                // baby; the basic food gives hearts only
+                info.is_treat(food)
+            }
         {
             self.maybe_baby(&id);
         }
@@ -2051,6 +2109,13 @@ impl Game {
             let state = self.animals[f].state;
             if state == AnimalState::InEnclosure {
                 if dark && !night_part[self.animals[f].part] {
+                    // the baby sleeps beside its mother at night (user request 2026-10-04,
+                    // NIGHT-034): it stands still with her `sleep` clip, no walking, no hop
+                    if let Some(b) = self.baby_states.get_mut(&id) {
+                        b.route.clear();
+                        b.play.mode = crate::baby::Mode::Idle;
+                        b.play.hop = 0.0;
+                    }
                     continue;
                 }
                 let inside = self.baby_states.get(&id).is_some_and(|b| {
@@ -2436,6 +2501,7 @@ impl Game {
         a.wander = Wander {
             pause_s: pause,
             route: Vec::new(),
+            rest_s: 0.0,
         };
         let id = a.id().to_owned();
         if eat_food {
@@ -2507,6 +2573,9 @@ impl Game {
             // the exits open the next morning; a day level brings nightfall (GAME-NIGHT, Q-091)
             let night = self.level.data.is_night_part(part);
             self.daytime.level_complete(&level_id, night);
+            if night {
+                self.open_night_gates(&level_id);
+            }
         }
     }
 
@@ -2618,7 +2687,17 @@ impl Game {
             {
                 continue; // locked levels are asleep (not simulated)
             }
-            if state == AnimalState::InEnclosure && dark && !night_part[self.animals[i].part] {
+            let day_dark =
+                state == AnimalState::InEnclosure && dark && !night_part[self.animals[i].part];
+            if self.house_step(i, dt, day_dark) {
+                continue; // resting or sleeping in its animal house (GAME-HOUSE)
+            }
+            if day_dark
+                && (self.animals[i].wander.route.is_empty()
+                    || !self.houses[self.animals[i].enclosure]
+                        .as_ref()
+                        .is_some_and(|h| h.rest))
+            {
                 continue; // day animals lie down in their enclosures at night (rule 1)
             }
             if self.perch(&self.animals[i]).is_some() {
@@ -2701,28 +2780,89 @@ impl Game {
                 // a pair keeps its distance: only cells a pair gap from the partner (Q-308)
                 let mates = self.mate_points(i);
                 let pair_gap = crate::animals::pair_gap_m(self.animals[i].id());
-                let target = wander::draw_target_where(
-                    &self.animals[i].area,
-                    here,
-                    water_bias,
-                    true,
-                    &|c| {
-                        !mates
-                            .iter()
-                            .any(|m| m.distance(cell_center(c)) < pair_gap - 1e-3)
-                    },
-                    &mut self.rng,
-                );
+                let house = if escaped {
+                    None
+                } else {
+                    self.houses[self.animals[i].enclosure]
+                        .as_ref()
+                        .filter(|h| h.rest)
+                };
+                // 2 of 10 targets are a free interior cell of the animal house (HOUSE rule 1);
+                // with a pool they replace land targets, the water share stays 7 of 10
+                let pool = water_bias
+                    && self.animals[i]
+                        .area
+                        .cells()
+                        .any(|(_, k)| k == wander::AreaCell::Water);
+                let roll = if house.is_some() {
+                    self.rng.below(10)
+                } else {
+                    10
+                };
+                let (want_house, class) = match house {
+                    Some(_) if pool => (
+                        (7..9).contains(&roll),
+                        match roll {
+                            0..=6 => Some(wander::AreaCell::Water),
+                            7..=8 => None,
+                            _ => Some(wander::AreaCell::Land),
+                        },
+                    ),
+                    Some(_) => (roll < crate::house::HOUSE_TARGETS_OF_10, None),
+                    None => (false, None),
+                };
+                let mut in_house = None;
+                if let (Some(h), true) = (house, want_house) {
+                    let free: Vec<IVec2> = h
+                        .interior
+                        .cells()
+                        .filter(|&c| {
+                            c != here
+                                && !mates.iter().any(|m| cell_of(*m) == c)
+                                && self.animals[i].area.contains(c)
+                        })
+                        .collect();
+                    if !free.is_empty() {
+                        in_house = Some(free[self.rng.below(free.len() as u32) as usize]);
+                    }
+                }
+                let keep_bias = house.is_none();
+                let target = in_house.or_else(|| {
+                    let area = &self.animals[i].area;
+                    wander::draw_target_where(
+                        area,
+                        here,
+                        water_bias && keep_bias,
+                        true,
+                        &|c| {
+                            !house.is_some_and(|h| h.is_interior(c) || h.is_door(c))
+                                && class.is_none_or(|k| area.class(c) == Some(k))
+                                && !mates
+                                    .iter()
+                                    .any(|m| m.distance(cell_center(c)) < pair_gap - 1e-3)
+                        },
+                        &mut self.rng,
+                    )
+                });
                 let a = &mut self.animals[i];
                 a.wander.pause_s = wander::draw_pause(&mut self.rng);
+                if in_house.is_some() {
+                    a.wander.rest_s = crate::house::draw_rest(&mut self.rng);
+                    a.wander.pause_s = 0.0;
+                }
                 if let Some(t) = target {
                     a.wander.route = a.area.route(here, t).unwrap_or_default();
                 }
                 continue;
             }
             let before = a.pos;
-            let (_, dir) =
-                wander::follow_route(&mut a.pos, &mut a.wander.route, wander::WANDER_SPEED * dt);
+            // (at dusk the animals hurry into their house)
+            let speed = if day_dark {
+                wander::GIFT_SPEED
+            } else {
+                wander::WANDER_SPEED
+            };
+            let (_, dir) = wander::follow_route(&mut a.pos, &mut a.wander.route, speed * dt);
             if dir != Vec2::ZERO {
                 a.facing = dir;
             }
@@ -2753,7 +2893,14 @@ impl Game {
             } else {
                 (self.mate_gap(i, now), self.mate_gap(i, before))
             };
+            // (at a house — footprint and door front — the pair gap is waived, GAME-HOUSE rule 4)
+            let at_house = |q: Vec2| {
+                self.houses[self.animals[i].enclosure]
+                    .as_ref()
+                    .is_some_and(|h| h.near(cell_of(q)))
+            };
             if now != before
+                && !(at_house(now) || at_house(before))
                 && gap_now < crate::animals::pair_gap_m(self.animals[i].id()) * relax - 1e-3
                 && gap_now < gap_before
             {
@@ -2763,6 +2910,105 @@ impl Game {
                 a.wander.pause_s = 1.0;
             }
         }
+    }
+
+    /// Whether the roof of animal house `id` is cut away: an animal rests inside and the
+    /// player is within 8 m of the door (GAME-HOUSE rule 6, HOUSE-014).
+    pub fn house_cutaway(&self, id: &str) -> bool {
+        let Some(h) = self.houses.iter().flatten().find(|h| h.id == id) else {
+            return false;
+        };
+        let inside = self.animals.iter().any(|a| {
+            a.state == AnimalState::InEnclosure
+                && self.level.data.elements[a.enclosure].id == h.enclosure
+                && h.is_interior(cell_of(a.pos))
+        });
+        h.cutaway(self.player.pos, inside)
+    }
+
+    /// Animal house behaviour of animal `i` at home (GAME-HOUSE rules 1–3): comes out when the
+    /// child is near, goes in at dusk, rests inside. Returns true when the animal rests or
+    /// sleeps and needs no further wander handling this tick.
+    fn house_step(&mut self, i: usize, dt: f32, day_dark: bool) -> bool {
+        let a = &self.animals[i];
+        if a.state != AnimalState::InEnclosure || a.area.is_empty() {
+            return false;
+        }
+        let Some(h) = self.houses[a.enclosure].as_ref().filter(|h| h.rest) else {
+            return false;
+        };
+        let p = self.player.pos;
+        let here = cell_of(a.pos);
+        let inside = h.is_interior(here) || h.is_door(here);
+        let gate_near = self.level.data.elements[a.enclosure]
+            .gate
+            .is_some_and(|g| g.distance_to(p) <= wander::NOTICE_PLAYER_M);
+        let child_near = gate_near || p.distance(h.door_front_center()) <= wander::NOTICE_PLAYER_M;
+        let a = &mut self.animals[i];
+        if inside && child_near {
+            // never hide an animal the child needs: walk out over the door front
+            let leaving = a
+                .wander
+                .route
+                .last()
+                .is_some_and(|&c| !h.footprint.contains(c));
+            if !leaving {
+                let front = h
+                    .door_front()
+                    .into_iter()
+                    .filter(|&c| a.area.contains(c))
+                    .min_by(|x, y| {
+                        cell_center(*x)
+                            .distance(a.pos)
+                            .total_cmp(&cell_center(*y).distance(a.pos))
+                    });
+                if let Some(f) = front {
+                    a.wander.route = a.area.route(here, f).unwrap_or_default();
+                }
+                a.wander.rest_s = 0.0;
+                a.wander.pause_s = 1.0;
+            }
+            return false;
+        }
+        if day_dark {
+            if !a.wander.route.is_empty() || child_near {
+                return false; // still walking (the caller keeps walking an unfinished route)
+            }
+            if inside {
+                a.wander.rest_s = crate::house::REST_UNTIL_MORNING_S;
+                return true;
+            }
+            // dusk: walk into the house, a pair onto different cells
+            let mates = self.mate_points(i);
+            let a = &self.animals[i];
+            let free: Vec<IVec2> = h
+                .interior
+                .cells()
+                .filter(|&c| a.area.contains(c) && !mates.iter().any(|m| cell_of(*m) == c))
+                .collect();
+            if free.is_empty() {
+                return false;
+            }
+            let t = free[self.rng.below(free.len() as u32) as usize];
+            let a = &mut self.animals[i];
+            a.wander.route = a.area.route(here, t).unwrap_or_default();
+            a.wander.rest_s = crate::house::REST_UNTIL_MORNING_S;
+            a.wander.pause_s = 0.0;
+            return false;
+        }
+        if a.wander.rest_s > 0.0 && a.wander.route.is_empty() && h.is_interior(here) {
+            if a.wander.rest_s > crate::house::REST_RANGE_S.1 {
+                // woke up in the morning: a short rest, then on with the day
+                a.wander.rest_s = crate::house::draw_rest(&mut self.rng);
+            }
+            a.wander.rest_s -= dt;
+            if a.wander.rest_s <= 0.0 {
+                a.wander.rest_s = 0.0;
+                return false;
+            }
+            return true;
+        }
+        false
     }
 
     /// Where the partner(s) of animal `i` are or are heading (same pair, same state; empty for

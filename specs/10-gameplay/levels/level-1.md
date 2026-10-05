@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS]
 test_prefix: LAYOUT-L1
-updated: 2026-10-01
+updated: 2026-10-04
 ---
 
 # Level 1 — entrance, zebra, hippo, panda
@@ -70,7 +70,7 @@ cell has a `surface`: `path` (cells of `path` elements, incl. bridge, jetty, cav
 | Food box positions | The storage is enterable (`interior` (−3, 12, 6, 4), door (0, 11)), but the 10 labelled boxes stay **outside** (Q-181 answered 2026-09-28): a row in front of the storage's south facade (box centres z = 10.66, labels facing south), on the north row of `path_ring_s`, with a free gap in front of the door (x 0…1; Q-150): meat x −4.9, melons −4.22, hay −3.54, bananas −2.86, bamboo −2.18, **grass** −1.5, gap (box edges −1.19 … 1.79), fish food 2.1, berries 2.8, eucalyptus 3.6, leaves 4.4. The gap is wider than the Q-150 row (box edges −0.09 … 1.69) because the door is enterable now: nothing solid within 0.9 m beside a door post (LAYOUT-038, Q-157). **Inside** (Q-194 answered 2026-09-29): 6 more real, labelled food boxes (interact → label panel → take, same as outside) on the 0.15 m plank platform of the wall band, labels facing the free floor: back (north) wall grass (−2.52, 16.44), melons (−1.88, 16.44), bamboo (1.28, 16.44), grass (1.92, 16.44), west wall melons (−3.44, 13.0), east wall bamboo (3.44, 14.6) — the foods of the level's three animals, repeated. Data: `[[food_box]]` (all 16) in `level-1.toml`. | Q-065, Q-150, Q-181, Q-194 |
 | Walking speed | 1.93 m/s on paths; grass 1.45 m/s (GAME-PLAYER §6, user decisions 2026-09-26 / 2026-09-29). | Q-024 |
 | Panda spot and cave view | Panda lies near the cave mouth so its head is visible from the high camera (see "High-angle camera" below). | — (level design) |
-| Hippo pool data | `hippo_pool` is an `[[enclosure_feature]]` (not an element) at x 11–18, z 15–21 with a west ramp; `enc_hippo.home_wander_on = ["grass", "water"]`; water and grass connect only over the ramp; the hippo picks a water target 7 of 10 times; the hut area is the `[[enclosure_feature]]` `hippo_hut` (`kind = "hut"`, x 15–18, z 11–14) (see "Hippo enclosure pool"). Implemented in M5a as proposed (data-driven). | Q-085, Q-098 |
+| Hippo pool data | `hippo_pool` is an `[[enclosure_feature]]` (not an element) at x 11–18, z 15–21 with a west ramp; `enc_hippo.home_wander_on = ["grass", "water"]`; water and grass connect only over the ramp; the hippo picks a water target 7 of 10 times; the hippo house is the `[[enclosure_feature]]` `hippo_hut` (`kind = "animal_house"`, footprint x 14–18, z 11–14, door west — GAME-HOUSE, Q-362; was the reserved hut area x 15–18) (see "Hippo enclosure pool"). Implemented in M5a as proposed (data-driven). | Q-085, Q-098 |
 | Tree areas | `grove_center` `dense` with a bush border; `trees_nw`, `trees_ne` `sparse` with explicit tree/bush positions (see "Woods"); wander areas of hiding places clipped to their `rect`. Implemented in M5a as proposed. | Q-085 |
 | Collision footprints, invisible walls | Footprint values and fixes of GAME-LAYOUT "Collision footprints"; exceptions for this level in "Woods" and "Collision and billboards". Implemented in M5a as proposed (deviations noted there). | Q-087 |
 | Enclosure signs | The sign in front of each gate becomes a gate arch (panel bottom ≥ 2.1 m) so the player never passes through its panel. | Q-086 |
@@ -244,7 +244,7 @@ Solid = every type except `path` and `hiding_place`.
 | `path_ne_trail` | path (side) | 13, 31, 2, 12 | Narrow trail from `path_ne` north between the river and `trees_ne` towards the leaf pile (`loc_leaves`). |
 | `path_leaves_trail` | path (side) | 18, 34, 1, 9 | 1 m stepping-stone trail straight through `trees_ne` from the north edge of the meadow to the bench at the leaf pile; keeps `loc_leaves` ≤ 10 s from `loc_meadow` (7.7 s) after the leaf pile moved into the north-east corner (FIX-056). |
 | `bench_leaves` | decoration (bench) | 19, 43, 1, 1 | Small one-seat bench at the south-west edge of the leaf pile; the rake leans on it. Its solid cell keeps the panda's wander area ≥ 22 m from the panda gate (FIX-056). |
-| `enc_hippo` | enclosure | 9, 11, 11, 12 | Hippo enclosure; gate (9, 15, 1, 2) on the west fence; square tiled pool `hippo_pool` (x 11–18, z 15–21, `[[enclosure_feature]]`, see "Hippo enclosure pool"), wooden hut (area x 15–18, z 11–14 reserved), edge stones; `home_wander_on = ["grass", "water"]`. |
+| `enc_hippo` | enclosure | 9, 11, 11, 12 | Hippo enclosure; gate (9, 15, 1, 2) on the west fence; square tiled pool `hippo_pool` (x 11–18, z 15–21, `[[enclosure_feature]]`, see "Hippo enclosure pool"), wooden hut `hippo_hut` (animal house, footprint x 14–18, z 11–14, GAME-HOUSE), edge stones; `zebra_shelter` (−20,15,5,4) and `panda_shelter` (−6,37,5,5) are the animal houses of `enc_zebra` / `enc_panda` (GAME-HOUSE "Houses per level"); `home_wander_on = ["grass", "water"]`. |
 | `hedge_hippo_nw` | decoration (hedge) | 8, 22, 1, 2 | Tall hedge north of the hippo board (sight blocker for the cave); since 2026-09-27 it starts at z 22 so the enclosure sign stands ≥ 0.9 m beside the gate (LAYOUT-033, LAYOUT-038). |
 | `hedge_hippo_sw` | decoration (hedge) | 8, 11, 1, 4 | Tall hedge right of the hippo gate (sight blocker for the cave). |
 | `board_hippo` | decoration (info_board) | 8, 21, 1, 1 | Info board of `enc_hippo`, north of the gate beyond the enclosure sign (moved 4 m north 2026-09-27, LAYOUT-033, LAYOUT-038). |
@@ -541,13 +541,14 @@ visible from the path in front of the gate. Its water uses the pond look (still,
 |---|---|---|
 | `rect` | 11, 15, 8, 7 (x 11–18, z 15–21) | 56 of the 130 inner cells (enclosure 11 × 12 = 132 minus the 2 gate cells) = **43 %** |
 | distance to the gate | 2 cells (the grass column x = 10 and the gate column x = 9 lie between the gate and the rim) | not adjacent to the gate cells (9, 15), (9, 16); the arriving hippo steps onto grass first |
-| margins | 1 m grass east (x = 19) and north (z = 22) between rim and fence; 4 m grass south (z 11–14) with the hut area x 15–18 | rim never touches the fence; room for `hut_wood` (≈ 4 × 3.5 m, placement to be confirmed with the hut model) |
+| margins | 1 m grass east (x = 19) and north (z = 22) between rim and fence; 4 m grass south (z 11–14) with the hut x 14–18 (GAME-HOUSE; east strip x 19 stays free) | rim never touches the fence; room for `hut_wood` (≈ 4 × 3.5 m, placement to be confirmed with the hut model) |
 | `ramp` | 11, 16, 1, 3 on the **west** side (`ramp_side = "-x"`) | faces the gate and the path; the child sees the hippo walk in and out |
 | `edge_stones` | (10.4, 21.6), (11.4, 14.4), (13.6, 14.3) — `rock` at scale 0.5 on the grass at the north-west corner and the south rim | decoration from the concept; kept out of the 1 m strips east and north of the pool so the home wander area stays connected |
 | water | `still`, pond water shader, no plants or animals | riddle guard (not the pond) |
 
-**Home wander area** (GAME-LAYOUT "Enclosure features and wandering at home"): 55 grass
-cells (enclosure minus gate cells, pool, hut area and the three stone cells) + 56 water
+**Home wander area** (GAME-LAYOUT "Enclosure features and wandering at home"): 59 grass
+cells (enclosure minus gate cells, pool, the hut's wall cells and the three stone cells; the hut's
+interior and door cells are grass, GAME-HOUSE) + 56 water
 cells, all connected; grass and water connect only through the 3 ramp cells. *Proposal:* 7 of
 10 wander targets are water cells.
 
@@ -564,7 +565,7 @@ problem.
 (not the ramp), the `pool_tiled` model at the rect centre with a placeholder fallback (tiled
 rim 0.4 m, flat striped ramp) while the model is missing, and the edge stones (`rock`,
 scale 0.5, solid for the animal). The hut area is data: `[[enclosure_feature]]` `hippo_hut`
-(`kind = "hut"`, rect 15, 11, 4, 4 — *proposal, Q-098*), drawn as a wooden placeholder
+(`kind = "animal_house"`, rect 14, 11, 5, 4 — GAME-HOUSE, supersedes the *proposal Q-098* hut 15, 11, 4, 4; edge stone (13.6, 14.3) moves to (12.6, 14.4)), drawn as a wooden placeholder
 box. The old hippo `enclosure_dressing` is removed. Animals at home walk to cells whose 8
 neighbours are in the same part of the area where possible (away from fences and the rim).
 The hippo is sunk 0.9 m (its model's water line) in the pool and in the pond and plays

@@ -6,7 +6,7 @@ module: glossary
 status: draft
 depends_on: []
 test_prefix: GLOS
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Glossary
@@ -70,9 +70,11 @@ language for player-facing text.
 | `nocturnal_animal` | nachtaktives Tier | nocturnal animal | Animal that is active at night (hedgehog, bat, owl, …). |
 | `daytime` (phases `day`, `dusk`, `night`, `sleeping`, `morning`) | Tageszeit † | time of day | Saved day/night state of the zoo (`zoo_core::daytime`, GAME-NIGHT "Implementation", GAME-SAVE). Not "level". |
 | `night_level` (data `[level] time = "night"`, id `night_<N>`) | Nachtlevel † | night level | A level of the night zoo, reached only through a moon door (GAME-LAYOUT "Moon door and night levels", GAME-LEVEL-NIGHT-1). |
+| `animal_house` (data `[[enclosure_feature]] kind = "animal_house"`) | Tierhaus | animal house | Small building inside an enclosure (hut, shelter, elephant/giraffe/monkey house) with solid walls and one doorway; animals enter and leave only through the door cells, the child never enters; never "cage" (GAME-HOUSE, Q-359 proposal). |
 | `night_house` / `indoor_enclosure` (data `indoor = true`) | Nachthaus / Innengehege † | night house / indoor enclosure | Enterable building of a night level whose dim indoor enclosures open into its visitor hall (GAME-LEVEL-NIGHT-1, Q-134 answered). |
 | `terrarium` (data `terrarium = true` on an `indoor` enclosure) | Terrarium | terrarium | Glass-fronted indoor enclosure of the terrarium house (snake, chameleon, poison dart frog); never "cage" (GAME-LEVEL-NIGHT-2). |
 | `terrarium_house` | Terrarienhaus | terrarium house | Enterable warm-lit building of `night_2` with the three terrariums along its north wall (GAME-LEVEL-NIGHT-2). |
+| `night_gate` (hint kind; barrier `barrier_n1_garden`, `opens_at = "night"`) | Laternentor | lantern gate | Small gate in the west hedge of `night_1` to the terrarium garden; opens the moment `night_1` is complete and stays open; the 🧭 hint 🚪 leads through it (GAME-LEVEL-NIGHT-2, NIGHT-030/031). |
 | `snake` | Schlange | snake | Friendly green-yellow corn snake; basic fish, treat eggs; baby `snake_hatchling` (night_2). |
 | `chameleon` | Chamäleon | chameleon | Colour-changing perched lizard; basic crickets, treat frozen insects; baby `chameleon_baby` (night_2). |
 | `poison_dart_frog` | Pfeilgiftfrosch | poison dart frog | Tiny very colourful frog shown friendly ("giftig" only as a board fact); basic flies, treat crickets; baby `frog_froglet` (night_2). |

@@ -236,6 +236,16 @@ fn fam_025_pair_members_keep_their_distance_while_wandering() {
                     if !g.in_scope(a) || a.state == AnimalState::InBowl {
                         continue;
                     }
+                    // (GAME-HOUSE rule 4: the gap is waived at an animal house, footprint and
+                    // door front, where a pair squeezes through the door)
+                    if a.state == AnimalState::InEnclosure
+                        && g.houses[a.enclosure].as_ref().is_some_and(|h| {
+                            h.near(zoo_core::level::cell_of(a.pos))
+                                || h.near(zoo_core::level::cell_of(b.pos))
+                        })
+                    {
+                        continue;
+                    }
                     checked += 1;
                     let d = a.pos.distance(b.pos) - pair_gap_m(id);
                     if d < worst {

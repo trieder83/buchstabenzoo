@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS]
 test_prefix: ADS
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Ad billboards (in-world)
@@ -121,6 +121,24 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
     the end of a 3 s hold is). No analytics, no query parameters, no request to the campaign
     host by the game (ADC1-005).
 
+12. **All-done carousel** (user request 2026-10-04, Q-364): when the 🧭 compass reports
+    `next = all_done` (every level that exists is solved, HINT-028/030 — not merely "nothing to
+    do right now") and the child taps it, a panel opens instead of the plain bubble: headline
+    `ad-carousel-title` ("Du magst Bildungsabenteuer? Schau mal hier!" / "You like educational
+    adventures? Check this out!", Fluent de + en) and a **carousel** of the verified campaigns in
+    slot order (all of them, picture for the current language; never placeholders). It advances by
+    itself every **4 s** (`CAROUSEL_MS`, frozen while the gate is up, restarted by any manual
+    move), has big **◀ ▶** buttons (64 px) and one **dot** per slide (current one marked), a swipe
+    (≥ 40 px horizontal) turns the page, wraps around, shows the tagline (`klasse1+`, hidden on
+    very small landscape screens) and a ✖ (same 400 ms accidental-touch guard) / Esc closes it.
+    Tapping the picture starts the **same parental gate** as rule 11 (campaign-specific question,
+    3 s hold, release opens the link directly, ADS-030) — the link is never opened without it. With
+    **no verified campaign** the panel is not offered and the normal all-done bubble shows. It
+    uses the images already in memory: no extra request, no tracking. While it is open the board
+    reading panels stay closed. Small screens: a compact card left of the control column
+    (landscape) / below the compass (portrait), never covering `#settings-btn`, `#compass-btn`,
+    `#view-btn`, `#act`.
+
 ### Threat model (what the signature does and does not protect)
 
 | Attacker | Can | Cannot |
@@ -164,6 +182,11 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-027 | Given a phone, a verified board is near and the panel was closed by ✖ (or the ✖ was tapped < 400 ms after opening: ignored), then the interact button (🔗) is visible and tapping it reopens the panel; leaving and coming back also reopens it; the manifest arriving late opens the panel for a child already standing there. | e2e |
 | ADS-028 | Given a small screen (780×360), then the open panel does not overlap `#settings-btn`, `#compass-btn`, `#view-btn` and `#act` (bounding boxes) and is a compact card; at 360×780 it does not overlap them either. | e2e |
 | ADS-029 | Given the gate: after the right answer + 3 s touch hold (finger moving 10 px does not release; no context menu) an open button ≥ 64 px with an anchor (`href` canonical, `target=_blank`, `rel=noopener noreferrer`) appears and `window.open` has NOT been called; tapping it calls `window.open` exactly once and closes panel and gate. A slow image download (> 4 s, < 15 s) still shows the campaign; a failed load is retried once. | e2e + unit |
+| ADS-030 | Given the gate (user request 2026-10-04: "the link should open directly, not show the link again"): after the right answer + 3 s touch hold the hold button shows ✔ (`#ad-hold.ready`) and `window.open` has NOT been called (a timer is no user gesture); releasing the finger then opens the link directly, exactly once (`_blank`, `noopener,noreferrer`) and closes panel and gate; an early release opens nothing; there is no second "open" button. Replaces the tap-button part of ADS-029. | e2e |
+| ADS-031 | Carousel logic (`carouselItems`, `Carousel`): items = verified campaigns in slot order, one image each for the language, empty without content; `next`/`prev` wrap, `go` wraps, auto-advance after exactly 4 s, a manual move restarts the timer, a paused timer never advances, a single slide never advances. | unit |
+| ADS-032 | Given all levels solved (`next = all_done`) and a verified campaign set, when the compass is tapped, then the carousel opens with the headline (de / en) and the first campaign, ◀ ▶ are ≥ 64 px, there is one dot per campaign; ▶ / ◀ / a dot / the 4 s timer change the slide and wrap; ✖ and Esc close it. | e2e |
+| ADS-033 | Given the carousel, when the picture is tapped, then the parental gate starts and `window.open` is not called; after the right answer + 3 s hold + release the link of the shown campaign opens exactly once and the carousel closes; the timer does not advance while the gate is up. | e2e |
+| ADS-034 | Given `next = all_done` but no verified campaign (no key / failed load) or `next` is not `all_done`, when the compass is tapped, then no carousel opens (the normal bubble shows). On 780x360 and 360x780 the carousel is inside the viewport, its buttons are ≥ 64 px and it overlaps none of `#settings-btn`, `#compass-btn`, `#view-btn`, `#act`. | e2e |
 
 ## Open questions
 
@@ -172,5 +195,6 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 - Q-240 signature scheme and key custody, Q-241 compiled campaign ids / link hosts, Q-242 gate
   difficulty, Q-243 caching / offline / Capacitor origin, Q-244 board placement and review,
   Q-245 test-key hook, Q-246 taglines from the manifest (not Fluent), Q-247 panel behaviour.
+- Q-364 all-done carousel (rule 12): implemented as recommended; open for the user.
 - Q-128 answered 2026-09-27: passive boards only (no links, no tracking, no network), own
   cross-promotion first, legal/child-safety check before any third-party ad (rules 4, 6).

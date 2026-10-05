@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L3
-updated: 2026-10-01
+updated: 2026-10-04
 ---
 
 # Level 3 — monkey, goldfish, snow fox (adventure playground and stream)
@@ -186,7 +186,7 @@ Grid rect = `x, z, w, d` (south-west corner + size). Solid = every type except `
 | `trees_l3_center_e` | decoration (tree_grove) | -1, 67, 8, 10 | density `dense`.  |
 | `enc_goldfish` | enclosure | 11, 63, 11, 10 | gate (11, 67, 1, 2). Goldfish pond enclosure: round pond with a low stone rim, water plants, a low wooden fence; the "gate" is a flat stone step where the bowl is put down to let the fish in (GAME-RESCUE goldfish bowl step 6). No waterfall, no wheel, no willow (riddle guards). |
 | `board_goldfish` | decoration (info_board) | 10, 70, 1, 1 | info board of `enc_goldfish`.  |
-| `enc_monkey` | enclosure | -4, 82, 12, 10 | gate (1, 82, 2, 1). Climbing frame of logs and ropes, hanging tyres, a wooden monkey house, a banana basket. No ship, no carousel, no trampoline (riddle guards). |
+| `enc_monkey` | enclosure | -4, 82, 12, 10 | gate (1, 82, 2, 1). Climbing frame of logs and ropes, hanging tyres, a wooden monkey house = animal house `monkey_house` (−4, 87, 5, 5, door east; GAME-HOUSE), a banana basket. No ship, no carousel, no trampoline (riddle guards). |
 | `board_monkey` | decoration (info_board) | -2, 80, 1, 1 | info board of `enc_monkey`.  |
 | `enc_snow_fox` | enclosure | -5, 50, 10, 7 | gate (-1, 56, 2, 1). Shady enclosure: wooden den with a straw bed under two pine trees, light rocks, a shallow drinking bowl. No freezer, no sprinkler, no washing line (riddle guards). |
 | `board_snow_fox` | decoration (info_board) | -3, 57, 1, 1 | info board of `enc_snow_fox`.  |

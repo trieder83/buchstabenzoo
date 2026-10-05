@@ -169,6 +169,10 @@ impl Sim {
     }
 
     fn reach_animal(&mut self, animal: &str) {
+        // (a child that cannot get close from one bank tries another one: banks already tried
+        // are skipped, GAME-HOUSE changed the random stream and exposed a pond out of reach
+        // of the first bank)
+        let mut tried: Vec<IVec2> = Vec::new();
         for _ in 0..8 {
             let s = self.member_pos(animal);
             let grid = self.g.level.grid();
@@ -181,12 +185,14 @@ impl Sim {
                 .cells()
                 .chain(zoo_core::Rect::new(s.x as i32 - 6, s.y as i32 - 6, 13, 13).cells())
                 .filter(|&c| grid.is_passable(c, false))
+                .filter(|&c| tried.iter().all(|t| (*t - c).abs().max_element() > 3))
                 .min_by(|a, b| {
                     cell_center(*a)
                         .distance(s)
                         .total_cmp(&cell_center(*b).distance(s))
                 })
-                .unwrap();
+                .unwrap_or_else(|| cell_of(self.g.player.pos));
+            tried.push(cell);
             self.walk_to(cell, 150.0);
             for _ in 0..120 {
                 let to = self.member_pos(animal) - self.g.player.pos;
@@ -203,7 +209,20 @@ impl Sim {
                 return;
             }
         }
-        panic!("could not reach the {animal}");
+        panic!(
+            "could not reach the {animal} (player {}, group {:?})",
+            self.g.player.pos,
+            self.g
+                .group(animal)
+                .iter()
+                .map(|&j| (
+                    self.g.animals[j].state,
+                    self.g.animals[j].pos,
+                    self.g.animals[j].wander.route.len(),
+                    self.g.animals[j].wander.pause_s
+                ))
+                .collect::<Vec<_>>()
+        );
     }
 }
 
@@ -297,6 +316,13 @@ fn follow_one(s: &mut Sim) {
                 .unwrap();
             s.walk_to(gate, 30.0);
             s.idle(0.5);
+        }
+        HintKind::NightGate => {
+            // through the open lantern gate: to the cell 3 m beyond it
+            s.walk_to(cell_of(h.stand), 150.0);
+            let beyond = h.pos + (h.pos - h.stand).normalize_or_zero() * 3.0;
+            s.walk_to(cell_of(beyond), 60.0);
+            s.idle(0.2);
         }
         HintKind::PickUp
         | HintKind::Bamboo
@@ -1143,6 +1169,28 @@ fn messy_state(seed: u64) -> Sim {
         *g = Game::from_save(zoo_data(), &save).unwrap();
         g.player.pos = p;
     }
+    // GAME-HOUSE (HOUSE-016): animals at home rest inside their animal house in about half of
+    // the states; they must come out for the child and never be a hint target
+    for i in 0..g.animals.len() {
+        let a = &g.animals[i];
+        let inside = a.state == AnimalState::InEnclosure
+            && r.next_u32().is_multiple_of(2)
+            && g.houses[a.enclosure].is_some();
+        if inside {
+            let h = g.houses[a.enclosure].clone().unwrap();
+            let cells = h.interior_cells();
+            let c = cells[(a.member as usize) % cells.len()];
+            let a = &mut g.animals[i];
+            a.pos = cell_center(c);
+            a.wander.route.clear();
+            a.wander.rest_s = 15.0;
+        }
+    }
+    // (a restore recomputes the wander areas, so the animals inside really rest)
+    let save = g.to_save();
+    let p = g.player.pos;
+    *g = Game::from_save(zoo_data(), &save).unwrap();
+    g.player.pos = p;
     g.drain_events();
     s
 }
@@ -1266,4 +1314,115 @@ fn night_028_compass_badge_is_the_next_task() {
     assert!(k == "moon_door" || k == "bed", "night badge {k}");
     assert!(s.g.daytime.sleep());
     assert_eq!(compass_badge(&s.g, &s.t), None, "sleeping: no badge");
+}
+
+// ------------------------------------------------------------------ the terrarium garden (night_2)
+
+/// The whole game with the terrarium garden, parsed once.
+fn zoo2_data() -> zoo_core::LevelData {
+    static DATA: std::sync::OnceLock<zoo_core::LevelData> = std::sync::OnceLock::new();
+    DATA.get_or_init(common::zoo_with_night2).clone()
+}
+
+const GARDEN: [&str; 3] = ["snake", "chameleon", "poison_dart_frog"];
+
+fn garden_done(s: &Sim) -> bool {
+    GARDEN.iter().all(|a| s.g.mission(a).unwrap().complete)
+}
+
+/// A night in which night_1 is complete (the garden gate is open) and the child stands in night_1.
+fn garden_sim(seed: u64) -> Sim {
+    let mut g = Game::new(zoo2_data(), seed).expect("zoo with night_2");
+    // level 1 is done (the night only falls after it)
+    for a in DAY_1 {
+        assert!(g.debug_send_home(a));
+    }
+    assert!(g.debug_set_daytime("night"));
+    for a in ["hedgehog", "bat", "owl"] {
+        assert!(g.debug_send_home(a));
+    }
+    g.drain_events();
+    g.player.pos = cell_center(IVec2::new(-30, 29));
+    Sim::new(g)
+}
+
+// HINT-025 / NIGHT-031 (NEVER STUCK, night_2): a child who only follows the 🧭 hint, from messy
+// states of the garden (split pairs, a wrong food or a treat in the hands, babies, a save/restore in
+// the middle), always brings all three pairs home, and then the hint leads to the bed and the morning.
+#[test]
+fn hint_025_never_stuck_following_the_hints_through_the_garden() {
+    for seed in 0..6u64 {
+        let mut s = garden_sim(seed);
+        let mut r = Pcg32::new(seed + 7);
+        // messy start: one pair split, a baby somewhere, a wrong food or a treat in the hands
+        let snake = s.g.group("snake");
+        s.g.animals[snake[0]].state = AnimalState::InEnclosure;
+        s.g.missions[snake[0]].started = true;
+        if seed % 2 == 0 {
+            let mut save = s.g.to_save();
+            save.babies = vec!["chameleon".to_owned()];
+            let p = s.g.player.pos;
+            s.g = Game::from_save(zoo2_data(), &save).unwrap();
+            s.g.player.pos = p;
+        }
+        let noise = [Food::Grass, Food::Eggs, Food::Fish, Food::Flies, Food::Bone];
+        let mut steps = 0;
+        while !garden_done(&s) {
+            steps += 1;
+            assert!(
+                steps < 90,
+                "seed {seed}: the garden is not done after 90 hint steps"
+            );
+            if r.next_u32().is_multiple_of(4) {
+                s.g.carry.take(&zoo_core::FoodBox {
+                    food: noise[(r.next_u32() % 5) as usize],
+                });
+            }
+            s.t.hide();
+            follow_one(&mut s);
+            if r.next_u32().is_multiple_of(5) {
+                let save = s.g.to_save();
+                let p = s.g.player.pos;
+                s.g = Game::from_save(zoo2_data(), &save).unwrap();
+                s.g.player.pos = p;
+            }
+        }
+        // all home: the hint leads to the bed and the morning comes
+        let mut tail = 0;
+        while s.g.daytime.phase != Phase::Day {
+            tail += 1;
+            assert!(
+                tail < 12,
+                "seed {seed}: no morning after {tail} steps ({:?})",
+                s.g.daytime.phase
+            );
+            s.t.hide();
+            follow_one(&mut s);
+        }
+    }
+}
+
+// NIGHT-031 (core): the gate is the first hint in night_1 while night_2 waits; its priority is <= 3
+// and following it brings the child into the garden, where the hint is a board of the garden.
+#[test]
+fn night_031_gate_hint_leads_into_the_garden() {
+    let mut s = garden_sim(2);
+    let h = s.press();
+    assert_eq!(h.kind, HintKind::NightGate, "{h:?}");
+    assert!(h.priority <= hints::PRIO_UNSTARTED);
+    s.t.hide();
+    follow_one(&mut s);
+    let here = s.g.level.data.part_at(cell_of(s.g.player.pos));
+    assert_eq!(
+        here,
+        s.g.level.data.part_index("night_2"),
+        "{:?}",
+        s.g.player.pos
+    );
+    s.t.hide();
+    let h = s.press();
+    assert!(
+        h.kind == HintKind::Board && h.animal.is_some_and(|a| GARDEN.contains(&a)),
+        "{h:?}"
+    );
 }

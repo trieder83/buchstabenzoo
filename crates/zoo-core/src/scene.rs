@@ -57,7 +57,14 @@ pub mod colors {
 /// Landmark / decoration kinds of levels 2–3 drawn as coloured placeholder boxes (PROD-POC
 /// "Placeholders"; the real models come after concept approval).
 pub fn placeholder_kind(kind: &str) -> Option<&'static str> {
-    const KINDS: [&str; 27] = [
+    const KINDS: [&str; 33] = [
+        // terrarium garden `night_2` (GAME-LEVEL-NIGHT-2)
+        "stone_wall",
+        "rowing_boat",
+        "lantern_tree",
+        "palm_tree",
+        "vine_arch",
+        "rain_barrel",
         // night zoo `night_1` (GAME-LEVEL-NIGHT-1)
         "telescope",
         "windmill",
@@ -95,7 +102,7 @@ pub fn placeholder_kind(kind: &str) -> Option<&'static str> {
 /// front east against the west hedge).
 pub fn landmark_model(kind: &str) -> Option<(&'static str, f32)> {
     Some(match kind {
-        "windmill" => ("windmill", 0.0),
+        "windmill" => ("windmill", 180.0), // sails turned to level north (user request 2026-10-04)
         "telescope" => ("telescope", 0.0),
         "tree_crooked" => ("crooked_tree", 0.0),
         "tree_hollow" => ("hollow_tree", 0.0),
@@ -269,6 +276,8 @@ impl Decal {
 pub const FOOD_STORAGE_SIGN_KEY: &str = "sign-food-storage";
 /// Fluent key of the night house sign (GAME-LEVEL-NIGHT-1).
 pub const NIGHT_HOUSE_SIGN_KEY: &str = "sign-night-house";
+/// Fluent key of the terrarium house sign (GAME-LEVEL-NIGHT-2).
+pub const TERRARIUM_HOUSE_SIGN_KEY: &str = "sign-terrarium-house";
 
 /// Asset path of an enclosure sign silhouette (ART-ENVIRONMENT behaviour 6).
 pub fn silhouette_path(animal: &str) -> String {
@@ -1562,8 +1571,60 @@ impl LevelScene {
                 let roof = Vec3::new(r.w as f32 - 0.3, 0.6, r.d as f32 - 0.5);
                 self.push_box(&f.id, c, 2.0, roof, colors::ROOF);
             }
+            "animal_house" => self.animal_house(f),
             _ => {}
         }
+    }
+
+    /// Placeholder of an animal house (GAME-HOUSE, HOUSE-020): wall boxes on every footprint
+    /// cell that is neither interior nor door, a lintel over the doorway from `door_height_m`
+    /// up, and a roof slab at `roof_height_m`. The doorway stays open (never a closed box);
+    /// lintel and roof are cut away while an animal rests inside and the child is near
+    /// (`roof_boxes`). Replaced by the model once it exists (`house::BUILT_MODELS`).
+    fn animal_house(&mut self, f: &crate::level::EnclosureFeature) {
+        let Some(h) = crate::house::House::from_feature(f) else {
+            return;
+        };
+        if let Some(m) = crate::house::BUILT_MODELS
+            .iter()
+            .find(|m| **m == h.model.as_str())
+        {
+            self.model_at(m, rect_center(h.footprint), 0.0);
+            return;
+        }
+        for c in h.footprint.cells().filter(|&c| h.is_wall(c)) {
+            let size = Vec3::new(0.9, h.roof_height_m, 0.9);
+            self.push_box(&h.id, cell_center(c), 0.0, size, colors::WOOD);
+        }
+        let first = self.boxes.len();
+        let d = h.door;
+        let lintel = Vec3::new(
+            d.w as f32 - 0.1,
+            h.roof_height_m - h.door_height_m,
+            d.d as f32 - 0.1,
+        );
+        self.push_box(
+            &format!("{}:lintel", h.id),
+            rect_center(d),
+            h.door_height_m,
+            lintel,
+            colors::WOOD,
+        );
+        let r = h.footprint;
+        let slab = Vec3::new(
+            r.w as f32 + 0.3,
+            crate::house::ROOF_SLAB_M,
+            r.d as f32 + 0.3,
+        );
+        self.push_box(
+            &format!("{}:roof", h.id),
+            rect_center(r),
+            h.roof_height_m,
+            slab,
+            colors::ROOF,
+        );
+        self.roof_boxes
+            .push((h.id.clone(), first..self.boxes.len()));
     }
 
     /// Non-solid riddle dressing (`[[scenery]]`, Q-080): tall grass with flowers, mud,
@@ -1780,6 +1841,69 @@ impl LevelScene {
                             (hash01(r.x, k) - 0.5) * (r.d as f32 - 1.0),
                         );
                     self.model_scaled("grass_tuft", p, h * 6.0, 2.0);
+                }
+            }
+            "pumpkin_patch" => {
+                // seven big round orange pumpkins on green vines (walked over: low)
+                let c = rect_center(r);
+                for k in 0..7 {
+                    let h = hash01(k, r.x);
+                    let p = c + Vec2::new(
+                        (h - 0.5) * (r.w as f32 - 1.0),
+                        (hash01(r.z, k) - 0.5) * (r.d as f32 - 1.0),
+                    );
+                    let s = 0.55 + h * 0.2;
+                    self.flat_walkable(
+                        id,
+                        p,
+                        Vec3::new(s, 0.2 + h * 0.05, s),
+                        0.0,
+                        [0.96, 0.52, 0.10],
+                    );
+                }
+                self.flat_walkable(
+                    id,
+                    c,
+                    Vec3::new(r.w as f32 - 0.2, 0.05, r.d as f32 - 0.2),
+                    0.0,
+                    [0.30, 0.55, 0.22],
+                );
+            }
+            "stepping_stones" => {
+                // round smooth plates over a wet moss patch
+                let c = rect_center(r);
+                self.flat_walkable(
+                    id,
+                    c,
+                    Vec3::new(r.w as f32 - 0.1, 0.05, r.d as f32 - 0.1),
+                    0.0,
+                    [0.28, 0.50, 0.30],
+                );
+                for k in 0..4 {
+                    let p = Vec2::new(r.x as f32 + 0.5 + k as f32 * (r.w as f32 - 1.0) / 3.0, c.y);
+                    self.flat_walkable(
+                        id,
+                        p,
+                        Vec3::new(0.7, 0.09 + 0.004 * k as f32, 0.7),
+                        0.0,
+                        colors::ROCK,
+                    );
+                }
+            }
+            "fern_glade" => {
+                // head-high giant ferns around an old stump (the fern model comes later)
+                let c = rect_center(r);
+                self.flat(id, c, Vec3::new(0.5, 0.4, 0.5), 0.0, colors::BARK);
+                for k in 0..6 {
+                    let a = k as f32 * 1.05;
+                    let p = c + Vec2::new(a.cos(), a.sin()) * 1.0;
+                    self.flat_walkable(
+                        id,
+                        p,
+                        Vec3::new(0.5, 0.35 + 0.02 * k as f32, 0.5),
+                        0.0,
+                        colors::WILLOW,
+                    );
                 }
             }
             "leaf_pile" => {
@@ -2197,7 +2321,7 @@ impl LevelScene {
                     self.roof_boxes
                         .push((e.id.clone(), first..self.boxes.len()));
                 }
-                if kind == "night_house" {
+                if kind == "night_house" || kind == "terrarium_house" {
                     // name board over the door (south facade); hidden with the roof while
                     // the player is inside (zoo view)
                     let wall_h = e.height_m.unwrap_or(4.0) * 0.7;
@@ -2208,7 +2332,11 @@ impl LevelScene {
                         Dir::S,
                         (wall_h - board.y - 0.1).max(2.25),
                         board,
-                        NIGHT_HOUSE_SIGN_KEY,
+                        if kind == "terrarium_house" {
+                            TERRARIUM_HOUSE_SIGN_KEY
+                        } else {
+                            NIGHT_HOUSE_SIGN_KEY
+                        },
                     );
                     if building_model(e).is_some() {
                         self.roof_boxes
@@ -2609,6 +2737,129 @@ impl LevelScene {
                     0.0,
                     Vec3::new(0.5, 0.3, 0.35),
                     colors::WOOD_LIGHT,
+                );
+            }
+            // terrarium garden `night_2` riddle scenery (stand-ins until real models exist)
+            "stone_wall" => {
+                // low dry wall: stacked flat grey courses with mossy tops
+                let courses = [(0.0, 0.0), (0.28, 0.1), (0.56, 0.2)];
+                for (k, (y, inset)) in courses.into_iter().enumerate() {
+                    let size = Vec3::new(w - 0.1 - inset * 2.0, 0.27, d - 0.1);
+                    self.part_box(
+                        id,
+                        c,
+                        y,
+                        size,
+                        if k == 2 { colors::WILLOW } else { colors::ROCK },
+                    );
+                }
+            }
+            "rowing_boat" => {
+                // upside-down blue hull, a keel strip, two oars leaning on it
+                self.part_box(
+                    id,
+                    c,
+                    0.0,
+                    Vec3::new(w - 0.2, 0.7, d - 0.3),
+                    colors::WAGON_BLUE,
+                );
+                self.part_box(
+                    id,
+                    c,
+                    0.7,
+                    Vec3::new(w - 0.8, 0.12, d - 1.0),
+                    [0.22, 0.40, 0.70],
+                );
+                for dx in [-0.6, 0.6] {
+                    self.part_box(
+                        id,
+                        c + Vec2::new(dx, -d / 2.0 + 0.05),
+                        0.0,
+                        Vec3::new(0.06, 1.3, 0.06),
+                        colors::WOOD_LIGHT,
+                    );
+                }
+            }
+            "lantern_tree" => {
+                self.part_box(id, c, 0.0, Vec3::new(0.5, 2.2, 0.5), colors::BARK);
+                self.part_box(
+                    id,
+                    c,
+                    2.0,
+                    Vec3::new(w + 1.4, 1.4, d + 1.4),
+                    colors::TREE_CROWN,
+                );
+                for (k, col) in [
+                    colors::ROOF,
+                    colors::GOLD,
+                    colors::WILLOW,
+                    colors::WAGON_BLUE,
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    for j in 0..5i32 {
+                        let a = (k as i32 * 5 + j) as f32 * 0.9;
+                        let p = c + Vec2::new(a.cos(), a.sin()) * (w / 2.0 + 0.5);
+                        self.part_box(
+                            id,
+                            p,
+                            1.5 + hash01(j, k as i32) * 0.4,
+                            Vec3::splat(0.22),
+                            col,
+                        );
+                    }
+                }
+            }
+            "palm_tree" => {
+                self.part_box(id, c, 0.0, Vec3::new(0.3, 3.5, 0.3), colors::BARK);
+                self.part_box(id, c, 3.5, Vec3::new(2.4, 0.15, 0.6), colors::TREE_CROWN);
+                self.part_box(id, c, 3.62, Vec3::new(0.6, 0.15, 2.4), colors::TREE_CROWN);
+                self.part_box(id, c, 3.2, Vec3::new(0.4, 0.3, 0.4), colors::BARK);
+            }
+            "vine_arch" => {
+                // two posts, a crossbar, green curtains and pink flowers
+                for dx in [-1.0, 1.0] {
+                    self.part_box(
+                        id,
+                        c + Vec2::new(dx * (w / 2.0 - 0.15), 0.0),
+                        0.0,
+                        Vec3::new(0.25, 2.2, 0.25),
+                        colors::WOOD,
+                    );
+                }
+                self.part_box(id, c, 2.0, Vec3::new(w - 0.1, 0.25, 0.3), colors::WOOD);
+                for k in 0..5 {
+                    let x = r.x as f32 + 0.4 + k as f32 * (w - 0.8) / 4.0;
+                    self.part_box(
+                        id,
+                        Vec2::new(x, c.y),
+                        0.7 + 0.04 * k as f32,
+                        Vec3::new(0.3, 1.3, 0.2),
+                        colors::WILLOW,
+                    );
+                    self.part_box(
+                        id,
+                        Vec2::new(x, c.y + 0.15),
+                        1.6,
+                        Vec3::new(0.14, 0.14, 0.08),
+                        colors::BLOSSOM,
+                    );
+                }
+            }
+            "rain_barrel" => {
+                self.part_box(id, c, 0.0, Vec3::new(w - 0.6, 1.0, d - 0.6), colors::WOOD);
+                for y in [0.2, 0.7] {
+                    self.part_box(id, c, y, Vec3::new(w - 0.5, 0.06, d - 0.5), colors::BLACK);
+                }
+                // a small eave over it, with its drain pipe
+                self.part_box(id, c, 1.9, Vec3::new(w, 0.12, d), colors::ROOF);
+                self.part_box(
+                    id,
+                    c + Vec2::new(w / 2.0 - 0.2, 0.0),
+                    0.0,
+                    Vec3::new(0.08, 1.9, 0.08),
+                    colors::STONE,
                 );
             }
             "treehouse" | "giant_tree" | "blossom_tree" => self.perch_tree(e, data),

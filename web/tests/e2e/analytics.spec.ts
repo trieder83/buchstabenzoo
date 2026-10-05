@@ -46,23 +46,10 @@ async function openSettings(page: Page) {
   await expect(page.locator('#analytics-toggle')).toBeVisible();
 }
 
-/** The gate: solve the sum (or pick a wrong answer), then hold the hand 3 s. */
-async function passGate(page: Page, wrong = false) {
+/** One tap on the 📊 button in the settings grants consent (no question, no hold). */
+async function grantByButton(page: Page) {
   await openSettings(page);
   await page.click('#analytics-toggle');
-  const q = (await page.locator('.an-question').innerText()).replace('−', '-');
-  const m = /(\d+) ([+-]) (\d+)/.exec(q)!;
-  const answer = m[2] === '+' ? Number(m[1]) + Number(m[3]) : Number(m[1]) - Number(m[3]);
-  const labels = await page.locator('.an-choices .an-btn').allInnerTexts();
-  const pick = wrong ? labels.find((l) => Number(l) !== answer)! : String(answer);
-  await page.locator('.an-choices .an-btn', { hasText: new RegExp(`^${pick}$`) }).click();
-  if (wrong) return;
-  const hold = page.locator('#analytics-hold');
-  const box = (await hold.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await expect(page.locator('#analytics-allow')).toBeVisible({ timeout: 6000 });
-  await page.mouse.up();
 }
 
 test('PLAT-022 nothing is loaded and no request is made before consent; the button shows off', async ({ page }) => {
@@ -80,54 +67,27 @@ test('PLAT-022 nothing is loaded and no request is made before consent; the butt
   expect(urls).toEqual([]);
 });
 
-test('PLAT-023 a wrong gate answer, the close button and "Nein danke" grant nothing', async ({ page }) => {
+test('PLAT-023 one tap on the settings 📊 grants consent at once (no question, no hold) and the button then disappears', async ({ page }) => {
   const urls = await spy(page);
   await open(page);
-  await passGate(page, true);
-  await expect(page.locator('#analytics-dialog')).toBeHidden();
-  expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBeNull();
-  // ✖ in the sum step
-  await page.click('#analytics-toggle');
-  await page.click('.an-x');
-  await expect(page.locator('#analytics-dialog')).toBeHidden();
-  // pass the gate, then "Nein danke"
-  await passGate(page);
-  const box = (await page.locator('#analytics-deny').boundingBox())!;
-  expect(box.height).toBeGreaterThanOrEqual(64);
-  expect(box.width).toBeGreaterThanOrEqual(64);
-  await page.click('#analytics-deny');
-  await expect(page.locator('#analytics-dialog')).toBeHidden();
-  expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBe('denied');
-  await page.waitForTimeout(500);
-  expect(urls).toEqual([]);
-  expect(await page.evaluate(() => 'dataLayer' in window)).toBe(false);
-});
-
-test('PLAT-023 a short hold does not pass the gate', async ({ page }) => {
-  await spy(page);
-  await open(page);
   await openSettings(page);
+  expect(await page.locator('.an-question, #analytics-hold, #analytics-dialog').count()).toBe(0);
   await page.click('#analytics-toggle');
-  const q = (await page.locator('.an-question').innerText()).replace('−', '-');
-  const m = /(\d+) ([+-]) (\d+)/.exec(q)!;
-  const answer = m[2] === '+' ? Number(m[1]) + Number(m[3]) : Number(m[1]) - Number(m[3]);
-  await page.locator('.an-choices .an-btn', { hasText: new RegExp(`^${answer}$`) }).click();
-  const box = (await page.locator('#analytics-hold').boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(1200);
-  await page.mouse.up();
-  await page.waitForTimeout(2500);
-  await expect(page.locator('#analytics-allow')).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBe('granted');
+  await expect(page.locator('#settings-analytics')).toBeHidden(); // consented once: nothing more to show
+  await expect.poll(() => urls.filter((u) => u.includes('/gtag/js')).length).toBe(1);
+  // after a reload the button stays hidden
+  await page.reload();
+  await waitFrames(page, 3);
+  await page.click('#settings-btn');
+  await expect(page.locator('#settings-analytics')).toBeHidden();
 });
 
 test('PLAT-024 PLAT-030 PLAT-027 grant loads the script and sends allowlisted events; switching off stops and clears cookies', async ({ page }) => {
   const urls = await spy(page);
   await open(page);
-  await passGate(page);
-  await page.click('#analytics-allow');
-  await expect(page.locator('#analytics-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await grantByButton(page);
+  expect(await page.evaluate(() => window.__zoo!.analytics.on)).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBe('granted');
   await expect.poll(() => urls.filter((u) => u.includes('/gtag/js')).length).toBe(1);
   expect(urls.find((u) => u.includes('/gtag/js'))).toBe(`https://www.googletagmanager.com/gtag/js?id=${ID}`);
@@ -167,17 +127,14 @@ test('PLAT-024 PLAT-030 PLAT-027 grant loads the script and sends allowlisted ev
   const allowedKeys = new Set(['app_language', 'reading_level', 'level_id', 'animal_id', 'species_id', 'minutes']);
   for (const e of ev) for (const k of Object.keys(e[2] as object)) expect(allowedKeys.has(k), `${e[1]}.${k}`).toBe(true);
 
-  // switching off: no gate, no more events, cookies cleared
+  // switching off (analytics.deny): no more events, cookies cleared
   await page.evaluate(() => {
     document.cookie = '_ga=GA1.1.123.456; path=/';
     document.cookie = `_ga_${'G-TEST000000'.slice(2)}=GS1.1.1; path=/`;
   });
   expect(await page.evaluate(() => document.cookie)).toContain('_ga=');
   const before = (await events(page)).length;
-  await openSettings(page);
-  await page.click('#analytics-toggle');
-  await expect(page.locator('#analytics-toggle')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#analytics-dialog')).toBeHidden();
+  await page.evaluate(() => window.__zoo!.analytics.deny()); // (the button is hidden once consent is given)
   expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBe('denied');
   expect(await page.evaluate(() => document.cookie)).not.toContain('_ga');
   expect((await calls(page)).at(-1)).toEqual(['consent', 'update', { analytics_storage: 'denied' }]);
@@ -189,8 +146,7 @@ test('PLAT-024 PLAT-030 PLAT-027 grant loads the script and sends allowlisted ev
 test('PLAT-024 a stored consent is resumed after a reload', async ({ page }) => {
   const urls = await spy(page);
   await open(page);
-  await passGate(page);
-  await page.click('#analytics-allow');
+  await grantByButton(page);
   await expect.poll(() => urls.length).toBeGreaterThan(0);
   urls.length = 0;
   await page.reload();
@@ -217,49 +173,49 @@ for (const [name, w, h] of [
     expect(s.y).toBeGreaterThanOrEqual(0);
     expect(s.x + s.width).toBeLessThanOrEqual(w + 0.5);
     expect(s.y + s.height).toBeLessThanOrEqual(h + 0.5);
-    // the consent card fits as well (gate → card)
-    await passGate(page);
-    const card = (await page.locator('#analytics-dialog .an-card').boundingBox())!;
-    expect(card.y).toBeGreaterThanOrEqual(0);
-    expect(card.y + card.height).toBeLessThanOrEqual(h + 0.5);
-    expect(card.x + card.width).toBeLessThanOrEqual(w + 0.5);
-    for (const id of ['#analytics-allow', '#analytics-deny']) {
-      const bb = (await page.locator(id).boundingBox())!;
-      expect(bb.height).toBeGreaterThanOrEqual(64);
-      expect(bb.y + bb.height).toBeLessThanOrEqual(h + 0.5);
-    }
-    await page.click('#analytics-deny');
     expect(urls).toEqual([]);
   });
 }
 
-test('PLAT-033 a small 3 s notice at the bottom, non-blocking, once per session; a tap opens the parental gate', async ({ page }) => {
+test('PLAT-033 first start: welcome dialog with story, data note, light "No" and green "Yes"; Yes grants consent and starts the intro', async ({ page }) => {
   const urls = await spy(page);
-  await open(page);
-  const notice = page.locator('#analytics-notice');
-  await expect(notice).toBeVisible({ timeout: 10_000 });
-  const box = (await notice.boundingBox())!;
-  const vp = page.viewportSize()!;
-  expect(box.y + box.height).toBeLessThanOrEqual(vp.height);
-  expect(box.y).toBeGreaterThan(vp.height * 0.6); // bottom area
-  // non-blocking: the full-screen consent dialog is not shown and the game keeps running
-  expect(await page.locator('#analytics-dialog').isVisible()).toBe(false);
-  await expect(notice).toBeHidden({ timeout: 6_000 }); // gone by itself after ~3 s
-  expect(urls).toEqual([]); // the notice records nothing
-  // once per session: a reload in the same tab shows it no more
-  await page.reload();
-  await waitFrames(page, 3);
-  await page.waitForTimeout(3500);
-  await expect(page.locator('#analytics-notice')).toHaveCount(0);
+  await page.setViewportSize({ width: 412, height: 892 });
+  await page.addInitScript(() => localStorage.clear());
+  await page.goto(`${START_URL}${START_URL.includes('?') ? '&' : '?'}intro=1`);
+  const w = page.locator('#analytics-welcome');
+  await expect(w).toBeVisible({ timeout: 10_000 });
+  await expect(w).toContainText(/ausgebrochen|escaped/);
+  const yes = page.locator('#welcome-yes');
+  const no = page.locator('#welcome-no');
+  for (const b of [yes, no]) expect((await b.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+  expect(await no.evaluate((e) => getComputedStyle(e).fontWeight)).not.toBe('700'); // light
+  expect(await yes.evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(124, 196, 106)'); // green
+  expect(urls).toEqual([]); // nothing before the answer
+  await yes.click();
+  await expect(w).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBe('granted');
+  await expect(page.locator('#intro')).toBeVisible(); // the intro follows
 });
 
-test('PLAT-033 tapping the notice starts the parental gate, never consent by itself', async ({ page }) => {
+test('PLAT-033 "No, I don\'t want to play" stores nothing, sends nothing, shows goodbye; back asks again; not shown once decided', async ({ page }) => {
   const urls = await spy(page);
-  await open(page);
-  const notice = page.locator('#analytics-notice');
-  await expect(notice).toBeVisible({ timeout: 10_000 });
-  await notice.dispatchEvent('pointerdown');
-  await expect(page.locator('.an-question')).toBeVisible(); // the gate's sum
+  await page.setViewportSize({ width: 412, height: 892 });
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('zoo.e2e.init')) {
+      sessionStorage.setItem('zoo.e2e.init', '1');
+      localStorage.clear();
+    }
+  });
+  const url = `${START_URL}${START_URL.includes('?') ? '&' : '?'}intro=1`;
+  await page.goto(url);
+  await page.click('#welcome-no');
+  await expect(page.locator('#welcome-back')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('zoo.analytics'))).toBeNull();
+  await page.click('#welcome-back');
+  await expect(page.locator('#welcome-yes')).toBeVisible();
   expect(urls).toEqual([]);
-  expect(await page.evaluate(() => window.localStorage.getItem('zoo.analytics'))).toBeNull();
+  await page.click('#welcome-yes');
+  await page.reload(); // decided: no welcome any more
+  await waitFrames(page, 3);
+  await expect(page.locator('#analytics-welcome')).toHaveCount(0);
 });

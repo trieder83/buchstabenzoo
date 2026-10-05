@@ -80,8 +80,8 @@ and carried in **one** bowl (rule 9); the night animals (hedgehog, bat, owl, sna
    - `Return`: farther than `LEASH_SOFT_M` 5.0 m it trots straight back (catch-up `CATCHUP_FACTOR` 1.6 ×); farther
      than `LEASH_HARD_M` 8.0 m it runs at `BURST_FACTOR` along the shortest route to her until within
      `RETURN_DONE_M` 4.0 m. The existing safety net stays: > `TELEPORT_M` 30 m → placed beside her.
-   - Speeds are multiples of the follow speed on the surface under the baby: amble `AMBLE_FACTOR` 0.7 (she
-     stands), trot `TROT_FACTOR` 1.25 (she walks), catch-up 1.6, burst 2.2 (never above `BURST_FACTOR`).
+   - Speeds are multiples of the follow speed on the surface under the baby: amble `AMBLE_FACTOR` 0.595 (she
+     stands), trot `TROT_FACTOR` 1.0625 (she walks), catch-up 1.36, burst 1.87 (never above `BURST_FACTOR`); these are the first design's 0.7 / 1.25 / 1.6 / 2.2 times `BABY_SLOWDOWN` 0.85 (babies run 15 % slower, user request 2026-10-04, FAM-034).
    - Leg length `LEG_S`: 3..5 s while she stands, 1.5..3 s while she walks. Targets are only valid cells: at home
      inside her wander area, otherwise passable cells (same cell/fence rules as the route finder), so the baby never
      leaves the enclosure while she is home and never clips fences/props. When called to the feeding spot it goes to rank 2
@@ -213,15 +213,16 @@ character costs its parts' draw calls like any animal, measured in the performan
 | FAM-022 | Given every hiding place of every pair species, then its wander area has ≥ 9 cells and two cells at least the pair gap and ≤ 3 m from the spot. | unit |
 | FAM-023 | Given every enclosure, then ≥ 12 home cells and (if fed) a feeding spot whose rank 0/1/2 cells are distinct home cells, adults a pair gap apart (hippo: 1 m, Q-282). | unit |
 | FAM-024 | Given any seed, then the pair starts a pair gap apart (≤ 3 m), perched members at different perch points. | unit |
-| FAM-025 | Given two simulated minutes of wandering (escaped, at home, night zoo), then no pair comes nearer than the gap (-5 cm). | unit |
+| FAM-025 | Given two simulated minutes of wandering (escaped, at home, night zoo), then no pair comes nearer than the gap (-5 cm), except at an animal house (footprint and the ring of cells around it, GAME-HOUSE rule 4). | unit |
 | FAM-026 | Given the right food shown to one animal of each pair species, then both follow and both enter together; the mission completes. | unit |
 | FAM-027 | Given a liked treat, then one baby per pair with a liked treat; looks: dedicated models scale 1, fallback 0.92 / 0.45. | unit |
 | FAM-028 | Given every pair species' info board, then the pair note exists in all reading levels (kiga = ♂ ♀) and de/en; home texts are plural. | unit |
 | FAM-029 | Given two goldfish, then fish food + filled bowl puts both into the bowl, save/restore keeps both, delivery brings both home; an old one-fish save reopens the mission. | unit |
 | FAM-030 | *Retired 2026-10-03 (user request: explicit treats, see FAM-031 and FEED-036…040; the code test is rewritten).* Was: Given a pair at home of a species that likes no garden treat (snow fox, koala, lion), when the child gives it its own favourite food carried from the box, then exactly one baby is born (once); given a species with a liked garden treat (zebra), then its box food gives no baby (user report 2026-10-03). | unit |
-| FAM-031 | Given every species of the master table (16), then a pair at home given its treat (garden basket or box in the hands) gets exactly one baby (once, saved), given its basic food only hearts, given any other food a gentle refusal; the baby model / name of the new species are `snake_hatchling`, `chameleon_baby`, `frog_froglet` (fallback 0.45 scale until the models exist). | unit |
+| FAM-031 | Given every species of the master table (16), then a pair at home given its treat (garden basket or box in the hands) gets exactly one baby (once, saved), given its basic food only hearts, given any other food a gentle refusal; the baby model / name of the new species are `snake_hatchling`, `chameleon_baby`, `frog_froglet` (fallback 0.45 scale until the models exist). *Implemented 2026-10-04 for the three night_2 species only (`night2_game.rs`).* | unit |
 | FAM-032 | Given a save in which a baby was born by the retired own-favourite-food rule (FAM-030), then the baby stays and is not born twice; FAM-030 itself is retired (superseded by FEED-036..040). | unit |
 | FAM-033 | Given the new pairs `snake`, `chameleon`, `poison_dart_frog` at their hiding place and at home, then pair gaps 1.0 / 0.7 (perch offset) / 0.5 m, home wander areas ≥ 12 cells, split pairs and a waiting partner are fetched like every pair (GARD-014), group look-ups use the species and never the first member. | unit |
+| FAM-034 | Given the baby speed factors, then each equals the first design (0.7 / 1.25 / 1.6 / 2.2) × 0.85 (babies run 15 % slower, user request 2026-10-04) and a baby never exceeds `walk × BURST_FACTOR`. | unit |
 | FAM-007 | Given male and female models side by side from the default camera, then children can tell they are a pair of the same species and spot the difference (manual review). | manual |
 
 ## Open questions

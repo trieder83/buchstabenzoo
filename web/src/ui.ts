@@ -3,6 +3,8 @@
 // mission celebration. Every text comes from the game (Fluent via `App.t` / `App.interact`);
 // icons are placeholders (emoji) until the icon art exists.
 
+import { OverviewMap } from './overview-map';
+import { TelescopeView } from './telescope';
 import { SOUND_EVENT } from './audio';
 import { browserEnv, isFullscreen, showFullscreenButton, showIosInstallHint, toggleFullscreen } from './fullscreen';
 import { dragScroll } from './scroll';
@@ -58,6 +60,12 @@ export interface UiApp {
   intro_done?(): void;
   /** GAME-NIGHT rule 11: the 🌙 night progress as JSON. */
   compass_json?(): string;
+  /** GAME-MAP: the overview map data (JSON) and the pause while it is open. */
+  overview_json?(): string;
+  set_map_open?(open: boolean): void;
+  /** GAME-TELESCOPE: the planet table (JSON) and the pause while the view is open. */
+  telescope_json?(): string;
+  set_telescope_open?(open: boolean): void;
 }
 
 /** Welcome board pictures (RESC-028, as the intro): empty enclosure, paw prints, riddle. */
@@ -82,6 +90,8 @@ export const HINT_ICONS: Record<string, string> = {
   bed: '🛏️',
   help: '👀',
   moon_door: '🌙',
+  // the lantern gate to the terrarium garden (night_2)
+  night_gate: '🚪',
   key_box: '🔑',
   event: '❗',
 };
@@ -256,6 +266,13 @@ export const FOOD_ICONS: Record<string, string> = {
   fruit: '🍎',
   worms: '🪱',
   nectar: '🌺',
+  // night_2 (terrarium garden)
+  fish: '🐟',
+  crickets: '🦗',
+  flies: '🪰',
+  eggs: '🥚',
+  frozen_insects: '🧊',
+  bone: '🦴',
 };
 
 /** Placeholder pictures of hiding places (kiga riddle). */
@@ -301,6 +318,16 @@ export const PLACE_ICONS: Record<string, string> = {
   loc_moon_pond: '🌕',
   loc_hilltop: '⛰️',
   loc_fir: '🎄',
+  // night zoo `night_2` (terrarium garden)
+  loc_stone_wall: '🧱',
+  loc_pumpkins: '🎃',
+  loc_rowing_boat: '🚣',
+  loc_lanterns: '🏮',
+  loc_palm: '🌴',
+  loc_vine_arch: '🌸',
+  loc_stepping_stones: '👣',
+  loc_ferns: '🌿',
+  loc_rain_barrel: '🛢️',
 };
 
 /** Placeholder pictures of the carried fish bowl (HUD, RESC-020). */
@@ -325,6 +352,9 @@ export const ANIMAL_ICONS: Record<string, string> = {
   hedgehog: '🦔',
   bat: '🦇',
   owl: '🦉',
+  snake: '🐍',
+  chameleon: '🦎',
+  poison_dart_frog: '🐸',
 };
 
 /** Icon of the interact button per target kind. */
@@ -347,6 +377,8 @@ export const TARGET_ICONS: Record<string, string> = {
   garden_sign: '👀',
   // RESC-028: the welcome board at the level entry
   welcome_board: '🗺️',
+  // GAME-TELESCOPE: look at the planets (night only)
+  telescope: '🔭',
   treat: '🧺',
 };
 
@@ -622,6 +654,8 @@ export class Ui {
     this.compass?.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      // everything done: the compass offers the campaign carousel (ADS-031, HINT-031)
+      if (this.allDoneTap()) return;
       this.expandStrip();
       this.pressHint();
       this.sayProgressInfo();
@@ -634,6 +668,12 @@ export class Ui {
       },
       true,
     );
+    this.map = new OverviewMap(this.app, ANIMAL_ICONS, HINT_ICONS, () => {
+      this.settings.hidden = true;
+    });
+    this.telescope = new TelescopeView(this.app, () => {
+      this.settings.hidden = true;
+    });
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
     // (CAMV-019)
@@ -658,6 +698,11 @@ export class Ui {
 
   /** Interact button / key: take from an open food panel, else interact with the target. */
   interact(): void {
+    if (this.map.isOpen) return; // the game is paused behind the overview map (MAP-006)
+    if (this.telescope.isOpen) {
+      this.telescope.close(); // the interact key again closes the telescope view (TELE-007)
+      return;
+    }
     if (this.panelFood && this.app.panel_key() === this.panelKey) {
       this.take();
       return;
@@ -665,6 +710,10 @@ export class Ui {
     const json = this.app.interact();
     if (!json) return;
     const data = JSON.parse(json) as PanelData;
+    if (data.kind === 'telescope') {
+      this.telescope.open();
+      return;
+    }
     if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign' || data.kind === 'welcome_board')
       this.openPanel(data);
     this.pollEvents();
@@ -1055,6 +1104,9 @@ export class Ui {
   /** Optional consumer of the game events (opt-in analytics, PLAT-030): type + ids only. */
   onGameEvent: ((e: GameEventMsg) => void) | null = null;
   private settingsRelabel: (() => void) | null = null;
+  /** The big overview map (GAME-MAP), opened from the settings menu or with `M`. */
+  readonly map: OverviewMap;
+  readonly telescope: TelescopeView;
 
   /** Adds a row to the settings menu (analytics consent, PLAT-031); `relabel` follows language changes. */
   addSettingsRow(row: HTMLElement, relabel: () => void): void {
@@ -1220,7 +1272,9 @@ export class Ui {
   }
 
   escape(): void {
-    if (!this.settings.hidden) this.settings.hidden = true;
+    if (this.telescope.isOpen) this.telescope.close();
+    else if (this.map.isOpen) this.map.close();
+    else if (!this.settings.hidden) this.settings.hidden = true;
     else this.closePanel();
   }
 
@@ -1228,6 +1282,14 @@ export class Ui {
     if (!this.panelFood) return;
     if (this.app.take_food(this.panelFood)) this.closePanel();
     this.pollEvents();
+  }
+
+  /** Set by main.ts: opens the ad carousel, true if it was shown (needs a verified campaign). */
+  onAllDone: (() => boolean) | null = null;
+
+  private allDoneTap(): boolean {
+    if (!this.onAllDone || parseProgress(this.app.compass_json?.() ?? this.lastProgress).next !== 'all_done') return false;
+    return this.onAllDone();
   }
 
   /** Tapping the compass explains it in a bubble next to it for ~4 s (NIGHT-023). */
@@ -1362,7 +1424,14 @@ export class Ui {
       hint.id = 'install-hint';
       extra.push(hint);
     }
-    this.settings.replaceChildren(langRow, levelRow, soundRow, gameRow, ...extra);
+    // Overview map (GAME-MAP): 🗺️ opens the big map of the whole zoo.
+    const mapRow = el('div', 'row');
+    mapRow.id = 'settings-map';
+    const mapBtn = el('button', 'choice', '🗺️');
+    mapBtn.id = 'map-btn';
+    mapBtn.addEventListener('click', () => this.map.open());
+    mapRow.append(mapBtn);
+    this.settings.replaceChildren(mapRow, langRow, levelRow, soundRow, gameRow, ...extra);
     this.markSound();
   }
 
@@ -1407,7 +1476,7 @@ export class Ui {
 
   private markSettings(): void {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
-      if (b.id === 'sound-toggle' || b.id === 'intro-replay' || b.id === 'fullscreen-toggle' || b.id === 'analytics-toggle') continue;
+      if (b.id === 'sound-toggle' || b.id === 'intro-replay' || b.id === 'map-btn' || b.id === 'fullscreen-toggle' || b.id === 'analytics-toggle') continue;
       const on = b.dataset.lang === this.app.language() || b.dataset.level === this.app.reading_level();
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
@@ -1425,6 +1494,9 @@ export class Ui {
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
     this.settings.querySelector('#sound-toggle')?.setAttribute('aria-label', this.app.t('ui-sound'));
+    this.settings.querySelector('#map-btn')?.setAttribute('aria-label', this.app.t('map-button'));
+    this.map?.relabel();
+    this.telescope?.relabel();
     this.settings.querySelector('#intro-replay')?.setAttribute('aria-label', this.app.t('ui-replay-intro'));
     this.settings.querySelector('#fullscreen-toggle')?.setAttribute('aria-label', this.app.t('ui-fullscreen'));
     const installHint = this.settings.querySelector('#install-hint');

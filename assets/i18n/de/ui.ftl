@@ -91,6 +91,9 @@ ad-gate-title = Zur Webseite
 ad-gate-sum = Löse die Aufgabe:
 ad-gate-hold = Halte den Knopf 3 Sekunden gedrückt.
 ad-close = Schließen
+ad-carousel-title = Du magst Bildungsabenteuer? Schau mal hier!
+ad-carousel-prev = Zurück
+ad-carousel-next = Weiter
 
 ui-replay-intro = Spiel erklären
 
@@ -187,5 +190,20 @@ analytics-note = Anonyme Statistik hilft uns, das Spiel zu verbessern. Es werden
 analytics-detail = Gezählt werden nur: Sprache, Lesestufe, Spielzeit, gespielte Level und das ungefähre Land. Keine Werbung. Ausschalten geht jederzeit mit dem Knopf 📊 in den Einstellungen.
 analytics-allow = Erlauben
 analytics-deny = Nein danke
+welcome-story = Die Tiere sind aus dem Zoo ausgebrochen – bring sie nach Hause!
+welcome-data = Das Spiel sammelt anonyme Daten, nur um das Spiel zu analysieren und zu bewerben.
+welcome-no = Nein, ich will nicht spielen
+welcome-yes = Ja, einverstanden, los geht's!
+welcome-bye = Schade! Komm gern wieder.
+welcome-back = Zurück
 
-analytics-notice = 📊 Anonyme Statistik ist aus. Eltern können sie im Menü ⚙️ erlauben.
+map-title = Zoo-Karte
+map-button = Karte
+map-close = Karte schließen
+map-you = Du bist hier
+map-next = Dort geht es weiter
+map-locked = Noch verschlossen
+map-level-level_1 = Bereich 1
+map-level-level_2 = Bereich 2
+map-level-level_3 = Bereich 3
+map-level-night_1 = Nacht-Zoo

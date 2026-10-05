@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L2
-updated: 2026-10-01
+updated: 2026-10-04
 ---
 
 # Level 2 — koala, elephant, giraffe, lion (behind the fallen tree)
@@ -186,13 +186,13 @@ every type except `path` and `hiding_place`. The level has no legacy `[[element]
 | `food_storage_2` | building (food_storage) | 39, 27, 6, 8 | door at cell (39, 30); enterable, walkable interior (40, 28, 4, 6). Second food storage (Q-089, confirmed 2026-10-01): all 10 food boxes, row in front of the west facade facing the arriving child (Q-181 answered); 6 more real labelled food boxes inside (Q-194 answered 2026-09-29). |
 | `grove_l2_center` | decoration (tree_grove) | 45, 27, 6, 12 | density `dense`.  |
 | `trees_l2_center_n` | decoration (trees) | 39, 35, 6, 4 | density `dense`.  |
-| `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter. No tree taller than the others, no blossoms, no tree house (riddle guards). |
+| `enc_koala` | enclosure | 27, 33, 8, 10 | gate (34, 36, 1, 2). Two eucalyptus trees (medium height, grey-green leaves), climbing trunk with forks, small wooden shelter = animal house `koala_shelter` (27, 39, 4, 4, door east; GAME-HOUSE). No tree taller than the others, no blossoms, no tree house (riddle guards). |
 | `board_koala` | decoration (info_board) | 35, 39, 1, 1 | info board of `enc_koala`.  |
-| `enc_elephant` | enclosure | 55, 28, 12, 13 | gate (55, 33, 1, 2). Elephant pool (still water, stones, a shallow ramp — like hippo_pool), hay rack, sand-coloured ground patch, one big boulder. No fountain, no logs, no ball (riddle guards). |
+| `enc_elephant` | enclosure | 55, 28, 12, 13 | gate (55, 33, 1, 2). Elephant pool (still water, stones, a shallow ramp — like hippo_pool), hay rack, sand-coloured ground patch, one big boulder; animal house `elephant_house` (55, 28, 4, 4, door east; GAME-HOUSE). No fountain, no logs, no ball (riddle guards). |
 | `board_elephant` | decoration (info_board) | 54, 31, 1, 1 | info board of `enc_elephant`, just south of its gate cells; moved from 54, 36 by FIX-056 so that `loc_big_ball` stays ≥ 22 m from its standing points. |
 | `enc_lion` | enclosure | 41, 14, 12, 8 | gate (46, 21, 2, 1). Wooden sun deck with a straw roof, a big lying log, dry grass. NO flat rocks, no stage, no chairs (riddle guards). |
 | `board_lion` | decoration (info_board) | 44, 23, 1, 1 | info board of `enc_lion`.  |
-| `enc_giraffe` | enclosure | 40, 44, 12, 12 | gate (45, 44, 2, 1). Tall feeding rack with leafy branches (4 m), giraffe house with a tall door. No tower, no slide, no train (riddle guards). |
+| `enc_giraffe` | enclosure | 40, 44, 12, 12 | gate (45, 44, 2, 1). Tall feeding rack with leafy branches (4 m), giraffe house with a tall door = animal house `giraffe_house` (41, 50, 6, 6, door south 43–44, door height 5.2 m; GAME-HOUSE). No tower, no slide, no train (riddle guards). |
 | `board_giraffe` | decoration (info_board) | 43, 42, 1, 1 | info board of `enc_giraffe`.  |
 | `map_board_l2` | landmark (map_board) | 32, 31, 1, 2 | Picture map at the level entry (opens the map, GAME-MAP). |
 | `treehouse_e` | decoration (treehouse) | 71, 44, 3, 3 | Old oak with a wooden tree house (roof, window, rope ladder) at the east wall between the music stage and the wall. The only tree house in the zoo (loc_treehouse). Moved from the south-west corner (28, 15) and renamed from `treehouse_sw` by FIX-056 (22 m haze rule). |

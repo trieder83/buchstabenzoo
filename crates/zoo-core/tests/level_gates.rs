@@ -37,7 +37,7 @@ fn walk(g: &mut Game, from: Vec2, dir: Vec2, secs: f32) -> Vec2 {
 // LAYOUT-036
 #[test]
 fn layout_036_level_gates_closed_while_locked_open_after() {
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     let ts = transitions(&data);
     let barriers: Vec<&str> = ts.iter().map(|(b, _)| b.as_str()).collect();
     for want in [
@@ -77,7 +77,7 @@ fn layout_036_level_gates_closed_while_locked_open_after() {
         let to_old = dir.offset().as_vec2();
         let along = to_old.perp();
 
-        let mut g = common::night_game(1);
+        let mut g = common::night2_game(1);
         // posts touching the hedge / wall on both sides: just outside the pillars is solid
         for side in [-1.0f32, 1.0] {
             let p = c + along * side * 1.6;
@@ -158,7 +158,7 @@ fn layout_036_level_gates_closed_while_locked_open_after() {
 // each of them with no edging stone (curb) across the line — no grass gap, curb or seam.
 #[test]
 fn layout_040_street_continues_under_every_level_gate() {
-    let data = common::zoo_with_night();
+    let data = common::zoo_with_night2();
     // the level gates and the moon door (Q-182 answered 2026-09-28: the street also runs
     // under the moon door, from `path_moon` to night_1's entry path)
     let ts: Vec<(String, String)> = data

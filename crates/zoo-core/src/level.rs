@@ -137,6 +137,10 @@ pub struct Element {
     pub transition: Option<String>,
     /// Barriers: the level whose completion unlocks it (moon door: its nightfall, Q-133).
     pub unlock_after: Option<String>,
+    /// Barriers: when an unlocked barrier opens - `night` (night-level gates such as
+    /// `barrier_n1_garden`: the moment `unlock_after` is complete, GAME-LEVEL-NIGHT-2, Q-331),
+    /// `morning` (day barriers: the next morning). Absent = by the barrier's own rule.
+    pub opens_at: Option<String>,
     /// Bamboo forests: bamboo can be cut at its `[[cut_spot]]`s (GAME-FEED §14).
     #[serde(default)]
     pub harvestable: bool,
@@ -164,6 +168,10 @@ pub struct Element {
     /// Enclosures inside a building (the night house, proposal Q-134).
     #[serde(default)]
     pub indoor: bool,
+    /// Indoor enclosures: a terrarium (glass case with heat / UV lamp, GAME-LEVEL-NIGHT-2,
+    /// Q-333).
+    #[serde(default)]
+    pub terrarium: bool,
     /// Enclosures: the species lives here as a pair (GAME-FAMILY; data flag, off until the
     /// female model exists).
     #[serde(default)]
@@ -664,11 +672,24 @@ pub struct EnclosureFeature {
     #[serde(default)]
     pub edge_stones: Vec<[f32; 2]>,
     pub model: Option<String>,
+    /// Animal house (GAME-HOUSE): the room, the doorway and its facing, heights.
+    pub interior: Option<Rect>,
+    pub door: Option<Rect>,
+    pub door_side: Option<String>,
+    pub door_height_m: Option<f32>,
+    pub roof_height_m: Option<f32>,
+    /// Animals may rest inside (default true).
+    pub rest: Option<bool>,
 }
 
 impl EnclosureFeature {
     pub fn is_pool(&self) -> bool {
         self.kind == "pool"
+    }
+
+    /// An animal house with a door (GAME-HOUSE).
+    pub fn is_animal_house(&self) -> bool {
+        self.kind == "animal_house"
     }
 
     /// Whether a cell is part of the pool's entry ramp.
@@ -1442,6 +1463,15 @@ impl Level {
         self.data
             .elements_of(ElementType::Barrier)
             .filter(|e| e.kind.as_deref() != Some("moon_door"))
+            // a night gate (`opens_at = "night"`) leading into a level that is not joined stays
+            // shut (night_1 played without the terrarium garden)
+            .filter(|e| {
+                e.opens_at.as_deref() != Some("night")
+                    || e.transition
+                        .as_deref()
+                        .and_then(|t| t.split("->").nth(1))
+                        .is_none_or(|to| self.data.part_index(to).is_some())
+            })
             .filter(|e| {
                 let from = e.transition.as_deref().and_then(|t| t.split("->").next());
                 let by = e

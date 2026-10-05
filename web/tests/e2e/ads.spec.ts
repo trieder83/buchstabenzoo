@@ -175,13 +175,10 @@ test.describe('signed campaigns (test build)', () => {
     await expect(page.locator('#ad-gate')).toBeVisible();
     // holding for 3 s opens the link exactly once, in a new tab without opener
     await page.mouse.down();
-    // the hold only shows the open button (a timer is no user gesture, ADS-029); the tap opens
-    await expect(page.locator('#ad-open')).toBeVisible({ timeout: 8000 });
+    // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
+    await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });
     expect(await opens(page)).toEqual([]);
-    expect(await page.locator('#ad-open').getAttribute('rel')).toBe('noopener noreferrer');
-    expect(await page.locator('#ad-open').getAttribute('target')).toBe('_blank');
     await page.mouse.up();
-    await page.locator('#ad-open').click();
     await page.waitForTimeout(500);
     expect(await opens(page)).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
     await expect(page.locator('#ad-gate')).toBeHidden();
@@ -241,13 +238,10 @@ test.describe('signed campaigns (test build)', () => {
     const hb = (await page.locator('#ad-hold').boundingBox())!;
     await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
     await page.mouse.down();
-    // the hold only shows the open button (a timer is no user gesture, ADS-029); the tap opens
-    await expect(page.locator('#ad-open')).toBeVisible({ timeout: 8000 });
+    // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
+    await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });
     expect(await opens(page)).toEqual([]);
-    expect(await page.locator('#ad-open').getAttribute('rel')).toBe('noopener noreferrer');
-    expect(await page.locator('#ad-open').getAttribute('target')).toBe('_blank');
     await page.mouse.up();
-    await page.locator('#ad-open').click();
     expect(await opens(page)).toEqual([['https://abcsmash.rcms.ch/', '_blank', 'noopener,noreferrer']]);
   });
 
@@ -275,13 +269,10 @@ test.describe('signed campaigns (test build)', () => {
     const hb = (await page.locator('#ad-hold').boundingBox())!;
     await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
     await page.mouse.down();
-    // the hold only shows the open button (a timer is no user gesture, ADS-029); the tap opens
-    await expect(page.locator('#ad-open')).toBeVisible({ timeout: 8000 });
+    // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
+    await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });
     expect(await opens(page)).toEqual([]);
-    expect(await page.locator('#ad-open').getAttribute('rel')).toBe('noopener noreferrer');
-    expect(await page.locator('#ad-open').getAttribute('target')).toBe('_blank');
     await page.mouse.up();
-    await page.locator('#ad-open').click();
     expect(await opens(page)).toEqual([['https://edugamegalaxy.rcms.ch/', '_blank', 'noopener,noreferrer']]);
     expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]);
   });

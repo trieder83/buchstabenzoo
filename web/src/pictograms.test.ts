@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { drawPictogram, PICTO_GRID, PICTOGRAM_IDS, type PictoCtx } from './pictograms';
 import { labelLayout } from './text';
 
-// the 14 foods of `Food::ALL` (zoo-core food.rs)
-const FOODS = ['grass', 'melons', 'bamboo', 'eucalyptus', 'hay', 'fish_food', 'bananas', 'leaves', 'meat', 'berries', 'beetles', 'fruit', 'worms', 'nectar'];
+// the 20 foods of `Food::ALL` (zoo-core food.rs)
+const FOODS = ['grass', 'melons', 'bamboo', 'eucalyptus', 'hay', 'fish_food', 'bananas', 'leaves', 'meat', 'berries', 'beetles', 'fruit', 'worms', 'nectar', 'fish', 'crickets', 'flies', 'eggs', 'frozen_insects', 'bone'];
 
 /** A recording 2D context: every call as text, plus the path extents on the design grid. */
 function recorder() {

@@ -453,6 +453,65 @@ export function pickImage(c: VerifiedCampaign, lang: string, n: number): Verifie
   return list[((n % list.length) + list.length) % list.length];
 }
 
+// ------------------------------------------------------------------ carousel (ADS-031)
+
+/** Auto-advance interval of the all-done carousel (ms). */
+export const CAROUSEL_MS = 4000;
+
+export interface CarouselItem {
+  campaign: VerifiedCampaign;
+  image: VerifiedImage;
+}
+
+/** The verified campaigns in slot order, each with its image for `lang` (never placeholders). */
+export function carouselItems(content: AdContent | null, lang: string): CarouselItem[] {
+  if (!content) return [];
+  return [...content.bySlot.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([, campaign]) => campaign)
+    .filter((c) => c.images.length > 0)
+    .map((campaign) => ({ campaign, image: pickImage(campaign, lang, 0) }));
+}
+
+/** Position + auto-advance timing of the carousel (pure, no DOM). */
+export class Carousel {
+  index = 0;
+  private since = 0;
+
+  constructor(
+    readonly count: number,
+    now = 0,
+    readonly intervalMs = CAROUSEL_MS,
+  ) {
+    this.since = now;
+  }
+
+  /** Goes to slide `i` (wraps) and restarts the auto-advance timer. */
+  go(i: number, now: number): void {
+    this.index = this.count > 0 ? ((i % this.count) + this.count) % this.count : 0;
+    this.since = now;
+  }
+
+  next(now: number): void {
+    this.go(this.index + 1, now);
+  }
+
+  prev(now: number): void {
+    this.go(this.index - 1, now);
+  }
+
+  /** Advances when the interval has passed; true if the slide changed. `paused` freezes the timer. */
+  tick(now: number, paused = false): boolean {
+    if (paused) {
+      this.since = now;
+      return false;
+    }
+    if (this.count < 2 || now - this.since < this.intervalMs) return false;
+    this.next(now);
+    return true;
+  }
+}
+
 // ------------------------------------------------------------------ parental gate
 
 export const GATE_HOLD_MS = 3000;

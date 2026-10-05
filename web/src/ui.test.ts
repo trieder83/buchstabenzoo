@@ -127,6 +127,18 @@ describe('GAME-NIGHT icons (no reading needed)', async () => {
   });
 });
 
+// LAYOUT-N2-015: the terrarium garden (night_2) needs no reading either
+describe('GAME-LEVEL-NIGHT-2 icons', async () => {
+  const { ANIMAL_ICONS, PLACE_ICONS } = await import('./ui');
+  it('the new foods, animals, places and the lantern-gate hint have pictures', () => {
+    for (const f of ['fish', 'crickets', 'flies', 'eggs', 'frozen_insects', 'bone']) expect(FOOD_ICONS[f], f).toBeTruthy();
+    for (const a of ['snake', 'chameleon', 'poison_dart_frog']) expect(ANIMAL_ICONS[a], a).toBeTruthy();
+    for (const p of ['loc_stone_wall', 'loc_pumpkins', 'loc_rowing_boat', 'loc_lanterns', 'loc_palm', 'loc_vine_arch', 'loc_stepping_stones', 'loc_ferns', 'loc_rain_barrel'])
+      expect(PLACE_ICONS[p], p).toBeTruthy();
+    expect(HINT_ICONS.night_gate).toBe('🚪');
+  });
+});
+
 describe('garden basket HUD (GAME-GARDEN §4)', () => {
   it('parses the basket and falls back to empty', () => {
     expect(parseBasket('{"carrot":2,"potato":3,"capacity":6,"offered":"carrot"}')).toEqual({

@@ -142,6 +142,9 @@ pub struct AnimalSave {
     pub wander_pause_s: Option<f32>,
     #[serde(default)]
     pub wander_route: Vec<[i32; 2]>,
+    /// Rest left inside the animal house (GAME-HOUSE, HOUSE-015); old saves: 0.
+    #[serde(default)]
+    pub rest_s: f32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -261,6 +264,7 @@ impl Game {
                     facing: Some(a.facing.to_array()),
                     wander_pause_s: Some(a.wander.pause_s),
                     wander_route: a.wander.route.iter().map(|c| c.to_array()).collect(),
+                    rest_s: a.wander.rest_s,
                 })
                 .collect(),
             missions: self
@@ -475,6 +479,11 @@ impl Game {
                 an.wander.pause_s = p;
             }
             an.wander.route = a.wander_route.iter().map(|&c| IVec2::from(c)).collect();
+            an.wander.rest_s = if a.rest_s.is_finite() {
+                a.rest_s.max(0.0)
+            } else {
+                0.0
+            };
         }
         // pair members never disagree (NEVER STUCK): the mission is complete only if every
         // member is complete and at home (a save from before the pair knew one member only)
@@ -489,6 +498,7 @@ impl Game {
             }
         }
         g.all_home = g.all_home && g.missions.iter().all(|m| m.complete);
+        g.reopen_night_gates();
         g.intro_seen = s.intro_seen;
         g.babies = s.babies.clone();
         for b in s.babies.clone() {

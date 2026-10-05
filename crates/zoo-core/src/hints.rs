@@ -80,6 +80,9 @@ pub enum HintKind {
     Help,
     /// 🌙 the moon door.
     MoonDoor,
+    /// 🚪 the open lantern gate between two night levels (night_1 → the terrarium garden,
+    /// GAME-LEVEL-NIGHT-2).
+    NightGate,
 }
 
 impl HintKind {
@@ -101,6 +104,7 @@ impl HintKind {
             HintKind::Bed => "bed",
             HintKind::Help => "help",
             HintKind::MoonDoor => "moon_door",
+            HintKind::NightGate => "night_gate",
         }
     }
 
@@ -121,6 +125,7 @@ impl HintKind {
             HintKind::Bed => "hint-bed",
             HintKind::Help => "hint-help",
             HintKind::MoonDoor => "hint-moon",
+            HintKind::NightGate => "hint-night-gate",
         }
     }
 }
@@ -163,7 +168,7 @@ pub struct Hint {
 fn hint(id: String, kind: HintKind, priority: u8, pos: Vec2, stand: Vec2) -> Hint {
     let height = match kind {
         HintKind::Food => 3.2,
-        HintKind::MoonDoor => 3.6,
+        HintKind::MoonDoor | HintKind::NightGate => 3.6,
         HintKind::Board | HintKind::Gate => 2.6,
         HintKind::Bamboo => 3.2,
         _ => 2.2,
@@ -640,7 +645,8 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
 
     // --- night (rule 3.5): the bed, the moon door; at dusk the bed is next
     let dusk = g.daytime.phase == Phase::Dusk || g.daytime.dusk_in.is_some();
-    if g.bed_usable() || dusk {
+    // (by day the bed is only a target while sleeping moves the game on, NIGHT-033)
+    if (g.bed_usable() && (g.daytime.is_night() || g.sleep_advances())) || dusk {
         if let Some(stand) = g.bed_stand(p) {
             let bed = g
                 .beds()
@@ -673,6 +679,29 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
             d.animal = h.animal;
             d.via_door = true;
             fixed.push(d);
+        }
+    }
+    // between two night levels the open lantern gate is the way (GAME-LEVEL-NIGHT-2): from the
+    // terrarium garden every target outside it, and from night_1 every target inside it, is
+    // replaced by the gate (ranks like the target it stands for, after the targets here)
+    let data = &g.level.data;
+    if let Some(hk) = data.part_at(cell_of(p)) {
+        let here_part = hk;
+        for h in fixed.iter_mut() {
+            let tk = data.part_at(cell_of(h.pos));
+            let Some(tk) = tk.filter(|&k| k != here_part) else {
+                continue;
+            };
+            let leaving = night_gate_of(g, here_part);
+            let gate = leaving.clone().or_else(|| night_gate_of(g, tk));
+            if let Some(mut gh) = gate {
+                gh.priority = h.priority;
+                gh.animal = h.animal;
+                // into the garden the gate is the next step (first); out of it the way back
+                // ranks after the garden's own targets (NIGHT-031)
+                gh.via_door = leaving.is_some();
+                *h = gh;
+            }
         }
     }
     let mut out = fixed;
@@ -731,6 +760,32 @@ pub const REPEAT_GUARD: u32 = 2;
 
 fn lying(uid: u32, food: Food) -> Target {
     Target::LyingFood { uid, food }
+}
+
+/// The open gate that leads INTO night level `k` from another night level (its entry barrier is
+/// no moon door), as a hint on the player's side; `None` for every other level.
+fn night_gate_of(g: &Game, k: usize) -> Option<Hint> {
+    let data = &g.level.data;
+    if !data.is_night_part(k) {
+        return None;
+    }
+    let p = g.player.pos;
+    data.parts[k].entries.iter().find_map(|en| {
+        let e = data.element(&en.barrier)?;
+        if !data.is_night_part(e.part) || !g.level.is_barrier_open(&en.barrier) {
+            return None;
+        }
+        let r = e.rect;
+        let c = Vec2::new(r.x as f32 + r.w as f32 / 2.0, r.z as f32 + r.d as f32 / 2.0);
+        let stand = stand_near(g, c, p, 1.2);
+        Some(hint(
+            format!("night_gate:{}", en.barrier),
+            HintKind::NightGate,
+            PRIO_NIGHT,
+            c,
+            stand,
+        ))
+    })
 }
 
 /// The open moon doors as hints (the side of the player).

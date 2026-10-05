@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1]
 test_prefix: LAYOUT-N1
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Night level 1 — the moonlit forest garden (hedgehog, bat, owl)
@@ -49,7 +49,7 @@ and gate, behind the dense groves `grove_n1_center` and `grove_n1_north`.
 | Night food | Own food hut `food_storage_n1` with 4 boxes: *Käfer* (hedgehog **and** owl), *Obst* (bat), distractors *Würmer*, *Nektar*; food ids `beetles`, `fruit`, `worms`, `nectar` | Q-135 |
 | Riddle uniqueness | Night levels are their own scope for LAYOUT-024 scenery kinds (the night pond and hill do not clash with the level-1 pond and rock hill: day and night riddles are never active together); night riddles still avoid every day `kiga` word | Q-136 |
 | Lights, items, props | `[[light]]` (lantern posts, string lights, wall/board lamps, indoor lights with `color`), furniture `[[prop]]`, interactables `[[item]]` | Q-137 |
-| Telescope | `telescope_n1`: a toy star telescope halfway along the north ring — a resting point that keeps the walk to the north-west ≤ 10 s per leg; interactive (look at the moon) later? | Q-138 |
+| Telescope | `telescope_n1`: a toy star telescope halfway along the north ring — a resting point that keeps the walk to the north-west ≤ 10 s per leg; interactive at night: looking through it shows the planets (GAME-TELESCOPE) | Q-138 |
 | Perched animals | bat hangs / owl sits at `perch_height_m` beside the spot (as Q-094); ground wander area is the fallback | Q-094 |
 | Poses | bat `hang` (upside down), hedgehog snuffling | Q-043 |
 | 22 m haze rule (FIX-056) | `tree_hollow_n1` and `loc_hollow_tree` moved 3 m south-east into the corner by the east hedge; the south places reach the plaza over `loc_moon_pond` → food boxes (see "Hiding places", "Walking distances"). | Q-145 |
@@ -92,21 +92,21 @@ Scale **1 character = 1 m**. North (+z) is up, x axis below. Generated from
    35 %%......=============================.........%%
    34 %%......===......................=========....%%
    33 %%AA....===......................=========....%%
-   32 %%AAmm..===..TTTTTTTTTTTTT.......=========M...%%
-   31 %%..mm..===..TTTTTTTTTTTTT..FFFFF=========M...%%
-   30 %%..3...===..TTTTTTTTTTTTT..FFFFF===============
-   29 %%......===..TTTTTTTTTTTTT..FFFFD===========S===
-   28 %%......===..TTTTTTTTTTTTT..FFFFFf========....%%
-   27 %%......===..TTTTTTTTTTTTT..FFFFFf========....%%
-   26 %%......===..TTTTTTTTTTTTT..FFFFFf========....%%
-   25 %%......===..TTTTTTTTTTTTT.......=========.bb.%%
-   24 %%......===..TTTTTTTTTTTTT.......=========....%%
-   23 %%......===..TTTTTTTTTTTTT.......===..........%%
-   22 %%P.....===..TTTTTTTTTTTTT.......===..........%%
-   21 %%P.....===..TTTTTTTTTTTTT.......===..........%%
-   20 %%..2...===..TTTTTTTTTTTTT.......===..........%%
-   19 %%......===..TTTTTTTTTTTTT.......===..........%%
-   18 %%......===..TTTTTTTTTTTTT.......===..........%%
+   32 %%AAmm..===..TTTTT::TTTTTT.......=========M...%%
+   31 %%..mm..===..TTTTT::TTTTTT..FFFFF=========M...%%
+   30 %%..3...===..TTTTT::TTTTTT..FFFFF===============
+   29 %%......===..TTTTT::TTTTTT..FFFFD===========S===
+   28 %%......===..TTTTT::TTTTTT..FFFFFf========....%%
+   27 %%......===..TT:::::TTTTTT..FFFFFf========....%%
+   26 %%......===..TT:::::TTTTTT..FFFFFf========....%%
+   25 %%......===..TT::TTTTTTTTT.......=========.bb.%%
+   24 %%......===..TT::TTTTTTTTT.......=========....%%
+   23 %%......===..TT::TTTTTTTTT.......===..........%%
+   22 %%P.....===..TT::TTTTTTTTT.......===..........%%
+   21 %%P.....===..TT:::::::::TT.......===..........%%
+   20 %%..2...===..TT:::::::::TT.......===..........%%
+   19 %%......===..TTTTTTTTT::TT.......===..........%%
+   18 %%......===..TTTTTTTTT::TT.......===..........%%
    17 %%......===......................===........HH%%
    16 %%......===......................===........HH%%
    15 %%......=================================....6%%
@@ -140,6 +140,8 @@ Scale **1 character = 1 m**. North (+z) is up, x axis below. Generated from
 | `H` | hollow tree `tree_hollow_n1` | `1` `2` `3` | hedgehog spots `loc_brush_pile`, `loc_flowerpots`, `loc_mushrooms` |
 | `4` `5` `6` | bat spots `loc_windmill`, `loc_fireflies`, `loc_hollow_tree` | `7` `8` `9` | owl spots `loc_moon_pond`, `loc_hilltop`, `loc_fir` |
 
+`:` = **secret trail** (`path_n1_secret_a…e`, 2 m wide, winds through the middle grove; see "Secret trail").
+
 East of x −25 (not drawn): the level-1 zoo wall with the moon door at z 29…30.
 
 ## Elements
@@ -149,7 +151,10 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 
 | Id | Type | Grid rect (x, z, w, d) | Notes |
 |---|---|---|---|
-| `hedge_n1_west` | decoration (hedge) | -72, 6, 2, 48 | Level edge, permanent. |
+| `hedge_n1_west` | decoration (hedge) | -72, 6, 2, 19 | Level edge south of the garden gate, permanent (shortened for `barrier_n1_garden`, GAME-LEVEL-NIGHT-2). |
+| `hedge_n1_west_n` | decoration (hedge) | -72, 27, 2, 27 | Level edge north of the garden gate, permanent. |
+| `barrier_n1_garden` | barrier (closed_gate) | -72, 25, 2, 2 | Lantern gate to the terrarium garden `night_2`: `unlock_after = "night_1"`, `opens_at = "night"` (opens the moment night_1 is complete, Q-331 answered 2026-10-04). |
+| `path_n1_gate` | path (main) | -72, 25, 8, 2 | From the west ring through the free band to the garden gate (the street runs under the gate cells, LAYOUT-040); no wander cell. |
 | `hedge_n1_south` | decoration (hedge) | -70, 6, 46, 2 | Level edge, permanent. |
 | `hedge_n1_north` | decoration (hedge) | -70, 52, 46, 2 | Level edge, permanent (level 3 lies east of its east end, beyond the zoo wall). |
 | `hedge_n1_east_s` | decoration (hedge) | -26, 8, 2, 21 | East edge in front of the level-1 zoo wall (wall_west_s), south of the moon door. |
@@ -176,7 +181,17 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `path_n1_nw` | path (side) | -60, 38, 2, 8 | Short trail from the north ring up to the fir tree (ends just south of loc_fir); the hill lies to its west. |
 | `path_n1_se` | path (side) | -36, 13, 5, 3 | Short path east from the south ring to the pond jetty. |
 | `jetty_n1` | path (jetty) | -33, 12, 2, 1 | Small wooden jetty deck on the pond's north shore (look-out point over the mirrored moon). The owl of loc_moon_pond sits on a wooden post at the pond's west shore, (-35.6, 10.5). |
-| `grove_n1_center` | decoration (tree_grove) | -59, 18, 13, 15 | `density = "dense"`, bush border. The hidden middle: old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards); bush border on all walkable sides. |
+| `grove_n1_center_a` | decoration (tree_grove) | -59, 18, 9, 2 | `density = "dense"`, bush border. Part a of the hidden middle (formerly one rect (−59, 18, 13, 15)), cut by the secret trail; old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards). |
+| `grove_n1_center_b` | decoration (tree_grove) | -59, 20, 2, 13 | `density = "dense"`, bush border. Part b of the hidden middle (formerly one rect (−59, 18, 13, 15)), cut by the secret trail; old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards). |
+| `grove_n1_center_c` | decoration (tree_grove) | -55, 22, 7, 4 | `density = "dense"`, bush border. Part c of the hidden middle (formerly one rect (−59, 18, 13, 15)), cut by the secret trail; old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards). |
+| `grove_n1_center_d` | decoration (tree_grove) | -52, 26, 4, 7 | `density = "dense"`, bush border. Part d of the hidden middle (formerly one rect (−59, 18, 13, 15)), cut by the secret trail; old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards). |
+| `grove_n1_center_e` | decoration (tree_grove) | -57, 28, 3, 5 | `density = "dense"`, bush border. Part e of the hidden middle (formerly one rect (−59, 18, 13, 15)), cut by the secret trail; old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards). |
+| `grove_n1_center_f` | decoration (tree_grove) | -48, 18, 2, 15 | `density = "dense"`, bush border. Part f of the hidden middle (formerly one rect (−59, 18, 13, 15)), cut by the secret trail; old round trees with big friendly crowns (no hollow, no fir, no mushrooms — riddle guards). |
+| `path_n1_secret_a` | path (side) | -54, 28, 2, 5 | Secret trail ("Secret trail" section), part a: entrance from the grass strip (−54…−53, 33) south of the north ring. |
+| `path_n1_secret_b` | path (side) | -57, 26, 5, 2 | Secret trail ("Secret trail" section), part b: first bend west. |
+| `path_n1_secret_c` | path (side) | -57, 22, 2, 4 | Secret trail ("Secret trail" section), part c: south along the west side. |
+| `path_n1_secret_d` | path (side) | -57, 20, 9, 2 | Secret trail ("Secret trail" section), part d: long bend east. |
+| `path_n1_secret_e` | path (side) | -50, 18, 2, 2 | Secret trail ("Secret trail" section), part e: exit to the grass strip (−50…−49, 17) north of the south ring. |
 | `grove_n1_north` | decoration (tree_grove) | -57, 41, 12, 11 | `density = "dense"`, bush border. Old round trees north of the ring, between the fir and the night house (reaches the house wall, so no dead-end strip remains). |
 | `windmill_n1` | landmark (windmill) | -57, 8, 2, 2 | Little wooden garden windmill (4 m) with four slowly turning sails and a small balcony; soft whirring sound. The only windmill in the zoo (loc_windmill). |
 | `tree_crooked_n1` | decoration (tree_crooked) | -52, 10, 1, 1 | Small crooked tree with a low horizontal branch in the firefly meadow (the bat hangs from the branch, loc_fireflies). |
@@ -186,6 +201,41 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `tree_old_n1` | decoration (tree_old) | -70, 32, 2, 2 | Big old mossy tree by the west hedge; a ring of mushrooms on the moss at its foot (loc_mushrooms). |
 | `hill_n1` | landmark (hill) | -69, 42, 3, 3 | Small round grassy hill (2 m) with one big round stone on top, no trees — the brightest moonlit spot of the garden (loc_hilltop). |
 | `fir_n1` | decoration (fir_tree) | -62, 48, 2, 2 | The one tall dark pointed fir tree in the north-west corner, with cones (loc_fir). The only fir in the zoo. |
+
+## Secret trail (user request 2026-10-04, Q-365)
+
+A **hidden path** winds through the middle grove from the north ring to the south ring — a
+secret shortcut the child may discover; it is **never needed** for any mission.
+
+- **Cells** (all `path`, kind `side`, 2 m wide so the bush borders (r 0.7 m, 0.6 m inside the edge)
+  leave ≥ 1.6 m for the player and following animals):
+  `path_n1_secret_a` (−54, 28, 2, 5) entrance at the top, z 28…32 → `_b` (−57, 26, 5, 2) west →
+  `_c` (−57, 22, 2, 4) south → `_d` (−57, 20, 9, 2) east → `_e` (−50, 18, 2, 2) exit at the
+  bottom. Total ≈ 27 m along the centre line. The grove `grove_n1_center` is cut into six dense
+  rects `grove_n1_center_a…f` around it (all still `dense`, `edge = "bushes"`, `blocks_view`).
+- **Connections:** the entrance cells (−54…−53, 32) touch the grass strip z 33…34, which joins
+  `path_n1_ring_n` (z 35…37); the exit cells (−50…−49, 18) touch the grass strip z 16…17, which joins
+  `path_n1_ring_s` (z 13…15). Ring north (−53, 35) → ring south (−50, 15): 14.8 s through the
+  trail, 18.3 s without it (over the plaza `path_n1_s_link`), ≈ 25 s around the west loop — a
+  small secret shortcut and a place to explore, no faster route to any hiding place that the
+  "Walking distances" need.
+- **Hidden from the zoo camera:** the six grove rects keep `blocks_view = true`, `height_m = 6`;
+  the old round crowns (≈ 6 m wide) overhang the 2 m trail, so from the ≈ 55° camera it is
+  covered (the canopy fade, GAME-PLAYER §2, only fades the crowns when the player is under them).
+  Only the two grass entrances are readable: a **faint trail** of flattened pale grass and
+  3–4 **stepping stones** leading into a gap of the bush border (decoration props `stepping_stone`
+  at the entrance and exit, scenery only, no collider; to be modelled — proposal Q-365).
+  **No fireflies** on or near it (`loc_fireflies` guard Q-115), no mushrooms, no hollow tree, no
+  pond: nothing that could be mistaken for a riddle detail.
+- **Never required / never blocking:** no hiding place rect, wander area, hint stand cell, board,
+  gate or food box lies on or next to it (≥ 4 m from every wander cell, ≥ 8 m from boards, gates and food boxes); closing the whole
+  trail leaves every walkable cell of `night_1` still reachable (LAYOUT-N1-016); hints never name
+  it (GAME-HINT targets stay on the existing paths).
+- **Hiding-place candidate in a secret clearing: not added** (Q-365). A spot in the middle of the
+  grove is ≤ 17 m straight from the hedgehog / bat / owl boards and the night-house door, which
+  breaks the 22 m haze rule (Q-110, CAMV-008, LAYOUT-N1-006); it would also need a new riddle
+  detail in 4 reading levels × de/en and re-checking all 27 combinations. The trail is therefore
+  decoration plus a shortcut only; an optional **treasure** (no mission) in a clearing is a later idea.
 
 ## Night house (GAME-NIGHT rule 4; Q-134 answered)
 
@@ -300,7 +350,7 @@ the **top of a pointed tree**.
 
 ## Terrarium house (user request 2026-10-03: moved to night_2)
 
-**Proposed elements (not in `night-1.toml` yet; they join the element table when the data is written):** `path_n1_gate` (path, side, -70, 25, 6, 2: from `path_n1_ring_w` west through the free band) and `barrier_n1_garden` (closed gate, -72, 25, 2, 2, lantern gate in the west hedge). Details in the next paragraph and in `levels/night-2.md`.
+**Elements added 2026-10-04 (implemented, Q-331 answered):** `path_n1_gate` (path, side, -70, 25, 6, 2: from `path_n1_ring_w` west through the free band) and `barrier_n1_garden` (closed gate, -72, 25, 2, 2, lantern gate in the west hedge). Details in the next paragraph and in `levels/night-2.md`.
 
 The terrarium house with the snake, chameleon and poison dart frog (three glass terrariums, `indoor = true`, `terrarium = true`) does **not** fit into `night_1`: the level has 591 free grass cells outside the nine hiding-place rects, and a search for nine new spots ≥ 12 m from the existing nine and ≥ 22 m (haze rule) from the new boards finds **one** (house in the east block; **zero** with the house in the west block (−46…−40, 17…25)). The hiding places cannot be moved to another level. Decision (Q-330, proposal): **second night level `night_2` "terrarium garden"**, GAME-LEVEL-NIGHT-2, behind a lantern gate in the west hedge of this level (`barrier_n1_garden`). `night_1` keeps its three animals (hedgehog, bat, owl: "all night animals home" = 6 animals) and its night house unchanged. The only edits here are the gate, the short path and one lantern post. New foods are **not** needed in this storage (the night_1 treats reuse the four existing boxes: hedgehog fruit, bat nectar, owl worms — GAME-FEED "Basic food and treats"; `worms` and `nectar` are no longer pure distractors).
 
@@ -413,13 +463,17 @@ light.
 | LAYOUT-N1-009 | Given `night_house`, then its interior and door are walkable with surface `path`, each indoor enclosure (`indoor = true`) has its gate edge-adjacent to an interior cell, and its `model_rect` contains the hall and all three enclosures. | unit |
 | LAYOUT-N1-010 | Given the `[[food_box]]` list, then the foods it has are exactly `beetles`, `fruit`, `worms`, `nectar`; 2–6 more boxes stand inside the hut and may repeat a food; every box has a walkable cell centre within 2 m in front of it reachable from the entry. | unit |
 | LAYOUT-N1-011 | Given the `[[light]]` list, then every post / string end is on a walkable cell outside hiding-place rects and scenery, every board and the map board has exactly one `board_lamp`, every `attach` id exists, and the night house has an `indoor` light per enclosure with the Q-116 colours. | unit |
+| LAYOUT-N1-015 | Given the secret trail `path_n1_secret_a…e`, then every cell is walkable with surface `path`, lies inside the old grove rect (−59, 18, 13, 15), is free of solid elements, colliders, hiding-place rects, wander areas, lights, items, boards and hint stand cells; the six `grove_n1_center_*` rects are dense, `blocks_view`, and together with the trail cover exactly the old rect; the trail's two ends are 4-connected to the grass strips that reach the north and south ring. | unit |
+| LAYOUT-N1-016 | Given the level with all `path_n1_secret_*` cells made solid, then every cell reachable from the entry is still reachable and every candidate, board, gate and box stays reachable (never required); with the trail open the ring-north → ring-south walk is ≥ 3 s shorter (14.8 s vs 18.3 s). | unit |
+| LAYOUT-N1-017 | Given the trail, then every trail cell belongs to a 2 × 2 block of trail cells (2 m wide everywhere), lies ≥ 4 m from every hiding-place wander cell and ≥ 8 m from every info board, gate and food box (hint stand cells stay clear); LAYOUT-N1-006 stays green. | unit |
 | LAYOUT-N1-012 | Given the player walks through the open moon door from level 1, then she stands on `path_n1_entry` in `night_1` and the night missions are in scope; walking back east returns her to `path_moon` (NIGHT-004). | e2e |
-| LAYOUT-N1-014 | Given `night-1.toml` with `path_n1_gate` and `barrier_n1_garden` (proposal), then LAYOUT-N1-002/003/006/007/008 stay green (the gate band holds no wander cell), the gate is closed and solid until night_1 is complete and opens at that moment (NIGHT-030). | unit |
+| LAYOUT-N1-014 | Given `night-1.toml` with `path_n1_gate` and `barrier_n1_garden` (implemented), then LAYOUT-N1-002/003/006/007/008 stay green (the gate band holds no wander cell), the gate is closed and solid until night_1 is complete and opens at that moment (NIGHT-030). | unit |
 | LAYOUT-N1-013 | Given the layout-true night mockups (after approval), then a reviewer can name each place's night clue without text and confirms nothing is scary (NIGHT-009). | manual |
 
 ## Open questions
 
-- Q-330…Q-333 (open, proposals 2026-10-03): night_2, the gate `barrier_n1_garden`, optional, terrarium look (GAME-LEVEL-NIGHT-2).
+- Q-365 (open, 2026-10-04): the secret trail through the middle grove; no hiding-place candidate in a clearing (22 m rule), stepping-stone props to model.
+- Q-330…Q-333 answered 2026-10-04 ("implement as recommended"): night_2, the gate `barrier_n1_garden`, optional, terrarium look (GAME-LEVEL-NIGHT-2).
 - Q-145 answered 2026-09-27: the layout changes of FIX-056 are accepted (22 m haze rule: moved/clipped hiding places, moved board, bench and trail, new walking neighbours).
 - Q-133 answered 2026-09-27: night level data (`time = "night"`, moon door `opens_at` / `unlock_after`), open every night — also after the night zoo is done.
 - Q-134 answered 2026-09-27: night house structure (hall + indoor enclosures + `model_rect`, boards outside).

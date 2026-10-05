@@ -8,6 +8,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   AD_FORMAT,
   b64decode,
+  Carousel,
+  carouselItems,
+  CAROUSEL_MS,
+  type AdContent,
+  type VerifiedCampaign,
   checkLink,
   checkTagline,
   GATE_HOLD_MS,
@@ -522,5 +527,50 @@ describe('parental gate (ADS-018)', () => {
     g.holdStart(0);
     expect(g.progress(99_999)).toBe(0);
     expect(g.stage).toBe('failed');
+  });
+});
+
+// ADS-031
+describe('carousel', () => {
+  const camp = (id: string, slot: number): VerifiedCampaign => ({
+    id,
+    slot,
+    active: true,
+    link: `https://${id}.rcms.ch/`,
+    tagline: { de: 'a', en: 'b' },
+    images: [
+      { lang: 'de', path: `img/${id}-de.png`, mime: 'image/png', bytes: 1, width: 64, height: 64, sha256: '', data: new Uint8Array(1) },
+      { lang: 'en', path: `img/${id}-en.png`, mime: 'image/png', bytes: 1, width: 64, height: 64, sha256: '', data: new Uint8Array(1) },
+    ],
+  });
+  const content: AdContent = { version: 1, bySlot: new Map([[3, camp('c', 3)], [1, camp('a', 1)], [2, camp('b', 2)]]) };
+
+  it('lists verified campaigns in slot order with the language image', () => {
+    const it1 = carouselItems(content, 'en');
+    expect(it1.map((i) => i.campaign.id)).toEqual(['a', 'b', 'c']);
+    expect(it1[0].image.path).toBe('img/a-en.png');
+    expect(carouselItems(content, 'de')[2].image.path).toBe('img/c-de.png');
+    expect(carouselItems(null, 'de')).toEqual([]);
+    expect(carouselItems({ version: 1, bySlot: new Map() }, 'de')).toEqual([]);
+  });
+
+  it('wraps, auto-advances after 4 s, restarts on manual moves and can be paused', () => {
+    const c = new Carousel(3, 0);
+    expect(CAROUSEL_MS).toBe(4000);
+    expect(c.tick(3999)).toBe(false);
+    expect(c.tick(4000)).toBe(true);
+    expect(c.index).toBe(1);
+    c.prev(4500);
+    c.prev(4500);
+    expect(c.index).toBe(2);
+    expect(c.tick(8499)).toBe(false); // the manual move restarted the timer
+    expect(c.tick(8500)).toBe(true);
+    expect(c.index).toBe(0);
+    c.go(5, 9000);
+    expect(c.index).toBe(2);
+    expect(c.tick(20000, true)).toBe(false); // paused (gate up)
+    expect(c.tick(23999)).toBe(false);
+    expect(c.tick(24000)).toBe(true);
+    expect(new Carousel(1, 0).tick(99999)).toBe(false);
   });
 });

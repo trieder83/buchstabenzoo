@@ -475,6 +475,19 @@ water = "still"
 model = "pond_stone_rim"
 notes = "Round pond with a low stone rim, water plants and two flat stones, filling most of the enclosure; the goldfish swims only here (home_wander_on = water). Not adjacent to the gate step (x 11, z 67-68)."
 
+[[enclosure_feature]]
+id = "monkey_house"
+enclosure = "enc_monkey"
+kind = "animal_house"
+model = "monkey_house"
+rect = [-4, 87, 5, 5]
+interior = [-3, 88, 3, 3]
+door = [0, 88, 1, 2]
+door_side = "+x"
+door_height_m = 1.8
+roof_height_m = 2.2
+notes = "Monkey house, NW corner (GAME-HOUSE; open archway, placeholder box until the model exists)"
+
 # ================================================================ carryable items (proposal Q-093)
 # Props the player can pick up. pos = level (x, z) centre; building = where it stands.
 [[item]]

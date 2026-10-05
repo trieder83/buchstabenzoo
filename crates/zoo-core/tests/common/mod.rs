@@ -69,6 +69,20 @@ pub fn zoo_with_night() -> LevelData {
     LevelData::join(vec![level1(), level2(), level3(), night1()]).expect("levels join")
 }
 
+pub fn night2() -> LevelData {
+    LevelData::from_toml_str(&read("assets/levels/night-2.toml")).expect("night-2.toml parses")
+}
+
+/// The day levels 1–3, `night_1` and the terrarium garden `night_2` joined (the whole game,
+/// GAME-LEVEL-NIGHT-2).
+pub fn zoo_with_night2() -> LevelData {
+    LevelData::join(vec![level1(), level2(), level3(), night1(), night2()]).expect("levels join")
+}
+
+pub fn night2_game(seed: u64) -> Game {
+    Game::new(zoo_with_night2(), seed).expect("zoo with night_2 starts")
+}
+
 pub fn night_game(seed: u64) -> Game {
     Game::new(zoo_with_night(), seed).expect("zoo with night starts")
 }

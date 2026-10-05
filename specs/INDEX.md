@@ -15,7 +15,7 @@
 
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
-| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 29 | — | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
+| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 34 | Q-364 | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
 | GAME-ADS-C1 | Ad campaign 1 — Math Fighter | draft | GAME-ADS, CONT-MATH, GAME-CART | 6 | — | [10-gameplay/ads/campaign-1-mathfighter/campaign.md](10-gameplay/ads/campaign-1-mathfighter/campaign.md) |
 | GAME-ADS-C2 | Ad campaign 2 — ABC Smash | draft | GAME-ADS, GAME-ADS-C1, CONT-READING | 4 | — | [10-gameplay/ads/campaign-2-abcsmash/campaign.md](10-gameplay/ads/campaign-2-abcsmash/campaign.md) |
 | GAME-ADS-C3 | Ad campaign 3 — EduGameGalaxy | draft | GAME-ADS, GAME-ADS-C1, GAME-ADS-C2 | 4 | — | [10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md](10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md) |
@@ -25,22 +25,24 @@
 | GAME-CART | Golf carts | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE, CONT-MATH, GAME-HINT | 14 | — | [10-gameplay/golf-carts.md](10-gameplay/golf-carts.md) |
 | GAME-ECON | Visitors, shops and coins (idea) | draft | GAME-LEVEL-3, GAME-FEED, GAME-EVENTS, CONT-MATH, GAME-SAVE, GAME-HINT | 10 | — | [10-gameplay/economy.md](10-gameplay/economy.md) |
 | GAME-EVENTS | Zoo events | draft | GAME-RESCUE, GAME-NIGHT, GAME-FAMILY, GAME-GARDEN, GAME-HINT, GAME-SAVE | 10 | — | [10-gameplay/events.md](10-gameplay/events.md) |
-| GAME-FAMILY | Animal pairs and babies | draft | GAME-ANIMALS, GAME-RESCUE, GAME-FEED, GAME-SAVE | 28 | Q-030, Q-074, Q-075, Q-097, Q-100, Q-106, Q-204, Q-280, Q-282, Q-283, Q-334, Q-352 | [10-gameplay/families.md](10-gameplay/families.md) |
-| GAME-FEED | Food boxes, bamboo forest, carrying and putting down items | draft | GAME-WORLD, CONT-READING, GAME-PLAYER | 44 | Q-025, Q-032, Q-034, Q-042, Q-065, Q-070, Q-154, Q-334, Q-338, Q-339, Q-352 | [10-gameplay/feeding.md](10-gameplay/feeding.md) |
-| GAME-GARDEN | Vegetable garden, fruit garden and treats | draft | GAME-FEED, GAME-FAMILY, GAME-LAYOUT, GAME-SAVE, CONT-READING | 24 | Q-100, Q-101, Q-102, Q-103, Q-154, Q-320, Q-321, Q-322, Q-323, Q-324, Q-334, Q-352 | [10-gameplay/garden.md](10-gameplay/garden.md) |
-| GAME-HINT | Next-target hint | draft | GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN | 29 | Q-008, Q-031, Q-262, Q-353 | [10-gameplay/hints.md](10-gameplay/hints.md) |
-| GAME-LAYOUT | Zoo layout and level boundaries | draft | GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER | 47 | Q-032, Q-044, Q-059, Q-060, Q-061, Q-095, Q-097, Q-098, Q-099, Q-102, Q-104, Q-105, Q-154, Q-262, Q-333 | [10-gameplay/layout.md](10-gameplay/layout.md) |
-| GAME-LEVEL-1 | Level 1 — entrance, zebra, hippo, panda | draft | GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS | 38 | Q-024, Q-043, Q-044, Q-047, Q-059, Q-060, Q-065, Q-097, Q-098, Q-099, Q-100, Q-101, Q-102, Q-103, Q-147, Q-280, Q-282 | [10-gameplay/levels/level-1.md](10-gameplay/levels/level-1.md) |
+| GAME-FAMILY | Animal pairs and babies | draft | GAME-ANIMALS, GAME-RESCUE, GAME-FEED, GAME-SAVE | 29 | Q-030, Q-074, Q-075, Q-097, Q-100, Q-106, Q-204, Q-280, Q-282, Q-283 | [10-gameplay/families.md](10-gameplay/families.md) |
+| GAME-FEED | Food boxes, bamboo forest, carrying and putting down items | draft | GAME-WORLD, CONT-READING, GAME-PLAYER | 44 | Q-025, Q-032, Q-034, Q-042, Q-065, Q-070, Q-154 | [10-gameplay/feeding.md](10-gameplay/feeding.md) |
+| GAME-GARDEN | Vegetable garden, fruit garden and treats | draft | GAME-FEED, GAME-FAMILY, GAME-LAYOUT, GAME-SAVE, CONT-READING | 24 | Q-100, Q-101, Q-102, Q-103, Q-154, Q-320, Q-321, Q-322, Q-323, Q-324 | [10-gameplay/garden.md](10-gameplay/garden.md) |
+| GAME-HINT | Next-target hint | draft | GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN | 31 | Q-008, Q-031, Q-262, Q-353 | [10-gameplay/hints.md](10-gameplay/hints.md) |
+| GAME-HOUSE | Animal houses (door-only entry) | draft | GAME-LAYOUT, GAME-ANIMALS, GAME-FAMILY, GAME-FEED, ART-ENVIRONMENT | 20 | Q-359, Q-360, Q-361, Q-362 | [10-gameplay/animal-houses.md](10-gameplay/animal-houses.md) |
+| GAME-LAYOUT | Zoo layout and level boundaries | draft | GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER | 47 | Q-032, Q-044, Q-059, Q-060, Q-061, Q-095, Q-097, Q-098, Q-099, Q-102, Q-104, Q-105, Q-154, Q-262, Q-359 | [10-gameplay/layout.md](10-gameplay/layout.md) |
+| GAME-LEVEL-1 | Level 1 — entrance, zebra, hippo, panda | draft | GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS | 38 | Q-024, Q-043, Q-044, Q-047, Q-059, Q-060, Q-065, Q-097, Q-098, Q-099, Q-100, Q-101, Q-102, Q-103, Q-147, Q-280, Q-282, Q-362 | [10-gameplay/levels/level-1.md](10-gameplay/levels/level-1.md) |
 | GAME-LEVEL-2 | Level 2 — koala, elephant, giraffe, lion (behind the fallen tree) | draft | GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER | 18 | Q-039, Q-043, Q-047, Q-095, Q-280 | [10-gameplay/levels/level-2.md](10-gameplay/levels/level-2.md) |
 | GAME-LEVEL-3 | Level 3 — monkey, goldfish, snow fox (adventure playground and stream) | draft | GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER | 20 | Q-043, Q-065, Q-095, Q-102, Q-280, Q-320 | [10-gameplay/levels/level-3.md](10-gameplay/levels/level-3.md) |
-| GAME-LEVEL-NIGHT-1 | Night level 1 — the moonlit forest garden (hedgehog, bat, owl) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1 | 14 | Q-043, Q-147, Q-149, Q-151, Q-154, Q-280, Q-330, Q-331, Q-333 | [10-gameplay/levels/night-1.md](10-gameplay/levels/night-1.md) |
-| GAME-LEVEL-NIGHT-2 | Night level 2 — the terrarium garden (snake, chameleon, poison dart frog) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, GAME-FAMILY, GAME-FEED, GAME-LEVEL-NIGHT-1 | 14 | Q-330, Q-331, Q-332, Q-333, Q-334, Q-335, Q-336, Q-337, Q-352 | [10-gameplay/levels/night-2.md](10-gameplay/levels/night-2.md) |
-| GAME-MAP | Zoo map with explored areas | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE | 9 | Q-053, Q-054, Q-055 | [10-gameplay/map.md](10-gameplay/map.md) |
-| GAME-NIGHT | Nightfall and the night zoo | draft | GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION | 31 | Q-031, Q-147, Q-153, Q-154, Q-330, Q-331, Q-332, Q-333, Q-352 | [10-gameplay/night.md](10-gameplay/night.md) |
+| GAME-LEVEL-NIGHT-1 | Night level 1 — the moonlit forest garden (hedgehog, bat, owl) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1 | 17 | Q-043, Q-147, Q-149, Q-151, Q-154, Q-280, Q-365 | [10-gameplay/levels/night-1.md](10-gameplay/levels/night-1.md) |
+| GAME-LEVEL-NIGHT-2 | Night level 2 — the terrarium garden (snake, chameleon, poison dart frog) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, GAME-FAMILY, GAME-FEED, GAME-LEVEL-NIGHT-1 | 15 | Q-367 | [10-gameplay/levels/night-2.md](10-gameplay/levels/night-2.md) |
+| GAME-MAP | Zoo overview map | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE | 21 | Q-053, Q-054, Q-055, Q-363 | [10-gameplay/map.md](10-gameplay/map.md) |
+| GAME-NIGHT | Nightfall and the night zoo | draft | GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION | 33 | Q-031, Q-147, Q-153, Q-154, Q-365, Q-367 | [10-gameplay/night.md](10-gameplay/night.md) |
 | GAME-PLAYER | Player character, camera and controls | draft | PROD-VISION, CONT-READING | 37 | Q-001, Q-024, Q-025, Q-028, Q-048, Q-051, Q-064, Q-065, Q-070, Q-097 | [10-gameplay/player.md](10-gameplay/player.md) |
 | GAME-QUESTS | Quests and riddles | draft | GAME-WORLD, GAME-RESCUE, CONT-READING | 5 | Q-015, Q-020, Q-040 | [10-gameplay/quests/overview.md](10-gameplay/quests/overview.md) |
 | GAME-RESCUE | Rescue mission — core loop | implemented | PROD-VISION, GAME-ANIMALS, GAME-FEED, GAME-WORLD, CONT-READING, CONT-MATH | 33 | Q-008, Q-020, Q-030, Q-031, Q-034, Q-039, Q-040, Q-041, Q-097 | [10-gameplay/rescue-mission.md](10-gameplay/rescue-mission.md) |
 | GAME-SAVE | Saving and restoring progress | draft | GAME-PLAYER, GAME-RESCUE, GAME-ANIMALS, GAME-FEED, GAME-MAP, CONT-L10N | 11 | Q-011 | [10-gameplay/save.md](10-gameplay/save.md) |
+| GAME-TELESCOPE | Telescope - looking at the planets | draft | GAME-PLAYER, GAME-NIGHT, GAME-LAYOUT, CONT-L10N | 12 | Q-365, Q-366, Q-367 | [10-gameplay/telescope.md](10-gameplay/telescope.md) |
 | GAME-WORLD | Zoo world | draft | PROD-VISION | 4 | — | [10-gameplay/world.md](10-gameplay/world.md) |
 
 ## Content
@@ -56,7 +58,7 @@
 
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
-| ART-ANIMALS | Animals — concept and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG | 13 | Q-002, Q-040, Q-043, Q-108, Q-280, Q-282, Q-335 | [30-art/animals.md](30-art/animals.md) |
+| ART-ANIMALS | Animals — concept and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG | 13 | Q-002, Q-040, Q-043, Q-108, Q-280, Q-282 | [30-art/animals.md](30-art/animals.md) |
 | ART-CHARACTERS | Characters — concept and models | draft | ART-PIPELINE, ART-DIRECTION, ART-RIG, GAME-PLAYER | 7 | Q-001, Q-009, Q-015, Q-016, Q-026, Q-027, Q-028, Q-051, Q-062, Q-340 | [30-art/characters.md](30-art/characters.md) |
 | ART-DIRECTION | Art direction | draft | — | 4 | Q-048, Q-050 | [30-art/art-direction.md](30-art/art-direction.md) |
 | ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 15 | Q-005, Q-044, Q-048, Q-059, Q-060, Q-061, Q-064, Q-098, Q-099, Q-147, Q-149, Q-151, Q-153, Q-154 | [30-art/environment.md](30-art/environment.md) |
@@ -80,4 +82,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 46 specs — draft: 43, review: 0, approved: 0, implemented: 3, deprecated: 0; 753 test cases; questions: answered: 143, open: 105, partly answered: 7, proposed: 2.
+**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 811 test cases; questions: answered: 156, open: 99, partly answered: 7, proposed: 2.

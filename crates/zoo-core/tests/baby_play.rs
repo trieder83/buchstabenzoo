@@ -211,3 +211,13 @@ fn fam_016_deterministic_and_never_lost() {
     let f = female(&g);
     assert!(g.baby_states["zebra"].pos.distance(g.animals[f].pos) < 5.0);
 }
+
+/// FAM-034: the baby speed factors are the first design times 0.85 (15 % slower).
+#[test]
+fn fam_034_babies_run_15_percent_slower() {
+    let eq = |a: f32, b: f32| (a - b).abs() < 1e-4;
+    assert!(eq(baby::AMBLE_FACTOR, 0.7 * 0.85));
+    assert!(eq(baby::TROT_FACTOR, 1.25 * 0.85));
+    assert!(eq(baby::CATCHUP_FACTOR, 1.6 * 0.85));
+    assert!(eq(baby::BURST_FACTOR, 2.2 * 0.85));
+}

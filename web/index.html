@@ -633,6 +633,326 @@
       #settings {
         z-index: 4;
       }
+      /* Overview map (GAME-MAP): full-screen, above everything; shapes on a canvas, icons as DOM. */
+      #overview-map {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        background: #fff3d6;
+        touch-action: none;
+        user-select: none;
+      }
+      #overview-map[hidden] {
+        display: none;
+      }
+      #overview-map .map-title {
+        position: absolute;
+        left: calc(16px + env(safe-area-inset-left));
+        top: calc(12px + env(safe-area-inset-top));
+        margin: 0;
+        font-size: 32px;
+        color: #3b2314;
+      }
+      #overview-map .map-close {
+        position: absolute;
+        right: calc(8px + env(safe-area-inset-right));
+        top: calc(4px + env(safe-area-inset-top));
+        width: 68px;
+        height: 68px;
+        font-size: 34px;
+        background: #e8604c;
+        color: #fff;
+      }
+      #overview-map .map-stage {
+        position: absolute;
+        border: 4px solid #3b2314;
+        border-radius: 8px;
+        box-sizing: content-box;
+        margin: -4px 0 0 -4px;
+      }
+      #overview-map .map-canvas {
+        display: block;
+      }
+      #overview-map .map-level {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        padding: 2px 8px;
+        border-radius: 12px;
+        border: 3px solid #3b2314;
+        background: #fff;
+        font-size: 18px;
+        font-weight: bold;
+        white-space: nowrap;
+        color: #3b2314;
+      }
+      #overview-map .map-level[data-state='locked'] {
+        background: #d4d4d4;
+        color: #666;
+      }
+      #overview-map .map-level[data-state='solved'] {
+        background: #9fdc86;
+      }
+      #overview-map .map-enclosure {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        line-height: 1;
+      }
+      #overview-map .map-enclosure.locked {
+        filter: grayscale(1);
+        opacity: 0.55;
+      }
+      #overview-map .map-enclosure .check {
+        position: absolute;
+        right: -0.3em;
+        bottom: -0.25em;
+        font-size: 0.55em;
+        color: #1f7a1f;
+        font-weight: bold;
+        text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+      }
+      #overview-map .map-player {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+      #overview-map .map-player .dot {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        background: #ffd65c;
+        border: 3px solid #e8604c;
+        border-radius: 50%;
+        line-height: 1;
+        padding: 2px;
+        z-index: 2;
+      }
+      #overview-map .map-player .arrow {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 22px;
+        color: #e8604c;
+        z-index: 1;
+        line-height: 1;
+        text-shadow: 0 0 3px #fff;
+      }
+      #overview-map .map-next {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 22px;
+        line-height: 1;
+        pointer-events: none;
+        animation: map-next-pulse 1.2s ease-in-out infinite;
+        z-index: 3;
+      }
+      #overview-map .map-next .arrow {
+        color: #e8604c;
+        text-shadow: 0 0 3px #fff;
+      }
+      @keyframes map-next-pulse {
+        0%, 100% { opacity: 0.55; margin-top: 0; }
+        50% { opacity: 1; margin-top: -6px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #overview-map .map-next { animation: none; }
+      }
+      @media (orientation: landscape) and (max-height: 460px), (orientation: portrait) and (max-width: 480px) {
+        #overview-map .map-title { font-size: 24px; }
+        #overview-map .map-close { width: 64px; height: 64px; }
+      }
+      /* Telescope view (GAME-TELESCOPE): night sky in a rounded eyepiece, planets as comic discs. */
+      #telescope-view {
+        position: fixed;
+        inset: 0;
+        z-index: 21;
+        box-sizing: border-box;
+        display: grid;
+        gap: 8px;
+        padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+        background: #04061a;
+        color: #fff;
+        user-select: none;
+        touch-action: manipulation;
+        grid-template-columns: minmax(0, 1fr) clamp(190px, calc(100vw - 590px), 300px);
+        grid-template-rows: 64px minmax(0, 1fr);
+        grid-template-areas: 'eye title' 'eye info';
+      }
+      #telescope-view[hidden] {
+        display: none;
+      }
+      @media (orientation: portrait) {
+        #telescope-view {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-rows: 64px minmax(0, 1fr) 150px;
+          grid-template-areas: 'title' 'eye' 'info';
+        }
+      }
+      #telescope-view .tele-title {
+        grid-area: title;
+        margin: 0;
+        align-self: center;
+        padding-right: 76px;
+        font-size: 24px;
+      }
+      #telescope-view .tele-close {
+        position: absolute;
+        right: calc(8px + env(safe-area-inset-right));
+        top: calc(4px + env(safe-area-inset-top));
+        width: 64px;
+        height: 64px;
+        font-size: 32px;
+        background: #e8604c;
+        color: #fff;
+      }
+      #telescope-view .tele-eyepiece {
+        grid-area: eye;
+        position: relative;
+        min-height: 0;
+        border: 6px solid #b98a3e;
+        border-radius: 36px;
+        box-shadow: inset 0 0 40px 14px #000, 0 0 0 3px #3b2a10;
+        background: radial-gradient(ellipse at center, #14204f 0%, #0a1033 60%, #03040f 100%);
+        overflow: hidden;
+      }
+      #telescope-view .tele-sky {
+        position: absolute;
+        inset: 0;
+      }
+      #telescope-view .tele-star {
+        position: absolute;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.35;
+        animation: tele-twinkle 3s ease-in-out infinite;
+      }
+      @keyframes tele-twinkle {
+        0%, 100% { opacity: 0.25; }
+        50% { opacity: 1; }
+      }
+      @keyframes tele-drift {
+        0%, 100% { translate: 0 0; }
+        50% { translate: 0 -4px; }
+      }
+      #telescope-view .tele-sun {
+        position: absolute;
+        pointer-events: none;
+      }
+      #telescope-view .tele-sun-art,
+      #telescope-view .tele-orbit {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      #telescope-view .tele-sun-rays {
+        transform-origin: 0 0;
+        animation: tele-spin 120s linear infinite;
+      }
+      @keyframes tele-spin {
+        to { transform: rotate(360deg); }
+      }
+      #telescope-view .tele-orbit {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      #telescope-view .tele-orbit line {
+        stroke: rgba(255, 255, 255, 0.2);
+        stroke-width: 2;
+        stroke-dasharray: 3 9;
+        stroke-linecap: round;
+      }
+      #telescope-view .tele-planet {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #telescope-view .tele-art-wrap {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+        animation: tele-drift 6s ease-in-out infinite;
+        animation-delay: inherit;
+      }
+      #telescope-view .tele-art {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: visible;
+      }
+      #telescope-view .tele-planet.selected::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: calc(var(--d) + 10px);
+        height: calc(var(--d) + 10px);
+        transform: translate(-50%, -50%);
+        border: 4px solid #ffd65c;
+        border-radius: 50%;
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      #telescope-view .tele-planet:focus-visible {
+        outline: 4px solid #ffd65c;
+        border-radius: 50%;
+      }
+      #telescope-view .tele-info {
+        grid-area: info;
+        box-sizing: border-box;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 10px 14px;
+        border: 4px solid #b98a3e;
+        border-radius: 20px;
+        background: #fff3d6;
+        color: #3b2314;
+        font-size: 18px;
+        line-height: 1.3;
+        align-self: stretch;
+      }
+      #telescope-view .tele-info p,
+      #telescope-view .tele-info h3 {
+        margin: 0 0 4px;
+      }
+      #telescope-view .tele-name {
+        font-size: 26px;
+      }
+      #telescope-view .tele-kind {
+        font-weight: bold;
+      }
+      #telescope-view .tele-hand {
+        font-size: 34px;
+      }
+      @media (max-width: 800px), (max-height: 460px) {
+        #telescope-view .tele-info {
+          padding: 5px 10px;
+          font-size: 14px;
+          line-height: 1.2;
+          border-width: 3px;
+        }
+        #telescope-view .tele-name { font-size: 18px; }
+        #telescope-view .tele-info p,
+        #telescope-view .tele-info h3 { margin-bottom: 2px; }
+        #telescope-view .tele-hand { font-size: 26px; }
+        #telescope-view .tele-title { font-size: 20px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #telescope-view .tele-star,
+        #telescope-view .tele-art-wrap,
+        #telescope-view .tele-sun-rays { animation: none; }
+        #telescope-view .tele-star { opacity: 0.8; }
+      }
       .panel-body {
         --read: max(4.4vh, 22px);
         position: relative;

@@ -579,6 +579,45 @@ ramp_side = "-x"
 model = "pool_tiled"
 notes = "Elephant bathing pool (tiled rim like hippo_pool, but larger ramp), 56 of 143 enclosure cells (39 %), 3 cells from the gate. No jet, no coins (must not look like fountain_sw)."
 
+[[enclosure_feature]]
+id = "koala_shelter"
+enclosure = "enc_koala"
+kind = "animal_house"
+model = "koala_shelter"
+rect = [27, 39, 4, 4]
+interior = [28, 40, 2, 2]
+door = [30, 40, 1, 2]
+door_side = "+x"
+door_height_m = 1.5
+roof_height_m = 1.9
+notes = "Small wooden koala shelter, NW corner (GAME-HOUSE; open archway, placeholder box until the model exists)"
+
+[[enclosure_feature]]
+id = "elephant_house"
+enclosure = "enc_elephant"
+kind = "animal_house"
+model = "elephant_house"
+rect = [55, 28, 4, 4]
+interior = [56, 29, 2, 2]
+door = [58, 29, 1, 2]
+door_side = "+x"
+door_height_m = 3.6
+roof_height_m = 4.0
+notes = "Elephant house in the free SW corner (GAME-HOUSE; open archway, placeholder box until the model exists)"
+
+[[enclosure_feature]]
+id = "giraffe_house"
+enclosure = "enc_giraffe"
+kind = "animal_house"
+model = "giraffe_house"
+rect = [41, 50, 6, 6]
+interior = [42, 51, 4, 4]
+door = [43, 50, 2, 1]
+door_side = "-z"
+door_height_m = 5.2
+roof_height_m = 5.6
+notes = "Tall giraffe house (4.5 m giraffe), back wall on the north fence (GAME-HOUSE; open archway, placeholder box until the model exists)"
+
 # ================================================================ hiding places (candidates)
 # Same fields as level-1 [[hiding_place]] (Q-080). rect = bounding box of the wander area and the
 # scenery. perch_height_m (proposal Q-094): the animal sits up in a tree / on the ship at

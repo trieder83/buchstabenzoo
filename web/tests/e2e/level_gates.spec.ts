@@ -23,6 +23,8 @@ const GATES = [
   { name: 'l1_l2', barrier: 'barrier_ne_tree', x: 25.5, z: 29.5, view: -2 },
   { name: 'l2_l3', barrier: 'barrier_l2_construction', x: 22.5, z: 53.5, view: 2 },
   { name: 'l1_l3', barrier: 'barrier_north_gate', x: -7.5, z: 46.5, view: 0 },
+  // the lantern gate of night_1 to the terrarium garden (GAME-LEVEL-NIGHT-2): opens as soon as night_1 is complete
+  { name: 'n1_n2', barrier: 'barrier_n1_garden', x: -70.5, z: 26, view: 2 },
 ];
 
 async function levelGates(page: Page): Promise<OpeningState[]> {

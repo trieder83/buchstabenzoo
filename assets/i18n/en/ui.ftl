@@ -89,6 +89,9 @@ ad-gate-title = To the website
 ad-gate-sum = Solve the sum:
 ad-gate-hold = Hold the button for 3 seconds.
 ad-close = Close
+ad-carousel-title = You like educational adventures? Check this out!
+ad-carousel-prev = Previous
+ad-carousel-next = Next
 
 ui-replay-intro = Explain the game
 
@@ -185,5 +188,20 @@ analytics-note = Anonymous statistics help us improve the game. No names, no tex
 analytics-detail = Only counted: language, reading level, play time, levels played and the rough country. No ads. You can switch it off at any time with the 📊 button in the settings.
 analytics-allow = Allow
 analytics-deny = No thanks
+welcome-story = The animals escaped from the zoo – bring them home!
+welcome-data = The game collects anonymous data only to analyze and promote the game.
+welcome-no = No, I don't want to play
+welcome-yes = Yes, I agree, let's play!
+welcome-bye = Too bad! Come back any time.
+welcome-back = Back
 
-analytics-notice = 📊 Anonymous statistics are off. Parents can allow them in the menu ⚙️.
+map-title = Zoo map
+map-button = Map
+map-close = Close map
+map-you = You are here
+map-next = Go there next
+map-locked = Still locked
+map-level-level_1 = Area 1
+map-level-level_2 = Area 2
+map-level-level_3 = Area 3
+map-level-night_1 = Night zoo

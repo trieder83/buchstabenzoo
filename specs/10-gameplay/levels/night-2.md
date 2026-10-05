@@ -6,22 +6,26 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, GAME-FAMILY, GAME-FEED, GAME-LEVEL-NIGHT-1]
 test_prefix: LAYOUT-N2
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Night level 2 — the terrarium garden (snake, chameleon, poison dart frog)
 
 **Contents:** Goal · Why a second night level (numbers) · Design assumptions · Spawn, entry, camera · Map · Elements · Terrarium house · Night food storage · Hiding places · Riddle details · Riddles and facts (de / en) · Barrier · Walking and pacing · Lights · Never stuck · Behaviour · Mockups and art · Test cases · Open questions
 
-Owned by the `zoo-level-designer` agent. **Design proposal (2026-10-03, user request: "a terrarium in a
-building of the night level, with snake, chameleon and a colourful poison dart frog")** — nothing is
-implemented, `assets/levels/night-2.toml` is written after approval (the element table below is its
-draft, LAYOUT-005 checks both). Level id `night_2`. Night rules: GAME-NIGHT. Frame: the plaza, hut,
+Owned by the `zoo-level-designer` agent. **Implemented 2026-10-04** (user requests 2026-10-03 "a terrarium in a
+building of the night level, with snake, chameleon and a colourful poison dart frog" and 2026-10-04 "also implement
+the terrarium building in the night level": Q-330…Q-339 and Q-350…Q-352 answered "implement as recommended").
+`assets/levels/night-2.toml` mirrors the element table below (LAYOUT-N2-004 checks both, the map is generated from it).
+**Simplifications of the first implementation:** the terrarium house has the plan of the night house (same 17 × 13 m
+`model_rect`, cases 8 m deep instead of 5) and is drawn with the `night_house` model as a stand-in; the riddle
+scenery are coloured placeholder boxes; the basic-food / treat rule is implemented for the three new species only (the
+older species keep the FAM-008/009 rule until the 16-species master table of GAME-FEED is built); the fridge prop, the
+silhouettes for the signs and the real models are listed in "Mockups and art". Level id `night_2`. Night rules: GAME-NIGHT. Frame: the plaza, hut,
 house and loop of `night_1`, **shifted 48 m west** (same relative geometry, so the 22 m haze rule, the 12 m spread and the
 walking numbers of night_1 carry over); all riddle places, scenery and the house contents are new.
 
-There is **no terrarium yet** in the specs or data (the night house of `night_1` holds hedgehog, bat and owl):
-this level is its first.
+The night house of `night_1` holds hedgehog, bat and owl: this level is the first with terrariums.
 
 ## Goal
 
@@ -63,7 +67,7 @@ Open for the user: Q-330.
 | Level data | `[level] id = "night_2"`, `time = "night"`, bounds (−120, 6, 48, 48) = x −120…−73, z 6…53, `missions = ["snake", "chameleon", "poison_dart_frog"]`; `[[entry]] entry_n2_garden` cells (−73, 25…26) next to the night_1 barrier `barrier_n1_garden` | Q-330, Q-331 |
 | Unlock | `barrier_n1_garden`: `unlock_after = "night_1"`, `opens_at = "night"` (open as soon as the three night_1 animals are home, stays open every later night) | Q-331 |
 | Optional | night_2 never blocks sleeping, the morning, or level 2 (`barrier_ne_tree` keeps `unlock_after = "night_1"`) | Q-332 |
-| Terrarium | enclosure with `indoor = true` plus the new flag `terrarium = true` (glass front, case frame, heat/UV lamp); gate = `glass_door` exactly like the night house | Q-333 |
+| Terrarium | enclosure with `indoor = true` plus the new flag `terrarium = true` (glass front, case frame, heat/UV lamp); gate = `glass_door` exactly like the night house. The flag is data (`Element::terrarium`); the case look comes with the real house model | Q-333 |
 | Foods | two-role model GAME-FEED "Basic food and treats": new foods `fish`, `crickets`, `flies`, `eggs`, `frozen_insects`, `bone` (6; total 20) | Q-334 |
 | Riddle scope | kinds unique across `night_1` ∪ `night_2`; no `kiga` word of a day place or a night_1 place (MISS-013) | Q-136 |
 | Sizes | snake 1.2 m long (coiled 0.35 m high), chameleon 0.5 m with crest and curled tail (concept brief 0.35 m: comic scale, like Q-143), frog 0.4 m (comic, real ≈ 4 cm) | Q-335 |
@@ -81,18 +85,18 @@ Scale **1 character = 1 m**, north (+z) up, x axis below (generated from the ele
 ```
    53 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    52 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   51 %%.............TTTTTTTTTTTT.................TT%%
-   50 %%.............TTTTTTTTTTTT.................TT%%
-   49 %%........RR...TTTTTTTTTTTT.................TT%%
-   48 %%........RR...TTTTTTTTTTTTsssssscccccffffffTT%%
-   47 %%.............TTTTTTTTTTTTsssssscccccffffffTT%%
-   46 %%.............TTTTTTTTTTTTsssssscccccffffffTT%%
-   45 %%.............TTTTTTTTTTTTsssssscccccffffffTT%%
-   44 %%..nnn........TTTTTTTTTTTTssggsscggccffggffTT%%
-   43 %%..nnn........TTTTTTTTTTTTNhhhhhhhhhhhhhhhhNTT%%
-   42 %%..nnn........TTTTTTTTTTTTNhhhhhhhhhhhhhhhhNTT%%
-   41 %%.............TTTTTTTTTTTTNhhhhhhhhhhhhhhhhNTT%%
-   40 %%.........................NhhhhhhhhhhhhhhhhNTT%%
+   51 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   50 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   49 %%........RR...TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   48 %%........RR...TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   47 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   46 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   45 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
+   44 %%..nnn........TTTTTTTTTTTTssggsscggccrrggrrTT%%
+   43 %%..nnn........TTTTTTTTTTTTNhhhhhhhhhhhhhhhNTT%%
+   42 %%..nnn........TTTTTTTTTTTTNhhhhhhhhhhhhhhhNTT%%
+   41 %%.............TTTTTTTTTTTTNhhhhhhhhhhhhhhhNTT%%
+   40 %%.........................NhhhhhhhhhhhhhhhNTT%%
    39 %%.........................NNNNNNNNDNNNNNNNNTT%%
    38 %%..................b.........i..i===..i......%%
    37 %%......=============================.........%%
@@ -128,14 +132,14 @@ Scale **1 character = 1 m**, north (+z) up, x axis below (generated from the ele
     7 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     6 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
       |.......|.......|.......|.......|.......|.......
-  x:  -120    -112    -104    -96     -88     -80
+  x:  -120    -112    -104    -96     -88     -80     
 ```
 
 | Char | Meaning | Char | Meaning |
 |---|---|---|---|
 | `%` | tall hedge (level edge) | `=` | path (entry, plaza, loop, links) |
-| `M` / `b` | map board / bench | `F` `f` `D` | food hut `food_storage_n2` / its floor / its door (the plaza is east of it) |
-| `N` `h` `D` | terrarium house walls / visitor hall / door (z 39, x −85) | `s` `c` `f` (rows 44–48) | terrarium snake / chameleon / frog (indoor enclosures; `g` = glass gate) |
+| `M` / `b` | map board / bench | `F` `f` `D` | food hut `food_storage_n2` walls / floor / door (the plaza is east of it) |
+| `N` `h` `D` | terrarium house walls / visitor hall / door (z 39, x −85) | `s` `c` `r` | terrarium snake / chameleon / frog (indoor enclosures, z 44-51; `g` = glass gate) |
 | `i` | info board (board lamp) | `T` | dense old-tree grove / `trees_n2_ne` |
 | `W` | low stone wall (`loc_stone_wall`) | `k` | pumpkin patch (`loc_pumpkins`, scenery, walkable) |
 | `B` | upturned rowing boat (`loc_rowing_boat`) | `L` | lantern tree (`loc_lanterns`) |
@@ -143,8 +147,7 @@ Scale **1 character = 1 m**, north (+z) up, x axis below (generated from the ele
 | `z` | stepping stones on wet moss (`loc_stepping_stones`, scenery, walkable) | `n` | fern glade (`loc_ferns`, scenery, walkable) |
 | `R` | rain barrel under a little eave (`loc_rain_barrel`) | `.` | grass (walkable, slower) |
 
-In the rows 44–48 the letters `s`, `c`, `f` are the three terrariums; the `f` inside the hut (rows 27–30) is the hut floor
-(`F` = hut walls); `h` is the visitor hall. The hedge cells at x −74…−73 are the east border.
+In the rows 44–51 the letters `s`, `c`, `r` are the three terrariums; the `f` inside the hut (rows 27–30) is the hut floor (`F` = hut walls); `h` is the visitor hall. The hedge cells at x −74…−73 are the east border (generated from `night-2.toml`).
 East of x −73 (not drawn): the night_1 west hedge with the gate at z 25…26.
 
 ## Elements
@@ -153,41 +156,48 @@ Grid rect = `x, z, w, d`. Solid = every type except `path`. The table mirrors th
 
 | Id | Type | Grid rect (x, z, w, d) | Notes |
 |---|---|---|---|
-| `hedge_n2_west` | decoration (hedge) | −120, 6, 2, 48 | Level edge. |
-| `hedge_n2_south` | decoration (hedge) | −118, 6, 46, 2 | Level edge. |
-| `hedge_n2_north` | decoration (hedge) | −118, 52, 46, 2 | Level edge. |
+| `hedge_n2_west` | decoration (hedge) | −120, 6, 2, 48 | Level edge, permanent. |
+| `hedge_n2_south` | decoration (hedge) | −118, 6, 46, 2 | Level edge, permanent. |
+| `hedge_n2_north` | decoration (hedge) | −118, 52, 46, 2 | Level edge, permanent. |
 | `hedge_n2_east_s` | decoration (hedge) | −74, 8, 2, 17 | East edge south of the gate (behind it the night_1 west hedge). |
 | `hedge_n2_east_n` | decoration (hedge) | −74, 27, 2, 25 | East edge north of the gate. |
-| `path_n2_entry` | path (main) | −78, 25, 6, 2 | From the gate west to the plaza; cells (−73, 25…26) are the level entry. |
-| `path_n2_plaza` | path (plaza) | −87, 24, 9, 11 | Plaza under string lights; food boxes and the hut door on its west edge; `path_n2_house` north, `path_n2_s_link` south. |
-| `map_board_n2` | landmark (map_board) | −78, 27, 1, 2 | Picture map (silhouettes of snake, chameleon, frog, no text), board lamp. |
-| `bench_n2_plaza` | decoration (bench) | −77, 28, 2, 1 | |
-| `food_storage_n2` | building (food_hut) | −92, 26, 5, 6 | `door` (−88, 29), `interior` (−91, 27, 3, 4), enterable; boxes: see "Night food storage". |
-| `path_n2_house` | path (main) | −86, 35, 3, 4 | Plaza north to the house door (−85, 39). |
-| `terrarium_house` | building (terrarium_house) | −93, 39, 17, 5 | `interior` (−92, 40, 15, 4), `door` (−85, 39), `model_rect` (−93, 39, 17, 10). Enterable; roof cut away while the player stands on a hall or door cell. |
-| `enc_n2_snake` | enclosure | −93, 44, 6, 5 | gate (−91, 44, 2, 1), `indoor = true`, `terrarium = true`, `pair = true`, `home_wander_on = ["grass"]` (sand/earth floor). |
-| `enc_n2_chameleon` | enclosure | −87, 44, 5, 5 | gate (−86, 44, 2, 1), same flags. |
-| `enc_n2_frog` | enclosure | −82, 44, 6, 5 | gate (−80, 44, 2, 1), same flags. |
-| `board_n2_snake` | decoration (info_board) | −90, 38, 1, 1 | `mount = "wall"`, outside the house on the south wall, board lamp. |
-| `board_n2_chameleon` | decoration (info_board) | −87, 38, 1, 1 | `mount = "wall"`, left of the door path, board lamp. |
-| `board_n2_frog` | decoration (info_board) | −81, 38, 1, 1 | `mount = "wall"`, right of the door path, board lamp. |
-| `trees_n2_ne` | decoration (tree_grove) | −76, 39, 2, 13 | dense, bush border, between house and east hedge. |
-| `bench_n2_ring` | decoration (bench) | −100, 38, 1, 1 | resting point on the north ring (replaces the night_1 telescope). |
+| `path_n2_entry` | path (main) | −78, 25, 6, 2 | From the gate west to the plaza; cells (-73, 25..26) are the level entry. |
+| `path_n2_plaza` | path (plaza) | −87, 24, 9, 11 | Plaza under string lights; food boxes and the hut door on its west edge, path to the terrarium house north, s_link south. |
+| `map_board_n2` | landmark (map_board) | −78, 27, 1, 2 | Picture map of the terrarium garden (silhouettes of snake, chameleon and frog, no text), with a board lamp. |
+| `bench_n2_plaza` | decoration (bench) | −77, 28, 2, 1 |  |
+| `food_storage_n2` | building (food_hut) | −92, 26, 5, 6 | `door` (−88, 29); `interior` (−91, 27, 3, 4). Small wooden food hut (copy of food_storage_n1), enterable: `interior` (-91, 27, 3, 4), door (-88, 29) on the east facade; basic foods in front of its east facade, the two treat boxes inside at its west wall (Q-336). A fridge prop for the frozen insects needs a model (not yet made). |
+| `path_n2_house` | path (main) | −86, 35, 3, 4 | From the plaza north to the terrarium-house door (-85, 39). |
+| `terrarium_house` | building (terrarium_house) | −93, 39, 17, 5 | `door` (−85, 39); `interior` (−92, 40, 15, 4); `model_rect` (−93, 39, 17, 13). Terrarium house: the same plan as the night house (hall + three glass-fronted terrariums along the north side) with a warm interior. Stand-in model: the night_house model until a conservatory model exists (kit_buildings spec `terrarium_house`). |
+| `enc_n2_snake` | enclosure | −93, 44, 6, 8 | gate (−91, 44, 2, 1); `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, warm amber heat lamp: sandy floor, a warm flat rock, a branch to coil on, a water dish. No riddle detail of any hiding place inside. |
+| `enc_n2_chameleon` | enclosure | −87, 44, 5, 8 | gate (−86, 44, 2, 1); `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, violet UV-style light: tall leafy branches, a hanging vine, a leaf dish. No riddle detail of any hiding place inside. |
+| `enc_n2_frog` | enclosure | −82, 44, 6, 8 | gate (−80, 44, 2, 1); `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, moist teal light: large leaves, a mossy log, a shallow dish, fine mist. No riddle detail of any hiding place inside. |
+| `board_n2_snake` | decoration (info_board) | −90, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_snake`; board lamp. Outside the terrarium house on its south wall; board lamp. |
+| `board_n2_chameleon` | decoration (info_board) | −87, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_chameleon`; board lamp. Outside the terrarium house on its south wall; board lamp. |
+| `board_n2_frog` | decoration (info_board) | −81, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_frog`; board lamp. Outside the terrarium house on its south wall; board lamp. |
+| `trees_n2_ne` | decoration (tree_grove) | −76, 39, 2, 13 | `density = "dense"`. Old round trees between the house and the east hedge. |
+| `bench_n2_ring` | decoration (bench) | −100, 38, 1, 1 | Resting point on the north ring (there is no telescope in night_2, Q-367). |
 | `path_n2_ring_n` | path (main) | −112, 35, 26, 3 | North ring from the house path west; passes the boards. |
 | `path_n2_ring_w` | path (main) | −112, 13, 3, 22 | West side of the loop. |
-| `path_n2_ring_s` | path (main) | −109, 13, 25, 3 | South side of the loop (x −109…−85). |
+| `path_n2_ring_s` | path (main) | −109, 13, 25, 3 | South side of the loop (x -109..-85). |
 | `path_n2_s_link` | path (main) | −87, 16, 3, 8 | From the south ring north to the plaza. |
-| `grove_n2_center` | decoration (tree_grove) | −107, 18, 13, 15 | dense, bush border: the hidden middle (old round trees; no palm, no lanterns). |
-| `grove_n2_north` | decoration (tree_grove) | −105, 41, 12, 11 | dense, bush border. |
-| `stone_wall_n2` | decoration (stone_wall) | −118, 11, 5, 1 | Low dry wall of flat grey stacked stones with moss in the gaps (`loc_stone_wall`); only stone wall in the night zoo. |
-| `pumpkin_patch_n2` | scenery (pumpkin_patch) | −118, 19, 4, 3 | walkable; 7 big round orange pumpkins on creeping vines (`loc_pumpkins`). |
-| `rowing_boat_n2` | decoration (rowing_boat) | −118, 31, 3, 2 | Old wooden rowing boat, blue, upside down on the grass, two oars leaning on it (`loc_rowing_boat`). |
-| `lantern_tree_n2` | decoration (lantern_tree) | −105, 8, 2, 2 | Tree with a spreading low crown hung with 20 colourful paper lanterns on strings (`loc_lanterns`; their own soft glow). |
-| `palm_tree_n2` | decoration (palm_tree) | −100, 10, 1, 1 | Slim palm (4 m), no branches, fan leaves, coconuts (`loc_palm`). |
-| `vine_arch_n2` | decoration (vine_arch) | −76, 16, 2, 2 | Wooden gate arch overgrown with green creepers, pink flowers, a crossbar (`loc_vine_arch`). |
-| `stepping_stones_n2` | scenery (stepping_stones) | −88, 9, 4, 2 | walkable; round smooth plates over a wet moss patch, small trickle (`loc_stepping_stones`). |
-| `fern_glade_n2` | scenery (fern_glade) | −116, 42, 3, 3 | walkable; head-high giant ferns around an old stump, light mist (`loc_ferns`). |
-| `rain_barrel_n2` | decoration (rain_barrel) | −110, 48, 2, 2 | Big wooden barrel with iron rings under a small eave and drain pipe; drips (`loc_rain_barrel`). |
+| `grove_n2_center` | decoration (tree_grove) | −107, 18, 13, 15 | `density = "dense"`. The hidden middle: old round trees (no palm, no lanterns). |
+| `grove_n2_north` | decoration (tree_grove) | −105, 41, 12, 11 | `density = "dense"`. Old round trees north of the ring, up to the house wall. |
+| `stone_wall_n2` | decoration (stone_wall) | −118, 11, 5, 1 | Low dry wall of flat grey stacked stones with moss in the gaps (loc_stone_wall); the only stone wall in the night zoo. |
+| `rowing_boat_n2` | decoration (rowing_boat) | −118, 31, 3, 2 | Old wooden rowing boat, blue, upside down on the grass, two oars leaning on it (loc_rowing_boat). |
+| `lantern_tree_n2` | decoration (lantern_tree) | −105, 8, 2, 2 | Tree with a spreading low crown hung with 20 colourful paper lanterns (loc_lanterns). |
+| `palm_tree_n2` | decoration (palm_tree) | −100, 10, 1, 1 | Slim palm (4 m), no branches, fan leaves, coconuts (loc_palm). |
+| `vine_arch_n2` | decoration (vine_arch) | −76, 16, 2, 2 | Wooden gate arch overgrown with green creepers, pink flowers, a crossbar (loc_vine_arch). |
+| `rain_barrel_n2` | decoration (rain_barrel) | −110, 48, 2, 2 | Big wooden barrel with iron rings under a small eave and drain pipe; drips (loc_rain_barrel). |
+
+## Scenery (non-solid `[[scenery]]` entries of the hiding places)
+
+Walkable ground dressing a riddle relies on; not elements (LAYOUT-N2-004 checks them against `[[scenery]]`).
+
+| Id | Type | Grid rect (x, z, w, d) | Notes |
+|---|---|---|---|
+| `pumpkin_patch_n2` | scenery (pumpkin_patch) | −118, 19, 4, 3 | place `loc_pumpkins`. Seven big round orange pumpkins on creeping vines with huge rough leaves; walkable. The only pumpkins in the zoo. |
+| `stepping_stones_n2` | scenery (stepping_stones) | −88, 9, 4, 2 | place `loc_stepping_stones`. Round smooth plates over a wet moss patch, small trickle; walkable. No river, pond or bridge (riddle guards). |
+| `fern_glade_n2` | scenery (fern_glade) | −116, 42, 3, 3 | place `loc_ferns`. Head-high giant ferns around an old stump, light mist; walkable. No mushrooms, no moss ring (riddle guards). |
 
 ## Terrarium house
 
@@ -196,8 +206,8 @@ conservatory look with plants climbing the window frames; **warm, lit interior**
 no scary darkness. The door (−85, 39) stands at the north end of `path_n2_house` (a street, GAME-LAYOUT rule 8).
 
 ```
- z 48  ssssssccccc ffffff      terrariums (indoor enclosures, glass fronts at z 44)
- z 44  ss gg ss c gg cc ff gg ff    gg = glass door / gate (2 m)
+ z 51  ssssss ccccc rrrrrr      terrariums (indoor enclosures z 44-51, glass fronts at z 44)
+ z 44  ss gg ss c gg cc rr gg rr    gg = glass door / gate (2 m)
  z 43  hall  x -92..-78 (15 x 4 m, surface path)   ← visitor hall
  z 40  hall
  z 39  wall .... .... D(-85) .... ....            ← south wall, door at x -85
@@ -206,14 +216,14 @@ no scary darkness. The door (−85, 39) stands at the north end of `path_n2_hous
 
 | Terrarium | Rect | Gate (hall side) | Light | Inside (riddle guards: nothing of any riddle place) |
 |---|---|---|---|---|
-| `enc_n2_snake` | (−93, 44, 6, 5) | (−91, 44, 2, 1) | warm amber `#F2A93B` (heat lamp) | sandy floor, a warm flat rock, a branch to coil on, a small water dish — no stones stacked as a wall, no pumpkins, no boat |
-| `enc_n2_chameleon` | (−87, 44, 5, 5) | (−86, 44, 2, 1) | violet UV-style `#9B6BE0` | tall leafy branches and a hanging vine from the ceiling, a leaf dish — no lanterns, no palm, no arch |
-| `enc_n2_frog` | (−82, 44, 6, 5) | (−80, 44, 2, 1) | moist teal `#3CC7A0` | large leaves, a mossy log, a shallow dish, fine mist — no ferns, no barrel, no stepping plates |
+| `enc_n2_snake` | (−93, 44, 6, 8) | (−91, 44, 2, 1) | warm amber `#F2A93B` (heat lamp) | sandy floor, a warm flat rock, a branch to coil on, a small water dish — no stones stacked as a wall, no pumpkins, no boat |
+| `enc_n2_chameleon` | (−87, 44, 5, 8) | (−86, 44, 2, 1) | violet UV-style `#9B6BE0` | tall leafy branches and a hanging vine from the ceiling, a leaf dish — no lanterns, no palm, no arch |
+| `enc_n2_frog` | (−82, 44, 6, 8) | (−80, 44, 2, 1) | moist teal `#3CC7A0` | large leaves, a mossy log, a shallow dish, fine mist — no ferns, no barrel, no stepping plates |
 
 - **Terrarium case (props, Q-333):** the case is the enclosure rect behind a **glass front** along z 44: a translucent pale-blue pane (alpha 0.25,
   no refraction; bright white frame lines and a few "shine" streaks; style = the existing `glass_door` model, drawn with the same blended pass, outlines only on the frame). Proposed models: `terrarium_front` (glass front wall segment, 1 m modules, ≤ 40 tris), `terrarium_frame` (case posts + lintel + lamp rail), `terrarium_lamp` (heat / UV lamp, emissive), `terrarium_rock_warm`, `terrarium_branch`, `terrarium_leaf_big`, `terrarium_moss_log`, `terrarium_dish`, `mist_puff` (billboard sprite). Their gates are the existing `glass_door`; no new door mechanism.
 - **How animals enter:** exactly like hedgehog, bat and owl: the player leads the following pair through the door (−85, 39), along the hall (4 m wide), the gate opens while she leads animals within 3 m (`Game::opening_open`, 1.5 s behind them) and the animals step onto their home cells. The snake slithers (0.9 m/s home wander ≈ 0.5), the frog hops, the chameleon walks (quadruped rig).
-- **Feed spot / stand cells (GAME-GARDEN 6a):** the child stands in the hall in front of the glass (hall cells z 43): `feed_spot` derived per case on the **gate side** (2 cells inside the glass on the gate edge: snake (−91, 44, 2, 1)…, derived when absent). Giving works through the glass at ≤ 2 m; the child never enters a terrarium. Pair gap (centre to centre): snake 1.0 m, chameleon 0.7 m (perch pair offset), frog 0.5 m; every case has ≥ 12 home cells (25–30).
+- **Feed spot / stand cells (GAME-GARDEN 6a):** the child stands in the hall in front of the glass (hall cells z 43): `feed_spot` derived per case on the **gate side** (2 cells inside the glass on the gate edge: snake (−91, 44, 2, 1)…, derived when absent). Giving works through the glass at ≤ 2 m; the child never enters a terrarium. Pair gap (centre to centre): snake 1.0 m, chameleon 0.7 m (perch pair offset), frog 0.5 m; every case has ≥ 12 home cells (48, 40, 48 cells).
 - **Collision / walkway:** hall interior and door are walkable path cells; the 4 m hall leaves ≥ 2 m free beside a following animal; nothing solid within 0.9 m beside the door posts (LAYOUT-038), diagonal approaches from 3 m stay free (LAYOUT-034), boards are wall-mounted and non-solid (Q-157, LAYOUT-032/041).
 - **Info boards outside** (as Q-134): each facing south onto `path_n2_ring_n` / `path_n2_house`, with a board lamp; the panel shows riddle, **basic food and treat lines** (GAME-FEED "Info board"), facts and the pair note.
 - **Indoor lights** `[[light]] kind = "indoor"`: three case lights (colours above) and one warm hall light.
@@ -221,7 +231,7 @@ no scary darkness. The door (−85, 39) stands at the north end of `path_n2_hous
 
 ## Night food storage
 
-`food_storage_n2` (−92, 26, 5, 6), door (−88, 29) east, interior (−91, 27, 3, 4): a copy of `food_storage_n1` shifted by −48 in x and with a small **fridge** prop (`fridge`, GAME-ECON model, snowflake sticker) at the back wall. Boxes (GAME-FEED §7, Q-181/Q-194 rules):
+`food_storage_n2` (−92, 26, 5, 6), door (−88, 29) east, interior (−91, 27, 3, 4): a copy of `food_storage_n1` shifted by −48 in x; a small **fridge** prop (`fridge`, GAME-ECON model, snowflake sticker) at the back wall is planned and waits for its model (the frozen-insects box stands inside at the back wall without it). Boxes (GAME-FEED §7, Q-181/Q-194 rules):
 
 - **Outside**, plaza west row x −86.66, labels east, z 26.0 / 26.65 / 27.3 / 27.95: *Fisch / fish* (`fish`), *Grillen / crickets* (`crickets`), *Fliegen / flies* (`flies`) and the distractor *Käfer / beetles* (`beetles`). These are the **basic foods** of the level (and the crickets are also the frog's treat).
 - **Inside** on the plank platform at the back wall (x −91.44, z 28.2 and 29.8) and at the fridge: *Eier / eggs* (`eggs`, snake treat), *Frostinsekten / frozen insects* (`frozen_insects`, chameleon treat, stands at the fridge). Treat-only foods stand **inside** (Q-336): the child looks for the treat after reading "Leckerli" on the board; the hut door and the hint lead there.
@@ -262,9 +272,9 @@ All nine have ≥ 9 cells (≥ 11), a cell ≥ 2 m from the spot, no solid or pa
 
 One animal's riddles never share their key detail: snake = warm stacked stones vs. round orange fruit vs. a blue upturned boat; chameleon = coloured lights vs. fan leaves and nuts vs. flowering creeper curtains; frog = squelchy plates vs. giant ferns and mist vs. drips and a barrel. No riddle contains a `kiga` word of any day place or of its own/any night place (MISS-013).
 
-## Riddles and facts (texts to be put into `assets/i18n/{de,en}/night.ftl` after approval)
+## Riddles and facts (texts in `assets/i18n/{de,en}/terrarium.ftl`)
 
-Key pattern as night_1: `mission-<animal>-riddle-<place>-<reading_level>`, `mission-<animal>-facts-<reading_level>`, `animal-<animal>` (+ `-more`), `mission-<animal>-home` (plural), `food-<id>`, `sign-terrarium-house`. `klasse1` sentences have ≤ 5 words, `kiga` is one word shown next to a picture.
+Key pattern as night_1 (the file `terrarium.ftl` also holds `board-treat-<level>`, `welcome-level-night_2-<level>`, `map-level-night_2`, `hint-night-gate`): `mission-<animal>-riddle-<place>-<reading_level>`, `mission-<animal>-facts-<reading_level>`, `animal-<animal>` (+ `-more`), `mission-<animal>-home` (plural), `food-<id>`, `sign-terrarium-house`. `klasse1` sentences have ≤ 5 words, `kiga` is one word shown next to a picture.
 
 Names: `animal-snake` Schlange / snake · `animal-chameleon` Chamäleon / chameleon · `animal-poison_dart_frog` Pfeilgiftfrosch / poison dart frog (short `kiga` word "Frosch" / "frog") · `sign-terrarium-house` Terrarienhaus / terrarium house · homes: "Super! Die Schlangen sind wieder zu Hause." / "Great! The snakes are home again." (chameleons, frogs likewise).
 
@@ -346,15 +356,17 @@ Names: `animal-snake` Schlange / snake · `animal-chameleon` Chamäleon / chamel
 | | klasse2 | Der Frosch sitzt neben einem großen Fass aus Holz. Von einem kleinen Dach tropft es hinein: tipp, tipp, tipp. | The frog sits next to a big wooden barrel. Water drips into it from a little roof: tip, tip, tip. |
 | | klasse3 | Unter einem kleinen Vordach steht ein großes, rundes Fass aus Holz mit dunklen Eisenringen. Aus dem Rohr tropft es gleichmäßig hinein: tipp, tipp, tipp. Am Rand lehnt ein großes Blatt, und genau darunter sitzt der Frosch und hört zu. | Under a small eave stands a big round wooden barrel with dark iron rings. Water drips in steadily from the pipe: tip, tip, tip. A big leaf leans against the rim, and right underneath it sits the frog, listening. |
 
-Info-board food lines (new, GAME-FEED "Info board"): de "Grundfutter: Fisch · Leckerli: Eier" (snake), "Grundfutter: Grillen · Leckerli: Frostinsekten" (chameleon), "Grundfutter: Fliegen · Leckerli: Grillen" (frog); en "Basic food: fish · Treat: eggs", "Basic food: crickets · Treat: frozen insects", "Basic food: flies · Treat: crickets".
+*English riddle wording differs slightly from the table where an English `kiga` word would otherwise occur in a riddle (RESC-011 / MISS-013, `night2_riddles_never_name_a_place`): `stones` → `rocks` (snake), `lanterns` → `paper lamps`, `barrel` → `tub`, `arch` / `fan` sentences shortened to ≤ 5 words (READ-002); the German texts are as in the tables.*
+
+Info-board treat line (implemented as a prefix line before the facts: `board-treat-<level>` + the treat's food word; the basic food keeps its existing line): de "Leckerli: Eier", en "Treat: eggs"; the planned combined wording of GAME-FEED "Info board": de "Grundfutter: Fisch · Leckerli: Eier" (snake), "Grundfutter: Grillen · Leckerli: Frostinsekten" (chameleon), "Grundfutter: Fliegen · Leckerli: Grillen" (frog); en "Basic food: fish · Treat: eggs", "Basic food: crickets · Treat: frozen insects", "Basic food: flies · Treat: crickets".
 
 ## Barrier (edit of night_1)
 
 | Id | Kind | Cells | Unlock | In-world explanation |
 |---|---|---|---|---|
-| `barrier_n1_garden` | closed gate (a wooden garden gate in the west hedge of night_1, with a lantern, a moon sign and a small padlock; model `gate_zoo`-style small gate, Q-331) | night_1 (−72, 25, 2, 2) | `unlock_after = "night_1"`, `opens_at = "night"` | "Terrarium garden — opens when the first night animals are home": the sign shows moon + three small silhouettes (snake, chameleon, frog) + a lock; the padlock springs open and the lantern turns green when night_1 is complete. Never invisible, never a wall. |
+| `barrier_n1_garden` | `closed_gate` (a wooden garden gate in the west hedge of night_1, with a lantern, a moon sign and a small padlock; stand-in model: the `gate_zoo` level gate at the entry, Q-331) | night_1 (−72, 25, 2, 2) | `unlock_after = "night_1"`, `opens_at = "night"` | "Terrarium garden — opens when the first night animals are home": the sign shows moon + three small silhouettes (snake, chameleon, frog) + a lock; the padlock springs open and the lantern turns green when night_1 is complete. Never invisible, never a wall. |
 
-Edits in `night-1.toml` (spec rows in night-1.md): `hedge_n1_west` split into (−72, 6, 2, 19) and (−72, 27, 2, 27); new `path_n1_gate` (path, main) (−70, 25, 6, 2) from `path_n1_ring_w` west through the free band between `loc_flowerpots` (z 18…23) and `loc_mushrooms` (z 27…33); one lantern post at (−66, 24.7). The band z 24…26 holds no wander cell, so LAYOUT-N1-006/007/008 stay valid.
+Edits in `night-1.toml` (spec rows in night-1.md, LAYOUT-N1-014): `hedge_n1_west` shortened to (−72, 6, 2, 19) and the new `hedge_n1_west_n` (−72, 27, 2, 27) (the old id keeps the south part: `loc_brush_pile` names it as scenery); new `path_n1_gate` (path, main) (−72, 25, 8, 2: the street runs under the gate cells, LAYOUT-040) from `path_n1_ring_w` west through the free band between `loc_flowerpots` (z 18…23) and `loc_mushrooms` (z 27…33); one lantern `n1_lantern_gate` at (−66.5, 25.25) (inside the path edge) post at (−66, 24.7). The band z 24…26 holds no wander cell, so LAYOUT-N1-006/007/008 stay valid.
 
 ## Walking and pacing
 
@@ -379,7 +391,7 @@ Every place has a neighbour ≤ 10 s; board → own spot 15–30 s (places far o
 
 ## Lights
 
-`[[light]]`: 8 lantern posts along entry, loop and links (≥ 0.25 m inside the path edge, outside hiding rects and scenery), two string lights over the plaza, wall lamps at the house door and hut door, board lamps ×4 (three boards + map board), indoor lights ×4 (hall + three terrariums, colours above), the lantern tree's own 20 lamps (emissive props, no lights), one lantern at the gate. The hiding places have no lantern of their own (the player's hand lantern finds the shining eyes; eyeshine is real for chameleon and frog).
+`[[light]]`: 10 lantern posts along entry, loop and links (≥ 0.25 m inside the path edge, outside hiding rects and scenery), two string lights over the plaza, wall lamps at the house door and hut door, board lamps ×4 (three boards + map board), indoor lights ×4 (hall + three terrariums, colours above), the lantern tree's own 20 lamps (emissive props, no lights), one lantern at the gate (`n1_lantern_gate` in night-1.toml). The hiding places have no lantern of their own (the player's hand lantern finds the shining eyes; eyeshine is real for chameleon and frog).
 
 ## Never stuck (binding)
 
@@ -426,6 +438,10 @@ Brief to write (art agent, not touched here): `art/environment/env_terrarium_hou
 | LAYOUT-N2-009 | Given `terrarium_house`, interior and door walkable `path`, each indoor terrarium has its gate edge-adjacent to an interior cell, `model_rect` contains hall and cases, `terrarium = true` on the three enclosures. | unit |
 | LAYOUT-N2-010 | Given the food boxes of night_2: outside `fish`, `crickets`, `flies`, `beetles`; inside `eggs`, `frozen_insects`; each with a reachable standing cell within 2 m. | unit |
 | LAYOUT-N2-011 | Given the lights, same checks as LAYOUT-N1-011 (posts, board lamps, indoor lights with the colours above). | unit |
+| LAYOUT-N2-015 | Given the new foods, animals, places and the lantern-gate hint, then the host has an icon for each (no reading needed). | vitest |
+| NIGHT-N2-001 | Given the zoo with night_2, then the texts of every riddle (9 places x 4 reading levels), the facts, names, homes, six food words, the treat line, welcome, map and gate-hint texts exist in de and en; no klasse1..3 riddle contains the `kiga` word of any night place or a food word (RESC-011 / MISS-007 / MISS-013). | unit |
+| NIGHT-N2-002 | Given the garden: the pairs start together a gap apart (40 seeds), places and terrariums fit two adults and a baby, the basic food makes both follow and enter, a treat or wrong food does not (FAM-021..026, FEED-37). | unit |
+| NIGHT-N2-003 | Given a pair at home, then the basic food gives hearts and no baby, the treat exactly one baby (once, saved), a wrong food is refused; the info board names the treat (FEED-38, FAM-031 for the three species). | unit |
 | LAYOUT-N2-012 | Given night_1 complete, when the player walks west through `path_n1_gate`, then she stands on `path_n2_entry`; the night_2 missions are in scope and the compass strip shows 3 icons (snake, chameleon, frog). | e2e |
 | LAYOUT-N2-013 | Given the glass terrarium fronts in the zoo and first-person views, then the animals are visible through the glass and the gate opens when a pair is led (door/gate rows LAYOUT-034). | e2e |
 | LAYOUT-N2-014 | Given the layout-true mockups, a reviewer names each place's clue without text; nothing is scary (NIGHT-009); the poison dart frog is shown friendly. | manual |
@@ -433,10 +449,9 @@ Brief to write (art agent, not touched here): `art/environment/env_terrarium_hou
 
 Further rows: NIGHT-030..032 (night.md), HINT-024/025 (hints.md), FAM-031/032 (families.md), FEED-036..044 (feeding.md), FAM/ANIM rows for the species.
 
+**Implemented tests (2026-10-04):** `crates/zoo-core/tests/night2_layout.rs` (LAYOUT-N2-001…011, LAYOUT-N1-014), `night2_game.rs` (NIGHT-030, NIGHT-031 compass, NIGHT-032, NIGHT-N2-002/003, HINT-025 states), `night2_content.rs` (NIGHT-N2-001), `hints.rs` (HINT-025 / NIGHT-031 following the hints through the garden with messy states and save/restore; HINT-027 loop detector inside), `web/src/ui.test.ts` (LAYOUT-N2-015), e2e `web/tests/e2e/night2.spec.ts` (LAYOUT-N2-012/013). **Not covered yet:** FEED-036 / 039 / 040 / 041 / 042 / 044 and FAM-032 for the 13 older species (the basic-food / treat rule is built for the three new species only; FEED-043 is covered by the 20 pictograms).
+
 ## Open questions
 
-- Q-330 night_2 as a separate level (recommended) vs. cramming into `night_1` (impossible with the numbers above).
-- Q-331 gate position/kind/unlock (`opens_at = "night"` right after night_1 is done).
-- Q-332 night_2 is optional and never blocks level 2 / sleeping.
-- Q-333 terrarium flag + glass look + models.
-- Q-334..Q-352: foods, basic/treat model, info board, babies: see open-questions.md.
+- Q-330…Q-339, Q-350…Q-352 answered 2026-10-04 ("implement as recommended"); see open-questions.md.
+- Open for the user: the 16-species treat rule for the older species (Q-350 table), the glass-case look and the real house model, the fridge prop and the nine scenery models (see "Mockups and art"), sign silhouettes for snake / chameleon / frog.

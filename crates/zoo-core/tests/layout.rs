@@ -920,8 +920,8 @@ fn layout_l1_020_layout_020_hippo_pool_and_home_area() {
     let water = area.cells().filter(|(_, k)| *k != AreaCell::Land).count();
     assert_eq!(
         (land, water),
-        (55, 56),
-        "GAME-LEVEL-1: 55 grass + 56 pool cells"
+        (59, 56),
+        "GAME-LEVEL-1 / GAME-HOUSE: 59 grass (hut interior and door included) + 56 pool cells"
     );
     assert!(pool.rect.cells().all(|c| area.contains(c)));
 }

@@ -108,14 +108,14 @@ fn night_001_dusk_after_the_last_celebration() {
     assert_eq!(g.daytime.light().night, 1.0);
 }
 
-// NIGHT-002: before nightfall the moon door is closed and the bed is not interactable; at
-// night the door is open (walkable) and the bed is.
+// NIGHT-002: before nightfall the moon door is closed; at night the door is open (walkable).
+// The bed works by day too (NIGHT-033, user report 2026-10-04).
 #[test]
 fn night_002_moon_door_and_bed_at_night() {
     let mut g = common::night_game(4);
     assert!(!door_walkable(&g));
     at_bed(&mut g);
-    assert_ne!(g.available_target(), Some(Target::Bed));
+    assert_eq!(g.available_target(), Some(Target::Bed));
     let mut g = night_game(4);
     assert!(door_walkable(&g), "the moon door is open at night");
     assert!(g.level_unlocked("night_1"));
@@ -533,4 +533,77 @@ fn layout_l2_018_level_2_bed() {
     g.player.facing = (bed.pos() - stand).normalize();
     assert!(g.debug_set_daytime("night"));
     assert_eq!(g.available_target(), Some(Target::Bed));
+}
+
+/// NIGHT-033 (user report 2026-10-04): by day the bed can always be used and sleeping leads to
+/// the evening — also when no night zoo waits; the 🧭 hint offers it by day only when sleeping
+/// moves the game on (night zoo waiting or exits pending).
+#[test]
+fn night_033_sleeping_by_day_always_works() {
+    let mut g = Game::new(common::zoo_with_night(), 5).unwrap();
+    assert_eq!(g.daytime.phase, Phase::Day);
+    assert!(!g.sleep_advances());
+    at_bed(&mut g);
+    assert!(g.bed_usable());
+    assert_eq!(g.available_target(), Some(Target::Bed));
+    let t = zoo_core::hints::HintTracker::default();
+    assert!(zoo_core::hints::candidates(&g, &t)
+        .iter()
+        .all(|h| h.kind != zoo_core::hints::HintKind::Bed));
+    assert!(g.sleep());
+    run(&mut g, SLEEP_S + DUSK_S + 1.0);
+    assert_eq!(g.daytime.phase, Phase::Night);
+    // pending exits make the bed a by-day hint target
+    let mut g = Game::new(common::zoo_with_night(), 5).unwrap();
+    g.daytime.pending_exits.push("night_1".into());
+    assert!(g.sleep_advances());
+    assert!(zoo_core::hints::candidates(&g, &t)
+        .iter()
+        .any(|h| h.kind == zoo_core::hints::HintKind::Bed));
+}
+
+/// HINT-030: level 1 solved, the exits pending, by day → the target is the bed, never "all done".
+#[test]
+fn hint_030_solved_level_with_pending_exits_points_to_the_bed() {
+    use zoo_core::hints::{candidates, what_next, HintKind, HintTracker};
+    let mut g = Game::new(common::zoo_with_night(), 5).unwrap();
+    for a in DAY_1 {
+        assert!(g.debug_send_home(a));
+    }
+    run(&mut g, CELEBRATION_S + DUSK_S + 1.0);
+    g.debug_set_daytime("day"); // the child is up again by day, the exits still pending
+    g.daytime.pending_exits.push("night_1".into());
+    let t = HintTracker::default();
+    assert_eq!(what_next(&g, &t), None);
+    assert_eq!(
+        candidates(&g, &t).first().map(|h| h.kind),
+        Some(HintKind::Bed)
+    );
+}
+
+/// NIGHT-034: at night the baby of a day pair at home stands still (no route, no hop).
+#[test]
+fn night_034_babies_of_day_animals_sleep_at_night() {
+    let id = "zebra";
+    let g0 = common::night_game(12);
+    let mut save = g0.to_save();
+    save.babies = vec![id.to_string()];
+    let mut g = Game::from_save(common::zoo_with_night(), &save).expect("restores");
+    assert!(g.debug_send_home(id));
+    for _ in 0..600 {
+        g.update(DT, Vec2::ZERO);
+    }
+    assert!(g.debug_set_daytime("night"));
+    for _ in 0..120 {
+        g.update(DT, Vec2::ZERO);
+    }
+    let b = g.baby_states.get(id).expect("baby");
+    assert!(b.route.is_empty());
+    assert_eq!(b.play.hop, 0.0);
+    assert_eq!(g.rest_clip(g.animal(id).unwrap()), "sleep");
+    let p0 = b.pos;
+    for _ in 0..300 {
+        g.update(DT, Vec2::ZERO);
+    }
+    assert_eq!(g.baby_states.get(id).unwrap().pos, p0);
 }

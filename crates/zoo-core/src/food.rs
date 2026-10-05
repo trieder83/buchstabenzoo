@@ -24,10 +24,22 @@ pub enum Food {
     Worms,
     /// Night zoo (later night levels: slow loris — Q-135).
     Nectar,
+    /// Night zoo `night_2` (GAME-FEED "Basic food and treats"): basic food of the snake.
+    Fish,
+    /// Basic food of the chameleon, treat of the poison dart frog.
+    Crickets,
+    /// Basic food of the poison dart frog.
+    Flies,
+    /// Treat of the snake.
+    Eggs,
+    /// Treat of the chameleon.
+    FrozenInsects,
+    /// Treat of the lion (box inside the level-2 storage, not stocked yet).
+    Bone,
 }
 
 impl Food {
-    pub const ALL: [Food; 14] = [
+    pub const ALL: [Food; 20] = [
         Food::Grass,
         Food::Melons,
         Food::Bamboo,
@@ -42,6 +54,12 @@ impl Food {
         Food::Fruit,
         Food::Worms,
         Food::Nectar,
+        Food::Fish,
+        Food::Crickets,
+        Food::Flies,
+        Food::Eggs,
+        Food::FrozenInsects,
+        Food::Bone,
     ];
 
     /// Foods of the day zoo (the day food storages, GAME-FEED).
@@ -74,11 +92,27 @@ impl Food {
             Food::Fruit => "fruit",
             Food::Worms => "worms",
             Food::Nectar => "nectar",
+            Food::Fish => "fish",
+            Food::Crickets => "crickets",
+            Food::Flies => "flies",
+            Food::Eggs => "eggs",
+            Food::FrozenInsects => "frozen_insects",
+            Food::Bone => "bone",
         }
     }
 
     /// Foods of the night zoo (the night food storage, GAME-NIGHT rule 5).
     pub const NIGHT: [Food; 4] = [Food::Beetles, Food::Fruit, Food::Worms, Food::Nectar];
+
+    /// Foods of the terrarium garden's storage (night_2: basic foods and treats, GAME-FEED
+    /// "Basic food and treats"); `beetles` stands there as a distractor.
+    pub const NIGHT_2: [Food; 5] = [
+        Food::Fish,
+        Food::Crickets,
+        Food::Flies,
+        Food::Eggs,
+        Food::FrozenInsects,
+    ];
 
     pub fn from_id(id: &str) -> Option<Food> {
         Food::ALL.into_iter().find(|f| f.id() == id)
@@ -114,9 +148,11 @@ pub fn pictogram_scale(level: ReadingLevel) -> f32 {
 
 /// Texture id of the shared food label atlas (host-rendered, FEED-030).
 pub const ATLAS_TEXTURE: &str = "text:food-atlas";
-/// Size of the food label atlas in px: 14 lid cells (128 x 128, 8 per row) on top, 14 front
-/// cells (256 x 64, 4 per row) below. 1024 x 512 RGBA8 = 2 MB for ALL boxes.
-pub const ATLAS_PX: (u32, u32) = (1024, 512);
+/// Size of the food label atlas in px: 20 lid cells (128 x 128, 8 per row, 3 rows) on top, 20
+/// front cells (256 x 64, 4 per row, 5 rows) below. 1024 x 704 RGBA8 = 2.9 MB for ALL boxes.
+pub const ATLAS_PX: (u32, u32) = (1024, 704);
+/// Top of the front cells (the lid rows above take 3 x 128 px).
+const ATLAS_FRONT_Y: u32 = 384;
 
 /// Which face of the crate an atlas cell is for.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -133,7 +169,7 @@ impl Food {
         let i = Food::ALL.iter().position(|f| *f == self).unwrap_or(0) as u32;
         match part {
             AtlasPart::Lid => [(i % 8) * 128, (i / 8) * 128, 128, 128],
-            AtlasPart::Front => [(i % 4) * 256, 256 + (i / 4) * 64, 256, 64],
+            AtlasPart::Front => [(i % 4) * 256, ATLAS_FRONT_Y + (i / 4) * 64, 256, 64],
         }
     }
 

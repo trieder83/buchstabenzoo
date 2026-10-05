@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-355** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-366** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-142 answered · 105 open · 10 other (partly answered / proposed / superseded).
+155 answered · 99 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -96,21 +96,15 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-340 — Visitor concept (5 types: mother, father, grandmother, girl ~7, boy ~5; briefs in art/characters/visitor_*/): approve the five designs and … (ART-CHARACTERS, ART-RIG, GAME-ECON)
 - Q-341 — Visitors' props (balloon, ice-cream cone, plush lion, camera, tote, backpack, sun hat/cap): separate rigid prop models on sockets … (ART-RIG, ART-CHARACTERS)
 - Q-342 — Adult proportions: the comic style keeps big heads, so the adults are ~1 : 5.5 (mother, father) and ~1 : 5 (grandmother) against the … (ART-CHARACTERS)
-- Q-330 — Terrarium house + snake, chameleon, poison dart frog (user request 2026-10-03): where? (GAME-LEVEL-NIGHT-2, GAME-LEVEL-NIGHT-1, GAME-NIGHT)
-- Q-331 — How does the child get to night_2? (GAME-LEVEL-NIGHT-1, GAME-LEVEL-NIGHT-2, GAME-NIGHT)
-- Q-332 — Is night_2 optional? Recommendation: yes — sleeping, the morning and level 2 never wait for it (barrier_ne_tree stays unlock_after = … (GAME-NIGHT, GAME-HINT)
-- Q-333 — Look of the terrarium house: enterable warm-lit house, three glass terrariums as indoor enclosures with a new flag terrarium = true, glass … (GAME-LEVEL-NIGHT-2, ART-ENVIRONMENT)
-- Q-334 — Food model (user request 2026-10-03): every species has BASIC food (box food that makes the escaped animal follow; hearts at home) and a … (GAME-FEED, GAME-FAMILY, GAME-GARDEN, GAME-ANIMALS)
-- Q-335 — Game sizes of the new animals: snake 1.2 m long, chameleon 0.5 m (concept brief 0.35 m), poison dart frog 0.4 m (real 4 cm; comic scale … (ART-ANIMALS)
-- Q-336 — Where do treat boxes stand? (GAME-FEED, GAME-LEVEL-NIGHT-2)
-- Q-337 — Bed near the terrarium garden? (GAME-NIGHT, GAME-LAYOUT)
-- Q-338 — Mark treat boxes with a star on the lid? (GAME-FEED)
-- Q-339 — Treat hint: keep the existing hint only when the child carries a treat of a home species without a baby (priority > 3, never the only … (GAME-HINT, GAME-FEED)
-- Q-350 — Treats of the species that had none (proposal, all from boxes already stocked in the species' level, except bone and the night_2 foods) … (GAME-FEED)
-- Q-351 — A treat shown to an ESCAPED animal: recommendation gentle "Hmm, später!" (no refusal sound, no follow, no penalty) — only the basic food … (GAME-RESCUE, GAME-FEED)
-- Q-352 — Info board and names: panel order name → riddle → basic line → treat line (⭐ marker, 🌱 garden / 📦 box source icon on kiga) → facts → pair … (GAME-FEED, GAME-ANIMALS, GAME-FAMILY)
 - Q-353 — The stall help hint (priority 1, after 120 s without progress) points at the missing animal even when the child holds no food … (GAME-HINT)
 - Q-354 — End of content (all animals of all levels home, level 4 not built): minimal friendly message next-all_done + 🎉 badge + free play (garden … (GAME-HINT, GAME-RESCUE (Q-031, Q-078))
+- Q-359 — Animal houses (user request 2026-10-04, GAME-HOUSE): data shape. (GAME-HOUSE, GAME-LAYOUT, glossary)
+- Q-360 — Which species get an animal house? (GAME-HOUSE, ART-ENVIRONMENT)
+- Q-361 — Animal house behaviour defaults: 2 of 10 wander targets are an interior cell, rest 8-20 s; at nightfall all home animals with a house go … (GAME-HOUSE, GAME-ANIMALS, GAME-NIGHT)
+- Q-362 — Positions of the seven houses (GAME-HOUSE "Houses per level"): the hippo hut grows from the reserved 4 x 4 to 5 x 4 (x 14-18) and the edge … (GAME-HOUSE, GAME-LEVEL-1, GAME-LEVEL-2)
+- Q-363 — Overview map instead of the explored-fog map (user request 2026-10-04: "a big map to get the overview, button in the settings"). (GAME-MAP)
+- Q-364 — All-done carousel (user request 2026-10-04): when every level is solved and the child taps the 🧭 target, show "You like educational … (GAME-ADS, GAME-HINT)
+- Q-365 — Secret trail through the middle grove of night_1 (user request 2026-10-04: "a hidden path to walk through, maybe an animal hiding spot"). (GAME-LEVEL-NIGHT-1, GAME-LAYOUT)
 
 ## Partly answered / other
 
@@ -127,6 +121,19 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-352 — Info board and names: panel order name → riddle → basic line → treat … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-351 — A treat shown to an ESCAPED animal: recommendation gentle "Hmm … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-350 — Treats of the species that had none (proposal, all from boxes already … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-339 — Treat hint: keep the existing hint only when the child carries a … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-338 — Mark treat boxes with a star on the lid? → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-337 — Bed near the terrarium garden? → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-336 — Where do treat boxes stand? → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-335 — Game sizes of the new animals: snake 1.2 m long, chameleon 0.5 m … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-334 — Food model (user request 2026-10-03): every species has BASIC food … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-333 — Look of the terrarium house: enterable warm-lit house, three glass … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-332 — Is night_2 optional? Recommendation: yes — sleeping, the morning and … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-331 — How does the child get to night_2? → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
+- Q-330 — Terrarium house + snake, chameleon, poison dart frog (user request … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
 - Q-326 — Camera views (GAME-CAMERA-VIEWS 3a): the one view button goes first … → user 2026-10-03: zoom out (direct pull-back from the eye to the view behind, CAMV-028)
 - Q-312 — Every bed inside an enterable building (user request 2026-10-01) … → 2026-10-01: "the bed should be inside the building, not outside".
 - Q-308 — Pairs for all animals (GAME-FAMILY): does every animal species … → 2026-10-01: yes — every animal incl. goldfish and night animals has a partner (pair = true for every enclosure; supersedes the …

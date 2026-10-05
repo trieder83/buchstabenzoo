@@ -1,0 +1,651 @@
+# Night level 2 layout data (the terrarium garden) - mirrors the element table in
+# specs/10-gameplay/levels/night-2.md (GAME-LEVEL-NIGHT-2). LAYOUT-N2-004 checks that ids and
+# rectangles agree with the spec.
+#
+# Frame: the plaza, hut, house and loop of night-1.toml SHIFTED 48 m WEST (same relative geometry);
+# all riddle places, scenery and the house contents are new. Reached only through the lantern
+# gate `barrier_n1_garden` in the west hedge of night_1 (opens the moment night_1 is complete,
+# Q-331, answered 2026-10-04 "implement as recommended"). Optional: nothing waits for it (Q-332).
+# rect = [x, z, w, d] -> covers cells x .. x+w-1, z .. z+d-1 (x/z = south-west corner).
+
+[level]
+id = "night_2"
+spec = "GAME-LEVEL-NIGHT-2"
+cell_size_m = 1.0
+bounds = [-120, 6, 48, 48]    # x -120..-73, z 6..53 - every border cell is solid except the [[entry]] cells
+ground_walkable = true
+ground_surface = "grass"
+missions = ["snake", "chameleon", "poison_dart_frog"]
+time = "night"
+
+[spawn]
+cell = [-76, 25]             # entry path, 3 m inside the lantern gate (used when a save is restored here without a position)
+facing = "-x"                # looks west into the garden: plaza and food hut ahead, terrarium house to the upper right
+camera_yaw = "-x"
+
+# Level entry: the cells edge-adjacent to the night_1 barrier `barrier_n1_garden`.
+[[entry]]
+id = "entry_n2_garden"
+cells = [-73, 25, 1, 2]
+from_level = "night_1"
+barrier = "barrier_n1_garden"
+
+# ---------------------------------------------------------------- outer limits: tall soft hedges all round (the gate gap in the east)
+[[element]]
+id = "hedge_n2_west"
+type = "decoration"
+kind = "hedge"
+rect = [-120, 6, 2, 48]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent."
+
+[[element]]
+id = "hedge_n2_south"
+type = "decoration"
+kind = "hedge"
+rect = [-118, 6, 46, 2]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent."
+
+[[element]]
+id = "hedge_n2_north"
+type = "decoration"
+kind = "hedge"
+rect = [-118, 52, 46, 2]
+blocks_view = true
+height_m = 3.0
+notes = "Level edge, permanent."
+
+[[element]]
+id = "hedge_n2_east_s"
+type = "decoration"
+kind = "hedge"
+rect = [-74, 8, 2, 17]
+blocks_view = true
+height_m = 3.0
+notes = "East edge south of the gate (behind it the night_1 west hedge)."
+
+[[element]]
+id = "hedge_n2_east_n"
+type = "decoration"
+kind = "hedge"
+rect = [-74, 27, 2, 25]
+blocks_view = true
+height_m = 3.0
+notes = "East edge north of the gate."
+
+# ---------------------------------------------------------------- entry, plaza, night food storage
+[[element]]
+id = "path_n2_entry"
+type = "path"
+kind = "main"
+rect = [-78, 25, 6, 2]
+notes = "From the gate west to the plaza; cells (-73, 25..26) are the level entry."
+
+[[element]]
+id = "path_n2_plaza"
+type = "path"
+kind = "plaza"
+rect = [-87, 24, 9, 11]
+notes = "Plaza under string lights; food boxes and the hut door on its west edge, path to the terrarium house north, s_link south."
+
+[[element]]
+id = "map_board_n2"
+type = "landmark"
+kind = "map_board"
+rect = [-78, 27, 1, 2]
+blocks_view = false
+notes = "Picture map of the terrarium garden (silhouettes of snake, chameleon and frog, no text), with a board lamp."
+
+[[element]]
+id = "bench_n2_plaza"
+type = "decoration"
+kind = "bench"
+rect = [-77, 28, 2, 1]
+
+[[element]]
+id = "food_storage_n2"
+type = "building"
+kind = "food_hut"
+rect = [-92, 26, 5, 6]
+door = [-88, 29]
+interior = [-91, 27, 3, 4]
+blocks_view = true
+height_m = 3.5
+notes = "Small wooden food hut (copy of food_storage_n1), enterable: `interior` (-91, 27, 3, 4), door (-88, 29) on the east facade; basic foods in front of its east facade, the two treat boxes inside at its west wall (Q-336). A fridge prop for the frozen insects needs a model (not yet made)."
+
+# ---------------------------------------------------------------- terrarium house (north-east): enterable hall + three indoor terrariums
+[[element]]
+id = "path_n2_house"
+type = "path"
+kind = "main"
+rect = [-86, 35, 3, 4]
+notes = "From the plaza north to the terrarium-house door (-85, 39)."
+
+[[element]]
+id = "terrarium_house"
+type = "building"
+kind = "terrarium_house"
+rect = [-93, 39, 17, 5]
+interior = [-92, 40, 15, 4]
+door = [-85, 39]
+model_rect = [-93, 39, 17, 13]
+blocks_view = true
+height_m = 4.5
+notes = "Terrarium house: the same plan as the night house (hall + three glass-fronted terrariums along the north side) with a warm interior. Stand-in model: the night_house model until a conservatory model exists (kit_buildings spec `terrarium_house`)."
+
+[[element]]
+id = "enc_n2_snake"
+type = "enclosure"
+rect = [-93, 44, 6, 8]
+animal = "snake"
+gate = [-91, 44, 2, 1]
+pair = true
+home_wander_on = ["grass"]
+indoor = true
+terrarium = true
+blocks_view = false
+notes = "Indoor terrarium behind a glass front, warm amber heat lamp: sandy floor, a warm flat rock, a branch to coil on, a water dish. No riddle detail of any hiding place inside."
+
+[[element]]
+id = "enc_n2_chameleon"
+type = "enclosure"
+rect = [-87, 44, 5, 8]
+animal = "chameleon"
+gate = [-86, 44, 2, 1]
+pair = true
+home_wander_on = ["grass"]
+indoor = true
+terrarium = true
+blocks_view = false
+notes = "Indoor terrarium behind a glass front, violet UV-style light: tall leafy branches, a hanging vine, a leaf dish. No riddle detail of any hiding place inside."
+
+[[element]]
+id = "enc_n2_frog"
+type = "enclosure"
+rect = [-82, 44, 6, 8]
+animal = "poison_dart_frog"
+gate = [-80, 44, 2, 1]
+pair = true
+home_wander_on = ["grass"]
+indoor = true
+terrarium = true
+blocks_view = false
+notes = "Indoor terrarium behind a glass front, moist teal light: large leaves, a mossy log, a shallow dish, fine mist. No riddle detail of any hiding place inside."
+
+[[element]]
+id = "board_n2_snake"
+type = "decoration"
+kind = "info_board"
+rect = [-90, 38, 1, 1]
+enclosure = "enc_n2_snake"
+mount = "wall"
+notes = "Outside the terrarium house on its south wall; board lamp."
+
+[[element]]
+id = "board_n2_chameleon"
+type = "decoration"
+kind = "info_board"
+rect = [-87, 38, 1, 1]
+enclosure = "enc_n2_chameleon"
+mount = "wall"
+notes = "Outside the terrarium house on its south wall; board lamp."
+
+[[element]]
+id = "board_n2_frog"
+type = "decoration"
+kind = "info_board"
+rect = [-81, 38, 1, 1]
+enclosure = "enc_n2_frog"
+mount = "wall"
+notes = "Outside the terrarium house on its south wall; board lamp."
+
+[[element]]
+id = "trees_n2_ne"
+type = "decoration"
+kind = "tree_grove"
+rect = [-76, 39, 2, 13]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Old round trees between the house and the east hedge."
+
+[[element]]
+id = "bench_n2_ring"
+type = "decoration"
+kind = "bench"
+rect = [-100, 38, 1, 1]
+notes = "Resting point on the north ring (there is no telescope in night_2, Q-367)."
+
+# ---------------------------------------------------------------- the loop: ring north / west / south around the hidden middle
+[[element]]
+id = "path_n2_ring_n"
+type = "path"
+kind = "main"
+rect = [-112, 35, 26, 3]
+notes = "North ring from the house path west; passes the boards."
+
+[[element]]
+id = "path_n2_ring_w"
+type = "path"
+kind = "main"
+rect = [-112, 13, 3, 22]
+notes = "West side of the loop."
+
+[[element]]
+id = "path_n2_ring_s"
+type = "path"
+kind = "main"
+rect = [-109, 13, 25, 3]
+notes = "South side of the loop (x -109..-85)."
+
+[[element]]
+id = "path_n2_s_link"
+type = "path"
+kind = "main"
+rect = [-87, 16, 3, 8]
+notes = "From the south ring north to the plaza."
+
+[[element]]
+id = "grove_n2_center"
+type = "decoration"
+kind = "tree_grove"
+rect = [-107, 18, 13, 15]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "The hidden middle: old round trees (no palm, no lanterns)."
+
+[[element]]
+id = "grove_n2_north"
+type = "decoration"
+kind = "tree_grove"
+rect = [-105, 41, 12, 11]
+density = "dense"
+edge = "bushes"
+blocks_view = true
+height_m = 6.0
+notes = "Old round trees north of the ring, up to the house wall."
+
+# ---------------------------------------------------------------- solid riddle scenery of the hiding places
+[[element]]
+id = "stone_wall_n2"
+type = "decoration"
+kind = "stone_wall"
+rect = [-118, 11, 5, 1]
+blocks_view = false
+height_m = 1.0
+notes = "Low dry wall of flat grey stacked stones with moss in the gaps (loc_stone_wall); the only stone wall in the night zoo."
+
+[[element]]
+id = "rowing_boat_n2"
+type = "decoration"
+kind = "rowing_boat"
+rect = [-118, 31, 3, 2]
+blocks_view = false
+height_m = 1.0
+notes = "Old wooden rowing boat, blue, upside down on the grass, two oars leaning on it (loc_rowing_boat)."
+
+[[element]]
+id = "lantern_tree_n2"
+type = "decoration"
+kind = "lantern_tree"
+rect = [-105, 8, 2, 2]
+blocks_view = false
+height_m = 3.5
+notes = "Tree with a spreading low crown hung with 20 colourful paper lanterns (loc_lanterns)."
+
+[[element]]
+id = "palm_tree_n2"
+type = "decoration"
+kind = "palm_tree"
+rect = [-100, 10, 1, 1]
+blocks_view = false
+height_m = 4.0
+notes = "Slim palm (4 m), no branches, fan leaves, coconuts (loc_palm)."
+
+[[element]]
+id = "vine_arch_n2"
+type = "decoration"
+kind = "vine_arch"
+rect = [-76, 16, 2, 2]
+blocks_view = false
+height_m = 2.4
+notes = "Wooden gate arch overgrown with green creepers, pink flowers, a crossbar (loc_vine_arch)."
+
+[[element]]
+id = "rain_barrel_n2"
+type = "decoration"
+kind = "rain_barrel"
+rect = [-110, 48, 2, 2]
+blocks_view = false
+height_m = 1.2
+notes = "Big wooden barrel with iron rings under a small eave and drain pipe; drips (loc_rain_barrel)."
+
+# ---------------------------------------------------------------- food boxes (GAME-FEED 7, basic foods outside, treat-only foods inside, Q-336)
+# Basic foods in front of the east facade of food_storage_n2 (facade line x = -87.0), on the west row of
+# path_n2_plaza, labels facing east. The beetles box is the distractor (a basic food of night_1).
+[[food_box]]
+food = "fish"
+pos = [-86.66, 26.0]
+facing = "+x"
+
+[[food_box]]
+food = "crickets"
+pos = [-86.66, 26.65]
+facing = "+x"
+
+[[food_box]]
+food = "flies"
+pos = [-86.66, 27.3]
+facing = "+x"
+
+[[food_box]]
+food = "beetles"
+pos = [-86.66, 27.95]
+facing = "+x"
+
+# Inside: the two treat-only foods on the plank platform of the wall band, labels towards the floor.
+[[food_box]]
+food = "eggs"
+pos = [-91.44, 28.2]
+facing = "+x"
+
+[[food_box]]
+food = "frozen_insects"
+pos = [-91.44, 29.8]
+facing = "+x"
+
+# ================================================================ hiding places (candidates)
+# Same fields as night_1. Every wander cell is >= 22 m from every standing point at the animal's own board and gate.
+
+# ---- snake
+[[hiding_place]]
+id = "loc_stone_wall"
+animal = "snake"
+rect = [-118, 8, 6, 5]
+animal_spot = [-116, 9]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["stone_wall", "stacked_stones", "wall_moss", "warm_stones"]
+scenery = ["stone_wall_n2"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_pumpkins"
+animal = "snake"
+rect = [-118, 18, 6, 6]
+animal_spot = [-116, 20]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["pumpkins", "orange_fruit", "vines", "rough_leaves"]
+scenery = ["pumpkin_patch_n2"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_rowing_boat"
+animal = "snake"
+rect = [-118, 27, 6, 7]
+animal_spot = [-116, 30]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["rowing_boat", "blue_boat", "oars", "upside_down"]
+scenery = ["rowing_boat_n2"]
+pose = "idle"
+
+# ---- chameleon
+[[hiding_place]]
+id = "loc_lanterns"
+animal = "chameleon"
+rect = [-107, 8, 6, 5]
+animal_spot = [-103, 9]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 1.8
+features = ["paper_lanterns", "coloured_lights", "lantern_tree", "low_branch"]
+scenery = ["lantern_tree_n2"]
+pose = "perch"
+
+[[hiding_place]]
+id = "loc_palm"
+animal = "chameleon"
+rect = [-100, 8, 7, 5]
+animal_spot = [-99, 10]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 2.2
+features = ["palm", "fan_leaves", "coconuts", "no_branches"]
+scenery = ["palm_tree_n2"]
+pose = "perch"
+
+[[hiding_place]]
+id = "loc_vine_arch"
+animal = "chameleon"
+rect = [-79, 12, 5, 4]
+animal_spot = [-75, 15]
+wander_radius_m = 3.0
+wander_on = "grass"
+perch_height_m = 2.0
+features = ["wooden_arch", "creepers", "pink_flowers", "crossbar"]
+scenery = ["vine_arch_n2"]
+pose = "perch"
+
+# ---- poison_dart_frog
+[[hiding_place]]
+id = "loc_stepping_stones"
+animal = "poison_dart_frog"
+rect = [-88, 8, 5, 5]
+animal_spot = [-86, 10]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["stepping_stones", "wet_moss", "squelching", "round_plates"]
+scenery = ["stepping_stones_n2"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_ferns"
+animal = "poison_dart_frog"
+rect = [-118, 39, 7, 8]
+animal_spot = [-114, 43]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["giant_ferns", "mist", "old_stump", "damp"]
+scenery = ["fern_glade_n2"]
+pose = "idle"
+
+[[hiding_place]]
+id = "loc_rain_barrel"
+animal = "poison_dart_frog"
+rect = [-111, 46, 6, 6]
+animal_spot = [-108, 48]
+wander_radius_m = 3.0
+wander_on = "grass"
+features = ["barrel", "dripping", "eave", "iron_rings"]
+scenery = ["rain_barrel_n2"]
+pose = "idle"
+
+# ================================================================ scenery (non-solid)
+[[scenery]]
+id = "pumpkin_patch_n2"
+kind = "pumpkin_patch"
+rect = [-118, 19, 4, 3]
+hiding_place = "loc_pumpkins"
+props = ["pumpkin", "vine"]
+notes = "Seven big round orange pumpkins on creeping vines with huge rough leaves; walkable. The only pumpkins in the zoo."
+
+[[scenery]]
+id = "stepping_stones_n2"
+kind = "stepping_stones"
+rect = [-88, 9, 4, 2]
+hiding_place = "loc_stepping_stones"
+props = ["stone_plate", "moss_patch"]
+notes = "Round smooth plates over a wet moss patch, small trickle; walkable. No river, pond or bridge (riddle guards)."
+
+[[scenery]]
+id = "fern_glade_n2"
+kind = "fern_glade"
+rect = [-116, 42, 3, 3]
+hiding_place = "loc_ferns"
+props = ["fern", "mist"]
+notes = "Head-high giant ferns around an old stump, light mist; walkable. No mushrooms, no moss ring (riddle guards)."
+
+# ================================================================ lights (data shape as night-1.toml)
+
+[[light]]
+id = "n2_lantern_entry"
+kind = "lantern_post"
+pos = [-76.5, 26.75]
+facing = "-z"
+
+[[light]]
+id = "n2_string_plaza_a"
+kind = "string_lights"
+pos = [-86.75, 34.75]
+to = [-78.25, 24.25]
+facing = "-z"
+
+[[light]]
+id = "n2_string_plaza_b"
+kind = "string_lights"
+pos = [-78.25, 34.75]
+to = [-86.75, 24.25]
+facing = "-z"
+
+[[light]]
+id = "n2_lantern_ring_n_e"
+kind = "lantern_post"
+pos = [-95.5, 37.75]
+facing = "-z"
+
+[[light]]
+id = "n2_lantern_ring_n_w"
+kind = "lantern_post"
+pos = [-104.5, 37.75]
+facing = "-z"
+
+[[light]]
+id = "n2_lantern_nw"
+kind = "lantern_post"
+pos = [-111.75, 37.75]
+facing = "+x"
+
+[[light]]
+id = "n2_lantern_ring_w_n"
+kind = "lantern_post"
+pos = [-109.25, 29.5]
+facing = "-x"
+
+[[light]]
+id = "n2_lantern_ring_w_s"
+kind = "lantern_post"
+pos = [-109.25, 20.5]
+facing = "-x"
+
+[[light]]
+id = "n2_lantern_sw"
+kind = "lantern_post"
+pos = [-111.75, 13.25]
+facing = "+x"
+
+[[light]]
+id = "n2_lantern_ring_s_w"
+kind = "lantern_post"
+pos = [-101.5, 13.25]
+facing = "+z"
+
+[[light]]
+id = "n2_lantern_ring_s_e"
+kind = "lantern_post"
+pos = [-92.5, 13.25]
+facing = "+z"
+
+[[light]]
+id = "n2_lantern_s_link"
+kind = "lantern_post"
+pos = [-84.25, 19.5]
+facing = "-x"
+
+[[light]]
+id = "n2_wall_terrarium_house"
+kind = "wall_lamp"
+pos = [-83.7, 38.95]
+facing = "-z"
+attach = "terrarium_house"
+
+[[light]]
+id = "n2_wall_food_hut"
+kind = "wall_lamp"
+pos = [-86.95, 31.3]
+facing = "+x"
+attach = "food_storage_n2"
+
+[[light]]
+id = "n2_indoor_hall"
+kind = "indoor"
+pos = [-85.0, 41.5]
+facing = "+z"
+attach = "terrarium_house"
+radius_m = 4.0
+color = "#FFE9B0"
+
+[[light]]
+id = "n2_indoor_snake"
+kind = "indoor"
+pos = [-90.0, 47.5]
+facing = "-z"
+attach = "enc_n2_snake"
+radius_m = 3.5
+color = "#F2A93B"
+
+[[light]]
+id = "n2_indoor_chameleon"
+kind = "indoor"
+pos = [-84.5, 47.5]
+facing = "-z"
+attach = "enc_n2_chameleon"
+radius_m = 3.5
+color = "#9B6BE0"
+
+[[light]]
+id = "n2_indoor_frog"
+kind = "indoor"
+pos = [-79.0, 47.5]
+facing = "-z"
+attach = "enc_n2_frog"
+radius_m = 3.5
+color = "#3CC7A0"
+
+[[light]]
+id = "n2_board_lamp_snake"
+kind = "board_lamp"
+pos = [-89.5, 38.5]
+facing = "-z"
+attach = "board_n2_snake"
+
+[[light]]
+id = "n2_board_lamp_chameleon"
+kind = "board_lamp"
+pos = [-86.5, 38.5]
+facing = "-z"
+attach = "board_n2_chameleon"
+
+[[light]]
+id = "n2_board_lamp_frog"
+kind = "board_lamp"
+pos = [-80.5, 38.5]
+facing = "-z"
+attach = "board_n2_frog"
+
+[[light]]
+id = "n2_board_lamp_map"
+kind = "board_lamp"
+pos = [-77.5, 28.0]
+facing = "+x"
+attach = "map_board_n2"
+
+# ================================================================ burglar event: none in night levels
+# GAME-EVENTS rule 4: burglars come only to unlocked DAY levels at night.

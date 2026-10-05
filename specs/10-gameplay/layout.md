@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-10-03
+updated: 2026-10-04
 ---
 
 # Zoo layout and level boundaries
@@ -414,6 +414,20 @@ condition, spawn point, and a top-down ASCII or SVG map.
 | `night_2` | [levels/night-2.md](levels/night-2.md) (GAME-LEVEL-NIGHT-2, **proposal 2026-10-03**): the terrarium garden west of `night_1` behind the lantern gate `barrier_n1_garden` (opens when night_1 is done); plaza, night food hut with a fridge, terrarium house with three glass terrariums (snake, chameleon, poison dart frog) and their nine hiding places; optional, 48 × 48 at x −120…−73, z 6…53. | not in data yet |
 | later levels | further night levels (`night_3`…) and day areas after Q-023 | — |
 
+## Level progression (overview, 2026-10-04)
+
+The order the child plays (compass target per step: HINT-030; sleeping by day always works, NIGHT-033):
+
+| Step | Level | Goal | Opens next |
+|---|---|---|---|
+| 1 | `level_1` | bring zebra, hippo, panda pairs home (riddle → food box → find → lead) | nightfall after the celebration → bed → moon door opens at night |
+| 2 | `night_1` | sleep (bed, also by day) → moon door → hedgehog, bat, owl pairs | next morning: `barrier_ne_tree` opens |
+| 3 | `level_2` | koala, elephant, giraffe, lion | `barrier_l2_construction` opens the next morning (level 3; Q-141) |
+| 4 | `level_3` | monkey, goldfish, snow fox; garden, treats, babies; from here visitors + ice cream (ECON) | nightfall |
+| 5 | `night_2` (optional, proposal) | lantern gate `barrier_n1_garden` after `night_1`: snake, chameleon, poison dart frog (terrarium house) | — |
+| 6 | `level_4` (planned, Q-175) | bear pair, bee event | — |
+| later | economy levels | refill ice cream kiosk and animal-food machine from the fridge, animal-doctor maths (ECON, Q-300…) | — |
+
 ## Behaviour
 
 1. The player can never leave the union of walkable cells (path and grass) of all unlocked levels.
@@ -462,6 +476,8 @@ into or through a billboard.
 
 ## Enclosure features and wandering at home (Q-085, confirmed 2026-10-01)
 
+**Animal houses (user request 2026-10-04, GAME-HOUSE):** the seven houses/shelters of levels 1-3 are `[[enclosure_feature]]` entries with `kind = "animal_house"` (footprint, interior, 2-cell door, door height; giraffe door >= 5.0 m). Walls are solid and not part of the home wander area, interior + door cells are, so animals enter and leave only over the door cells (HOUSE-001..020); the child never enters. Positions: GAME-HOUSE "Houses per level".
+
 GAME-ANIMALS: an animal `in_enclosure` wanders slowly inside its enclosure. Where it may
 walk is level data:
 - Enclosure elements carry `home_wander_on` — a list of surfaces, default `["grass"]`.
@@ -470,8 +486,7 @@ walk is level data:
   not blocked by a prop footprint; `water` = the cells of the enclosure's `pool` feature.
 - `[[enclosure_feature]]` (like `[[food_box]]` and `[[scenery]]` **not** an element; the
   enclosure cells stay solid for the player, so LAYOUT-003 is unaffected): `id`, `enclosure`,
-  `kind = "pool"` (or `kind = "hut"`: a reserved building area, not part of the home wander
-  area — *proposal Q-098*, first used by `hippo_hut`), `rect` (inside the enclosure rectangle), `water = "still"`, `ramp` (cells
+  `kind = "pool"` (or `kind = "animal_house"`: house with walls, interior and door, GAME-HOUSE, Q-359; the old reserved `kind = "hut"` of Q-098 is deprecated), `rect` (inside the enclosure rectangle), `water = "still"`, `ramp` (cells
   of the entry ramp, part of `rect`), `ramp_side`, `edge_stones` (decoration rocks just
   outside the rim, solid for the animal), `model`.
 - Water and grass of the home wander area connect **only through ramp cells** (the rim is

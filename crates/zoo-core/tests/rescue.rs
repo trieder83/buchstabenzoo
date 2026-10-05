@@ -853,7 +853,7 @@ fn animal_clip_table_is_read() {
 }
 
 // FEED-035: the one food label atlas holds a lid and a front cell per food, inside the
-// texture and without overlap (one 1024 x 512 texture for all boxes, 2 MB)
+// texture and without overlap (one 1024 x 704 texture for all 20 foods, <= 3 MB; was 14 foods in 1024 x 512)
 #[test]
 fn feed_035_food_atlas_cells_fit_and_do_not_overlap() {
     use zoo_core::food::{AtlasPart, ATLAS_PX};
@@ -880,5 +880,5 @@ fn feed_035_food_atlas_cells_fit_and_do_not_overlap() {
             assert!(apart, "{a:?} overlaps {b:?}");
         }
     }
-    assert!(ATLAS_PX.0 * ATLAS_PX.1 * 4 <= 2 * 1024 * 1024);
+    assert!(ATLAS_PX.0 * ATLAS_PX.1 * 4 <= 3 * 1024 * 1024);
 }

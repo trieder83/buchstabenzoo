@@ -186,7 +186,7 @@ Rules for the implementation that follow from the data:
   Sleeping uses the normal **interact action** (user decision 2026-09-27): standing next to
   the bed, desktop `E` (or Space/Enter) and the touch action button (🛏 icon) start sleeping —
   no extra menu or text needed.
-  *Q-140 answered (user 2026-09-27):* while a visited night level is unfinished, the bed also works **by day**
+  *Q-140 answered (user 2026-09-27), widened 2026-10-04 (NIGHT-033):* the bed works **by day** always (before: only while a visited night level was unfinished)
   and the child sleeps until the evening (dusk → night) — otherwise a child who slept before
   the night zoo was done would never get another night (level 2 waits for `night_1`, Q-078).
 - **Save** (GAME-SAVE): `daytime` (phase, time in phase, pending dusk, nightfalls, pending
@@ -272,13 +272,16 @@ Rules for the implementation that follow from the data:
 | NIGHT-027 | Given the child sleeps at the bed of any level (from the stand cell or even from the bed's centre) and gets up in the morning, then she stands on the bed's free `stand` cell NEXT to the bed (0.7–2.3 m from its centre), outside every collider and the bed's footprint, on a walkable cell with her feet on the floor — never inside or on top of the bed (user report 2026-10-02: she woke up inside the bed). | unit |
 | NIGHT-021 | Given all level-1 missions played to the end (scripted child following the hints, real movement), then the compass badge shows night coming (🌙), dusk turns into night, the moon door opens, the bed works with `E` and the next morning comes (the whole night cycle is reachable end to end). | e2e |
 | NIGHT-024 | Given dusk or night (day zoo or night zoo), then a quiet cricket loop plays (ART-SOUND "Ambient loops", ASND-022/027, gain ≤ 0.12, 3 s fade in); it fades out when sleeping starts; none by day. | unit (ASND-022), e2e (ASND-027) |
-| NIGHT-030 | Given night_1 complete (all six animals home), then `barrier_n1_garden` is open from that moment (not only the next morning) and every later night; before that it is closed and solid, with its sign, lock and lantern; the morning rules (`barrier_ne_tree`, NIGHT-010) are unchanged. | unit |
-| NIGHT-031 | Given night, night_1 complete and night_2 missions incomplete, when the player is in night_1 or night_2, then the 🧭 candidates are the gate 🚪 (priority 3) and the bed 🛏, the gate first; in night_2 the first candidate is the next mission step; once night_2 is complete the bed. | unit |
-| NIGHT-032 | Given night_2 never visited or half played, then sleeping, the morning and level 2 work unchanged (optional level); progress of night_2 is saved and restored (animals, pairs, babies) and a save from before night_2 opens it fresh. | unit |
+| NIGHT-030 | Given night_1 complete (all six animals home), then `barrier_n1_garden` is open from that moment (not only the next morning) and every later night; before that it is closed and solid, with its sign, lock and lantern; the morning rules (`barrier_ne_tree`, NIGHT-010) are unchanged. *Implemented 2026-10-04: `night2_game.rs`, `Element::opens_at`, `Game::open_night_gates`.* | unit |
+| NIGHT-031 | Given night, night_1 complete and night_2 missions incomplete, when the player is in night_1 or night_2, then the 🧭 candidates are the gate 🚪 (priority 3) and the bed 🛏, the gate first; in night_2 the first candidate is the next mission step; once night_2 is complete the bed. *Implemented 2026-10-04: `HintKind::NightGate`, `night2_game.rs`, `hints.rs`.* | unit |
+| NIGHT-032 | Given night_2 never visited or half played, then sleeping, the morning and level 2 work unchanged (optional level); progress of night_2 is saved and restored (animals, pairs, babies) and a save from before night_2 opens it fresh. *Implemented 2026-10-04: `night2_game.rs`, `Game::reopen_night_gates` (old saves).* | unit |
+| NIGHT-033 | Given day (no dusk pending), then the bed is always interactable and sleeping leads to the evening (dusk → night), also when no night zoo waits (user report 2026-10-04); the 🧭 hint offers the bed by day only while sleeping moves the game on (`sleep_advances`: a night zoo waits or a completed level's exits are pending). | unit |
+| NIGHT-034 | Given night and a day pair at home (also with a baby), then both adults and the baby are asleep (`sleep` clip, baby copies it): the baby stands still next to its mother — no route, no hop, mode idle — until the morning; in animal houses they sleep inside (GAME-HOUSE). The baby of a night animal still plays. (user request 2026-10-04: "the day animals should sleep during night") | unit |
 
 ## Open questions
 
 - Q-076…Q-079 answered 2026-09-26 (animals of night level 1, owl food, what comes after, no pressure).
+- Telescope at night: planet view, see GAME-TELESCOPE (Q-138, Q-365…Q-367).
 - Q-133…Q-139 answered 2026-09-27 (as recommended): night level data, night house, night foods, riddle scope of night levels, light/item/prop data, telescope, burglar spots (level design, 2026-09-27).
 - Q-126 answered 2026-09-27: dark-blue gradient with moon and stars, haze in the same blue, day fog end kept (20.8 m since FIX-056).
 - Q-091 answered 2026-09-27: barriers open the next morning (engine section, NIGHT-010).

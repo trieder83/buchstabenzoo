@@ -21,6 +21,8 @@ const LEVELS = [
   'levels/level-3.toml',
   // the night zoo behind the moon door (GAME-NIGHT rule 4, NIGHT-004)
   'levels/night-1.toml',
+  // the terrarium garden behind the lantern gate of night_1 (GAME-LEVEL-NIGHT-2)
+  'levels/night-2.toml',
 ];
 
 /** Debug handle for e2e tests. */
@@ -142,7 +144,7 @@ async function main(): Promise<void> {
     MEASUREMENT_ID,
   );
   if (analytics.available) {
-    const { row, relabel, showNotice } = createAnalyticsRow(app, analytics);
+    const { row, relabel, showWelcome } = createAnalyticsRow(app, analytics);
     ui.addSettingsRow(row, relabel);
     ui.onGameEvent = (e) => analytics.onGameEvent(e);
     // the level part the player stands in, once a second and only while analytics is on (no per-frame code)
@@ -150,19 +152,12 @@ async function main(): Promise<void> {
       if (analytics.on) analytics.observeLevel(app.player_level());
     }, 1000);
     analytics.init();
-    // a small 3 s notice at the bottom (non-blocking) when no decision was made yet: after the intro
-    let waited = 0;
-    const timer = window.setInterval(() => {
-      waited += 1;
-      const intro = document.getElementById('intro');
-      if (waited > 90 || !intro || intro.hidden) {
-        window.clearInterval(timer);
-        if (waited <= 90) showNotice();
-      }
-    }, 1000);
+    // first start: the welcome dialog (animals escaped, data note, Yes / No) before the intro
+    if (introEnabled(window.location.search, navigator.webdriver === true)) showWelcome();
   }
   // ad billboards (GAME-ADS): signed external campaigns load after the first frame
   const ads = new AdsHost(app, { keys: resolveKeys(AD_TEST_BUILD ? testKeyParam(window.location.search) : null), store });
+  ui.onAllDone = () => ads.openCarousel();
   attachInput(app, {
     canvas,
     stickView: stickView(),

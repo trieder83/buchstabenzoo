@@ -30,6 +30,9 @@ impl Game {
         self.level
             .data
             .elements_of(ElementType::Barrier)
+            // a gate between two night levels (`barrier_n1_garden`) is no moon door: it opens
+            // when its level is complete and stays open (Q-331)
+            .filter(|e| !self.level.data.is_night_part(e.part))
             .filter(|e| {
                 e.kind.as_deref() == Some(MOON_DOOR_KIND)
                     || e.transition
@@ -173,13 +176,19 @@ impl Game {
         })
     }
 
-    /// Whether the bed can be used now: at night (NIGHT-003), and by day while a night zoo
-    /// is waiting (Q-140).
+    /// Whether sleeping would move the game on: an unfinished night zoo waits (Q-140) or a
+    /// completed level's exits are still closed until the next morning (user report 2026-10-04:
+    /// "we still can not sleep during the day to progress to the night"). The 🧭 hint offers
+    /// the bed by day only then.
+    pub fn sleep_advances(&self) -> bool {
+        self.night_zoo_waiting() || !self.daytime.pending_exits.is_empty()
+    }
+
+    /// Whether the bed can be used now: at night (NIGHT-003), and by day always (the child
+    /// sleeps until the evening; never a state without a way to the night, NIGHT-033).
     pub fn bed_usable(&self) -> bool {
         self.daytime.is_night()
-            || (self.daytime.phase == Phase::Day
-                && self.daytime.dusk_in.is_none()
-                && self.night_zoo_waiting())
+            || (self.daytime.phase == Phase::Day && self.daytime.dusk_in.is_none())
     }
 
     /// Goes to bed (within reach; at night → the next morning, NIGHT-003; by day with a
@@ -318,6 +327,40 @@ impl Game {
         self.events.push(GameEvent::Morning);
     }
 
+    /// Opens the gates between night levels that a completed night level unlocks
+    /// (`opens_at = "night"`, e.g. `barrier_n1_garden` after `night_1`): at once, not the next
+    /// morning, and they stay open every later night (GAME-LEVEL-NIGHT-2, Q-331).
+    pub(crate) fn open_night_gates(&mut self, level_id: &str) {
+        for id in self.level.barriers_unlocked_by(level_id) {
+            let at_night = self.level.data.element(&id).is_some_and(|e| {
+                e.opens_at.as_deref() == Some("night") && self.level.data.is_night_part(e.part)
+            });
+            if at_night && self.level.open_barrier(&id) {
+                self.events.push(GameEvent::BarrierOpened { id });
+            }
+        }
+    }
+
+    /// After a restore: the night gates of every completed night level are open (also in saves
+    /// made before the gate existed).
+    pub(crate) fn reopen_night_gates(&mut self) {
+        for k in 0..self.level.data.parts.len() {
+            if !self.level.data.is_night_part(k) {
+                continue;
+            }
+            let mut mine = self
+                .animals
+                .iter()
+                .zip(&self.missions)
+                .filter(|(a, _)| a.part == k)
+                .peekable();
+            if mine.peek().is_some() && mine.all(|(_, m)| m.complete) {
+                let id = self.level.data.parts[k].id.clone();
+                self.open_night_gates(&id);
+            }
+        }
+    }
+
     fn close_moon_doors(&mut self) {
         for id in self.moon_doors() {
             self.level.close_barrier(&id);
@@ -343,6 +386,7 @@ impl Game {
                 a.wander = Wander {
                     pause_s: pause,
                     route: Vec::new(),
+                    rest_s: 0.0,
                 };
             }
         }

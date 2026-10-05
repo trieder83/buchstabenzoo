@@ -141,11 +141,12 @@ fn raw_str<'a>(t: &'a toml::Table, key: &str) -> Option<&'a str> {
     t.get(key).and_then(|v| v.as_str())
 }
 
-const LEVEL_FILES: [&str; 4] = [
+const LEVEL_FILES: [&str; 5] = [
     "assets/levels/level-1.toml",
     "assets/levels/level-2.toml",
     "assets/levels/level-3.toml",
     "assets/levels/night-1.toml",
+    "assets/levels/night-2.toml",
 ];
 
 /// Garden rects of every level file (`[[garden]] rect`).
@@ -270,6 +271,10 @@ fn layout_n1_003_no_overlaps_and_disjoint_bounds() {
     for e in data.elements_of(ElementType::Path) {
         for c in e.rect.cells() {
             if let Some(s) = grid.solid_element(c) {
+                // the street runs under a closed barrier (LAYOUT-040: `barrier_n1_garden`)
+                if data.elements[s].ty == ElementType::Barrier {
+                    continue;
+                }
                 covered.push((e.id.clone(), data.elements[s].id.clone(), c));
             }
         }
@@ -1444,4 +1449,205 @@ fn layout_030_burglar_event_spots() {
         }
     }
     assert!(problems.is_empty(), "{problems:#?}");
+}
+
+// ------------------------------------------------------------------ LAYOUT-N1-015…017
+// The secret trail through the middle grove (Q-365).
+
+const OLD_GROVE: (i32, i32, i32, i32) = (-59, 18, 13, 15);
+
+fn trail_cells(data: &LevelData) -> Vec<IVec2> {
+    let cells: Vec<IVec2> = data
+        .elements_of(ElementType::Path)
+        .filter(|e| e.id.starts_with("path_n1_secret_"))
+        .flat_map(|e| e.rect.cells())
+        .collect();
+    assert!(!cells.is_empty(), "no path_n1_secret_* elements");
+    cells
+}
+
+// LAYOUT-N1-015: trail cells are walkable path cells inside the old grove rect, free of
+// solid elements, colliders, hiding places, wander areas and boards; the grove parts are dense
+// and view-blocking and cover (with the trail) exactly the old rect; both ends join the rings.
+#[test]
+fn layout_n1_015_secret_trail_cells() {
+    let level = night_level();
+    let data = &level.data;
+    let grid = level.grid();
+    let trail = trail_cells(data);
+    let old = Rect::new(OLD_GROVE.0, OLD_GROVE.1, OLD_GROVE.2, OLD_GROVE.3);
+    let set: BTreeSet<(i32, i32)> = trail.iter().map(|c| (c.x, c.y)).collect();
+    assert_eq!(set.len(), trail.len(), "trail rects overlap");
+    let mut problems = Vec::new();
+    for &c in &trail {
+        if !old.contains(c) {
+            problems.push(format!("{c} outside the old grove"));
+        }
+        if !grid.is_walkable(c, false) || grid.surface(c) != Some(Surface::Path) {
+            problems.push(format!("{c} not a walkable path cell"));
+        }
+        if grid.solid_element(c).is_some() {
+            problems.push(format!("{c} under a solid element"));
+        }
+        let p = cell_center(c);
+        if level
+            .colliders()
+            .shapes()
+            .iter()
+            .any(|s| s.push_out(p, 0.3) != Vec2::ZERO)
+        {
+            problems.push(format!("{c} touches a collider"));
+        }
+        for h in &data.hiding_places {
+            if h.rect.contains(c) {
+                problems.push(format!("{c} inside hiding place {}", h.id));
+            }
+        }
+    }
+    for h in &data.hiding_places {
+        for (w, _) in hiding_area(&level, h).cells() {
+            if set.contains(&(w.x, w.y)) {
+                problems.push(format!("{} wander cell {w} on the trail", h.id));
+            }
+        }
+    }
+    // the grove parts + the trail tile the old rect exactly
+    let parts: Vec<&zoo_core::level::Element> = data
+        .elements
+        .iter()
+        .filter(|e| e.id.starts_with("grove_n1_center_"))
+        .collect();
+    assert!(parts.len() >= 2);
+    for e in &parts {
+        assert_eq!(e.density.as_deref(), Some("dense"), "{}", e.id);
+        assert!(e.blocks_view, "{} must block the view", e.id);
+    }
+    for c in old.cells() {
+        let n = parts.iter().filter(|e| e.rect.contains(c)).count()
+            + usize::from(set.contains(&(c.x, c.y)));
+        if n != 1 {
+            problems.push(format!("{c} covered {n} times"));
+        }
+    }
+    // ends: entrance top (z 32 → grass 33, 34 → ring_n at z 35), exit bottom (z 18 → 17, 16 → 15)
+    for (x, zs) in [
+        (-54, [33, 34, 35]),
+        (-53, [33, 34, 35]),
+        (-50, [17, 16, 15]),
+        (-49, [17, 16, 15]),
+    ] {
+        for z in zs {
+            if !grid.is_walkable(IVec2::new(x, z), false) {
+                problems.push(format!("connection cell ({x}, {z}) not walkable"));
+            }
+        }
+    }
+    for (x, z) in [(-54, 35), (-53, 35), (-50, 15), (-49, 15)] {
+        if grid.surface(IVec2::new(x, z)) != Some(Surface::Path) {
+            problems.push(format!("ring cell ({x}, {z}) is not a path"));
+        }
+    }
+    // the entry of the level reaches the trail
+    let reach = flood_fill(grid, entry_cell(), false);
+    for &c in &trail {
+        if !reach[grid.index(c).unwrap()] {
+            problems.push(format!("{c} not reachable from the entry"));
+        }
+    }
+    assert!(problems.is_empty(), "{problems:#?}");
+}
+
+// LAYOUT-N1-016: never required. With every trail cell solid the whole walkable level is still
+// reachable from the entry; with the trail the ring-north → ring-south walk is ≥ 3 s shorter.
+#[test]
+fn layout_n1_016_secret_trail_never_required() {
+    let open = night_level();
+    let trail = trail_cells(&open.data);
+    let mut closed_data = open.data.clone();
+    for e in closed_data
+        .elements
+        .iter_mut()
+        .filter(|e| e.id.starts_with("path_n1_secret_"))
+    {
+        e.ty = ElementType::Decoration;
+        e.kind = Some("tree_grove".into());
+        e.density = Some("dense".into());
+    }
+    let closed = Level::new(closed_data);
+    for &c in &trail {
+        assert!(!closed.grid().is_walkable(c, false), "{c} still walkable");
+    }
+    let r_open = flood_fill(open.grid(), entry_cell(), false);
+    let r_closed = flood_fill(closed.grid(), entry_cell(), false);
+    let tset: BTreeSet<(i32, i32)> = trail.iter().map(|c| (c.x, c.y)).collect();
+    let mut lost = Vec::new();
+    for c in open.data.level.bounds.cells() {
+        let k = open.grid().index(c).unwrap();
+        if r_open[k] && !tset.contains(&(c.x, c.y)) && !r_closed[k] {
+            lost.push(c);
+        }
+    }
+    assert!(lost.is_empty(), "cells cut off without the trail: {lost:?}");
+    let a = [IVec2::new(-53, 35)];
+    let b = [IVec2::new(-50, 15)];
+    let with = min_cost(open.grid(), &a, &b, time_cost());
+    let without = min_cost(closed.grid(), &a, &b, time_cost());
+    println!(
+        "LAYOUT-N1-016: ring north → ring south {with:.1} s with the trail, {without:.1} s without"
+    );
+    assert!(without - with >= 3.0, "{with} vs {without}");
+}
+
+// LAYOUT-N1-017: the trail is 2 cells wide everywhere (collision-safe between the bush
+// borders) and keeps ≥ 4 m from every wander cell and ≥ 8 m from boards, gates and food boxes.
+#[test]
+fn layout_n1_017_secret_trail_width_and_distance() {
+    let level = night_level();
+    let data = &level.data;
+    let trail = trail_cells(data);
+    let set: BTreeSet<(i32, i32)> = trail.iter().map(|c| (c.x, c.y)).collect();
+    let has = |x: i32, z: i32| set.contains(&(x, z));
+    for &c in &trail {
+        let in_block = [(0, 0), (-1, 0), (0, -1), (-1, -1)].iter().any(|(dx, dz)| {
+            let (x, z) = (c.x + dx, c.y + dz);
+            has(x, z) && has(x + 1, z) && has(x, z + 1) && has(x + 1, z + 1)
+        });
+        assert!(
+            in_block,
+            "{c} is not part of a 2 × 2 block (trail too narrow)"
+        );
+    }
+    let mut avoid: Vec<(String, Vec2)> = Vec::new();
+    for h in &data.hiding_places {
+        for (w, _) in hiding_area(&level, h).cells() {
+            avoid.push((format!("wander cell of {}", h.id), cell_center(w)));
+        }
+    }
+    let mut far: Vec<(String, Vec2)> = Vec::new();
+    for e in &data.elements {
+        if e.kind.as_deref() == Some("info_board") {
+            far.push((e.id.clone(), rect_center(e.rect)));
+        }
+        if let Some(g) = e.gate {
+            far.push((format!("gate of {}", e.id), rect_center(g)));
+        }
+    }
+    for b in &data.food_boxes {
+        far.push(("food box".into(), b.pos()));
+    }
+    let mut bad = Vec::new();
+    for &c in &trail {
+        let p = cell_center(c);
+        for (n, q) in &avoid {
+            if p.distance(*q) < 4.0 {
+                bad.push(format!("{c} < 4 m from {n}"));
+            }
+        }
+        for (n, q) in &far {
+            if p.distance(*q) < 8.0 {
+                bad.push(format!("{c} < 8 m from {n}"));
+            }
+        }
+    }
+    assert!(bad.is_empty(), "{:#?}", &bad[..bad.len().min(20)]);
 }

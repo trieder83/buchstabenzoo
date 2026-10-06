@@ -123,6 +123,12 @@ pub fn footprint(model: &str) -> &'static [LocalShape] {
             hx: 1.17,
             hz: 0.57,
         }],
+        "parking_sign" => &[B {
+            x: 0.0,
+            z: 0.0,
+            hx: 0.1,
+            hz: 0.1,
+        }],
         "traffic_cone" => &[C {
             x: 0.0,
             z: 0.0,

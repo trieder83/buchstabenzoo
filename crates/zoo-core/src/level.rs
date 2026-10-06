@@ -314,6 +314,45 @@ impl ItemData {
     }
 }
 
+/// A drivable golf cart with its parking spot (`[[cart]]`, GAME-CART "Data shape").
+#[derive(Debug, Clone, Deserialize)]
+pub struct CartData {
+    pub id: String,
+    /// Centre of the parked cart (level metres).
+    pub pos: [f32; 2],
+    /// Parking heading (`+x`, `-x`, `+z`, `-z`).
+    pub facing: String,
+    /// Parking footprint cells (x, z, w, d); the oriented box lies inside.
+    pub rect: Rect,
+    /// Walkable boarding cell.
+    pub stand: [i32; 2],
+    /// The parking sign.
+    pub sign_pos: [f32; 2],
+    /// Level id that must be open (`""` = always).
+    #[serde(default)]
+    pub locked_until: String,
+    #[serde(default)]
+    pub model: String,
+    #[serde(default)]
+    pub notes: String,
+    #[serde(skip)]
+    pub part: usize,
+}
+
+impl CartData {
+    pub fn pos(&self) -> Vec2 {
+        Vec2::from(self.pos)
+    }
+
+    pub fn heading(&self) -> Vec2 {
+        facing_vec(&self.facing)
+    }
+
+    pub fn stand_cell(&self) -> IVec2 {
+        IVec2::from(self.stand)
+    }
+}
+
 /// Furniture inside a building (`[[prop]]`, proposal Q-137): a model at a position; drawn as
 /// a placeholder until the model exists.
 #[derive(Debug, Clone, Deserialize)]
@@ -732,6 +771,9 @@ pub struct LevelData {
     /// Furniture (proposal Q-137).
     #[serde(default, rename = "prop")]
     pub props: Vec<PropData>,
+    /// Golf carts and their parking spots (GAME-CART).
+    #[serde(default, rename = "cart")]
+    pub carts: Vec<CartData>,
     /// Ad billboards (GAME-ADS rule 1).
     #[serde(default, rename = "ad_board")]
     pub ad_boards: Vec<crate::ads::AdBoardData>,
@@ -908,6 +950,10 @@ impl LevelData {
                     e
                 }));
             out.props.extend(next.props.into_iter().map(|mut e| {
+                e.part = shift(e.part);
+                e
+            }));
+            out.carts.extend(next.carts.into_iter().map(|mut e| {
                 e.part = shift(e.part);
                 e
             }));
@@ -1287,6 +1333,8 @@ pub struct Level {
     /// night).
     night_shapes: Vec<crate::collision::Shape>,
     night_solid: bool,
+    /// Boxes of the parked golf carts (solid for the player, animals and other carts).
+    cart_shapes: Vec<crate::collision::Shape>,
 }
 
 /// Collider radius of a lantern post while it is visible (GAME-LAYOUT `[[light]]`, LAYOUT-035).
@@ -1329,7 +1377,24 @@ impl Level {
             openings: scene.openings,
             night_shapes,
             night_solid: false,
+            cart_shapes: Vec::new(),
         }
+    }
+
+    /// Sets the boxes of the parked golf carts (GAME-CART rule 4): they become prop colliders
+    /// and block the grid cells whose centre a player circle could not stand on.
+    pub fn set_cart_shapes(&mut self, shapes: Vec<crate::collision::Shape>) {
+        if self.cart_shapes == shapes {
+            return;
+        }
+        self.cart_shapes = shapes;
+        self.rebuild_colliders();
+        self.refresh_prop_blocked();
+    }
+
+    /// The boxes of the parked golf carts.
+    pub fn cart_shapes(&self) -> &[crate::collision::Shape] {
+        &self.cart_shapes
     }
 
     /// Makes the lantern posts solid (they are visible: dusk to morning) or not (by day),
@@ -1387,6 +1452,7 @@ impl Level {
         if self.night_solid {
             extra.extend_from_slice(&self.night_shapes);
         }
+        extra.extend_from_slice(&self.cart_shapes);
         self.colliders =
             crate::collision::Colliders::from_placements_and(&kept, &extra, self.data.level.bounds);
     }

@@ -97,6 +97,8 @@ pub struct Skeleton {
     /// Node index of each joint (the skin's joint list).
     pub joints: Vec<usize>,
     pub inverse_bind: Vec<Mat4>,
+    /// Node names (glTF `name`), index = node index; empty when the loader did not set them.
+    pub names: Vec<String>,
 }
 
 impl Skeleton {
@@ -113,7 +115,19 @@ impl Skeleton {
             order,
             joints,
             inverse_bind,
+            names: Vec::new(),
         }
+    }
+
+    /// Sets the node names (index = node index).
+    pub fn with_names(mut self, names: Vec<String>) -> Self {
+        self.names = names;
+        self
+    }
+
+    /// Node index of the node called `name`.
+    pub fn node_by_name(&self, name: &str) -> Option<usize> {
+        self.names.iter().position(|n| n == name)
     }
 
     pub fn node_count(&self) -> usize {

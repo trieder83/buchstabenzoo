@@ -41,6 +41,9 @@ export interface UiApp {
   /** GAME-CART rule 21: the math level of the note task (`mathe1` … `mathe5`). */
   set_math_level?(id: string): boolean;
   math_level?(): string;
+  /** GAME-CART: sitting in a cart (get-out button, no view button), and why the cart at hand is locked. */
+  driving?(): boolean;
+  target_lock?(): string;
   /** GAME-CART rules 14/15: key state JSON, a code at the key box, the pause while the lock is open. */
   cart_key_json?(): string;
   enter_code?(code: number): string;
@@ -398,6 +401,9 @@ export const TARGET_ICONS: Record<string, string> = {
   // GAME-CART: the note on the desk, the key box with the combination lock
   note: '📝',
   key_box: '🔑',
+  // GAME-CART: board a golf cart (🔒 badge while locked), and the one action while seated
+  cart: '🛻',
+  get_out: '🚶',
 };
 
 /**
@@ -547,6 +553,9 @@ interface PanelData {
   /** Key box lock panel: wrong codes so far, and the 📝 pulse. */
   tries?: number;
   help?: boolean;
+  /** Golf cart feedback (GAME-CART): why a cart is locked, whether animals wait. */
+  reason?: string;
+  followers?: boolean;
 }
 
 export interface GameEventMsg {
@@ -650,6 +659,9 @@ export class Ui {
   private lastHintStep = '';
   private lastHintDots = -1;
   private lastPulses = 0;
+  /** The next compass pulse comes from the locked-cart feedback: three pulses (GAME-CART rule 13). */
+  private cartPulse = false;
+  private lastLock = '';
   private lastProgress = '';
   readonly gear = document.getElementById('settings-btn') as HTMLButtonElement;
   readonly settings = document.getElementById('settings') as HTMLDivElement;
@@ -766,6 +778,27 @@ export class Ui {
     const data = JSON.parse(json) as PanelData;
     if (data.kind === 'telescope') {
       this.telescope.open();
+      return;
+    }
+    if (data.kind === 'cart_locked') {
+      // tapping a locked cart: 🔒🔑 bubble, the hint marker points at the next key step
+      this.say(`${data.reason === 'closed_level' ? '🔒' : '🔒🔑'} ${data.text ?? ''}`, data.key ?? '', 3500);
+      if (data.reason !== 'closed_level') this.cartPulse = true;
+      this.pollEvents();
+      return;
+    }
+    if (data.kind === 'cart_no_park') {
+      this.say(`🅿️✖ ${data.text ?? ''}`, data.key ?? '', 3000);
+      this.pollEvents();
+      return;
+    }
+    if (data.kind === 'cart_boarded') {
+      if (data.text) this.say(`🐾 ${data.text}`, 'cart-walk', 3000);
+      this.pollEvents();
+      return;
+    }
+    if (data.kind === 'cart_left') {
+      this.pollEvents();
       return;
     }
     if (data.kind === 'key_box') {
@@ -946,9 +979,10 @@ export class Ui {
     const n = this.app.hint_pulses?.() ?? 0;
     if (n === this.lastPulses || !this.compass) return;
     this.lastPulses = n;
-    this.compass.classList.remove('pulse');
+    this.compass.classList.remove('pulse', 'pulse3');
     void this.compass.offsetWidth; // restart the animation
-    this.compass.classList.add('pulse');
+    this.compass.classList.add(this.cartPulse ? 'pulse3' : 'pulse');
+    this.cartPulse = false;
     this.compass.dataset.pulses = String(n);
   }
 
@@ -1034,14 +1068,27 @@ export class Ui {
 
   /** Per-frame update: button visibility, HUD, events, auto-close. */
   update(): void {
+    const lock = this.app.target_lock?.() ?? '';
+    const driving = this.app.driving?.() ?? false;
+    if (document.body.classList.contains('driving') !== driving) {
+      document.body.classList.toggle('driving', driving);
+    }
     const key = this.app.target_key();
-    if (key !== this.lastTarget) {
+    if (key !== this.lastTarget || lock !== this.lastLock) {
       this.lastTarget = key;
+      this.lastLock = lock;
       const kind = this.app.target_kind();
       const icon = targetIcon(kind, key);
       this.act.textContent = icon;
+      // a locked cart: the 🔒 badge on the button (GAME-CART rule 2)
+      this.act.dataset.lock = lock;
+      if (lock) this.act.append(el('span', 'badge', '🔒'));
       this.act.hidden = !(this.touch && kind);
       this.act.dataset.kind = kind;
+      this.act.setAttribute(
+        'aria-label',
+        this.app.t(kind === 'get_out' ? 'ui-cart-get-out' : kind === 'cart' ? 'ui-cart-board' : 'ui-interact'),
+      );
       this.hint.hidden = this.touch || !kind;
       this.hint.dataset.kind = kind;
       (this.hint.querySelector('.icon') as HTMLElement).textContent = icon;

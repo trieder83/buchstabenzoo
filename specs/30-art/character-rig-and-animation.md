@@ -6,7 +6,7 @@ module: character-rig-and-animation
 status: draft
 depends_on: [ART-PIPELINE, GAME-PLAYER, TECH-ARCH]
 test_prefix: RIG
-updated: 2026-10-01
+updated: 2026-10-06
 ---
 
 # Character rig and animation — technical contract
@@ -151,6 +151,8 @@ and skins). The list of characters and their look lives in ART-CHARACTERS.
    | `cheer` | 45 | 1.50 s | no | `cheer_peak` (15) | 0.10 s | `laugh` | Success: jump with both arms up (animal happy, quest step done). |
    | `wave` | 40 | 1.33 s | no | — | 0.15 s | `happy` | Greeting; character-choice preview when tapped (GAME-PLAYER §1). |
    | `carry` | 30 | 1.00 s | yes | — | 0.15 s | — | **Upper-body layer**: both arms hold an item at `socket_carry`. See §4.6. |
+   | `drive` | 30 | 1.00 s | yes | — | 0.20 s | `neutral` | Seated in the golf cart (GAME-CART): the character origin is placed at the cart's `socket_driver`; hips on the seat, both hands on the steering wheel, feet on the floor/pedal, tiny breathing motion. |
+   | `drive_turn_l` / `drive_turn_r` | 30 | 1.00 s | yes | — | 0.20 s | `neutral` | Same pose with the wheel turned 30° left / right (hands follow the wheel, head looks into the curve). |
 
 4. **Visitor and pirate clip set** (shared hierarchy, own rest pose if proportions differ):
 
@@ -288,6 +290,7 @@ The exported file is `assets/models/characters/<asset_id>.glb`; the source is
 | RIG-020 | Given the turnaround sheets and the exported `.glb` rendered from front and side in rest pose, then the silhouettes match (proportions within ~5 %). | manual |
 | RIG-021 | Given each human character `.glb` in rest pose, then the centroid of the `face` primitive has z > 0 and y > 0.86 (character faces +Z), `upper_arm_r` has x < 0, and the armature node has identity transform. | asset |
 | RIG-022 | Given each human character `.glb`, then the `body` primitive has no duplicated positions with differing normals (smooth normals, §3.5) and no outline/shell mesh exists. | asset |
+| RIG-023 | Given each player `.glb`, then clips `drive`, `drive_turn_l`, `drive_turn_r` exist (30 frames, loop) and, posed at the cart's `socket_driver` offset, both wrists are within 0.04 m of the steering-wheel grip points and both ankles are on the cart floor (± 0.03 m). | asset |
 
 ## Open questions
 

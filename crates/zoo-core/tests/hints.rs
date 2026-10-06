@@ -1628,6 +1628,46 @@ fn hint_033_no_block_no_loop() {
     assert_eq!(cart_hint(&s).unwrap().kind, HintKind::KeyBox);
 }
 
+/// A trip to the golf cart of level 1 (CART-029): tap it (locked feedback + hint marker before
+/// the key), or board, drive a little and get out again.
+fn cart_trip(s: &mut Sim, rng: &mut Pcg32) {
+    let stand = s.g.carts[0].stand;
+    s.g.player.pos = cell_center(stand);
+    s.g.player.facing = (s.g.carts[0].pos - s.g.player.pos).normalize();
+    if s.g.seated.is_some() {
+        return;
+    }
+    let before = s.g.hint_signature();
+    match s.g.interact() {
+        Some(zoo_core::game::Interaction::CartLocked { .. }) => {
+            assert!(!s.g.has_cart_key);
+            let shown = s.t.show_cart_key(&s.g).map(|h| h.kind);
+            assert!(
+                matches!(shown, Some(HintKind::Note | HintKind::KeyBox)),
+                "the marker points at the next key step: {shown:?}"
+            );
+            assert!((s.t.time_left() - 12.0).abs() < 1e-3);
+        }
+        Some(zoo_core::game::Interaction::CartBoarded { .. }) => {
+            for k in 0..60 {
+                let a = (k / 15) as f32 * 1.7 + rng.below(6) as f32;
+                s.g.update(1.0 / 30.0, glam::Vec2::new(a.cos(), a.sin()));
+            }
+            for k in 0..400 {
+                if s.g.leave_cart() == zoo_core::cart::LeaveResult::Left {
+                    break;
+                }
+                let a = (k / 40) as f32 * 1.3;
+                s.g.update(1.0 / 30.0, glam::Vec2::new(a.cos(), a.sin()));
+            }
+            assert!(s.g.seated.is_none(), "she can always get out");
+        }
+        other => panic!("cart tap: {other:?}"),
+    }
+    // cart actions are no progress of the hint signature (no hint loop through them)
+    assert_eq!(before, s.g.hint_signature());
+}
+
 // CART-029: the follow-the-hints fuzz with cart actions never loops and reaches the key; once
 // with only the cart hints left (quiet day), once with the garden / treat hints around
 #[test]
@@ -1672,6 +1712,7 @@ fn cart_029_fuzz_follow_hints_with_cart_actions() {
                     s.t = HintTracker::default();
                     s.run = (String::new(), 0, 0);
                 }
+                3 => cart_trip(&mut s, &mut rng),
                 _ => {}
             }
             s.t.hide();
@@ -1685,9 +1726,12 @@ fn cart_029_fuzz_follow_hints_with_cart_actions() {
             }
         }
         assert!(cart_hint(&s).is_none());
-        // afterwards the hints go on without loops, 40 more steps
-        for _ in 0..40 {
+        // afterwards the hints go on without loops, 40 more steps (the carts are usable now)
+        for k in 0..40 {
             s.t.hide();
+            if k % 7 == 0 {
+                cart_trip(&mut s, &mut rng);
+            }
             follow_one(&mut s);
         }
     }

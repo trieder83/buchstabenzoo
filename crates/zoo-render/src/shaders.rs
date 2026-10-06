@@ -88,8 +88,8 @@ float bob_hash(vec3 o) {
 const RICH_DECL: &str = r#"
 layout(location = 6) in vec4 a_glow;        // slot: sRGB emission / colour + mode (1 glow, 3 glass, 5 flat)
 layout(location = 7) in vec4 a_node;        // part pivot (model space) + part code (0 = root)
-layout(location = 8) in vec4 a_inst_node;   // instance: open 0..1, hide mask
-uniform vec4 u_nodes[8];    // per part: axis (1 X, 2 Y, 3 Z), angle at open 1, hide bit, mode
+layout(location = 8) in vec4 a_inst_node;   // instance: open 0..1 (or a turn in rad), hide mask, steer -1..1, glow off (1)
+uniform vec4 u_nodes[8];    // per part: axis (1 X, 2 Y, 3 Z), angle at open 1, hide bit, mode (0 open, 1 clock, 2 night only, 3 steer)
 vec3 turn(vec3 v, int axis, float a) {
     float c = cos(a), s = sin(a);
     if (axis == 1) return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
@@ -104,21 +104,21 @@ const RICH_MAIN: &str = r#"
         // moving / hideable part of a multi-node asset (ARCH-007)
         vec4 nd = u_nodes[code];
         int bit = int(nd.z + 0.5);
-        if ((bit > 0 && (int(a_inst_node.y + 0.5) & bit) != 0) || (nd.w > 1.5 && u_glow_on < 0.5)) {
+        if ((bit > 0 && (int(a_inst_node.y + 0.5) & bit) != 0) || (nd.w > 1.5 && nd.w < 2.5 && u_glow_on < 0.5)) {
             gl_Position = vec4(0.0, 0.0, 2.0, 1.0);   // hidden: outside the clip volume
             v_normal = vec3(0.0, 1.0, 0.0); v_uv = a_uv; v_color = a_color; v_view_depth = 0.0;
             v_fadeable = 0.0; v_glow = vec4(0.0); v_world = vec3(0.0);
             return;
         }
         int axis = int(nd.x + 0.5);
-        float ang = (nd.w > 0.5 && nd.w < 1.5) ? nd.y * u_time : nd.y * a_inst_node.x;
+        float ang = (nd.w > 0.5 && nd.w < 1.5) ? nd.y * u_time : (nd.w > 2.5 ? nd.y * a_inst_node.z : nd.y * a_inst_node.x);
         if (axis > 0 && ang != 0.0) {
             mp = turn(mp - a_node.xyz, axis, ang) + a_node.xyz;
             mn = turn(mn, axis, ang);
         }
     }
     // glow slots emit only at night; glass (3) and flat slot colours (5) always apply
-    v_glow = a_glow.w > 2.5 ? a_glow : (a_glow.w > 0.5 && u_glow_on > 0.5 ? vec4(a_glow.rgb, 2.0) : vec4(0.0));
+    v_glow = a_glow.w > 2.5 ? a_glow : (a_glow.w > 0.5 && u_glow_on > 0.5 && a_inst_node.w < 0.5 ? vec4(a_glow.rgb, 2.0) : vec4(0.0));
 "#;
 
 fn static_vs_src(rich: bool) -> String {

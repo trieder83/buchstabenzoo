@@ -62,6 +62,19 @@ impl ViewMode {
     }
 }
 
+/// While driving a golf cart the camera zooms out by this much (GAME-CART rule 5).
+pub const CART_EXTRA_DISTANCE_M: f32 = 3.0;
+
+/// The view shown while driving (GAME-CAMERA-VIEWS rule 11, CAMV-024): only the zoo view; the
+/// stored view returns after getting out. `look_around` and `first_person` are never shown.
+pub fn view_while_driving(requested: ViewMode, driving: bool) -> ViewMode {
+    if driving {
+        ViewMode::Zoo
+    } else {
+        requested
+    }
+}
+
 /// Glide time between two views (behaviour 1, 2, 3).
 pub const TRANSITION_S: f32 = 0.4;
 
@@ -158,6 +171,15 @@ mod tests {
         assert_eq!(ViewMode::from_id("x"), None);
         assert_eq!(ViewMode::LookAround.saved(), ViewMode::Zoo);
         assert_eq!(ViewMode::FirstPerson.saved(), ViewMode::FirstPerson);
+    }
+
+    // CAMV-024
+    #[test]
+    fn camv_024_only_the_zoo_view_while_driving() {
+        for m in [ViewMode::Zoo, ViewMode::LookAround, ViewMode::FirstPerson] {
+            assert_eq!(view_while_driving(m, true), ViewMode::Zoo);
+            assert_eq!(view_while_driving(m, false), m);
+        }
     }
 
     #[test]

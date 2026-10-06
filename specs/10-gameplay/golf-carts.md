@@ -6,7 +6,7 @@ module: golf-carts
 status: draft
 depends_on: [GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE, CONT-MATH, GAME-HINT]
 test_prefix: CART
-updated: 2026-10-06
+updated: 2026-10-07
 ---
 
 # Golf carts
@@ -23,14 +23,17 @@ design rules"), so a child who never solves the math note is not stuck.
 "zookeeper cart"). The static hand cart on the repair barrier (`zookeeper_cart`, ART-ENVIRONMENT
 props) is a different prop: it cannot be entered, driven or locked and has no `[[cart]]` entry.
 
-**Status 2026-10-06:** P1 (math core, math level setting) and P2 (note, key box, lock panel, key
-hints, save v3 key fields) are **implemented** (`zoo-core/src/{math,cart_key}.rs`, `web/src/lock-panel.ts`,
-`math-aid.ts`; tests `tests/math.rs`, `tests/cart_key.rs`, `tests/hints.rs` HINT-032/033 + CART-029 key part,
-e2e `web/tests/e2e/cart_key.spec.ts`). P3 (carts, driving) is not built: the key has no use yet beyond the HUD
-chip and the "Du hast den Schlüssel!" bubble. Implementation notes: the closed box and its `cart_key` and the
+**Status 2026-10-07:** P1 (math core), P2 (note, key box, lock panel) and **P3 (carts, driving)** are implemented:
+`zoo-core/src/{math,cart_key,cart}.rs`, `[[cart]]` loading in `level.rs`, save v3 `carts` / `seated`,
+`web/src/lock-panel.ts`, `math-aid.ts`, the get-out button / 🔒 badge / bubbles in `ui.ts`, the dynamic cart batch,
+seated child, wheels / steering wheel / headlights in `zoo-web` + `zoo-render`. Tests `tests/{math,cart_key,cart,cart_fuzz}.rs`,
+`tests/hints.rs` (HINT-032/033, CART-029), `view.rs` (CAMV-024), e2e `web/tests/e2e/{cart_key,cart}.spec.ts`.
+Not built: cart sounds (no cue in ART-SOUND yet), `drive` clip of `player_boy` (no boy model; the girl has `drive`,
+`drive_turn_l/r`). Implementation notes: the closed box and its `cart_key` and the
 open box (`key_box_open.glb`, same kit script `kit_bedroom.py`) are separate placements the host swaps
 (`LevelScene::key_boxes`); the note is a reading target (its panel opens by itself like a board and counts as
 reading, every opening resets `key_box_tries`), the key box is a button target (lock panel, game paused).
+Parked carts are prop colliders of the level (`Level::set_cart_shapes`); the driven one is not (it collides itself).
 
 ## Behaviour
 
@@ -41,7 +44,7 @@ reading, every opening resets `key_box_tries`), the key box is a button target (
    | Cart | Level | Pose (centre, facing) | Footprint rect (x, z, w, d) | Boarding cell | Why here |
    |---|---|---|---|---|---|
    | `cart_l1` | `level_1` | (4.0, 3.5), `+z` | (3, 2, 2, 3) | (2, 3) on `path_plaza` | East edge of the entrance plaza, 4.3 m from the spawn (0, 2): in the first screen, beside the way to the storage, no gate, board or hiding place near. |
-   | `cart_l2` | `level_2` | (28.5, 32.0), `+x` | (27, 31, 3, 2) | (28, 30) on `path_l2_entry` | Grass strip between the entry path and the koala fence at the level entry, 3.4 m from the spawn (27, 29); west of `map_board_l2`, 4 m from `loc_fountain`'s rect. |
+   | `cart_l2` | `level_2` | (28.5, 31.7), `+x` | (27, 31, 3, 2) | (28, 30) on `path_l2_entry` | Grass strip between the entry path and the koala fence at the level entry, 3.4 m from the spawn (27, 29); west of `map_board_l2`, 4 m from `loc_fountain`'s rect. |
    | `cart_l3` | `level_3` | (15.5, 51.0), `+x` | (14, 50, 3, 2) | (15, 52) on `path_l3_entry` | Grass strip between the entry path and the south hedge `hedge_l3_south_b`, 5 m from the spawn (20, 53). |
 
    Verified 2026-10-06 against `assets/levels/level-1/2/3.toml`: the footprint cells overlap no
@@ -50,7 +53,7 @@ reading, every opening resets `key_box_tries`), the key box is a button target (
    `stand` cell; the 1-cell ring touches only `fountain_sw`/`hedge`/`enc_koala` (decoration
    edges, no gate); the three level entry paths stay free (3 m wide). A level-2 spot at
    (30, 26, 3, 2) was rejected: it overlaps `loc_fountain` (rect 28, 22, 3, 6).
-   Parking signs (0.2 m footprint) at (5.5, 2.5) / (26.5, 31.5) / (13.5, 50.5), facing the cart.
+   Parking signs (0.2 m footprint) at (5.5, 2.5) / (26.9, 31.5) / (13.5, 50.5), facing the cart. (Level 2 moved 2026-10-07: cart z 32.0 -> 31.7 and sign x 26.5 -> 26.9 so that no gap of 0.1-0.6 m opens between a parked cart / the sign and a wall near the level gate, LAYOUT-039.)
 2. **Locked or usable.** A cart is **locked** while the child has no cart key
    (`has_cart_key = false`) **or** its level is not open yet (`locked_until`, e.g. the barrier
    of the level has not opened — the cart then also stays hidden behind the barrier in
@@ -78,13 +81,18 @@ reading, every opening resets `key_box_tries`), the key box is a button target (
 5. **Driving model** (zoo-core `cart.rs`, pure, deterministic):
    - **Same controls as walking** (left thumb / WASD): the stick gives a world direction
      relative to the camera. The cart **steers towards that direction** at up to 150°/s and
-     accelerates (6 m/s²) towards `speed_max × cos(angle error)` while the error is < 90°;
-     at an error ≥ 90° the target speed is 0 → it brakes (10 m/s²) and **turns on the spot**.
+     accelerates (6 m/s²) towards `speed_max × cos(angle error)` while the error is < **30°**
+     (`DRIVE_ERROR_DEG`, implementation 2026-10-07: with 90° a 180° turn moved the cart > 1 m
+     before it pointed the right way); at an error ≥ 30° the target speed is 0 → it brakes
+     (10 m/s²) and **turns on the spot**.
    - **No reversing** (decided default, Q-372): pulling the stick back never drives backwards;
      it turns the cart around on the spot (180° in ≤ 1.3 s) and then drives forward. Speed is
-     never negative. Turning on the spot always works, so the cart cannot be driven into a
-     dead end (it can also always turn out of a corner); a friendly 🔔 horn button is
-     optional.
+     never negative — with one exception, the **wedge escape**: turning on the spot does not
+     always work (a nook between a bench and a rock hill is narrower than the box's diagonal), so
+     when the held stick makes no progress for 1 s and points backwards the cart backs out at
+     1.5 m/s (`REVERSE_SPEED_MS`); after 3 s without any progress the cart is lifted to the nearest
+     **roomy pose** within 8 m (one where it can turn through every heading, no animal within
+     1 m; `Game::cart_rescues`). A friendly 🔔 horn button is optional.
    - **Speed:** paths **4.5 m/s** (≈ 2.3 × walking), grass **2.0 m/s** (Q-120 answered),
      chosen from the surface of the cell under the box centre, smooth blend (the
      acceleration limits above).
@@ -99,8 +107,9 @@ reading, every opening resets `key_box_tries`), the key box is a button target (
    slides along obstacles. **Never stuck:** a turn that would overlap a solid is resolved by
    pushing the box out along the shortest separating axis (≤ 0.5 m per step); if no free
    pose exists within 1.5 m (cannot happen on valid level data) the cart is put back on its
-   parking pose and the player stands on the boarding cell — a counter test asserts this is
-   never needed in the fuzz (CART-018). Carts do not exist in the night levels
+   parking pose and the player stands on the boarding cell (`Game::cart_resets`) — a counter
+   test asserts this is never needed in the fuzz (CART-018); the wedge rescue above is the
+   normal safety net and may fire (`cart_rescues`). Carts do not exist in the night levels
    (`night_1`, `night_2`, decided default, Q-372); the moon door cannot be used while seated.
 7. **Safety, child-friendly:** the cart slows down and stops ≥ 0.5 m before it would touch
    a visitor, an animal or a duck on land (look-ahead along the heading, 1.5 m + stopping
@@ -231,7 +240,7 @@ it differs). `has_cart_key` implies `key_box_open` on load (repair of a broken s
 ("Math Fighter", same in both), `cart-note-line-<kiga|klasse1|klasse2|klasse3>` ("Das Ergebnis ist der
 Code für den Schlüsselkasten"), `cart-keybox-open`, `cart-key-got` ("Du hast den Schlüssel!"),
 `next-explore` is unchanged. Lock panel and HUD (implemented): `cart-lock-title`, `cart-lock-wrong`,
-`ui-key`, `ui-lock-up`, `ui-lock-down`, `ui-lock-open`, `ui-lock-close` (aria labels, no text needed), math row
+`ui-key`, `ui-lock-up`, `ui-lock-down`, `ui-lock-open`, `ui-lock-close`, `ui-cart-get-out`, `ui-cart-board` (aria labels, no text needed), math row
 `ui-math-level`, `ui-level-mathe1`…`ui-level-mathe5` (in `math.ftl`). Math task texts: CONT-MATH `math-cart-<kind>-<reading level>`.
 
 ## Work packages (implementation order)
@@ -280,15 +289,15 @@ Report for the implementation (every package must repeat this check):
 | CART-007 | Given the player carries the fish bowl with the fish (and food, the basket, the key), when she drives and gets out, then she still carries all of it. | unit |
 | CART-008 | Given the player drives past an info board, then no reading panel opens, and no board, door, bed, box or animal interaction is offered while seated except get-out. | unit |
 | CART-009 | Given a save made while sitting in a cart, when restored, then she sits in the same cart at the same pose; given the pose is no longer walkable, then at the nearest free pose within 4 m, else the parking pose. | unit |
-| CART-010 | Given touch controls, then driving works with the left thumb exactly like walking and the get-out button (🚶, >= 64 px) is reachable with the right thumb. | e2e (`web/tests/e2e/gameplay/cart.spec.ts`) |
+| CART-010 | Given touch controls, then driving works with the left thumb exactly like walking and the get-out button (🚶, >= 64 px) is reachable with the right thumb, does not overlap the gear / compass and the view button is hidden (780×360, 360×780). | e2e (`web/tests/e2e/cart.spec.ts`), vitest (`ui.test.ts` icons) |
 | CART-011 | Given a new game, then the carts cannot be entered (🔒 badge on the interact button) until the cart key is in the pocket; given the key but a closed level, the cart of that level stays locked. | unit |
 | CART-012 | Given the note on the desk, then it shows the title "Math Fighter" and a math task for the child's math level; its result is the key-box combination (3 digits, leading zeros); different seeds give different tasks (CONT-MATH MATH-007…013). | unit (`tests/cart.rs`) |
 | CART-013 | Given the key box, when the right combination is entered, then the box opens, the key goes into the pocket and all carts of open levels can be used; a wrong combination shakes and counts a try; from 3 wrong codes the note pulses and the 🧭 hint leads to the note. | unit |
 | CART-014 | Given the key box panel on touch, then every digit wheel can be set with big ▲/▼ buttons (>= 72 px) without reading, ✔ opens, ✖ closes. | e2e |
 | CART-015 | Given the three level files, then each has exactly the `[[cart]]` of rule 1 with `id`, `pos`, `facing`, `rect`, `stand`, `sign_pos`, `locked_until`, `model`; the oriented 1.3 × 2.3 m box at `pos` lies inside `rect`; the spec table and the toml agree (LAYOUT-005, LAYOUT-048). | unit (`layout`) |
 | CART-016 | Given each parking rect, then its cells are walkable and overlap no solid element, hiding-place rect, wander area, scenery, garden, event spot, prop collider, light post or `stand` cell, lie >= 1 cell from every gate / door / entry / barrier cell, the boarding cell is a walkable cell <= 1.5 m from the box, and the parked box does not disconnect the walkable grid (LAYOUT-048). | unit |
-| CART-017 | No reversing: given the stick pointing backwards, then the cart turns on the spot (180° in <= 1.3 s, moved <= 0.2 m) and then drives forward; its speed is never negative. | unit |
-| CART-018 | NEVER STUCK (cart): given seeded random stick sequences (3 seeds × 2000 steps from each parking pose, in the joined zoo, with animals and visitors around, incl. save/restore in the middle), then the box never overlaps a solid, never leaves open levels, never needs the parking-pose reset, and from every end state get-out finds a valid cell after at most a few more driven metres. | unit (fuzz) |
+| CART-017 | No reversing: given the stick pointing backwards, then the cart turns on the spot (180° in <= 1.3 s, moved <= 0.2 m) and then drives forward; its speed is never negative (except the wedge escape). | unit |
+| CART-018 | NEVER STUCK (cart): given seeded random stick sequences (3 seeds × 2000 steps from each parking pose, in the joined zoo, with animals and visitors around, incl. save/restore in the middle), then the box never overlaps a solid, never leaves open levels, never needs the parking-pose reset (a wedged cart is lifted to a roomy pose, `cart_rescues`), and from every end state get-out finds a valid cell after at most a few more driven metres. | unit (fuzz) |
 | CART-019 | Parking check: given the cart in a gate apron, a door cell, on a stand cell, in a 2 m corridor or any pose that would disconnect the walkable grid, when the child taps get-out, then she stays seated and the 🅿️✖ bubble shows; after driving to a valid pose get-out works; the three parking rects always pass. | unit |
 | CART-020 | Given the key but the level of `cart_l2` closed, then its interact shows `cart-closed-level` and no hint; given the level opens, the cart is usable. | unit |
 | CART-021 | Locked feedback: given a locked cart, when the child interacts, then the bubble `cart-locked` shows and the hint marker points for 12 s at the note (`note_read = false` or `key_box_tries >= 3`) or the key box; it does not repeat by itself. | unit |

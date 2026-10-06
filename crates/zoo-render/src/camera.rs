@@ -61,6 +61,9 @@ pub struct FollowCamera {
     yaw: f32,
     distance: f32,
     target_distance: f32,
+    /// Extra zoo-view distance while driving a golf cart (GAME-CART rule 5) and its target.
+    extra: f32,
+    extra_target: f32,
     /// World point the camera looks at.
     pub target: Vec3,
     /// Requested view (GAME-CAMERA-VIEWS 1).
@@ -136,6 +139,8 @@ impl FollowCamera {
             yaw: 0.0,
             distance: d,
             target_distance: d,
+            extra: 0.0,
+            extra_target: 0.0,
             target: Vec3::ZERO,
             mode: ViewMode::Zoo,
             close: ViewMode::FirstPerson,
@@ -199,6 +204,17 @@ impl FollowCamera {
         self.distance
     }
 
+    /// Zooms out by `m` metres on top of the zoom distance while driving a golf cart (eased;
+    /// 0 = normal), GAME-CART rule 5.
+    pub fn set_extra_distance(&mut self, m: f32) {
+        self.extra_target = m.max(0.0);
+    }
+
+    /// The extra distance now (m).
+    pub fn extra_distance(&self) -> f32 {
+        self.extra
+    }
+
     /// Eases yaw and zoom towards their targets and follows `player_world` (feet position).
     pub fn update(&mut self, dt: f32, player_world: Vec3) {
         let k = 1.0 - (-EASE_RATE * dt.max(0.0)).exp();
@@ -210,6 +226,10 @@ impl FollowCamera {
         self.distance += (self.target_distance - self.distance) * k;
         if (self.target_distance - self.distance).abs() < 1e-4 {
             self.distance = self.target_distance;
+        }
+        self.extra += (self.extra_target - self.extra) * k;
+        if (self.extra_target - self.extra).abs() < 1e-3 {
+            self.extra = self.extra_target;
         }
         self.target = player_world + Vec3::Y * LOOK_AT_HEIGHT_M;
         // GAME-CAMERA-VIEWS: glide between the zoo pose and the close pose, ease the turn
@@ -226,6 +246,7 @@ impl FollowCamera {
     pub fn snap(&mut self, player_world: Vec3) {
         self.yaw = self.target_yaw();
         self.distance = self.target_distance;
+        self.extra = self.extra_target;
         self.target = player_world + Vec3::Y * LOOK_AT_HEIGHT_M;
         self.blend = if self.mode.is_close() { 1.0 } else { 0.0 };
         self.link = 1.0;
@@ -347,8 +368,8 @@ impl FollowCamera {
         let p = self.params.pitch_deg.to_radians();
         let fwd = Vec3::new(-self.yaw.sin(), 0.0, -self.yaw.cos());
         Pose {
-            eye: self.target - fwd * (p.cos() * self.distance)
-                + Vec3::Y * (p.sin() * self.distance),
+            eye: self.target - fwd * (p.cos() * (self.distance + self.extra))
+                + Vec3::Y * (p.sin() * (self.distance + self.extra)),
             yaw: self.yaw,
             pitch: -p,
             fov_deg: self.params.vertical_fov_deg,

@@ -358,6 +358,9 @@ pub struct LevelScene {
     /// Turning water wheels in the water (`mill_hut`, LAYOUT-L3-017); drawn by the host with
     /// a spinning `wheel` part (ARCH-007).
     pub water_wheels: Vec<WaterWheel>,
+    /// Painted parking rectangles of the golf carts (thin white lines on the ground,
+    /// GAME-CART rule 1); not placeholders.
+    pub parking_marks: Vec<BoxPlacement>,
 }
 
 /// Radius of the mill hut's water wheel to the paddle tips (m).
@@ -1028,6 +1031,41 @@ impl LevelScene {
             }
             for bx in &mut s.boxes[first_box..] {
                 bx.part = p.part as u8;
+            }
+        }
+        // Golf-cart parking: the sign facing the cart and the painted rectangle (GAME-CART rule 1).
+        for c in &data.carts {
+            let to_cart = c.pos() - Vec2::from(c.sign_pos);
+            let k = s.model_at_y(
+                "parking_sign",
+                Vec2::from(c.sign_pos),
+                0.0,
+                crate::cart::yaw_of_dir(to_cart.normalize_or(Vec2::Y)),
+            );
+            s.placements[k].part = c.part as u8;
+            let (x0, z0) = (c.rect.x as f32 + 0.12, c.rect.z as f32 + 0.12);
+            let (x1, z1) = (
+                (c.rect.x + c.rect.w) as f32 - 0.12,
+                (c.rect.z + c.rect.d) as f32 - 0.12,
+            );
+            let line = 0.1;
+            for (a, b) in [
+                (Vec2::new(x0, z0), Vec2::new(x1, z0)),
+                (Vec2::new(x0, z1), Vec2::new(x1, z1)),
+                (Vec2::new(x0, z0), Vec2::new(x0, z1)),
+                (Vec2::new(x1, z0), Vec2::new(x1, z1)),
+            ] {
+                let mid = (a + b) * 0.5;
+                let (dx, dz) = ((b.x - a.x).abs(), (b.y - a.y).abs());
+                s.parking_marks.push(BoxPlacement {
+                    pos: level_to_world_at(mid, crate::ground::PATH_TOP_M + 0.003),
+                    size: Vec3::new(dx.max(line), 0.01, dz.max(line)),
+                    yaw: 0.0,
+                    color: [0.94, 0.94, 0.88],
+                    fadeable: false,
+                    source: c.id.clone(),
+                    part: c.part as u8,
+                });
             }
         }
         // Ad billboards (GAME-ADS): frame, posts, footprint, picture decal.

@@ -63,7 +63,7 @@
 | ART-DIRECTION | Art direction | draft | — | 4 | Q-048, Q-050 | [30-art/art-direction.md](30-art/art-direction.md) |
 | ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 16 | Q-005, Q-044, Q-048, Q-059, Q-060, Q-061, Q-064, Q-098, Q-099, Q-147, Q-149, Q-151, Q-153, Q-154 | [30-art/environment.md](30-art/environment.md) |
 | ART-PIPELINE | Asset pipeline — concept to game | draft | ART-DIRECTION | 10 | Q-009, Q-026, Q-153, Q-154 | [30-art/asset-pipeline.md](30-art/asset-pipeline.md) |
-| ART-RIG | Character rig and animation — technical contract | draft | ART-PIPELINE, GAME-PLAYER, TECH-ARCH | 22 | Q-009, Q-014, Q-024, Q-025, Q-026, Q-027, Q-029, Q-042, Q-050, Q-051, Q-063 | [30-art/character-rig-and-animation.md](30-art/character-rig-and-animation.md) |
+| ART-RIG | Character rig and animation — technical contract | draft | ART-PIPELINE, GAME-PLAYER, TECH-ARCH | 23 | Q-009, Q-014, Q-024, Q-025, Q-026, Q-027, Q-029, Q-042, Q-050, Q-051, Q-063 | [30-art/character-rig-and-animation.md](30-art/character-rig-and-animation.md) |
 | ART-SOUND | Sound effects — sourcing and pipeline | draft | ART-PIPELINE, ART-ANIMALS, GAME-ANIMALS, GAME-FEED, GAME-PLAYER, PERF-BUDGETS | 27 | Q-008, Q-211, Q-213, Q-214, Q-215, Q-216, Q-220, Q-221, Q-250, Q-251 | [30-art/sound.md](30-art/sound.md) |
 
 ## Tech
@@ -82,4 +82,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 845 test cases; questions: answered: 160, open: 102, partly answered: 7, proposed: 2.
+**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 846 test cases; questions: answered: 160, open: 102, partly answered: 7, proposed: 2.

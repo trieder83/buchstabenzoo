@@ -471,7 +471,7 @@ One `[[cart]]` in `level-2.toml`:
 
 | id | pose (centre, facing) | rect (x, z, w, d) | boarding cell | sign | `locked_until` |
 |---|---|---|---|---|---|
-| `cart_l2` | (28.5, 32.0), `+x` | (27, 31, 3, 2) | (28, 30) on `path_l2_entry` | (26.5, 31.5) | "level_2" |
+| `cart_l2` | (28.5, 31.7), `+x` | (27, 31, 3, 2) | (28, 30) on `path_l2_entry` | (26.9, 31.5) | "level_2" |
 
 Grass strip between `path_l2_entry` (z 28…30, stays 3 m free) and the koala fence (`enc_koala` starts at z 33), west of `map_board_l2` (x 32). The first spot tried, (30, 26, 3, 2), overlaps the `loc_fountain` rect (28, 22, 3, 6) and was rejected. Spawn (27, 29) is 3.4 m away. The parked cart is a solid box (1.3 × 2.3 m, B(0, 0, 0.65, 1.15))
 that never closes a way (LAYOUT-048) and is never a hint target. The cart needs the cart key (GAME-CART

@@ -84,6 +84,21 @@ pub struct SaveState {
     /// Math level id (v3); missing / unknown = `mathe1`.
     #[serde(default)]
     pub math_level: String,
+    /// The golf carts (v3): pose of every cart; missing = all on their parking poses.
+    #[serde(default)]
+    pub carts: Vec<CartSave>,
+    /// Id of the cart she sits in (v3).
+    #[serde(default)]
+    pub seated: Option<String>,
+}
+
+/// A golf cart's pose (v3, GAME-CART "Save"): `yaw` in the camera convention (0 = north).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CartSave {
+    pub id: String,
+    pub x: f32,
+    pub z: f32,
+    pub yaw: f32,
 }
 
 fn intro_seen_default() -> bool {
@@ -341,6 +356,17 @@ impl Game {
             key_box_tries: self.key_box_tries,
             note_aid: self.note_aid,
             math_level: self.settings.math_level.id().to_owned(),
+            carts: self
+                .carts
+                .iter()
+                .map(|c| CartSave {
+                    id: c.id.clone(),
+                    x: c.pos.x,
+                    z: c.pos.y,
+                    yaw: c.yaw(),
+                })
+                .collect(),
+            seated: self.seated_cart().map(|c| c.id.clone()),
         }
     }
 
@@ -532,6 +558,7 @@ impl Game {
         g.key_box_tries = s.key_box_tries;
         g.note_aid = s.note_aid;
         g.settings.math_level = crate::math::MathLevel::from_id_or_default(&s.math_level);
+        g.restore_carts(&s.carts, s.seated.as_deref());
         g.babies = s.babies.clone();
         for b in s.babies.clone() {
             g.spawn_baby(&b);

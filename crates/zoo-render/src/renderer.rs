@@ -56,8 +56,9 @@ pub struct Instance {
     pub scale_fade: [f32; 4],
     /// Flat colour with `a = 1`, or `a = 0` to sample the palette texture.
     pub color: [f32; 4],
-    /// Moving parts (ARCH-007): x = open amount 0…1 (door leaves, gates), y = hide mask
-    /// ([`HIDE_ROOF`] | [`HIDE_WALLS_UPPER`]), z, w unused.
+    /// Moving parts (ARCH-007): x = open amount 0…1 (door leaves, gates; golf cart: wheel
+    /// angle in radians), y = hide mask ([`HIDE_ROOF`] | [`HIDE_WALLS_UPPER`]), z = steering
+    /// −1…1 (golf cart), w = 1 switches the glow slots of this instance off (parked cart).
     pub node: [f32; 4],
 }
 
@@ -65,6 +66,8 @@ pub struct Instance {
 pub const HIDE_ROOF: u32 = 1;
 /// Hide-mask bit of a model's `walls_upper` part.
 pub const HIDE_WALLS_UPPER: u32 = 2;
+/// Steering wheel turn at full lock (30°, GAME-CART).
+pub const CART_STEER_MAX_RAD: f32 = 30.0 * std::f32::consts::PI / 180.0;
 /// Parts a mesh can move / hide on its own (`u_nodes` array size, part 0 = root).
 pub const MAX_NODE_PARTS: usize = 8;
 
@@ -130,6 +133,20 @@ impl NodeBehaviour {
                 axis: 2.0,
                 angle: std::f32::consts::TAU / 20.0,
                 mode: 1.0,
+                ..Self::STATIC
+            },
+            // golf cart (GAME-CART): wheels spin about +X by the instance's `node.x` radians
+            // (rolling forward = positive), the steering wheel turns about +Z by `node.z` ×
+            // 30° (mode 3, positive = left turn)
+            "wheel_fl" | "wheel_fr" | "wheel_rl" | "wheel_rr" => Self {
+                axis: 1.0,
+                angle: 1.0,
+                ..Self::STATIC
+            },
+            "steering_wheel" => Self {
+                axis: 3.0,
+                angle: CART_STEER_MAX_RAD,
+                mode: 3.0,
                 ..Self::STATIC
             },
             "roof" => Self {
@@ -1777,6 +1794,15 @@ impl Renderer {
 
     pub fn has_skinned(&self, name: &str) -> bool {
         self.skinned.contains_key(name)
+    }
+
+    /// Model-space position of the skeleton node `node` of a skinned model in the pose of the
+    /// last drawn frame (e.g. `hand_l`: the hand lantern follows the swinging arm). `None` if the
+    /// model or node is unknown.
+    pub fn node_position(&self, model: &str, node: &str) -> Option<Vec3> {
+        let sm = self.skinned.get(model)?;
+        let i = sm.skeleton.node_by_name(node)?;
+        sm.world.get(i).map(|m| m.w_axis.truncate())
     }
 
     /// Adds a static mesh as an instanced batch (props use the palette texture).

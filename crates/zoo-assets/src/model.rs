@@ -399,7 +399,13 @@ impl Model {
                     Some(m) => m.map(|c| Mat4::from_cols_array_2d(&c)).collect(),
                     None => vec![Mat4::IDENTITY; joints.len()],
                 };
-                Some(Skeleton::new(parents, rest, order, joints, inverse_bind))
+                Some(
+                    Skeleton::new(parents, rest, order, joints, inverse_bind).with_names(
+                        doc.nodes()
+                            .map(|n| n.name().unwrap_or("").to_owned())
+                            .collect(),
+                    ),
+                )
             }
             None => None,
         };

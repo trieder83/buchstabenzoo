@@ -324,3 +324,12 @@ describe('key box lock panel maths (CART-014)', () => {
     expect(countParts(47)).toEqual({ rods: 4, dots: 7 });
   });
 });
+
+// CART-010: the golf cart icons of the interact button (🛻 board, 🚶 get out)
+describe('golf cart icons', () => {
+  it('CART-010: cart and get_out have their icons', () => {
+    expect(TARGET_ICONS.cart).toBe('🛻');
+    expect(TARGET_ICONS.get_out).toBe('🚶');
+    expect(targetIcon('get_out', 'get_out')).toBe('🚶');
+  });
+});

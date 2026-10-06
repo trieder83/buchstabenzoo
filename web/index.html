@@ -243,6 +243,28 @@
       #compass-btn.pulse {
         animation: nudge 1.1s ease-in-out 2;
       }
+      /* the locked golf cart points at the key: three pulses (GAME-CART rule 13) */
+      #compass-btn.pulse3 {
+        animation: nudge 1.1s ease-in-out 3;
+      }
+      /* golf cart: 🔒 badge on the interact button; only the zoo view while driving (CAMV-024) */
+      #act {
+        overflow: visible;
+      }
+      #act .badge {
+        position: absolute;
+        right: -4px;
+        top: -4px;
+        font-size: 0.45em;
+        line-height: 1;
+        background: #fff;
+        border: 3px solid #3b2314;
+        border-radius: 50%;
+        padding: 2px;
+      }
+      body.driving #view-btn {
+        display: none;
+      }
       @keyframes nudge {
         50% {
           transform: scale(1.18);

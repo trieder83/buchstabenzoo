@@ -193,6 +193,21 @@ pub enum GameEvent {
     },
     /// The key box opened and the cart key is in the pocket (GAME-CART rule 15).
     KeyBoxOpened,
+    /// She got into a golf cart; `followers`: animals follow and now wait (GAME-CART rule 7).
+    CartBoarded {
+        id: String,
+        followers: bool,
+    },
+    /// She got out of a golf cart.
+    CartLeft {
+        id: String,
+    },
+    /// A locked cart was tapped (`closed_level`: its level is not open yet).
+    CartLocked {
+        closed_level: bool,
+    },
+    /// Getting out was refused: the parked cart would be harmful (🅿️✖).
+    CartNoPark,
 }
 
 /// Reading panels open this long after their target became available (GAME-PLAYER §4).
@@ -305,6 +320,12 @@ pub enum Target {
     KeyBox {
         id: String,
     },
+    /// A golf cart (GAME-CART): board it, or the locked feedback while it is locked.
+    Cart {
+        id: String,
+    },
+    /// While seated in a cart: the only action, get out (🚶).
+    GetOut,
 }
 
 /// What the child gives to an animal at home.
@@ -350,6 +371,8 @@ impl Target {
             Target::Telescope { .. } => "telescope",
             Target::Note { .. } => "note",
             Target::KeyBox { .. } => "key_box",
+            Target::Cart { .. } => "cart",
+            Target::GetOut => "get_out",
         }
     }
 }
@@ -402,6 +425,17 @@ pub enum Interaction {
     Note { id: String },
     /// The key box: the host opens the lock panel (GAME-CART rule 15).
     KeyBox { id: String },
+    /// Got into a golf cart.
+    CartBoarded { id: String, followers: bool },
+    /// A locked cart was tapped.
+    CartLocked {
+        id: String,
+        reason: crate::cart::CartLock,
+    },
+    /// Got out of the cart.
+    CartLeft { id: String },
+    /// Getting out refused (🅿️✖): the child keeps driving.
+    CartNoPark { id: String },
     /// Gave the carried food to an animal at home (it stays in the hands).
     FoodGift {
         animal: &'static str,
@@ -692,6 +726,20 @@ pub struct Game {
     /// The note shows its visual aid (CONT-MATH rule 5): set by the 3rd wrong code in a row,
     /// cleared by a new task (math level change); saved.
     pub note_aid: bool,
+    /// The golf carts (GAME-CART) and the index of the one she sits in.
+    pub carts: Vec<crate::cart::Cart>,
+    pub seated: Option<usize>,
+    /// Cells forbidden for carts (building interiors / doors, gardens), by grid index.
+    pub(crate) cart_banned: Vec<bool>,
+    /// Extra things a cart keeps away from (ducks, visitors): (centre, radius); set by the host.
+    pub cart_obstacles: Vec<(Vec2, f32)>,
+    pub(crate) cart_entity_buf: Vec<(Vec2, f32)>,
+    /// Times the last-resort reset put a cart home (must stay 0, CART-018).
+    pub cart_resets: u32,
+    /// Times the wedge rescue lifted a cart to a roomy pose (rare, 3 s without progress).
+    pub cart_rescues: u32,
+    /// Speed of the driven cart in the last update (m/s).
+    pub cart_speed_now: f32,
 }
 
 /// A building door opens while the player is this close to the door cell (m).
@@ -920,7 +968,7 @@ impl Game {
             };
             a.wander.pause_s = wander::draw_pause(r);
         }
-        Ok(Self {
+        let mut game = Self {
             level,
             player,
             carry: Carry::default(),
@@ -943,6 +991,14 @@ impl Game {
             note_read: false,
             key_box_tries: 0,
             note_aid: false,
+            carts: Vec::new(),
+            seated: None,
+            cart_banned: Vec::new(),
+            cart_obstacles: Vec::new(),
+            cart_entity_buf: Vec::new(),
+            cart_resets: 0,
+            cart_rescues: 0,
+            cart_speed_now: 0.0,
             intro_seen: false,
             babies: Vec::new(),
             baby_states: BTreeMap::new(),
@@ -961,7 +1017,9 @@ impl Game {
             treat_choice: None,
             lying: crate::carrying::Lying::default(),
             bamboo,
-        })
+        };
+        game.init_carts();
+        Ok(game)
     }
 
     /// Whether a level part is unlocked: the first level always, a later one when one of its
@@ -1399,6 +1457,10 @@ impl Game {
     /// boards and boxes — the readable side (GAME-PLAYER §5).
     pub fn interactables(&self) -> Vec<Interactable> {
         let mut out = Vec::new();
+        if self.seated.is_some() {
+            // seated: the get-out button is the only action (GAME-CART rule 9)
+            return out;
+        }
         let data = &self.level.data;
         for e in &data.elements {
             if e.kind.as_deref() != Some("info_board") {
@@ -1540,6 +1602,14 @@ impl Game {
         }
         // the golf-cart note and the key box (GAME-CART rules 14/15)
         self.cart_key_interactables(&mut out);
+        // golf carts (always offered so the child learns they exist, GAME-CART rule 2)
+        for c in &self.carts {
+            out.push(Interactable {
+                target: Target::Cart { id: c.id.clone() },
+                point: c.pos,
+                readable: None,
+            });
+        }
         // vegetable gardens (GAME-GARDEN): ripe plants, the signs
         for sp in &data.plant_spots {
             let ripe = self
@@ -1631,6 +1701,16 @@ impl Game {
 
     /// [`Game::is_available`] with another range (panel hysteresis, GAME-PLAYER §4).
     pub fn is_available_within(&self, it: &Interactable, range: f32) -> bool {
+        if let Target::Cart { id } = &it.target {
+            // within 1.5 m of the box, no facing rule (GAME-CART rule 3)
+            return self
+                .carts
+                .iter()
+                .position(|c| &c.id == id)
+                .is_some_and(|i| {
+                    self.cart_distance(i, self.player.pos) <= crate::cart::BOARD_RANGE_M
+                });
+        }
         let range = match it.target {
             Target::CutSpot { .. } => range.min(crate::carrying::CUT_RANGE_M),
             _ => range,
@@ -1655,6 +1735,9 @@ impl Game {
     /// The nearest available interactable (PLAY-021), if any. Putting a carried item down
     /// is offered only when nothing else is available.
     pub fn available_target(&self) -> Option<Target> {
+        if self.seated.is_some() {
+            return Some(Target::GetOut);
+        }
         let p = self.player.pos;
         self.interactables()
             .into_iter()
@@ -1749,6 +1832,28 @@ impl Game {
                 Some(Interaction::Note { id })
             }
             Target::KeyBox { id } => Some(Interaction::KeyBox { id }),
+            Target::Cart { id } => {
+                let i = self.carts.iter().position(|c| c.id == id)?;
+                if let Some(reason) = self.cart_lock(i) {
+                    self.events.push(GameEvent::CartLocked {
+                        closed_level: reason == crate::cart::CartLock::ClosedLevel,
+                    });
+                    return Some(Interaction::CartLocked { id, reason });
+                }
+                let followers = self
+                    .animals
+                    .iter()
+                    .any(|a| a.state == AnimalState::Following);
+                self.board_cart(i)
+                    .then_some(Interaction::CartBoarded { id, followers })
+            }
+            Target::GetOut => {
+                let id = self.seated_cart()?.id.clone();
+                match self.leave_cart() {
+                    crate::cart::LeaveResult::Left => Some(Interaction::CartLeft { id }),
+                    _ => Some(Interaction::CartNoPark { id }),
+                }
+            }
             Target::Plant { spot } => self.harvest(&spot),
             Target::GardenSign { bed } => {
                 let b = self.level.data.garden_beds.iter().find(|b| b.id == bed)?;
@@ -2352,14 +2457,19 @@ impl Game {
         if self.carrying_animal() {
             params.walk_speed *= CARRY_ANIMAL_SPEED_FACTOR; // careful (RESC-023)
         }
-        self.player.step_with(
-            self.level.grid(),
-            self.level.colliders(),
-            &params,
-            input,
-            dt,
-            leading,
-        );
+        if self.seated.is_some() {
+            self.drive_cart(dt, input);
+        } else {
+            self.cart_speed_now = 0.0;
+            self.player.step_with(
+                self.level.grid(),
+                self.level.colliders(),
+                &params,
+                input,
+                dt,
+                leading,
+            );
+        }
         // a species whose members are ALL at home is done, whatever the mission flags say (an
         // old save, a restore, a missed completion): the compass and the hints must never offer
         // a target for it (RESC-033, user report 2026-10-03)
@@ -2384,6 +2494,7 @@ impl Game {
         self.update_followers(dt);
         self.update_stall(dt);
         self.update_wander(dt);
+        self.keep_animals_out_of_carts();
         self.update_babies(dt);
         self.gift_cooldown.retain(|_, s| {
             *s -= dt;
@@ -2392,7 +2503,7 @@ impl Game {
         self.update_daytime(dt);
         self.update_panel(dt);
         self.time_s += f64::from(dt);
-        if self.player.last_speed > 0.01 {
+        if self.player.last_speed > 0.01 || self.cart_speed_now > 0.01 {
             self.autosave.moving_s += dt;
         }
     }
@@ -2677,8 +2788,19 @@ impl Game {
             .map_or(self.player.pos, |g| g.gate_center() + g.gate_out() * 0.9);
         let player_cell = cell_of(p);
         let fp = self.follow_params;
+        let seated = self.seated.is_some();
         for a in &mut self.animals {
             if a.state != AnimalState::Following {
+                continue;
+            }
+            if seated {
+                // they wait where she got in (GAME-CART rule 7, GAME-RESCUE rule 6)
+                if !a.waiting {
+                    a.waiting = true;
+                    self.events.push(GameEvent::Waiting {
+                        animal: a.id().to_owned(),
+                    });
+                }
                 continue;
             }
             let dist = a.pos.distance(p);
@@ -3214,6 +3336,9 @@ impl Game {
     /// open; after [`STALL_WALK_S`] the escaped animals of open missions walk to a cell near
     /// the player (the hint points at them from [`STALL_HELP_S`]).
     fn update_stall(&mut self, dt: f32) {
+        if self.seated.is_some() {
+            return; // driving is no stall (GAME-CART)
+        }
         let sig = self.progress_signature();
         if sig != self.stall_sig || !self.any_mission_open() || self.daytime.is_dark() {
             if sig != self.stall_sig || !self.any_mission_open() {

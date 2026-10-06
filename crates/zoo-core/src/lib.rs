@@ -6,6 +6,7 @@ pub mod ambient;
 pub mod animals;
 pub mod baby;
 pub mod carrying;
+pub mod cart;
 pub mod cart_key;
 pub mod collision;
 pub mod content;

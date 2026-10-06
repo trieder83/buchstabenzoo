@@ -29,3 +29,7 @@ ui-lock-up = Zahl größer
 ui-lock-down = Zahl kleiner
 ui-lock-open = Aufschließen
 ui-lock-close = Schließen
+
+## Buttons (aria labels, no text needed on screen)
+ui-cart-get-out = Aussteigen
+ui-cart-board = In den Golfwagen einsteigen

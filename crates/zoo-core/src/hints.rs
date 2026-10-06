@@ -944,6 +944,26 @@ impl HintTracker {
         self.shown.as_ref()
     }
 
+    /// The locked-cart feedback (GAME-CART rule 13): the hint marker points at the next key
+    /// step (note or key box) for the usual 12 s. `None` (no marker) when there is no key step
+    /// (the key is taken, or at night). Child-initiated, so it never repeats by itself.
+    pub fn show_cart_key(&mut self, g: &Game) -> Option<&Hint> {
+        let h = candidates(g, self)
+            .into_iter()
+            .find(|h| matches!(h.kind, HintKind::Note | HintKind::KeyBox))?;
+        self.idle_s = 0.0;
+        self.cycle.clear();
+        self.index = 0;
+        self.pending = Some((h.id.clone(), h.pos));
+        self.left_s = HINT_SHOW_S;
+        self.refresh_s = REFRESH_S;
+        self.walk_s = 0.0;
+        self.walk_m = walking_distance(g, h.pos);
+        self.shown = Some(h);
+        self.pulses += 1;
+        self.shown.as_ref()
+    }
+
     /// How often the hint `id` was reached without any change of the game since (repeat guard).
     pub fn reached_count(&self, g: &Game, id: &str) -> u32 {
         if self.guard_sig != g.hint_signature() {

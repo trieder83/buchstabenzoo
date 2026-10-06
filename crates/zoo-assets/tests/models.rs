@@ -327,3 +327,15 @@ fn cart_032_golf_cart_models() {
     );
     assert!(open.empty("socket_key").is_some());
 }
+
+/// The skeleton keeps its node names, so the hand lantern can follow the `hand_l` bone.
+#[test]
+fn player_skeleton_has_named_hand_nodes() {
+    let m = Model::from_glb(
+        &std::fs::read(root().join("assets/models/characters/player_girl.glb")).unwrap(),
+    )
+    .unwrap();
+    let sk = m.skeleton.as_ref().expect("skinned");
+    assert!(sk.node_by_name("hand_l").is_some());
+    assert!(sk.node_by_name("hand_r").is_some());
+}

@@ -975,11 +975,11 @@ facing = "-z"
 # locked_until = level id that must be open ("" = always). Every cart also needs the cart key.
 [[cart]]
 id = "cart_l2"
-pos = [28.5, 32.0]
+pos = [28.5, 31.7]
 facing = "+x"
 rect = [27, 31, 3, 2]
 stand = [28, 30]
-sign_pos = [26.5, 31.5]
+sign_pos = [26.9, 31.5]
 locked_until = "level_2"
 model = "golf_cart"
 notes = "Grass strip between path_l2_entry and the koala fence, 3.4 m from the spawn (27, 29) (LAYOUT-L2-019)."

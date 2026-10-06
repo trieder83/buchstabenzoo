@@ -77,6 +77,27 @@ crossfade_in = 0.15
 events = {}
 layer = "upper_body"
 
+[player.drive]
+frames = 30
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "neutral"
+
+[player.drive_turn_l]
+frames = 30
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "neutral"
+
+[player.drive_turn_r]
+frames = 30
+loop = true
+crossfade_in = 0.20
+events = {}
+expression = "neutral"
+
 [visitor.idle]
 frames = 90
 loop = true

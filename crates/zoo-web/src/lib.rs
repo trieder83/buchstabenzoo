@@ -78,6 +78,11 @@ const DYN_GLOW: &str = "__dyn_glow";
 const FIREFLIES_PER_AREA: usize = 6;
 /// The hand lantern the player carries at night (`kit_night`, GAME-NIGHT rule 1).
 const HAND_LANTERN: &str = "hand_lantern";
+/// The drivable golf cart model (GAME-CART), drawn as a dynamic instanced batch.
+const CART_MODEL: &str = "golf_cart";
+/// Driver's seat and headlight positions of the cart model (`socket_driver`, `light_l/_r`) when
+/// the model has no empties.
+const CART_SOCKET_FALLBACK: Vec3 = Vec3::new(0.27, 0.5, -0.22);
 /// `hand_lantern.socket_handle` (glTF): the grip that coincides with her hand.
 const HAND_LANTERN_GRIP: Vec3 = Vec3::new(0.0, 0.385, 0.0);
 /// Plant kinds in the order of [`PLANT_MODELS`] (treat ids, GAME-GARDEN).
@@ -103,8 +108,9 @@ const PLANT_MODELS: [[&str; 3]; 4] = [
     ],
 ];
 /// Models the presentation places itself (not in the level scene).
-const EXTRA_MODELS: [&str; 13] = [
+const EXTRA_MODELS: [&str; 14] = [
     HAND_LANTERN,
+    CART_MODEL,
     "carrot_plant_sprout",
     "carrot_plant_young",
     "carrot_plant_ripe",
@@ -417,6 +423,35 @@ pub struct App {
     key_boxes: Vec<KeyBoxView>,
     /// The hand lantern at night (dynamic instance).
     hand_lantern: [Instance; 1],
+    /// Golf carts (GAME-CART): instances drawn this frame, the model's driver socket and
+    /// headlight positions, whether the model loaded.
+    cart_instances: Vec<Instance>,
+    cart_sockets: CartSockets,
+    cart_model: bool,
+    /// Driving a cart: only the zoo view is shown, the camera is zoomed out; the stored view
+    /// returns after getting out (CAMV-024).
+    driving: bool,
+    view_before: Option<ViewMode>,
+    /// Smoothed steering of the seated child's clip (-1 right … +1 left).
+    steer_blend: f32,
+}
+
+/// Model-space attach points of the golf cart (`socket_driver`, `light_l`, `light_r`).
+#[derive(Debug, Clone, Copy)]
+struct CartSockets {
+    driver: Vec3,
+    light_l: Vec3,
+    light_r: Vec3,
+}
+
+impl Default for CartSockets {
+    fn default() -> Self {
+        Self {
+            driver: CART_SOCKET_FALLBACK,
+            light_l: Vec3::new(0.32, 0.5, 1.43),
+            light_r: Vec3::new(-0.32, 0.5, 1.43),
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -494,6 +529,8 @@ impl App {
         // Static props and buildings: one instanced batch per model (its moving parts, glow
         // slots and glass included, ARCH-006/007). Ground tiles get no normal edges.
         let mut has_carry_model = false;
+        let mut cart_sockets = CartSockets::default();
+        let mut cart_model = false;
         let mut faces: BTreeMap<String, Vec<zoo_assets::Face>> = BTreeMap::new();
         for (path, bytes) in &files {
             let Some(name) = path
@@ -512,6 +549,15 @@ impl App {
                     renderer
                         .add_model(name, &m, if ground { 0.0 } else { 1.0 })
                         .map_err(|e| JsError::new(&format!("{e:?}")))?;
+                    if name == CART_MODEL {
+                        cart_model = true;
+                        let d = CartSockets::default();
+                        cart_sockets = CartSockets {
+                            driver: m.empty("socket_driver").unwrap_or(d.driver),
+                            light_l: m.empty("light_l").unwrap_or(d.light_l),
+                            light_r: m.empty("light_r").unwrap_or(d.light_r),
+                        };
+                    }
                     if name == "food_box" {
                         renderer
                             .add_model(CARRY_BOX, &m, 1.0)
@@ -1046,7 +1092,17 @@ impl App {
             plants,
             key_boxes,
             hand_lantern: [Instance::model(Vec3::ZERO, 0.0, false)],
+            cart_instances: Vec::with_capacity(4),
+            cart_sockets,
+            cart_model,
+            driving: false,
+            view_before: None,
+            steer_blend: 0.0,
         };
+        if app.cart_model {
+            // creates the dynamic batch the carts are drawn in
+            app.renderer.add_instance(CART_MODEL, Vec3::ZERO, 0.0);
+        }
         app.reset_views();
         Ok(app)
     }
@@ -1219,6 +1275,9 @@ impl App {
     /// Look-around held (`true`) or released (GAME-CAMERA-VIEWS 2): eye button, `F`, right
     /// mouse button. Only from the zoo view; returns whether look-around is now active.
     pub fn look_hold(&mut self, on: bool) -> bool {
+        if self.driving {
+            return false; // zoo view only while driving (CAMV-024)
+        }
         let facing = views::level_to_yaw(self.game.player.facing);
         match (on, self.camera.mode()) {
             (true, ViewMode::Zoo) => {
@@ -1240,6 +1299,9 @@ impl App {
     /// The one view button (GAME-CAMERA-VIEWS 3a, CAMV-025): zoo → first person → look-around
     /// → zoo. Returns the new view id. Look-around chosen this way stays until the next tap.
     pub fn cycle_view(&mut self) -> String {
+        if self.driving {
+            return self.view_mode();
+        }
         self.look_held = false;
         match self.camera.mode() {
             ViewMode::Zoo => self.set_view(ViewMode::FirstPerson),
@@ -1254,6 +1316,9 @@ impl App {
 
     /// Toggles first person (GAME-CAMERA-VIEWS 3; `V`, 👓 button). Returns the new view id.
     pub fn toggle_first_person(&mut self) -> String {
+        if self.driving {
+            return self.view_mode();
+        }
         self.look_held = false;
         let next = if self.camera.mode() == ViewMode::FirstPerson {
             ViewMode::Zoo
@@ -1270,6 +1335,10 @@ impl App {
         let Some(mode) = ViewMode::from_id(id) else {
             return false;
         };
+        if self.driving {
+            self.view_before = Some(mode.saved());
+            return true;
+        }
         self.set_view(mode.saved());
         self.camera.snap(player_feet(&self.game));
         true
@@ -1282,7 +1351,10 @@ impl App {
 
     /// The view to store in the settings (look-around is never stored, behaviour 9).
     pub fn saved_view_mode(&self) -> String {
-        self.camera.mode().saved().id().to_owned()
+        self.view_before
+            .unwrap_or(self.camera.mode().saved())
+            .id()
+            .to_owned()
     }
 
     /// Continuous turn of a close view by a drag in CSS px (mouse, right thumb, eye button;
@@ -1391,6 +1463,104 @@ impl App {
             None => "",
         }
         .to_owned()
+    }
+
+    // ------------------------------------------------------------------ golf carts (GAME-CART)
+
+    /// The golf carts as JSON `[{"id", "x", "z", "yaw", "dir_x", "dir_z", "speed", "lock"
+    /// ("" | "no_key" | "closed_level"), "seated", "lights", "wheel", "steer"}]` (level
+    /// coordinates; `yaw` in the camera convention).
+    pub fn carts_json(&self) -> String {
+        let rows: Vec<String> = (0..self.game.carts.len())
+            .map(|i| {
+                let c = &self.game.carts[i];
+                let lock = match self.game.cart_lock(i) {
+                    None => "",
+                    Some(zoo_core::cart::CartLock::NoKey) => "no_key",
+                    Some(zoo_core::cart::CartLock::ClosedLevel) => "closed_level",
+                };
+                format!(
+                    "{{\"id\":{},\"x\":{:.3},\"z\":{:.3},\"yaw\":{:.4},\"dir_x\":{:.4},\"dir_z\":{:.4},\"speed\":{:.3},\"lock\":{},\"seated\":{},\"lights\":{},\"wheel\":{:.3},\"steer\":{:.3}}}",
+                    js(&c.id),
+                    c.pos.x,
+                    c.pos.y,
+                    c.yaw(),
+                    c.dir.x,
+                    c.dir.y,
+                    c.speed,
+                    js(lock),
+                    self.game.seated == Some(i),
+                    self.game.cart_lights_on(i),
+                    c.wheel_angle,
+                    c.steer
+                )
+            })
+            .collect();
+        format!("[{}]", rows.join(","))
+    }
+
+    /// Whether she sits in a cart (the host shows the get-out button and hides the view button).
+    pub fn driving(&self) -> bool {
+        self.game.seated.is_some()
+    }
+
+    /// Why the cart at hand is locked (`no_key`, `closed_level`) or empty (no cart at hand or it
+    /// is usable): the 🔒 badge of the interact button.
+    pub fn target_lock(&self) -> String {
+        let Some(Target::Cart { id }) = self.game.available_target() else {
+            return String::new();
+        };
+        match self
+            .game
+            .carts
+            .iter()
+            .position(|c| c.id == id)
+            .and_then(|i| self.game.cart_lock(i))
+        {
+            None => "",
+            Some(zoo_core::cart::CartLock::NoKey) => "no_key",
+            Some(zoo_core::cart::CartLock::ClosedLevel) => "closed_level",
+        }
+        .to_owned()
+    }
+
+    /// Debug/e2e: puts a cart on a pose (level coordinates, heading vector).
+    pub fn debug_cart_pose(&mut self, i: usize, x: f32, z: f32, dir_x: f32, dir_z: f32) -> bool {
+        let Some(c) = self.game.carts.get_mut(i) else {
+            return false;
+        };
+        c.pos = Vec2::new(x, z);
+        c.dir = Vec2::new(dir_x, dir_z).normalize_or(c.dir);
+        if self.game.seated == Some(i) {
+            self.game.player.pos = c.pos;
+        } else {
+            self.game.sync_cart_shapes();
+        }
+        true
+    }
+
+    /// Debug/e2e: the cart key is in the pocket (what the right code does).
+    pub fn debug_give_cart_key(&mut self) {
+        self.game.has_cart_key = true;
+        self.game.key_box_open = true;
+    }
+
+    /// Debug/e2e: whether the cart's box overlaps a solid right now (must stay false).
+    pub fn debug_cart_overlaps(&self, i: usize) -> bool {
+        self.game
+            .carts
+            .get(i)
+            .is_some_and(|c| self.game.cart_pose_overlaps(c.pos, c.dir))
+    }
+
+    /// Debug/e2e: the camera's extra zoom while driving (m).
+    pub fn camera_extra_distance(&self) -> f32 {
+        self.camera.extra_distance()
+    }
+
+    /// Debug/e2e: the cart pieces drawn (instances in the cart batch).
+    pub fn cart_drawn(&self) -> u32 {
+        self.cart_instances.len() as u32
     }
 
     /// A code typed at the key box (the three wheels, `0..=999`): `right` (the box opened, the
@@ -1664,6 +1834,16 @@ impl App {
         let Some(result) = self.game.interact() else {
             return String::new();
         };
+        // a locked cart points at the next key step for 12 s (GAME-CART rule 13)
+        if matches!(
+            result,
+            Interaction::CartLocked {
+                reason: zoo_core::cart::CartLock::NoKey,
+                ..
+            }
+        ) {
+            self.hints.show_cart_key(&self.game);
+        }
         let json = self.interaction_json(&result);
         self.handle_events();
         json
@@ -2208,6 +2388,7 @@ impl App {
                 animal_placeholder(&mut self.dyn_boxes, pos, a, action, t);
             }
         }
+        self.update_carts(dt);
         self.renderer
             .set_dynamic_instances(DYN_BOX, &self.dyn_boxes);
 
@@ -2216,16 +2397,16 @@ impl App {
             self.renderer.set_dynamic_instances(CAPSULE, &[]);
             self.renderer.set_dynamic_instances(MARKER, &[]);
         } else if self.player_skinned {
-            self.draws.push((
-                PLAYER_MODEL,
+            let draw = self.seated_draw().unwrap_or_else(|| {
                 CharacterDraw::locomotion(
                     player,
                     yaw,
                     self.idle_time,
                     self.walk_time,
                     self.walk_blend,
-                ),
-            ));
+                )
+            });
+            self.draws.push((PLAYER_MODEL, draw));
         } else {
             // Placeholder capsule (1.2 m) with a small marker showing the facing.
             let bob = (self.walk_time * 9.0).sin().abs() * 0.05 * self.walk_blend;
@@ -3116,6 +3297,118 @@ impl App {
         }
     }
 
+    // ------------------------------------------------------------------ golf carts
+
+    /// World pose of cart `i` for drawing: position (on the ground) and yaw.
+    fn cart_pose(&self, i: usize) -> (Vec3, f32) {
+        let c = &self.game.carts[i];
+        (
+            level_to_world(c.pos) + Vec3::Y * c.y,
+            zoo_core::cart::yaw_of_dir(c.dir),
+        )
+    }
+
+    /// Model-space point of the cart model in the world.
+    fn cart_point(&self, i: usize, local: Vec3) -> Vec3 {
+        let (p, yaw) = self.cart_pose(i);
+        p + Quat::from_rotation_y(yaw) * local
+    }
+
+    /// The golf carts this frame (GAME-CART): one dynamic batch with the wheel angle, the
+    /// steering and the headlight switch of every instance, the two headlights as point lights
+    /// at dusk / night, a red box where the model is missing.
+    fn update_carts(&mut self, _dt: f32) {
+        self.cart_instances.clear();
+        for i in 0..self.game.carts.len() {
+            let c = &self.game.carts[i];
+            if !self.game.part_unlocked(c.part) {
+                continue;
+            }
+            let (p, yaw) = self.cart_pose(i);
+            if self.cart_model {
+                let lights = self.game.cart_lights_on(i);
+                let mut inst = Instance::model(p, yaw, false);
+                // wheel angle (rad), hide mask, steering −1…1 (+ = left), glow slots off (parked)
+                inst.node = [c.wheel_angle, 0.0, c.steer, if lights { 0.0 } else { 1.0 }];
+                self.cart_instances.push(inst);
+            } else {
+                let size = Vec3::new(1.3, 1.0, 2.3);
+                self.dyn_boxes
+                    .push(Instance::flat(p, yaw, size, [0.78, 0.18, 0.16], false));
+            }
+        }
+        if self.cart_model {
+            self.renderer
+                .set_dynamic_instances(CART_MODEL, &self.cart_instances);
+        }
+    }
+
+    /// The child sitting in the cart: origin at `socket_driver`, the `drive` clip, the turn
+    /// clips while steering (falls back to `idle` for a model without them).
+    fn seated_draw(&mut self) -> Option<CharacterDraw> {
+        let i = self.game.seated?;
+        let pos = self.cart_point(i, self.cart_sockets.driver);
+        let (_, yaw) = self.cart_pose(i);
+        let steer = self.game.carts[i].steer;
+        self.steer_blend += (steer - self.steer_blend) * 0.3;
+        let has = |c: &str| self.renderer.has_clip(PLAYER_MODEL, c);
+        let (idle, turn) = if has("drive") {
+            (
+                "drive",
+                if self.steer_blend >= 0.0 {
+                    "drive_turn_l"
+                } else {
+                    "drive_turn_r"
+                },
+            )
+        } else {
+            ("idle", "walk")
+        };
+        let blend = if has(turn) && turn != "walk" {
+            (self.steer_blend.abs() * 2.0).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        Some(CharacterDraw {
+            pos,
+            yaw,
+            idle_time: self.idle_time,
+            walk_time: self.idle_time,
+            walk_blend: blend,
+            idle_clip: idle,
+            walk_clip: turn,
+            action: None,
+            action_blend: 0.0,
+            under_water: false,
+            tilt: Quat::IDENTITY,
+            eye_glow: false,
+            scale: 1.0,
+            tint: [0.0; 4],
+        })
+    }
+
+    /// Enters / leaves the driving camera: the zoo view only and 3 m further away; the stored
+    /// view returns afterwards (CAMV-024).
+    fn sync_driving(&mut self) {
+        let seated = self.game.seated.is_some();
+        if seated == self.driving {
+            return;
+        }
+        self.driving = seated;
+        self.look_held = false;
+        if seated {
+            self.view_before = Some(self.camera.mode().saved());
+            self.set_view(zoo_core::view::view_while_driving(ViewMode::Zoo, true));
+            self.camera
+                .set_extra_distance(zoo_core::view::CART_EXTRA_DISTANCE_M);
+        } else {
+            self.camera.set_extra_distance(0.0);
+            if let Some(v) = self.view_before.take() {
+                self.set_view(v);
+            }
+        }
+    }
+
     /// Night presentation of a frame (GAME-NIGHT §10): global light, night-only props,
     /// the player's lantern + the nearest lamps as point lights, light pools for the rest,
     /// eyeshine and fireflies (emissive dynamic boxes).
@@ -3154,7 +3447,14 @@ impl App {
                 let yaw = self.player_yaw;
                 let left = Quat::from_rotation_y(yaw) * Vec3::X;
                 let fwd = Quat::from_rotation_y(yaw) * Vec3::Z;
-                let hand = player + left * 0.3 + fwd * 0.08 + Vec3::Y * 0.42;
+                // the lantern hangs from her left hand bone, so it swings with the arm when she
+                // walks (user report 2026-10-06); fixed offset only if the model has no such node
+                let hand = match self.renderer.node_position(PLAYER_MODEL, "hand_l") {
+                    Some(h) if self.player_skinned => {
+                        player + Quat::from_rotation_y(yaw) * h - Vec3::Y * 0.03
+                    }
+                    _ => player + left * 0.3 + fwd * 0.08 + Vec3::Y * 0.42,
+                };
                 if self.renderer.has_model(HAND_LANTERN) {
                     self.hand_lantern[0] = Instance::model(hand - HAND_LANTERN_GRIP, yaw, false);
                     lantern = 1;
@@ -3167,12 +3467,28 @@ impl App {
                     ));
                 }
             }
+            // the headlights of the driven cart (GAME-CART rule 10): two warm point lights ahead
+            // of the lamps (the model's `light_l` / `light_r` empties)
+            let mut cart_lights = 0;
+            if let Some(i) = self.game.seated.filter(|&i| self.game.cart_lights_on(i)) {
+                for local in [self.cart_sockets.light_l, self.cart_sockets.light_r] {
+                    self.frame_lights.push(PointLight {
+                        pos: self.cart_point(i, local),
+                        radius: 4.5,
+                        color: Vec3::new(1.0, 0.88, 0.54),
+                        strength: 0.9,
+                        tinted: false,
+                    });
+                    cart_lights += 1;
+                }
+            }
             nightfx::pick_lamps(
                 &self.lamps,
                 self.camera.target,
                 nightfx::LAMP_CULL_M,
-                // the lantern + the tier's lamps as point lights (PERF-BUDGETS rule 5)
-                nightfx::MAX_POINT_LIGHTS - self.quality.tier().lamp_lights(),
+                // the lantern + the cart's lights + the tier's lamps as point lights
+                // (PERF-BUDGETS rule 5)
+                nightfx::MAX_POINT_LIGHTS - self.quality.tier().lamp_lights() + cart_lights,
                 &mut self.lamp_order,
                 &mut self.frame_lights,
                 &mut self.frame_pools,
@@ -3253,7 +3569,20 @@ impl App {
                 None => self.autopilot = None,
             }
         }
+        // ducks are things the cart keeps away from (GAME-CART rule 7)
+        if self.game.seated.is_some() {
+            self.ambient.poses(&mut self.ambient_poses);
+            self.game.cart_obstacles.clear();
+            for p in &self.ambient_poses {
+                if p.model.contains("duck") {
+                    self.game
+                        .cart_obstacles
+                        .push((Vec2::new(p.pos.x, -p.pos.z), 0.3));
+                }
+            }
+        }
         self.game.update(dt, dir);
+        self.sync_driving();
         // one footstep per footfall of the walk clip, only while moving (ASND-005/011)
         let speed = self.game.player.last_speed;
         if dt > 0.0
@@ -3462,6 +3791,34 @@ impl App {
                 format!("{{\"kind\":\"telescope\",\"id\":{}}}", js(id))
             }
             Interaction::Note { id } => self.note_json(id),
+            Interaction::CartBoarded { id, followers } => format!(
+                "{{\"kind\":\"cart_boarded\",\"id\":{},\"followers\":{followers},\"text\":{}}}",
+                js(id),
+                js(&if *followers {
+                    self.text_now("cart-walk")
+                } else {
+                    String::new()
+                })
+            ),
+            Interaction::CartLocked { id, reason } => {
+                let closed = *reason == zoo_core::cart::CartLock::ClosedLevel;
+                let key = if closed { "cart-closed-level" } else { "cart-locked" };
+                format!(
+                    "{{\"kind\":\"cart_locked\",\"id\":{},\"reason\":{},\"key\":{},\"text\":{}}}",
+                    js(id),
+                    js(if closed { "closed_level" } else { "no_key" }),
+                    js(key),
+                    js(&self.text_now(key))
+                )
+            }
+            Interaction::CartLeft { id } => {
+                format!("{{\"kind\":\"cart_left\",\"id\":{}}}", js(id))
+            }
+            Interaction::CartNoPark { id } => format!(
+                "{{\"kind\":\"cart_no_park\",\"id\":{},\"key\":\"cart-no-park\",\"text\":{}}}",
+                js(id),
+                js(&self.text_now("cart-no-park"))
+            ),
             Interaction::KeyBox { id } => format!(
                 "{{\"kind\":\"key_box\",\"key\":{},\"title\":{},\"tries\":{},\"help\":{}}}",
                 js(&format!("key_box:{id}")),
@@ -4623,6 +4980,8 @@ fn target_key(t: &Target) -> String {
         Target::Telescope { id } => format!("telescope:{id}"),
         Target::Note { id } => format!("note:{id}"),
         Target::KeyBox { id } => format!("key_box:{id}"),
+        Target::Cart { id } => format!("cart:{id}"),
+        Target::GetOut => "get_out".to_owned(),
     }
 }
 

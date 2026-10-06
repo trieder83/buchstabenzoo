@@ -950,6 +950,46 @@ def clip_carry(f, n=30):
     return p
 
 
+# ---- drive (golf cart, GAME-CART): character space = origin at the cart's `socket_driver`
+# (seat top centre of the left seat). Cart wheel hub (0.27, -0.38, 0.88) -> (0, -0.60, 0.38) here.
+DRIVE_HUB = Vector((0.0, -0.60, 0.38))
+DRIVE_TILT = -20.0   # steering wheel plane tilt about X (golf_cart.py)
+DRIVE_RING = 0.17    # grip radius on the ring (ring r 0.15..0.19)
+DRIVE_STEER = 30.0   # wheel angle of drive_turn_l / drive_turn_r (deg)
+
+
+def wheel_grip(side, steer_deg):
+    """Hand target on the tilted steering wheel; steer_deg > 0 turns the wheel to the LEFT
+    (counter-clockwise seen by the driver: left hand goes down)."""
+    sgn = 1.0 if side == "l" else -1.0
+    a = math.radians(sgn * 68.0 + steer_deg)  # clock angle from the top, + towards +X
+    local = Vector((math.sin(a) * DRIVE_RING, 0.0, math.cos(a) * DRIVE_RING))
+    return DRIVE_HUB + Matrix.Rotation(math.radians(DRIVE_TILT), 3, "X") @ local
+
+
+def clip_drive(f, steer=0.0, n=30):
+    """Seated driving: hips on the seat, thighs forward, feet on the floor / pedal, both
+    hands on the wheel, tiny breathing + head motion (loop of n frames)."""
+    t = 2 * math.pi * f / n
+    br = math.sin(t)
+    p = Pose()
+    p.hips_offset = Vector((0, -0.13, -0.39 + 0.002 * br))
+    p.rel["hips"] = rx(-4.0)
+    p.rel["spine"] = rx(12.0 + 0.6 * br)
+    p.rel["chest"] = rx(8.0 + 0.6 * br)
+    p.rel["neck"] = rx(-6.0)
+    p.rel["head"] = rx(-12.0) @ rz(0.15 * steer) @ rx(0.8 * math.sin(2 * t))
+    # feet: left flat on the floor, right on the pedal (pressed a little, tiny pulse)
+    p.leg_ik("l", Vector((0.075, -0.28, -0.105)), 0.0, pole=Vector((0.1, -1.0, 0.6)))
+    p.leg_ik("r", Vector((-0.075, -0.31 - 0.004 * br, -0.09)), 12.0, pole=Vector((-0.1, -1.0, 0.6)))
+    for s in ("l", "r"):
+        sgn = 1.0 if s == "l" else -1.0
+        tgt = wheel_grip(s, steer) + Vector((0, 0.004 * math.sin(2 * t + sgn), 0.003 * br))
+        p.arm_ik(s, tgt, Vector((sgn * 0.5, 0.35, -0.8)))
+        p.set_world(f"hand_{s}", p.world(f"lower_arm_{s}"))
+    return p
+
+
 # (name, frames, loop, pose_fn(frame))
 def player_clips():
     walk = clip_walk()
@@ -964,6 +1004,9 @@ def player_clips():
         ("cheer", 45, False, clip_cheer),
         ("wave", 40, False, clip_wave),
         ("carry", 30, True, clip_carry),
+        ("drive", 30, True, clip_drive),
+        ("drive_turn_l", 30, True, lambda f: clip_drive(f, DRIVE_STEER)),
+        ("drive_turn_r", 30, True, lambda f: clip_drive(f, -DRIVE_STEER)),
     ]
 
 

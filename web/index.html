@@ -1356,6 +1356,30 @@
         flex-direction: column;
         gap: 8px;
       }
+      /* small screens: a taller panel so the more-info block below the main block keeps room */
+      @media (max-height: 460px), (max-width: 480px) {
+        .panel-body[data-kind='info_board'] {
+          /* the player is drawn at the screen centre: stay 44 px above it (PLAY-025) */
+          max-height: calc(50dvh - 44px - var(--panel-top));
+        }
+      }
+      @media (max-height: 460px) {
+        .panel-body[data-kind='info_board'] {
+          max-height: calc(50dvh - 12px - var(--panel-top));
+          border-width: 4px;
+          padding: 4px 10px 6px;
+          gap: 4px;
+        }
+        .panel-body[data-kind='info_board'] .panel-text {
+          line-height: 1.12;
+        }
+        .panel-body[data-kind='info_board'] .panel-title {
+          margin: 0;
+        }
+        .panel-body[data-kind='info_board'] > .panel-more {
+          padding-top: 2px;
+        }
+      }
       .panel-body[data-kind='food_box'] {
         flex-direction: row;
         align-items: center;
@@ -1402,6 +1426,7 @@
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
         border-top: 4px dashed #d9c49a;
         padding-top: 6px;
@@ -1429,20 +1454,6 @@
       }
       .panel-more::-webkit-scrollbar-thumb:active {
         background: #6b4428;
-      }
-      @media (orientation: landscape) {
-        .panel-body[data-kind='info_board'] {
-          display: grid;
-          grid-template-columns: 3fr 1fr;
-          column-gap: 16px;
-          align-items: start;
-        }
-        .panel-body[data-kind='info_board'] > .panel-more {
-          max-height: calc(38dvh - var(--panel-top) - 34px);
-          border-top: 0;
-          border-left: 4px dashed #d9c49a;
-          padding: 0 0 0 12px;
-        }
       }
       /* RESC-028: the welcome board is long; it scrolls inside the panel box */
       .panel-body[data-kind='welcome_board'] {
@@ -1542,7 +1553,7 @@
       }
       .panel-facts {
         margin: 0;
-        font-size: var(--read);
+        font-size: calc(var(--read) * 0.82);
         line-height: 1.22;
         font-weight: bold;
         color: #5a3a22;

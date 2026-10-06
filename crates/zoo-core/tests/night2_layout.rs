@@ -391,12 +391,12 @@ fn point(level: &Level, name: &str) -> Vec<IVec2> {
         return walkable_within(grid, cell_center(h.spot_cell()), 2.0);
     }
     let house = data.element("terrarium_house").unwrap();
-    let hall = house.interior.unwrap();
+    let hall_cells = house.interior_cells();
     let hall_in_front_of_gate = |enc: &str| -> Vec<IVec2> {
         let gate = data.element(enc).unwrap().gate.unwrap();
         walkable_adjacent(grid, gate)
             .into_iter()
-            .filter(|c| hall.contains(*c))
+            .filter(|c| hall_cells.contains(c))
             .collect()
     };
     match name {
@@ -823,9 +823,9 @@ fn layout_n2_009_terrarium_house() {
     let grid = level.grid();
     let house = data.element("terrarium_house").expect("terrarium_house");
     assert_eq!(house.ty, ElementType::Building);
-    let hall = house.interior.expect("interior");
+    let hall = house.interior_cells();
     let door = house.door_cell().expect("door");
-    for c in hall.cells().chain([door]) {
+    for c in hall.iter().copied().chain([door]) {
         assert_eq!(
             grid.kind(c),
             CellKind::Walkable(Surface::Path),
@@ -834,7 +834,7 @@ fn layout_n2_009_terrarium_house() {
     }
     let model = house.model_rect.expect("model_rect");
     assert!(
-        hall.cells().all(|c| model.contains(c)),
+        hall.iter().all(|c| model.contains(*c)),
         "hall outside model_rect"
     );
     let cases: Vec<_> = data
@@ -866,7 +866,7 @@ fn layout_n2_009_terrarium_house() {
                     c + IVec2::NEG_Y,
                 ]
             })
-            .any(|c| hall.contains(c));
+            .any(|c| hall.contains(&c));
         assert!(to_hall, "{}: gate not next to the hall", e.id);
         assert!(
             e.rect.cells().all(|c| model.contains(c)),

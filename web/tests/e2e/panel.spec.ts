@@ -173,3 +173,58 @@ for (const [name, viewport] of [
     });
   });
 }
+
+// PLAY-038: main text first, the more-info block below it and scrolling inside itself.
+for (const [name, viewport] of [
+  ['desktop', { width: 1280, height: 720 }],
+  ['phone portrait', { width: 360, height: 780 }],
+  ['small landscape', { width: 780, height: 360 }],
+] as const) {
+  test.describe(`PLAY-038 ${name}`, () => {
+    test.use({ viewport });
+    test(`more-info block sits below the main block and scrolls (${name})`, async ({ page }) => {
+      const errors = await start(page, 'klasse3');
+      for (const lang of ['de', 'en']) {
+        await page.evaluate((l) => window.__zoo!.app.set_language(l), lang);
+        await goto(page, -6.0, 10.5);
+        await expect(page.locator('#panel')).toBeHidden();
+        await goto(page, -7.0, 10.5);
+        await face(page, 'KeyA');
+        await expect(page.locator('#panel-facts')).toBeAttached();
+        const m = await page.evaluate(() => {
+          const r = (e: Element) => e.getBoundingClientRect();
+          const main = document.getElementById('panel-main')!;
+          const more = document.getElementById('panel-more')!;
+          const close = document.getElementById('panel-close')!;
+          const text = document.getElementById('panel-text')!;
+          const food = document.getElementById('panel-food')!;
+          const cs = getComputedStyle(more);
+          const c = r(close);
+          const hit = (a: DOMRect) => !(c.right <= a.left || c.left >= a.right || c.bottom <= a.top || c.top >= a.bottom);
+          return {
+            moreTopMinusMainBottom: r(more).top - r(main).bottom,
+            mainClipped: main.scrollHeight - main.clientHeight,
+            overflowY: cs.overflowY,
+            overscroll: cs.overscrollBehaviorY,
+            closeSize: Math.min(c.width, c.height),
+            overlapText: hit(r(text)) && r(text).width > 0 && getClientRectsOverlap(close, text),
+            moreH: r(more).height,
+          };
+          function getClientRectsOverlap(a: Element, t: Element) {
+            return Array.from(t.getClientRects()).some((q) => hit(q));
+          }
+        });
+        const tag = `${name} ${lang}`;
+        expect(m.moreTopMinusMainBottom, tag).toBeGreaterThanOrEqual(-1);
+        expect(m.mainClipped, tag).toBeLessThanOrEqual(1);
+        expect(['auto', 'scroll'], tag).toContain(m.overflowY);
+        expect(m.overscroll, tag).toBe('contain');
+        expect(m.closeSize, tag).toBeGreaterThanOrEqual(64);
+        expect(m.overlapText, tag).toBe(false);
+        expect(m.moreH, tag).toBeGreaterThanOrEqual(40);
+        await page.screenshot({ path: `/tmp/claude-1000/play038-${name.replace(' ', '-')}-${lang}.png` });
+      }
+      expect(errors).toEqual([]);
+    });
+  });
+}

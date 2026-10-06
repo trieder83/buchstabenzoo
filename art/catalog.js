@@ -821,11 +821,11 @@ window.ART_CATALOG = {
         {
           id: "env_terrarium_house",
           title: "Night \u2014 terrarium house",
-          status: "in-review",
+          status: "approved",
           description: "NEW small enterable night building for the terrarium animals: warm lit windows with glass cases, big snake pictogram above the door; cut-away with three lit terrarium cases (snake / chameleon / poison dart frog), walkway and board stands. Approve: look of the building, the cut-away and the snake pictogram.",
           spec: "GAME-NIGHT",
           brief: "environment/env_terrarium_house/brief.md",
-          notes: "Chosen overview_v2 (roof and building almost fully in frame, two big case windows) and cutaway_v2 (warm light in all three cases, readable). Alternatives: overview_v1 (roof cropped at the top), cutaway_v1 (left case lit blue, nicer contrast but colour differs from the other two). Layout via the level spec.",
+          notes: "APPROVED 2026-10-06 by the user (overview_v2 + cutaway_v2; floor must be WOOD, not grass). Chosen overview_v2 (roof and building almost fully in frame, two big case windows) and cutaway_v2 (warm light in all three cases, readable). Alternatives: overview_v1 (roof cropped at the top), cutaway_v1 (left case lit blue, nicer contrast but colour differs from the other two). Layout via the level spec.",
           images: [
             { file: "environment/env_terrarium_house/overview_v2.jpg", label: "exterior at night (chosen v2)", required: true },
             { file: "environment/env_terrarium_house/cutaway_v2.jpg", label: "cut-away (chosen v2)", required: true },

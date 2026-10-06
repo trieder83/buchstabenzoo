@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-375** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-376** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-159 answered · 102 open · 10 other (partly answered / proposed / superseded).
+160 answered · 102 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -124,6 +124,7 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-375 — Terrarium house look (user request 2026-10-06): the terrarium house … → request 2026-10-06 ("implement as specified"); real models listed in night-2.md "Model needs".
 - Q-371 — Golf cart look. Recommended green-white with a striped roof. → 2026-10-06: RED and WHITE instead (red body, white roof with red stripes; the zoo has a lot of green already).
 - Q-370 — Carts of locked levels: Recommendation: they exist but show a 🔒 until … → 2026-10-06: as recommended.
 - Q-369 — Wrong key-box codes: feedback after 3 tries? → 2026-10-06: as recommended.

@@ -96,7 +96,9 @@ for (const [name, vp] of [
       // The player is drawn at the screen centre (follow camera); the panel must leave it free.
       const m = await panelMetrics(page);
       const cy = vp.height / 2;
-      expect(m.bottom < cy - 40 || m.top > cy + 40, `panel ${m.top}–${m.bottom} covers the centre ${cy}`).toBe(true);
+      // (PLAY-038: on screens <= 460 px high the panel may come within 10 px of the head)
+      const gap = vp.height <= 460 ? 10 : 40;
+      expect(m.bottom < cy - gap || m.top > cy + gap, `panel ${m.top}–${m.bottom} covers the centre ${cy}`).toBe(true);
       // Left thumb: drag right (east, away from the board).
       const x0 = await page.evaluate(() => window.__zoo!.app.player_x());
       const s = { x: vp.width * 0.2, y: vp.height * 0.85, id: 7 };

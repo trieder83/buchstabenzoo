@@ -366,6 +366,12 @@ always has an `interior` rect (LAYOUT-041). Today: `zookeeper_house_1`, `zookeep
   the footprint of the whole house model (roof cut away while the player is on a hall/door
   cell). Info boards stand outside (a solid board cell inside the building rect would overlap
   it, LAYOUT-003).
+  **Round plans (2026-10-06, Q-375, LAYOUT-N2-020):** an enterable building may have a
+  non-rectangular plan: `rect` is its first footprint rect (the row that holds the `door`),
+  `interior_extra` lists further walkable interior rects (hall = `interior` ∪ extras) and
+  `footprint_extra` further solid footprint rects (the wall mass); a stepped arc is a union of
+  rects. LAYOUT-003 / LAYOUT-023 / LAYOUT-029 apply to the union; the `terrarium_house` of
+  `night_2` uses it (half-disc, round hall, cases fanned around it).
 
 ## Night lights, interactables and furniture (Q-118 answered; data shape Q-137 answered)
 

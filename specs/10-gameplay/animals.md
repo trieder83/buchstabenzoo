@@ -91,7 +91,7 @@ level and language, CONT-READING, CONT-L10N) contains:
 4. **more about the animal** (*Steckbrief*, user request 2026-09-26): 2–4 short, true,
    child-friendly facts per reading level (e.g. what it looks like, where it comes from,
    something surprising), shown in the info board panel **after** the riddle and the food
-   word (the riddle is the core of the game and must always be visible first — QA finding
+   word, **below** it as its own block that takes the remaining panel height and scrolls inside itself (never beside it, also in landscape; PLAY-038) (the riddle is the core of the game and must always be visible first — QA finding
    F2, 2026-09-26; panel fit on phones: Q-070). Facts must
    never reveal the current hiding place (same rule as RESC-011: no place word). Length per
    reading level: `kiga` 1 fact (one word + picture), `klasse1` 3 sentences of ≤ 5 words,

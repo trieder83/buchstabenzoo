@@ -82,3 +82,23 @@ test('LAYOUT-N2-013: the terrarium hall renders and a led pair is home behind th
   expect(strip.animals.find((a: { id: string }) => a.id === 'snake').home).toBe(true);
   expect(errors).toEqual([]);
 });
+
+test('LAYOUT-N2-023: the round terrarium house shows its pictograms (outside and in the hall)', async ({ page }) => {
+  const errors = await start(page);
+  await toOpenGate(page);
+  await page.evaluate(() => window.__zoo!.app.debug_teleport(-76.5, 25.5));
+  fs.mkdirSync(shots, { recursive: true });
+  await page.waitForTimeout(6000); // the celebration banners fade
+  await goto(page, -85.5, 35.5); // on the street in front of the door
+  await nextFrames(page, 6);
+  await page.screenshot({ path: path.join(shots, 'night2_round_house_outside.png') });
+  await page.keyboard.press('Escape');
+  await goto(page, -85.5, 38.0); // at the boards next to the door
+  await nextFrames(page, 6);
+  await page.screenshot({ path: path.join(shots, 'night2_round_house_boards.png') });
+  await goto(page, -85.5, 43.5); // in the round hall
+  await nextFrames(page, 8);
+  await page.screenshot({ path: path.join(shots, 'night2_round_house_hall.png') });
+  expect(await app<string>(page, 'player_level')).toBe('night_2');
+  expect(errors).toEqual([]);
+});

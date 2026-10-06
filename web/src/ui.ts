@@ -621,6 +621,20 @@ export function fitReadingText(body: HTMLElement): number {
     px = Math.max(MIN_READ_PX, px - 2);
     body.style.setProperty('--read', `${px}px`);
   }
+  // keep room for the more-info block below the main block (PLAY-038): first shrink down to
+  // cap height 3 % of the viewport (ADIR-003) leaving a comfortable block, then, if the long
+  // riddle still leaves < 48 px, down to MIN_READ_PX (Q-070) so the block stays usable
+  if (body.querySelector('.panel-more')) {
+    const floor = Math.max(MIN_READ_PX, Math.ceil(0.0433 * window.innerHeight));
+    const comfy = window.innerHeight <= 460 ? 56 : 96;
+    const tiers: [number, number][] = [[comfy, floor], [window.innerHeight <= 460 ? 44 : 48, MIN_READ_PX]];
+    for (const [reserve, lowest] of tiers) {
+      while (main.offsetHeight > available() - reserve && px > lowest) {
+        px = Math.max(lowest, px - 2);
+        body.style.setProperty('--read', `${px}px`);
+      }
+    }
+  }
   return px;
 }
 

@@ -296,6 +296,15 @@ fn layout_033_enclosure_signs_stand_beside_the_gate() {
 /// leaves the owner rect while the opposite probe stays inside it; `None` for the moon door
 /// (walked through both ways, normal from the model yaw).
 fn opening_normal(o: &zoo_core::scene::Opening, data: &zoo_core::LevelData) -> Option<Vec2> {
+    if let OpeningKind::BuildingDoor { building, .. } = &o.kind {
+        // (a round house: the footprint is a union of rects, the hall is open floor)
+        let e = data.element(building)?;
+        let cell = zoo_core::level::cell_of;
+        let inside = |p: Vec2| e.footprint_contains(cell(p)) || e.is_interior_cell(cell(p));
+        return [Vec2::X, -Vec2::X, Vec2::Y, -Vec2::Y]
+            .into_iter()
+            .find(|&c| !inside(o.center + c * 1.2) && inside(o.center - c * 1.2));
+    }
     let rect = match &o.kind {
         OpeningKind::BuildingDoor { building, .. } => data.element(building)?.rect,
         OpeningKind::EnclosureGate { enclosure } | OpeningKind::GlassDoor { enclosure } => {
@@ -829,9 +838,7 @@ fn layout_041_every_building_with_a_door_is_enterable() {
     for e in data.elements_of(ElementType::Building) {
         let Some(door) = e.door_cell() else { continue };
         n += 1;
-        let inner = e
-            .interior
-            .unwrap_or_else(|| panic!("{}: a door but no interior", e.id));
+        assert!(e.interior.is_some(), "{}: a door but no interior", e.id);
         assert!(e.is_enterable(), "{}", e.id);
         let n4 = [
             glam::IVec2::X,
@@ -840,13 +847,13 @@ fn layout_041_every_building_with_a_door_is_enterable() {
             glam::IVec2::NEG_Y,
         ];
         assert!(
-            n4.iter().any(|d| inner.contains(door + *d)),
+            n4.iter().any(|d| e.is_interior_cell(door + *d)),
             "{}: door not next to the interior",
             e.id
         );
         assert!(
             n4.iter()
-                .any(|d| !e.rect.contains(door + *d) && grid.is_walkable(door + *d, false)),
+                .any(|d| !e.footprint_contains(door + *d) && grid.is_walkable(door + *d, false)),
             "{}: door leads nowhere",
             e.id
         );
@@ -866,7 +873,7 @@ fn layout_041_every_building_with_a_door_is_enterable() {
                 }
             }
         }
-        for c in inner.cells() {
+        for c in e.interior_cells() {
             assert!(
                 seen.contains(&c),
                 "{}: interior cell {c} not reachable",

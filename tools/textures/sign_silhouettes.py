@@ -137,6 +137,120 @@ def zebra_mask() -> Image.Image:
     return m
 
 
+def _chain(d: ImageDraw.ImageDraw, pts, r0, r1, fill=255):
+    """Round-capped tube through a polyline of points, radius tapering r0 -> r1."""
+    n = len(pts) - 1
+    for i in range(n):
+        ra = r0 + (r1 - r0) * i / n
+        rb = r0 + (r1 - r0) * (i + 1) / n
+        _capsule(d, pts[i], pts[i + 1], ra, rb, fill)
+
+
+def snake_mask() -> Image.Image:
+    """A coiled snake with a raised head and a forked tongue (ART-ENVIRONMENT 6, Q-375)."""
+    m = Image.new("L", (W * SS, H * SS), 0)
+    d = ImageDraw.Draw(m)
+    # body: lower coil (a flat spiral) then the neck rising on the right
+    pts = []
+    for i in range(0, 61):
+        t = i / 60
+        a = math.radians(200 - 560 * t)
+        r = 82 - 40 * t
+        pts.append((150 + r * 1.35 * math.cos(a), 188 + r * 0.42 * math.sin(a)))
+    neck = _bezier(pts[0], (300, 70), (292, 62), 24)
+    _chain(d, pts[::-1], 6, 17)
+    _chain(d, neck[::-1] if False else neck, 17, 20)
+    # head (rounded wedge) on top of the neck, facing right
+    hx, hy = 292, 62
+    d.polygon(_s(_rot_ellipse(hx + 8, hy - 2, 30, 17, -10)), fill=255)
+    _ellipse(d, hx - 12, hy + 2, 18, 15)
+    # forked tongue
+    cut = ImageDraw.Draw(m)
+    _capsule(d, (hx + 36, hy - 4), (hx + 58, hy - 6), 1.8, 1.4)
+    _capsule(d, (hx + 58, hy - 6), (hx + 70, hy - 14), 1.4, 1.0)
+    _capsule(d, (hx + 58, hy - 6), (hx + 70, hy + 2), 1.4, 1.0)
+    # eye
+    _ellipse(cut, hx + 6, hy - 6, 4.2, 4.2, fill=0)
+    # belly scale bands on the coil (the cream panel shows through)
+    for i in range(6, 56, 7):
+        x, y = pts[i]
+        _ellipse(cut, x, y, 2.2, 2.2, fill=0)
+    return m
+
+
+def chameleon_mask() -> Image.Image:
+    """A chameleon on a branch: casque, turret eye, curled tail, forked feet."""
+    m = Image.new("L", (W * SS, H * SS), 0)
+    d = ImageDraw.Draw(m)
+    # branch
+    _capsule(d, (30, 214), (360, 190), 8, 7)
+    # body: tall oval back, belly line
+    d.polygon(_s(_rot_ellipse(190, 128, 82, 52, -8)), fill=255)
+    # head with casque, facing left
+    d.polygon(_s(_rot_ellipse(100, 96, 40, 28, 12)), fill=255)
+    d.polygon(_s(_rot_ellipse(116, 66, 26, 15, 35)), fill=255)  # casque (rounded crest)
+    _capsule(d, (68, 108), (52, 118), 15, 13)  # snout
+    # eye turret
+    _ellipse(d, 100, 90, 16, 16)
+    # legs gripping the branch (two-toed claws)
+    for x0, x1 in ((140, 150), (230, 238)):
+        _capsule(d, (x0, 150), (x1, 196), 12, 9)
+        _capsule(d, (x1 - 10, 196), (x1 + 16, 204), 7, 6)
+        _capsule(d, (x1 + 6, 190), (x1 + 20, 198), 6, 5)
+    # tail: a curl behind the body
+    spiral = []
+    for i in range(0, 41):
+        t = i / 40
+        a = math.radians(-30 + 560 * t)
+        r = 40 - 30 * t
+        spiral.append((300 + r * math.cos(a), 112 + r * math.sin(a)))
+    _chain(d, [(262, 140), (284, 150)] + spiral[:1], 12, 11)
+    _chain(d, spiral, 11, 4)
+    cut = ImageDraw.Draw(m)
+    _ellipse(cut, 96, 88, 7.5, 7.5, fill=0)  # eye socket
+    _ellipse(d, 94, 88, 3.4, 3.4, fill=255)  # pupil
+    # dorsal ridge dots
+    for i in range(8):
+        x = 140 + i * 12
+        _ellipse(cut, x, 94 + 4 * math.sin(i), 2.4, 2.4, fill=0)
+    return m
+
+
+def poison_dart_frog_mask() -> Image.Image:
+    """A sitting poison dart frog, three-quarter side view facing left, round toe pads."""
+    m = Image.new("L", (W * SS, H * SS), 0)
+    d = ImageDraw.Draw(m)
+    ground = 226
+    # body and head
+    d.polygon(_s(_rot_ellipse(204, 150, 88, 58, -6)), fill=255)
+    d.polygon(_s(_rot_ellipse(124, 130, 52, 40, 8)), fill=255)
+    # eyes bulging on top of the head
+    _ellipse(d, 112, 92, 17, 17)
+    _ellipse(d, 148, 94, 15, 15)
+    # hind leg: folded thigh, shin and long foot
+    _capsule(d, (250, 160), (276, 210), 30, 15)
+    _capsule(d, (276, 212), (232, ground - 8), 12, 9)
+    _capsule(d, (232, ground - 8), (178, ground - 8), 9, 8)
+    for k in range(3):
+        _ellipse(d, 172 - k * 6, ground - 8 + (k - 1) * 8, 7, 7)
+    # front leg
+    _capsule(d, (140, 170), (118, 214), 14, 9)
+    _capsule(d, (118, 214), (82, ground - 6), 8, 7)
+    for k in range(3):
+        _ellipse(d, 76 - k * 3, ground - 6 + (k - 1) * 9, 6.5, 6.5)
+    cut = ImageDraw.Draw(m)
+    _ellipse(cut, 106, 90, 7.5, 7.5, fill=0)
+    _ellipse(cut, 143, 92, 6.5, 6.5, fill=0)
+    _ellipse(d, 105, 90, 3.2, 3.2, fill=255)
+    _ellipse(d, 142, 92, 2.8, 2.8, fill=255)
+    # spots (the cream panel shows through)
+    for x, y, r in [(196, 128, 6), (222, 140, 7), (176, 150, 5.5), (232, 112, 5), (206, 168, 6.5), (150, 118, 4)]:
+        _ellipse(cut, x, y, r, r, fill=0)
+    # smile
+    _capsule(cut, (80, 136), (110, 146), 1.6, 1.6, fill=0)
+    return m
+
+
 def render(mask: Image.Image) -> Image.Image:
     # soft rounded edges: slight blur, then downsample
     mask = mask.filter(ImageFilter.GaussianBlur(SS * 0.6)).resize((W, H), Image.LANCZOS)
@@ -145,7 +259,13 @@ def render(mask: Image.Image) -> Image.Image:
     return img
 
 
-SILHOUETTES = {"zebra": zebra_mask}
+SILHOUETTES = {
+    "zebra": zebra_mask,
+    # the terrarium animals of night_2 (no concept side views: drawn here, Q-375)
+    "snake": snake_mask,
+    "chameleon": chameleon_mask,
+    "poison_dart_frog": poison_dart_frog_mask,
+}
 
 # Animals whose silhouette comes from the approved concept side view (ART-ENVIRONMENT 6).
 FROM_ART = ["hippo", "panda", "koala", "elephant", "goldfish", "monkey", "giraffe", "lion", "snow_fox"]

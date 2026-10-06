@@ -238,9 +238,7 @@ impl Game {
                 }
             };
             for e in data.elements.iter().filter(|e| e.is_enterable()) {
-                if let Some(r) = e.interior {
-                    r.cells().for_each(&mut ban);
-                }
+                e.interior_cells().into_iter().for_each(&mut ban);
                 if let Some(d) = e.door_cell() {
                     ban(d);
                 }

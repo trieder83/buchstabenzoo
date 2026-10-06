@@ -638,6 +638,13 @@ concept_approved = true
 animations = []
 
 [[asset]]
+id = "env_terrarium_house"
+kind = "environment"
+spec = "GAME-NIGHT"
+concept_approved = true
+animations = []
+
+[[asset]]
 id = "env_night_overview"
 kind = "environment"
 spec = "GAME-NIGHT"

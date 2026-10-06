@@ -20,6 +20,7 @@ use glam::{IVec2, Quat, Vec2, Vec3};
 
 mod ad_board;
 mod models;
+mod round_house;
 pub use models::*;
 
 /// Placeholder colours (sRGB, flat) per element kind.
@@ -42,6 +43,8 @@ pub mod colors {
     pub const FOAM: [f32; 3] = [0.96, 0.98, 1.0];
     pub const GOLD: [f32; 3] = [0.98, 0.80, 0.25];
     pub const WHITE: [f32; 3] = [0.97, 0.96, 0.93];
+    /// Cream plate of the animal pictograms on signs (LAYOUT-N2-022).
+    pub const CREAM: [f32; 3] = [1.0, 0.95, 0.84];
     pub const BLACK: [f32; 3] = [0.17, 0.16, 0.18];
     pub const WILLOW: [f32; 3] = [0.55, 0.74, 0.36];
     pub const BLOSSOM: [f32; 3] = [0.97, 0.68, 0.80];
@@ -801,8 +804,12 @@ pub fn info_board_pose(e: &Element, data: &LevelData) -> (Vec2, Dir) {
 
 /// A wall-mounted info board (`mount = "wall"`, Q-157): panel size (w, h, depth) and the
 /// height of its bottom edge above the ground.
-pub const WALL_BOARD: Vec3 = Vec3::new(1.0, 0.75, 0.06);
+pub const WALL_BOARD: Vec3 = Vec3::new(1.3, 1.0, 0.06);
 pub const WALL_BOARD_BOTTOM_M: f32 = 1.0;
+/// Cream plate (w, h) with the animal pictogram on a wall board (LAYOUT-N2-022).
+pub const WALL_PICTOGRAM_PLATE: Vec2 = Vec2::new(1.2, 0.9);
+/// The same on the board above an indoor enclosure's glass door.
+pub const INDOOR_PICTOGRAM_PLATE: Vec2 = Vec2::new(1.7, 0.9);
 
 /// Board-lamp socket of an info board: on the standing board, or above a wall board.
 pub fn info_board_lamp_socket(e: &Element) -> Vec3 {
@@ -2293,6 +2300,25 @@ impl LevelScene {
                     source: e.id.clone(),
                     part: e.part as u8,
                 });
+                // the animal's pictogram on a cream plate (LAYOUT-N2-022)
+                if let Some(animal) = e
+                    .enclosure
+                    .as_deref()
+                    .and_then(|id| data.element(id))
+                    .and_then(|enc| enc.animal.as_deref())
+                {
+                    let face = pos + out * WALL_BOARD.z;
+                    self.pictogram_plate(
+                        e.id.clone(),
+                        animal,
+                        face,
+                        out,
+                        facing_yaw(dir),
+                        WALL_BOARD_BOTTOM_M + WALL_BOARD.y / 2.0,
+                        WALL_PICTOGRAM_PLATE,
+                        e.part as u8,
+                    );
+                }
             }
             (ElementType::Decoration, "info_board") => {
                 let (pos, dir) = info_board_pose(e, data);
@@ -3429,6 +3455,10 @@ impl LevelScene {
     /// walls and the roof in [`LevelScene::roof_boxes`] (hidden while inside, PLAY-028),
     /// shelves and a bed inside.
     fn enterable_building(&mut self, e: &Element, data: &LevelData) {
+        if round_house::is_round(e) {
+            self.round_building(e, data);
+            return;
+        }
         let furnished = data
             .props
             .iter()
@@ -3744,7 +3774,7 @@ impl LevelScene {
         // part of the house model; the gate is a glass door (LAYOUT-031)
         let in_model = e.indoor
             && data.elements_of(ElementType::Building).any(|b| {
-                building_model(b).is_some()
+                (building_model(b).is_some() || round_house::is_round(b))
                     && b.model_rect.is_some_and(|m| {
                         m.contains(IVec2::new(e.rect.x, e.rect.z))
                             && m.contains(IVec2::new(
@@ -3798,7 +3828,7 @@ impl LevelScene {
     /// hall side, bottom 2.3 m — the door is 2.2 m high).
     fn indoor_enclosure_sign(&mut self, e: &Element, mid: Vec2, out: Dir) {
         let o = out.offset().as_vec2();
-        let board = Vec3::new(1.1, 0.7, 0.06);
+        let board = Vec3::new(1.8, 1.0, 0.06);
         let along_z = matches!(out, Dir::E | Dir::W);
         let c = mid + o * (0.1 + board.z / 2.0);
         self.boxes.push(BoxPlacement {
@@ -3815,16 +3845,21 @@ impl LevelScene {
             part: e.part as u8,
         });
         if let Some(animal) = &e.animal {
-            let n = level_to_world(o).normalize();
-            let right = Vec3::Y.cross(n);
-            let front = mid + o * (0.1 + board.z + DECAL_LIFT_M);
-            self.decals.push(Decal {
-                id: format!("sign:{}", e.id),
-                image: DecalImage::Texture(silhouette_path(animal)),
-                center: level_to_world_at(front, INDOOR_SIGN_BOTTOM_M + board.y / 2.0),
-                right: right * 0.45,
-                up: Vec3::Y * 0.3,
-            });
+            // the animal's pictogram on a cream plate on the board (LAYOUT-N2-022)
+            self.pictogram_plate(
+                e.id.clone(),
+                animal,
+                mid + o * (0.1 + board.z),
+                o,
+                if along_z {
+                    quarter_turns_cw_to_yaw(1)
+                } else {
+                    0.0
+                },
+                INDOOR_SIGN_BOTTOM_M + board.y / 2.0,
+                INDOOR_PICTOGRAM_PLATE,
+                e.part as u8,
+            );
         }
     }
 }

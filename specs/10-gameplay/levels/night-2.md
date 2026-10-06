@@ -17,8 +17,7 @@ Owned by the `zoo-level-designer` agent. **Implemented 2026-10-04** (user reques
 building of the night level, with snake, chameleon and a colourful poison dart frog" and 2026-10-04 "also implement
 the terrarium building in the night level": Q-330…Q-339 and Q-350…Q-352 answered "implement as recommended").
 `assets/levels/night-2.toml` mirrors the element table below (LAYOUT-N2-004 checks both, the map is generated from it).
-**Simplifications of the first implementation:** the terrarium house has the plan of the night house (same 17 × 13 m
-`model_rect`, cases 8 m deep instead of 5) and is drawn with the `night_house` model as a stand-in; the riddle
+**Simplifications of the first implementation:** the terrarium house has a **round plan** (user request 2026-10-06: it must not look like the night house; Q-375 answered "implement as recommended"): a half-disc with a stepped arc, a round visitor hall and the three glass cases fanned around it (west / north / east); it is drawn by a procedural placeholder (curved wall, stepped dome roof, glass fronts) until the real model exists; the riddle
 scenery are coloured placeholder boxes; the basic-food / treat rule is implemented for the three new species only (the
 older species keep the FAM-008/009 rule until the 16-species master table of GAME-FEED is built); the fridge prop, the
 silhouettes for the signs and the real models are listed in "Mockups and art". Level id `night_2`. Night rules: GAME-NIGHT. Frame: the plaza, hut,
@@ -85,19 +84,19 @@ Scale **1 character = 1 m**, north (+z) up, x axis below (generated from the ele
 ```
    53 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    52 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   51 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   50 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   49 %%........RR...TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   48 %%........RR...TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   47 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   46 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   45 %%.............TTTTTTTTTTTTsssssscccccrrrrrrTT%%
-   44 %%..nnn........TTTTTTTTTTTTssggsscggccrrggrrTT%%
-   43 %%..nnn........TTTTTTTTTTTTNhhhhhhhhhhhhhhhNTT%%
-   42 %%..nnn........TTTTTTTTTTTTNhhhhhhhhhhhhhhhNTT%%
-   41 %%.............TTTTTTTTTTTTNhhhhhhhhhhhhhhhNTT%%
-   40 %%.........................NhhhhhhhhhhhhhhhNTT%%
-   39 %%.........................NNNNNNNNDNNNNNNNNTT%%
+   51 %%.............TTTTTTTTTTT...................T%%
+   50 %%.............TTTTTTTTTTT...................T%%
+   49 %%........RR...TTTTTTTTTTT......ccccccc......T%%
+   48 %%........RR...TTTTTTTTTTT....NNcccccccNN....T%%
+   47 %%.............TTTTTTTTTTT..NNNNcccccccNNNN..T%%
+   46 %%.............TTTTTTTTTTT.NNNNNccggcccNNNNN.T%%
+   45 %%.............TTTTTTTTTTTNNNNNNhhhhhhhNNNNNNT%%
+   44 %%..nnn........TTTTTTTTTTTssssshhhhhhhhhrrrrrT%%
+   43 %%..nnn........TTTTTTTTTTTssssghhhhhhhhhgrrrrT%%
+   42 %%..nnn........TTTTTTTTTTTssssghhhhhhhhhgrrrrT%%
+   41 %%.............TTTTTTTTTTTssssshhhhhhhhhrrrrrT%%
+   40 %%........................NNNNNNhhhhhhhNNNNNNT%%
+   39 %%........................NNNNNNNNNDNNNNNNNNNT%%
    38 %%..................b.........i..i===..i......%%
    37 %%......=============================.........%%
    36 %%......=============================.........%%
@@ -147,7 +146,7 @@ Scale **1 character = 1 m**, north (+z) up, x axis below (generated from the ele
 | `z` | stepping stones on wet moss (`loc_stepping_stones`, scenery, walkable) | `n` | fern glade (`loc_ferns`, scenery, walkable) |
 | `R` | rain barrel under a little eave (`loc_rain_barrel`) | `.` | grass (walkable, slower) |
 
-In the rows 44–51 the letters `s`, `c`, `r` are the three terrariums; the `f` inside the hut (rows 27–30) is the hut floor (`F` = hut walls); `h` is the visitor hall. The hedge cells at x −74…−73 are the east border (generated from `night-2.toml`).
+In the rows 39–48 the letters `s`, `c`, `r` are the three terrariums (snake west, chameleon north, frog east of the round hall; `g` = glass gate); the `f` inside the hut (rows 27–30) is the hut floor (`F` = hut walls); `h` is the visitor hall. The hedge cells at x −74…−73 are the east border (generated from `night-2.toml`).
 East of x −73 (not drawn): the night_1 west hedge with the gate at z 25…26.
 
 ## Elements
@@ -167,21 +166,21 @@ Grid rect = `x, z, w, d`. Solid = every type except `path`. The table mirrors th
 | `bench_n2_plaza` | decoration (bench) | −77, 28, 2, 1 |  |
 | `food_storage_n2` | building (food_hut) | −92, 26, 5, 6 | `door` (−88, 29); `interior` (−91, 27, 3, 4). Small wooden food hut (copy of food_storage_n1), enterable: `interior` (-91, 27, 3, 4), door (-88, 29) on the east facade; basic foods in front of its east facade, the two treat boxes inside at its west wall (Q-336). A fridge prop for the frozen insects needs a model (not yet made). |
 | `path_n2_house` | path (main) | −86, 35, 3, 4 | From the plaza north to the terrarium-house door (-85, 39). |
-| `terrarium_house` | building (terrarium_house) | −93, 39, 17, 5 | `door` (−85, 39); `interior` (−92, 40, 15, 4); `model_rect` (−93, 39, 17, 13). Terrarium house: the same plan as the night house (hall + three glass-fronted terrariums along the north side) with a warm interior. Stand-in model: the night_house model until a conservatory model exists (kit_buildings spec `terrarium_house`). |
-| `enc_n2_snake` | enclosure | −93, 44, 6, 8 | gate (−91, 44, 2, 1); `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, warm amber heat lamp: sandy floor, a warm flat rock, a branch to coil on, a water dish. No riddle detail of any hiding place inside. |
-| `enc_n2_chameleon` | enclosure | −87, 44, 5, 8 | gate (−86, 44, 2, 1); `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, violet UV-style light: tall leafy branches, a hanging vine, a leaf dish. No riddle detail of any hiding place inside. |
-| `enc_n2_frog` | enclosure | −82, 44, 6, 8 | gate (−80, 44, 2, 1); `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, moist teal light: large leaves, a mossy log, a shallow dish, fine mist. No riddle detail of any hiding place inside. |
-| `board_n2_snake` | decoration (info_board) | −90, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_snake`; board lamp. Outside the terrarium house on its south wall; board lamp. |
-| `board_n2_chameleon` | decoration (info_board) | −87, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_chameleon`; board lamp. Outside the terrarium house on its south wall; board lamp. |
-| `board_n2_frog` | decoration (info_board) | −81, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_frog`; board lamp. Outside the terrarium house on its south wall; board lamp. |
-| `trees_n2_ne` | decoration (tree_grove) | −76, 39, 2, 13 | `density = "dense"`. Old round trees between the house and the east hedge. |
+| `terrarium_house` | building (terrarium_house) | −94, 39, 19, 1 | `door` (−85, 39); `interior` (−89, 41, 9, 4); `model_rect` (−94, 39, 19, 11). Round terrarium house: a half-disc (radius ≈ 10 m, flat side = the south facade with the door) with a round visitor hall and the three glass cases fanned around it. `rect` is the south wall row; the walkable hall is `interior` plus `interior_extra` (−88, 40, 7, 1), (−88, 45, 7, 1); the wall mass between the hall, the cases and the outer arc is `footprint_extra` (10 row runs, solid; the interior floor is **wooden planks**, LAYOUT-N2-024). Stand-in model: procedural placeholder until a conservatory model exists (kit_buildings spec `terrarium_house`). |
+| `enc_n2_snake` | enclosure | −94, 41, 5, 4 | gate (−90, 42, 1, 2); west wedge, glass front east; `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, warm amber heat lamp: sandy floor, a warm flat rock, a branch to coil on, a water dish. No riddle detail of any hiding place inside. |
+| `enc_n2_chameleon` | enclosure | −88, 46, 7, 4 | gate (−86, 46, 2, 1); north wedge, glass front south; `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, violet UV-style light: tall leafy branches, a hanging vine, a leaf dish. No riddle detail of any hiding place inside. |
+| `enc_n2_frog` | enclosure | −80, 41, 5, 4 | gate (−80, 42, 1, 2); east wedge, glass front west; `indoor = true`; `terrarium = true`; `pair = true`; `home_wander_on = ["grass"]`. Indoor terrarium behind a glass front, moist teal light: large leaves, a mossy log, a shallow dish, fine mist. No riddle detail of any hiding place inside. |
+| `board_n2_snake` | decoration (info_board) | −90, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_snake`; board lamp. Outside the terrarium house on its south wall; board lamp; shows the snake pictogram (LAYOUT-N2-022). |
+| `board_n2_chameleon` | decoration (info_board) | −87, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_chameleon`; board lamp. Outside the terrarium house on its south wall; board lamp. Shows the chameleon pictogram (LAYOUT-N2-022). |
+| `board_n2_frog` | decoration (info_board) | −81, 38, 1, 1 | `mount = "wall"`; board of `enc_n2_frog`; board lamp. Outside the terrarium house on its south wall; board lamp. Shows the poison dart frog pictogram (LAYOUT-N2-022). |
+| `trees_n2_ne` | decoration (tree_grove) | −75, 39, 1, 13 | `density = "dense"`. Old round trees between the house and the east hedge. |
 | `bench_n2_ring` | decoration (bench) | −100, 38, 1, 1 | Resting point on the north ring (there is no telescope in night_2, Q-367). |
 | `path_n2_ring_n` | path (main) | −112, 35, 26, 3 | North ring from the house path west; passes the boards. |
 | `path_n2_ring_w` | path (main) | −112, 13, 3, 22 | West side of the loop. |
 | `path_n2_ring_s` | path (main) | −109, 13, 25, 3 | South side of the loop (x -109..-85). |
 | `path_n2_s_link` | path (main) | −87, 16, 3, 8 | From the south ring north to the plaza. |
 | `grove_n2_center` | decoration (tree_grove) | −107, 18, 13, 15 | `density = "dense"`. The hidden middle: old round trees (no palm, no lanterns). |
-| `grove_n2_north` | decoration (tree_grove) | −105, 41, 12, 11 | `density = "dense"`. Old round trees north of the ring, up to the house wall. |
+| `grove_n2_north` | decoration (tree_grove) | −105, 41, 11, 11 | `density = "dense"`. Old round trees north of the ring, up to the house wall. |
 | `stone_wall_n2` | decoration (stone_wall) | −118, 11, 5, 1 | Low dry wall of flat grey stacked stones with moss in the gaps (loc_stone_wall); the only stone wall in the night zoo. |
 | `rowing_boat_n2` | decoration (rowing_boat) | −118, 31, 3, 2 | Old wooden rowing boat, blue, upside down on the grass, two oars leaning on it (loc_rowing_boat). |
 | `lantern_tree_n2` | decoration (lantern_tree) | −105, 8, 2, 2 | Tree with a spreading low crown hung with 20 colourful paper lanterns (loc_lanterns). |
@@ -201,33 +200,65 @@ Walkable ground dressing a riddle relies on; not elements (LAYOUT-N2-004 checks 
 
 ## Terrarium house
 
-An enterable house like `night_house` (hall + indoor enclosures, boards outside) but a **terrarium house**: low, rounded, a glass-roofed
-conservatory look with plants climbing the window frames; **warm, lit interior** (visitor hall light warm white `#FFE9B0`, dim but readable, NIGHT-005),
-no scary darkness. The door (−85, 39) stands at the north end of `path_n2_house` (a street, GAME-LAYOUT rule 8).
+An enterable house like `night_house` (hall + indoor enclosures, boards outside) but a **terrarium house**: a **round plan** (user request
+2026-10-06, Q-375: "should not look the same as the other night house — half or quarter circle arranged cages"), low, a glass-roofed
+conservatory look with a stepped dome roof and plants climbing the window frames; **warm, lit interior** (visitor hall light warm white `#FFE9B0`,
+dim but readable, NIGHT-005), no scary darkness. The door (−85, 39) stands in the middle of the straight south facade, at the north end of
+`path_n2_house` (a street, GAME-LAYOUT rule 8). The night house is a rectangle with a long hall and three cases in a row; the terrarium house is a
+**half-disc**: a round hall in the middle and the three cases **fanned around it** (snake west, chameleon north, frog east), each with its glass front on
+the hall side. The grid has 1 m cells, so the arc is a **staircase** of axis-aligned rects (engine: `Element::interior_extra` and
+`Element::footprint_extra`, LAYOUT-N2-020; every case stays a plain rect).
 
 ```
- z 51  ssssss ccccc rrrrrr      terrariums (indoor enclosures z 44-51, glass fronts at z 44)
- z 44  ss gg ss c gg cc rr gg rr    gg = glass door / gate (2 m)
- z 43  hall  x -92..-78 (15 x 4 m, surface path)   ← visitor hall
- z 40  hall
- z 39  wall .... .... D(-85) .... ....            ← south wall, door at x -85
- z 38  i(-90)   i(-87)   path  i(-81)             ← boards outside
+ x     -94 ........ -85 ........ -76      (the map rows 39-49, x −94…−76)
+ z 49  ......ccccccc......
+ z 48  ....NNcccccccNN....
+ z 47  ..NNNNcccccccNNNN..
+ z 46  .NNNNNccggcccNNNNN.
+ z 45  NNNNNNhhhhhhhNNNNNN
+ z 44  ssssshhhhhhhhhrrrrr
+ z 43  ssssghhhhhhhhhgrrrr
+ z 42  ssssghhhhhhhhhgrrrr
+ z 41  ssssshhhhhhhhhrrrrr
+ z 40  NNNNNNhhhhhhhNNNNNN
+ z 39  NNNNNNNNNDNNNNNNNNN
+
+ N = wall mass (`footprint_extra`) and the south wall, h = round visitor hall (wooden floor), s / c / r = snake west /
+ chameleon north / frog east case, g = glass gate (2 m), D = door at x −85; boards `i` outside at z 38 (x −90, −87, −81).
 ```
 
 | Terrarium | Rect | Gate (hall side) | Light | Inside (riddle guards: nothing of any riddle place) |
 |---|---|---|---|---|
-| `enc_n2_snake` | (−93, 44, 6, 8) | (−91, 44, 2, 1) | warm amber `#F2A93B` (heat lamp) | sandy floor, a warm flat rock, a branch to coil on, a small water dish — no stones stacked as a wall, no pumpkins, no boat |
-| `enc_n2_chameleon` | (−87, 44, 5, 8) | (−86, 44, 2, 1) | violet UV-style `#9B6BE0` | tall leafy branches and a hanging vine from the ceiling, a leaf dish — no lanterns, no palm, no arch |
-| `enc_n2_frog` | (−82, 44, 6, 8) | (−80, 44, 2, 1) | moist teal `#3CC7A0` | large leaves, a mossy log, a shallow dish, fine mist — no ferns, no barrel, no stepping plates |
+| `enc_n2_snake` (west) | (−94, 41, 5, 4) | (−90, 42, 1, 2) | warm amber `#F2A93B` (heat lamp) | sandy floor, a warm flat rock, a branch to coil on, a small water dish — no stones stacked as a wall, no pumpkins, no boat |
+| `enc_n2_chameleon` (north) | (−88, 46, 7, 4) | (−86, 46, 2, 1) | violet UV-style `#9B6BE0` | tall leafy branches and a hanging vine from the ceiling, a leaf dish — no lanterns, no palm, no arch |
+| `enc_n2_frog` (east) | (−80, 41, 5, 4) | (−80, 42, 1, 2) | moist teal `#3CC7A0` | large leaves, a mossy log, a shallow dish, fine mist — no ferns, no barrel, no stepping plates |
 
+- **Round plan (LAYOUT-N2-020, -021):** hall rows (cells): z 40 x −88…−82, z 41…44 x −89…−81, z 45 x −88…−82 (50 cells; ≥ 3 m wide everywhere; wide enough at each gate that no wall touches a gate post, LAYOUT-038). The footprint
+  (`rect` + `footprint_extra`) is every cell of the half-disc (|x + 85| ≤ 9, centre-distance ≤ 11.2 m from (−84.5, 39)) that is not hall, door or case; the plan is
+  mirror-symmetric about the door axis. The renderer draws it as curved wall boxes along the outer arc (one wall slab per exposed edge of the union of footprint
+  and cases), a **stepped dome roof** (three nested layers of row slabs), a glass front on every hall/case edge and the door leaf in the south facade. The roof cut-away
+  works as in the night house (roof boxes hidden while the player is inside, PLAY-028).
+- **Look (approved concept `art/environment/env_terrarium_house/overview_v2.jpg`, `cutaway_v2.jpg`, user 2026-10-06):** warm brown timber walls, a low rounded
+  **green (grass-roof) dome**, an arched door with warm light, glass cases lit amber / violet / teal behind the windows, a **round cream plaque with the big snake pictogram above the
+  door** (LAYOUT-N2-022), inside a **warm wooden plank floor** (not grass, not stone; LAYOUT-N2-024), wooden rails in front of the glass fronts and a small lit info board at every case.
+  The placeholder follows this: timber-brown walls, green stepped dome, plank-coloured floor slab with board lines, pale-blue glass frames.
 - **Terrarium case (props, Q-333):** the case is the enclosure rect behind a **glass front** along z 44: a translucent pale-blue pane (alpha 0.25,
   no refraction; bright white frame lines and a few "shine" streaks; style = the existing `glass_door` model, drawn with the same blended pass, outlines only on the frame). Proposed models: `terrarium_front` (glass front wall segment, 1 m modules, ≤ 40 tris), `terrarium_frame` (case posts + lintel + lamp rail), `terrarium_lamp` (heat / UV lamp, emissive), `terrarium_rock_warm`, `terrarium_branch`, `terrarium_leaf_big`, `terrarium_moss_log`, `terrarium_dish`, `mist_puff` (billboard sprite). Their gates are the existing `glass_door`; no new door mechanism.
 - **How animals enter:** exactly like hedgehog, bat and owl: the player leads the following pair through the door (−85, 39), along the hall (4 m wide), the gate opens while she leads animals within 3 m (`Game::opening_open`, 1.5 s behind them) and the animals step onto their home cells. The snake slithers (0.9 m/s home wander ≈ 0.5), the frog hops, the chameleon walks (quadruped rig).
-- **Feed spot / stand cells (GAME-GARDEN 6a):** the child stands in the hall in front of the glass (hall cells z 43): `feed_spot` derived per case on the **gate side** (2 cells inside the glass on the gate edge: snake (−91, 44, 2, 1)…, derived when absent). Giving works through the glass at ≤ 2 m; the child never enters a terrarium. Pair gap (centre to centre): snake 1.0 m, chameleon 0.7 m (perch pair offset), frog 0.5 m; every case has ≥ 12 home cells (48, 40, 48 cells).
-- **Collision / walkway:** hall interior and door are walkable path cells; the 4 m hall leaves ≥ 2 m free beside a following animal; nothing solid within 0.9 m beside the door posts (LAYOUT-038), diagonal approaches from 3 m stay free (LAYOUT-034), boards are wall-mounted and non-solid (Q-157, LAYOUT-032/041).
-- **Info boards outside** (as Q-134): each facing south onto `path_n2_ring_n` / `path_n2_house`, with a board lamp; the panel shows riddle, **basic food and treat lines** (GAME-FEED "Info board"), facts and the pair note.
+- **Feed spot / stand cells (GAME-GARDEN 6a):** the child stands in the hall in front of the glass (the hall cells next to the gates): `feed_spot` derived per case on the **gate side** (2 cells inside the glass on the gate edge: snake (−94…−90, 41…42)…, derived when absent). Giving works through the glass at ≤ 2 m; the child never enters a terrarium. Pair gap (centre to centre): snake 1.0 m, chameleon 0.7 m (perch pair offset), frog 0.5 m; every case has ≥ 12 home cells (20, 28, 20 cells).
+- **Collision / walkway:** hall interior and door are walkable path cells; the hall (≥ 3 m wide everywhere, 9 m wide at the door end) leaves ≥ 2 m free beside a following animal; nothing solid within 0.9 m beside the door posts (LAYOUT-038), diagonal approaches from 3 m stay free (LAYOUT-034), boards are wall-mounted and non-solid (Q-157, LAYOUT-032/041).
+- **Info boards outside** (as Q-134): each facing south onto `path_n2_ring_n` / `path_n2_house`, with a board lamp and the **pictogram of its animal** (see "Sign pictograms"); the panel shows riddle, **basic food and treat lines** (GAME-FEED "Info board"), facts and the pair note.
 - **Indoor lights** `[[light]] kind = "indoor"`: three case lights (colours above) and one warm hall light.
 - **Glass and perf:** 3 cases × ≈ 8 blended quads, one extra blended draw call; no new shader (PERF note below).
+
+### Sign pictograms (LAYOUT-N2-022, ART-ENVIRONMENT behaviour 6)
+
+A child must see at a glance which case is for whom, without reading. Every sign of the terrarium house carries the **animal pictogram** (the dark comic
+silhouette of the species on a cream plate, the same `assets/textures/signs/silhouette_<animal>.png` family as the `enclosure_sign` panels, drawn by
+`tools/textures/sign_silhouettes.py`; new: `snake`, `chameleon`, `poison_dart_frog`): (1) the three **wall info boards** on the south facade (`board_n2_*`, 1.0 × 0.75 m, pictogram
+0.8 × 0.53 m on a cream plate) and (2) the board above each **glass gate** on its hall side (`<id>:sign`, the existing `indoor_enclosure_sign`, now on a cream plate too).
+The pictograms are large and readable from the game camera (wall board plate 0.9 × 0.62 m; gate board plate 1.0 × 0.6 m; plus the **big snake plaque, 1.5 m across, above the door**, the house emblem). The rule is data-driven: every wall-mounted `info_board` and every indoor-enclosure sign whose enclosure has an `animal` shows that animal's pictogram. It holds at
+every reading level (no text needed).
 
 ## Night food storage
 
@@ -421,7 +452,7 @@ Applies GAME-LAYOUT "Level design rules" and GAME-HINT; **the child cannot get s
 
 ## Mockups and art
 
-Brief to write (art agent, not touched here): `art/environment/env_terrarium_house/brief.md` — `overview.png`: top-down cut-away of the house with three lit glass terrariums (amber / violet / teal) along the north wall, hall, door on the street, plaza with hut; `player_view.png`: the child in the hall looking at the three glass fronts with the animals visible behind the glass; props from the modular list plus the new terrarium models; mood of `env_night_house` but **warm and cosy**, tropical plants, nothing scary. Also needed: concept sheets for the three families (in review: `art/animals/{snake,chameleon,poison_dart_frog}_family`), a greybox of this layout, riddle-place mockups for the nine places (briefs after approval).
+Brief to write (art agent, not touched here): `art/environment/env_terrarium_house/brief.md` — `overview.png`: top-down cut-away of the **round (half-disc) house**: a round hall behind the door in the straight south facade and three lit glass terrariums (amber west / violet north / teal east) fanned around it under a stepped dome roof — clearly not the rectangle of `env_night_house` —, plaza with hut; `player_view.png`: the child in the round hall turning to the three glass fronts (each with its animal pictogram plate above the gate) with the animals visible behind the glass; props from the modular list plus the new terrarium models; mood of `env_night_house` but **warm and cosy**, tropical plants, nothing scary. Also needed: concept sheets for the three families (in review: `art/animals/{snake,chameleon,poison_dart_frog}_family`), a greybox of this layout, riddle-place mockups for the nine places (briefs after approval).
 
 ## Test cases
 
@@ -436,6 +467,11 @@ Brief to write (art agent, not touched here): `art/environment/env_terrarium_hou
 | LAYOUT-N2-007 | Given the hiding places, then ≥ 9 wander cells each (16, 27, 21, 13, 20, 11, 25, 28, 22), a cell ≥ 2 m from the spot, no solid/path cell, inside the rect; different animals' places do not overlap; all different-animal spot pairs ≥ 12 m. | unit |
 | LAYOUT-N2-008 | Given the hiding places, features and scenery ids exist, each scenery / riddle kind occurs once in the night levels, MISS-013 holds for the new riddles. | unit |
 | LAYOUT-N2-009 | Given `terrarium_house`, interior and door walkable `path`, each indoor terrarium has its gate edge-adjacent to an interior cell, `model_rect` contains hall and cases, `terrarium = true` on the three enclosures. | unit |
+| LAYOUT-N2-020 | Given `terrarium_house`, then its plan is round: `interior_extra` and `footprint_extra` exist, the hall is the union of `interior` and the extra rects (50 cells), the footprint cells are disjoint from every enclosure, the hall and the door; every footprint cell is walled (not walkable), the plan is mirror-symmetric about the door axis, the three cases lie west / north / east of the hall (not in one row), and the hall is ≥ 3 m wide everywhere. | unit |
+| LAYOUT-N2-021 | Given the round house, then never-stuck holds: door, hall and all three gates are reachable from the entry, each gate is edge-adjacent to a hall cell, the pairs lead in and out (NIGHT-N2-002), LAYOUT-031 gate/door fills are present, the stand cells in front of the gates and the hint stand cells are free, the roof cut-away hides the roof boxes while the player is in the hall, and the house is drawn by the procedural fan placeholder (no `night_house` model). | unit |
+| LAYOUT-N2-022 | (= AENV-017) Given the terrarium house, then every wall info board and every indoor-enclosure sign of the three cases (and the plaque above the door: the snake) has a pictogram decal of its enclosure's animal (`silhouette_snake`, `silhouette_chameleon`, `silhouette_poison_dart_frog`) on a cream plate; the three PNGs exist and are not blank. | unit |
+| LAYOUT-N2-024 | Given the terrarium house, then the floor of every hall and door cell is a wooden plank floor, not grass: the cells are walkable `path` surface (never `grass`), the placeholder draws a plank-coloured floor slab over the whole hall (and walkway) with board lines, and no grass tile shows inside. | unit |
+| LAYOUT-N2-023 | Given the game camera and the first-person view at the terrarium house, then the house looks round and clearly different from the night house and the pictograms on the boards and over the gates are visible (review screenshots `art/environment/poc/`). | e2e |
 | LAYOUT-N2-010 | Given the food boxes of night_2: outside `fish`, `crickets`, `flies`, `beetles`; inside `eggs`, `frozen_insects`; each with a reachable standing cell within 2 m. | unit |
 | LAYOUT-N2-011 | Given the lights, same checks as LAYOUT-N1-011 (posts, board lamps, indoor lights with the colours above). | unit |
 | LAYOUT-N2-015 | Given the new foods, animals, places and the lantern-gate hint, then the host has an icon for each (no reading needed). | vitest |
@@ -454,4 +490,10 @@ Further rows: NIGHT-030..032 (night.md), HINT-024/025 (hints.md), FAM-031/032 (f
 ## Open questions
 
 - Q-330…Q-339, Q-350…Q-352 answered 2026-10-04 ("implement as recommended"); see open-questions.md.
-- Open for the user: the 16-species treat rule for the older species (Q-350 table), the glass-case look and the real house model, the fridge prop and the nine scenery models (see "Mockups and art"), sign silhouettes for snake / chameleon / frog.
+- Open for the user: the 16-species treat rule for the older species (Q-350 table), the glass-case look and the real house model, the fridge prop and the nine scenery models (see "Mockups and art"), the real models of the round house (below).
+
+## Model needs (round terrarium house, 2026-10-06; Blender later, not part of this change)
+
+`terrarium_house` (round conservatory: half-disc shell with a stepped / domed glass roof and a south door, ≈ 19 × 10 m, replaces the procedural placeholder; kit_buildings),
+`terrarium_front_arc` (glass front segments for the three hall/case edges, 1 m modules), `terrarium_dome_roof`, `info_board_wall` with a pictogram plate (the plates are
+decals today), and real pictograms (colour versions of the three silhouettes if the art director wants them).

@@ -41,7 +41,7 @@ pub struct BuildingSpec {
     pub eaves_m: f32,
 }
 
-pub const BUILDING_SPECS: [BuildingSpec; 6] = [
+pub const BUILDING_SPECS: [BuildingSpec; 5] = [
     BuildingSpec {
         kind: "zookeeper_house",
         model: "zookeeper_house",
@@ -80,17 +80,6 @@ pub const BUILDING_SPECS: [BuildingSpec; 6] = [
     },
     BuildingSpec {
         kind: "night_house",
-        model: "night_house",
-        size: (17, 13),
-        door: Some(Vec2::new(0.0, -6.0)),
-        hinge: Vec3::new(-0.47, 0.0, 6.35),
-        door_yaw_deg: 0.0,
-        eaves_m: 2.0,
-    },
-    // the terrarium house of `night_2` has the plan of the night house (hall + three glass-fronted
-    // cases); its own conservatory model replaces this stand-in later (`model` = one line)
-    BuildingSpec {
-        kind: "terrarium_house",
         model: "night_house",
         size: (17, 13),
         door: Some(Vec2::new(0.0, -6.0)),

@@ -162,6 +162,14 @@ pub struct Element {
     /// Enterable buildings (proposal Q-092): walkable interior cells (surface `path`); with
     /// the `door` cell they are the only walkable cells of the building rect.
     pub interior: Option<Rect>,
+    /// Enterable buildings with a round plan (the terrarium house, LAYOUT-N2-020): further
+    /// walkable interior rects (a stepped arc is a union of rects).
+    #[serde(default)]
+    pub interior_extra: Vec<Rect>,
+    /// Enterable buildings with a round plan: further solid footprint rects besides `rect`
+    /// (the wall mass between the hall and the outer arc); disjoint from every enclosure.
+    #[serde(default)]
+    pub footprint_extra: Vec<Rect>,
     /// Enterable buildings: footprint of the whole model when it is larger than the walkable
     /// building rect (the night house with its indoor enclosure wing, proposal Q-134).
     pub model_rect: Option<Rect>,
@@ -240,8 +248,35 @@ impl Element {
 
     /// Whether a cell of an enterable building is walkable (interior or door cell).
     pub fn is_open_cell(&self, c: IVec2) -> bool {
-        self.interior.is_some_and(|r| r.contains(c)) && self.ty == ElementType::Building
+        self.is_interior_cell(c) && self.ty == ElementType::Building
             || (self.is_enterable() && self.door_cell() == Some(c))
+    }
+
+    /// A cell of the `interior` rect or of one of the `interior_extra` rects.
+    pub fn is_interior_cell(&self, c: IVec2) -> bool {
+        self.interior.is_some_and(|r| r.contains(c))
+            || self.interior_extra.iter().any(|r| r.contains(c))
+    }
+
+    /// All walkable interior cells (the `interior` rect plus the extra rects).
+    pub fn interior_cells(&self) -> Vec<IVec2> {
+        self.interior
+            .iter()
+            .chain(&self.interior_extra)
+            .flat_map(|r| r.cells())
+            .collect()
+    }
+
+    /// Every cell of the footprint: `rect` plus the `footprint_extra` rects.
+    pub fn footprint_cells(&self) -> impl Iterator<Item = IVec2> + '_ {
+        std::iter::once(self.rect)
+            .chain(self.footprint_extra.iter().copied())
+            .flat_map(|r| r.cells())
+    }
+
+    /// Whether a cell belongs to the footprint (`rect` or `footprint_extra`).
+    pub fn footprint_contains(&self, c: IVec2) -> bool {
+        self.rect.contains(c) || self.footprint_extra.iter().any(|r| r.contains(c))
     }
 
     pub fn animal_spot_cell(&self) -> Option<IVec2> {
@@ -1065,7 +1100,7 @@ impl LevelData {
         let mut out = Vec::new();
         for (i, a) in solids.iter().enumerate() {
             for b in &solids[i + 1..] {
-                if let Some(c) = a.rect.cells().find(|c| b.rect.contains(*c)) {
+                if let Some(c) = a.footprint_cells().find(|c| b.footprint_contains(*c)) {
                     out.push((a.id.clone(), b.id.clone(), c));
                 }
             }
@@ -1138,7 +1173,8 @@ impl Grid {
         }
         for (i, e) in data.elements.iter().enumerate() {
             let open = e.ty == ElementType::Barrier && open_barriers.contains(&e.id);
-            for c in e.rect.cells() {
+            // (the interior of a round house is not part of its footprint rects)
+            for c in e.footprint_cells().chain(e.interior_cells()) {
                 let Some(k) = index(c) else { continue };
                 if e.ty == ElementType::Path {
                     cells[k].path = true;

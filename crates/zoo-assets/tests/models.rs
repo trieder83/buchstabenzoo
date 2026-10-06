@@ -271,6 +271,119 @@ fn aenv_016_l2_landmark_models() {
     }
 }
 
+// AENV-018: the real models of the terrarium house (kit_terrarium.py): budgets, size limits, the
+// hideable shell nodes, the animated `water_sheet`, perch / lamp / mist sockets and glow lamps.
+#[test]
+fn aenv_018_terrarium_models() {
+    // (model, max triangles, max w, max h, max d)
+    for (name, max_tris, w, h, d) in [
+        ("terrarium_house", 3000, 20.0, 6.0, 12.0),
+        ("terrarium_front", 40, 1.1, 2.5, 0.3),
+        ("terrarium_frame", 80, 4.5, 2.7, 0.4),
+        ("terrarium_frame_wide", 80, 7.5, 2.7, 0.4),
+        ("terrarium_lamp", 150, 0.6, 0.9, 0.9),
+        ("terrarium_lamp_uv", 150, 0.6, 0.9, 0.9),
+        ("terrarium_lamp_teal", 150, 0.6, 0.9, 0.9),
+        ("terrarium_dish", 300, 0.7, 0.2, 0.7),
+        ("terrarium_floor_snake", 300, 4.05, 0.2, 4.65),
+        ("terrarium_floor_frog", 300, 4.25, 0.25, 4.65),
+        ("terrarium_floor_chameleon", 300, 7.05, 0.2, 3.65),
+        ("terrarium_rock_warm", 300, 2.0, 1.3, 1.4),
+        ("terrarium_rock_flat", 300, 1.9, 0.4, 1.3),
+        ("terrarium_branch_low", 300, 2.9, 1.3, 0.5),
+        ("terrarium_waterfall", 300, 2.2, 1.4, 1.7),
+        ("mist_puff", 300, 0.9, 0.5, 0.5),
+        ("terrarium_leaf_big", 300, 2.0, 1.3, 2.0),
+        ("terrarium_moss_log", 300, 1.7, 0.9, 0.5),
+        ("terrarium_fern", 300, 0.8, 0.7, 0.9),
+        ("terrarium_branch", 300, 2.7, 2.25, 1.5),
+        ("terrarium_tree", 300, 3.0, 2.3, 1.2),
+        ("info_board_wall", 300, 1.0, 1.3, 0.3),
+        ("fridge", 300, 0.8, 1.2, 0.7),
+    ] {
+        let m = load(&format!("assets/models/props/{name}.glb"));
+        let tris = m.mesh.indices.len() / 3;
+        assert!(tris > 10 && tris <= max_tris, "{name}: {tris} triangles");
+        let (lo, hi) = m.mesh.bounds();
+        assert!(lo.y.abs() < 0.02, "{name}: origin at the feet / base");
+        assert!(
+            hi.x - lo.x <= w && hi.y - lo.y <= h && hi.z - lo.z <= d,
+            "{name}: size {:?}",
+            hi - lo
+        );
+    }
+    // house: the hideable parts, the door / emblem sockets, glowing windows, 19 m round footprint
+    let house = load("assets/models/props/terrarium_house.glb");
+    for n in ["roof", "shell_upper"] {
+        assert!(house.node_index(n).is_some(), "terrarium_house: node {n}");
+    }
+    let door = house.empty("socket_door").expect("socket_door");
+    assert!(
+        door.x.abs() < 0.01 && door.z < 0.0,
+        "door axis x = 0, door in the south facade"
+    );
+    let emblem = house.empty("socket_emblem").expect("socket_emblem");
+    assert!(
+        emblem.y > 3.0 && emblem.z > 0.0,
+        "emblem plaque above the door, in front of the wall"
+    );
+    assert!(house.empty("light_hall").is_some());
+    let (lo, hi) = house.mesh.bounds();
+    assert!(
+        hi.x - lo.x > 19.0 && hi.z - lo.z > 11.0,
+        "house covers model_rect 19 x 11"
+    );
+    assert!(house
+        .materials
+        .iter()
+        .any(|m| m.name == "window_glow" && m.is_glow()));
+    // water: the animated sheet + pool nodes and the mist socket
+    let fall = load("assets/models/props/terrarium_waterfall.glb");
+    assert!(
+        fall.node_index("water_sheet").is_some(),
+        "waterfall: water_sheet node"
+    );
+    assert!(fall.empty("socket_mist").is_some());
+    let pool = load("assets/models/props/terrarium_floor_frog.glb");
+    assert!(
+        pool.node_index("water_pool").is_some(),
+        "frog floor: water_pool node"
+    );
+    // chameleon perches
+    for n in ["terrarium_branch", "terrarium_tree"] {
+        let m = load(&format!("assets/models/props/{n}.glb"));
+        for k in 1..=3 {
+            let p = m.empty(&format!("socket_perch_{k}")).expect("perch socket");
+            assert!(p.y > 1.0, "{n}: perch {k} is up in the branches");
+        }
+    }
+    // the three lamps glow in their own colours and carry a light point
+    let mut glows = Vec::new();
+    for (n, slot) in [
+        ("terrarium_lamp", "terrarium_amber_glow"),
+        ("terrarium_lamp_uv", "terrarium_violet_glow"),
+        ("terrarium_lamp_teal", "terrarium_teal_glow"),
+    ] {
+        let m = load(&format!("assets/models/props/{n}.glb"));
+        assert!(m.empty("light").is_some(), "{n}: light point");
+        let g = m
+            .materials
+            .iter()
+            .find(|x| x.name == slot && x.is_glow())
+            .unwrap_or_else(|| panic!("{n}: glow slot {slot}"));
+        glows.push(g.emissive);
+    }
+    assert!(
+        glows[0] != glows[1] && glows[1] != glows[2],
+        "three different lamp colours"
+    );
+    // glass front is see-through, the info board has its pictogram + lamp sockets
+    let front = load("assets/models/props/terrarium_front.glb");
+    assert!(front.materials.iter().any(|m| m.is_glass()));
+    let board = load("assets/models/props/info_board_wall.glb");
+    assert!(board.empty("socket_pictogram").is_some() && board.empty("socket_lamp").is_some());
+}
+
 // CART-032: `golf_cart` (<= 1000 tris, wheel / steering / headlight nodes, driver socket, glow
 // headlights), `parking_sign` (<= 150 tris) and `key_box_open` (no `door` node) exist and load.
 #[test]

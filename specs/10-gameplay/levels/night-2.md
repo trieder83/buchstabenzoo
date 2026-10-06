@@ -17,10 +17,10 @@ Owned by the `zoo-level-designer` agent. **Implemented 2026-10-04** (user reques
 building of the night level, with snake, chameleon and a colourful poison dart frog" and 2026-10-04 "also implement
 the terrarium building in the night level": Q-330…Q-339 and Q-350…Q-352 answered "implement as recommended").
 `assets/levels/night-2.toml` mirrors the element table below (LAYOUT-N2-004 checks both, the map is generated from it).
-**Simplifications of the first implementation:** the terrarium house has a **round plan** (user request 2026-10-06: it must not look like the night house; Q-375 answered "implement as recommended"): a half-disc with a stepped arc, a round visitor hall and the three glass cases fanned around it (west / north / east); it is drawn by a procedural placeholder (curved wall, stepped dome roof, glass fronts) until the real model exists; the riddle
+**Simplifications of the first implementation:** the terrarium house has a **round plan** (user request 2026-10-06: it must not look like the night house; Q-375 answered "implement as recommended"): a half-disc with a stepped arc, a round visitor hall and the three glass cases fanned around it (west / north / east); it is drawn by the real Blender models of `kit_terrarium` (2026-10-06, see "Terrarium models"; the procedural curved wall / dome roof / floor boxes remain only as the `Fallback` of the house model); the riddle
 scenery are coloured placeholder boxes; the basic-food / treat rule is implemented for the three new species only (the
-older species keep the FAM-008/009 rule until the 16-species master table of GAME-FEED is built); the fridge prop, the
-silhouettes for the signs and the real models are listed in "Mockups and art". Level id `night_2`. Night rules: GAME-NIGHT. Frame: the plaza, hut,
+older species keep the FAM-008/009 rule until the 16-species master table of GAME-FEED is built); the fridge prop is now a model (`fridge`, "Terrarium models"); the
+silhouettes for the signs are listed in "Mockups and art". Level id `night_2`. Night rules: GAME-NIGHT. Frame: the plaza, hut,
 house and loop of `night_1`, **shifted 48 m west** (same relative geometry, so the 22 m haze rule, the 12 m spread and the
 walking numbers of night_1 carry over); all riddle places, scenery and the house contents are new.
 
@@ -251,6 +251,33 @@ the hall side. The grid has 1 m cells, so the arc is a **staircase** of axis-ali
 - **Indoor lights** `[[light]] kind = "indoor"`: three case lights (colours above) and one warm hall light.
 - **Glass and perf:** 3 cases × ≈ 8 blended quads, one extra blended draw call; no new shader (PERF note below).
 
+### Terrarium models (AENV-018 / AENV-019, placed 2026-10-06)
+
+User request 2026-10-06: replace the placeholders by real Blender models; the **snake case** has a sand and stone floor, the **frog case** sand, water and a small
+waterfall, the **chameleon case** branches and a tree to sit on. Models and the full placement table: `tools/blender/props/README_terrarium.md` (source
+`tools/blender/props/kit_terrarium.py`); the scene wiring is `crates/zoo-core/src/scene/terrarium.rs` and `round_house.rs`.
+
+- **House:** `terrarium_house` at level (-84.5, 39.0), yaw 0, ground 0 (house frame: origin = middle of the south facade). Its parts `shell_upper` and `roof` hide while the player is
+  inside (as `walls_upper` / `roof` of the night house, PLAY-028; the renderer maps `shell_upper` to the upper-walls hide bit); the root (1 m wall base, plank hall floor, door jambs
+  and arch, emblem plaque) stays. The door leaf (`door_wood`) and the three glass gates (`glass_door`) are the existing mechanism. The wall mass, case walls, upper walls, dome roof and plank floor boxes of
+  the placeholder are kept as `Fallback { model: "terrarium_house" }` and drawn only when the model is missing (LAYOUT-N2-024 reads the floor from there). The snake pictogram decal of the emblem
+  (LAYOUT-N2-022) sits at `socket_emblem` (-84.5, 38.37, 4.0 m), ~1.5 m wide on the 1.9 m round plaque.
+- **Boards:** each wall board (`board_n2_*`) is an `info_board_wall` model (scale 1.6, mount 1.0 m, flush with the south wall, yaw 0, non-solid) with the animal pictogram decal on the round plate
+  (`socket_pictogram`); the board lamp sits at the model's `socket_lamp`. The flat board with its cream plate is the model's `Fallback`. The boards above the glass gates (`<case>:sign`) keep the flat board and plate.
+- **Case frame:** every case is placed in a *viewer frame* (floor centre = rect centre moved 0.15 m towards the glass; glass line = the rect edge on the gate side; `right` = to the viewer's right,
+  `into` = towards the back wall); case yaw: snake +90 (glass east), chameleon 0 (glass south), frog -90 (glass west). Floor top 0.08 m: every prop stands on it, the animals' feet follow
+  it (ground patch over the case rect, walk height 0.08 m instead of the 0.05 m grass tile).
+- **Snake case** (`enc_n2_snake`, floor centre (-91.35, 43.0)): `terrarium_floor_snake` (sand, darker dunes, 10 flagstones on one side = stone floor, pebbles), `terrarium_rock_warm` (-92.75, 44.0), `terrarium_rock_flat` basking stone (-91.15, 43.7),
+  `terrarium_branch_low` (-91.9, 43.1), `terrarium_dish` (-89.85, 44.4), amber `terrarium_lamp` (-93.7, 43.6, 1.95 m), two `terrarium_front` + `terrarium_frame` on the glass line.
+- **Frog case** (`enc_n2_frog`, floor centre (-77.65, 43.0)): `terrarium_floor_frog` (sand bank, moss mounds, stone-rimmed pool `water_pool`), `terrarium_waterfall` (-75.95, 42.4; its `water_sheet` breathes: +-7 % in length, period 2 s, shader mode 4), `mist_puff`
+  (-76.7, 42.4; rises 8 cm and swells 8 % over 8 s), two `terrarium_leaf_big`, `terrarium_moss_log`, `terrarium_fern`, teal `terrarium_lamp_teal` (-75.3, 43.8, 1.95 m), fronts + frame.
+- **Chameleon case** (`enc_n2_chameleon`, floor centre (-84.5, 47.85)): `terrarium_floor_chameleon`, two `terrarium_branch`, `terrarium_tree`, two `terrarium_leaf_big`, `terrarium_lamp_uv` (-84.5, 49.7, 1.95 m), five `terrarium_front`
+  (the 2 m gate between the 2 m and 3 m runs) + `terrarium_frame_wide`. The animals keep their wander cells (they do not use the `socket_perch_*` points: Q-376).
+- **Rules:** every piece is non-solid decoration: no collider is added, no wander cell, gate cell or stand cell changes (LAYOUT-N2-007 / -021 hold); the glass fronts leave the 2 m gate free. Everything static but the glass fronts is merged into
+  one mesh by the host (`bake_into("terrarium_cases")`, static batching ARCH-008); the waterfall (animated part) and the mist (moves) stay single instances; the fronts are drawn in the blended glass pass. The lamps glow in their own slots
+  (`terrarium_amber_glow` / `_violet_glow` / `_teal_glow`); the `n2_indoor_*` point lights keep their colours.
+- **Fridge:** `fridge` at (-90.6, 30.5), yaw +90 (front east), at the west wall inside the food hut, solid footprint 0.68 x 0.7 m; the frozen-insects box stands at its feet. `[[prop]] fridge_n2` in `night-2.toml`.
+
 ### Sign pictograms (LAYOUT-N2-022, ART-ENVIRONMENT behaviour 6)
 
 A child must see at a glance which case is for whom, without reading. Every sign of the terrarium house carries the **animal pictogram** (the dark comic
@@ -471,6 +498,10 @@ Brief to write (art agent, not touched here): `art/environment/env_terrarium_hou
 | LAYOUT-N2-021 | Given the round house, then never-stuck holds: door, hall and all three gates are reachable from the entry, each gate is edge-adjacent to a hall cell, the pairs lead in and out (NIGHT-N2-002), LAYOUT-031 gate/door fills are present, the stand cells in front of the gates and the hint stand cells are free, the roof cut-away hides the roof boxes while the player is in the hall, and the house is drawn by the procedural fan placeholder (no `night_house` model). | unit |
 | LAYOUT-N2-022 | (= AENV-017) Given the terrarium house, then every wall info board and every indoor-enclosure sign of the three cases (and the plaque above the door: the snake) has a pictogram decal of its enclosure's animal (`silhouette_snake`, `silhouette_chameleon`, `silhouette_poison_dart_frog`) on a cream plate; the three PNGs exist and are not blank. | unit |
 | LAYOUT-N2-024 | Given the terrarium house, then the floor of every hall and door cell is a wooden plank floor, not grass: the cells are walkable `path` surface (never `grass`), the placeholder draws a plank-coloured floor slab over the whole hall (and walkway) with board lines, and no grass tile shows inside. | unit |
+| LAYOUT-N2-025 | (= AENV-019) Given the scene of `night_2`, then `terrarium_house` is placed at (-84.5, 39.0) yaw 0 as a building model (`shell_upper` + `roof` hide inside), every terrarium model it places exists and loads, the emblem decal sits at `socket_emblem`, and the old placeholder boxes are only the house model's fallback. | unit |
+| LAYOUT-N2-026 | Given the three cases, then each holds its dressing (floor, props, lamp, glass fronts, frame; snake: sand + stone floor, frog: pool + waterfall + mist, chameleon: branches + tree) inside its rect (plus the back wall), the glass fronts leave the 2 m gate free, and no solid footprint lies inside a case (wander, gate and stand cells unchanged). | unit |
+| LAYOUT-N2-027 | Given the food hut and the wall boards, then `fridge` stands inside the hut (solid, west wall), each board is an `info_board_wall` with the pictogram decal on its plate, and the house, board and fridge placeholders exist as fallback boxes. | unit |
+| LAYOUT-N2-028 | Given the game camera outside and the first-person / zoo view inside the hall, then the screenshots show each case with its dressing (snake sand + stone, frog sand + pool + waterfall, chameleon branches / tree), the glass fronts and gates, nothing floating or hidden (review shots `art/environment/poc/night2_*`). | e2e |
 | LAYOUT-N2-023 | Given the game camera and the first-person view at the terrarium house, then the house looks round and clearly different from the night house and the pictograms on the boards and over the gates are visible (review screenshots `art/environment/poc/`). | e2e |
 | LAYOUT-N2-010 | Given the food boxes of night_2: outside `fish`, `crickets`, `flies`, `beetles`; inside `eggs`, `frozen_insects`; each with a reachable standing cell within 2 m. | unit |
 | LAYOUT-N2-011 | Given the lights, same checks as LAYOUT-N1-011 (posts, board lamps, indoor lights with the colours above). | unit |

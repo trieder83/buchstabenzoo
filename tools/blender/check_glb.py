@@ -35,7 +35,9 @@ BUDGET_OVERRIDES = {"moon_door": 1500, "moon_door_open": 1500,
                     # kit_landmarks_l2: train (7 axle nodes + smoke) and blossom tree (user order 2026-10-04)
                     "zoo_train": 2200, "blossom_tree": 1800,
                     # golf cart (GAME-CART, brief: <= 1000) and its parking sign (<= 150)
-                    "golf_cart": 1000, "parking_sign": 150}
+                    "golf_cart": 1000, "parking_sign": 150,
+                    # kit_terrarium (terrarium house of night_2): shell <= 3000, the rest stays <= 300 (checked by the test)
+                    "terrarium_house": 3000}
 
 # expected extents (x, y = height, z) in metres; None = not checked. Tolerance 0.06 m.
 EXPECTED_SIZES = {
@@ -117,6 +119,30 @@ EXPECTED_SIZES = {
     "cart_key": (0.13, 0.16, (0.0, 0.03)),
     "golf_cart": ((1.4, 1.5), (1.95, 2.05), (2.55, 2.75)),
     "parking_sign": (0.46, 1.53, 0.2),
+    # kit_terrarium (tools/blender/props/kit_terrarium.py, README_terrarium.md)
+    "terrarium_house": (19.76, 5.9, 11.92),
+    "terrarium_front": (1.0, 2.4, 0.17),
+    "terrarium_frame": (4.4, 2.62, 0.28),
+    "terrarium_frame_wide": (7.4, 2.62, 0.28),
+    "terrarium_lamp": (0.48, 0.8, 0.74),
+    "terrarium_lamp_uv": (0.48, 0.8, 0.74),
+    "terrarium_lamp_teal": (0.48, 0.8, 0.74),
+    "terrarium_dish": (0.63, 0.09, 0.63),
+    "terrarium_floor_snake": (4.0, 0.13, 4.62),
+    "terrarium_floor_frog": (4.2, 0.19, 4.6),
+    "terrarium_floor_chameleon": (7.0, 0.17, 3.6),
+    "terrarium_rock_warm": (1.92, 1.16, 1.31),
+    "terrarium_rock_flat": (1.85, 0.37, 1.21),
+    "terrarium_branch_low": (2.78, 1.18, 0.38),
+    "terrarium_waterfall": (2.17, 1.32, 1.58),
+    "mist_puff": (0.85, 0.34, 0.45),
+    "terrarium_leaf_big": (1.91, 1.19, 1.93),
+    "terrarium_moss_log": (1.61, 0.84, 0.47),
+    "terrarium_fern": (0.72, 0.57, 0.81),
+    "terrarium_branch": (2.6, 2.15, 1.39),
+    "terrarium_tree": (2.92, 2.24, 1.14),
+    "info_board_wall": (0.9, 1.24, 0.23),
+    "fridge": (0.7, 1.15, 0.68),
     "garden_gate": (2.24, 1.12, 0.14),
     "glass_door": (1.95, 2.2, 0.14),
     "door_wood": (0.94, 2.1, 0.2),

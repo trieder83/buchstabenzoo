@@ -35,7 +35,7 @@
 | GAME-LEVEL-2 | Level 2 — koala, elephant, giraffe, lion (behind the fallen tree) | draft | GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER | 19 | Q-039, Q-043, Q-047, Q-095, Q-280 | [10-gameplay/levels/level-2.md](10-gameplay/levels/level-2.md) |
 | GAME-LEVEL-3 | Level 3 — monkey, goldfish, snow fox (adventure playground and stream) | draft | GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER | 21 | Q-043, Q-065, Q-095, Q-102, Q-280, Q-320 | [10-gameplay/levels/level-3.md](10-gameplay/levels/level-3.md) |
 | GAME-LEVEL-NIGHT-1 | Night level 1 — the moonlit forest garden (hedgehog, bat, owl) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-CAMERA-VIEWS, GAME-LEVEL-1 | 17 | Q-043, Q-147, Q-149, Q-151, Q-154, Q-280, Q-365 | [10-gameplay/levels/night-1.md](10-gameplay/levels/night-1.md) |
-| GAME-LEVEL-NIGHT-2 | Night level 2 — the terrarium garden (snake, chameleon, poison dart frog) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, GAME-FAMILY, GAME-FEED, GAME-LEVEL-NIGHT-1 | 20 | Q-367 | [10-gameplay/levels/night-2.md](10-gameplay/levels/night-2.md) |
+| GAME-LEVEL-NIGHT-2 | Night level 2 — the terrarium garden (snake, chameleon, poison dart frog) | draft | GAME-LAYOUT, GAME-NIGHT, GAME-RESCUE, GAME-FAMILY, GAME-FEED, GAME-LEVEL-NIGHT-1 | 24 | Q-367, Q-376 | [10-gameplay/levels/night-2.md](10-gameplay/levels/night-2.md) |
 | GAME-MAP | Zoo overview map | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE | 21 | Q-053, Q-054, Q-055, Q-363 | [10-gameplay/map.md](10-gameplay/map.md) |
 | GAME-NIGHT | Nightfall and the night zoo | draft | GAME-RESCUE, GAME-ANIMALS, GAME-LAYOUT, GAME-SAVE, GAME-PLAYER, CONT-MISSIONS, ART-DIRECTION | 33 | Q-031, Q-147, Q-153, Q-154, Q-365, Q-367 | [10-gameplay/night.md](10-gameplay/night.md) |
 | GAME-PLAYER | Player character, camera and controls | draft | PROD-VISION, CONT-READING | 38 | Q-001, Q-024, Q-025, Q-028, Q-048, Q-051, Q-064, Q-065, Q-070, Q-097 | [10-gameplay/player.md](10-gameplay/player.md) |
@@ -61,7 +61,7 @@
 | ART-ANIMALS | Animals — concept and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-ANIMALS, ART-RIG | 13 | Q-002, Q-040, Q-043, Q-108, Q-280, Q-282 | [30-art/animals.md](30-art/animals.md) |
 | ART-CHARACTERS | Characters — concept and models | draft | ART-PIPELINE, ART-DIRECTION, ART-RIG, GAME-PLAYER | 7 | Q-001, Q-009, Q-015, Q-016, Q-026, Q-027, Q-028, Q-051, Q-062, Q-340 | [30-art/characters.md](30-art/characters.md) |
 | ART-DIRECTION | Art direction | draft | — | 4 | Q-048, Q-050 | [30-art/art-direction.md](30-art/art-direction.md) |
-| ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 17 | Q-005, Q-044, Q-048, Q-059, Q-060, Q-061, Q-064, Q-098, Q-099, Q-147, Q-149, Q-151, Q-153, Q-154 | [30-art/environment.md](30-art/environment.md) |
+| ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 19 | Q-005, Q-044, Q-048, Q-059, Q-060, Q-061, Q-064, Q-098, Q-099, Q-147, Q-149, Q-151, Q-153, Q-154 | [30-art/environment.md](30-art/environment.md) |
 | ART-PIPELINE | Asset pipeline — concept to game | draft | ART-DIRECTION | 10 | Q-009, Q-026, Q-153, Q-154 | [30-art/asset-pipeline.md](30-art/asset-pipeline.md) |
 | ART-RIG | Character rig and animation — technical contract | draft | ART-PIPELINE, GAME-PLAYER, TECH-ARCH | 23 | Q-009, Q-014, Q-024, Q-025, Q-026, Q-027, Q-029, Q-042, Q-050, Q-051, Q-063 | [30-art/character-rig-and-animation.md](30-art/character-rig-and-animation.md) |
 | ART-SOUND | Sound effects — sourcing and pipeline | draft | ART-PIPELINE, ART-ANIMALS, GAME-ANIMALS, GAME-FEED, GAME-PLAYER, PERF-BUDGETS | 27 | Q-008, Q-211, Q-213, Q-214, Q-215, Q-216, Q-220, Q-221, Q-250, Q-251 | [30-art/sound.md](30-art/sound.md) |
@@ -82,4 +82,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 853 test cases; questions: answered: 161, open: 102, partly answered: 7, proposed: 2.
+**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 859 test cases; questions: answered: 161, open: 103, partly answered: 7, proposed: 2.

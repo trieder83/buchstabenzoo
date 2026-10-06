@@ -3,7 +3,7 @@
 //! between the hall and the cases and a stepped dome roof. The real conservatory model
 //! replaces it later.
 
-use super::{colors, BoxPlacement, LevelScene};
+use super::{colors, BoxPlacement, BuildingModel, Fallback, LevelScene};
 use crate::coords::level_to_world_at;
 use crate::level::{cell_center, Element, ElementType, LevelData, Rect};
 use glam::{IVec2, Vec2, Vec3};
@@ -175,7 +175,6 @@ impl LevelScene {
             );
         }
 
-        let upper_first = self.boxes.len();
         for (c, size) in &high_boxes {
             self.push_box(id, *c, low, *size, WALL_WOOD);
         }
@@ -202,7 +201,6 @@ impl LevelScene {
         }
 
         // -- wooden plank floor over the hall and the door cell (LAYOUT-N2-024) ---------------
-        let floor_first = self.boxes.len();
         let mut floor: BTreeSet<(i32, i32)> = hall.clone();
         if let Some(d) = door {
             floor.insert((d.x, d.y));
@@ -215,11 +213,13 @@ impl LevelScene {
         }
 
         // -- the house emblem: a round plaque with the big snake over the door ---------------
-        if let (Some(dc), Some(animal)) = (door, cases.first().and_then(|c| c.animal.clone())) {
+        // (fallback only; the model has its own plaque, the decal below is on both)
+        let animal = cases.first().and_then(|c| c.animal.clone());
+        if let (Some(dc), Some(animal)) = (door, animal.as_deref()) {
             let centre = Vec2::new(dc.x as f32 + 0.5, e.rect.z as f32 - 0.2);
             self.pictogram_plate(
                 format!("{id}:emblem"),
-                &animal,
+                animal,
                 centre + Vec2::new(0.0, -0.05),
                 Vec2::new(0.0, -1.0),
                 0.0,
@@ -227,9 +227,10 @@ impl LevelScene {
                 Vec2::new(1.8, 1.2),
                 e.part as u8,
             );
+            // the plate box belongs to the fallback; the decal comes from the model's plaque
+            self.decals.pop();
         }
 
-        let dome_first = self.boxes.len();
         // -- stepped dome roof over the whole plan --------------------------------------
         let depth = |c: IVec2| -> i32 {
             // layers of cells that are surrounded by the house on all sides (Chebyshev)
@@ -281,16 +282,30 @@ impl LevelScene {
             }
         }
 
-        // the upper walls, case walls, glass fronts and roof hide while the player is inside
-        // (PLAY-028); only the 1 m base stays
-        for b in &mut self.boxes[first..] {
+        // the placeholder is only the fallback of the house model (`terrarium_house`): the
+        // model draws shell, roof, floor and plaque (its `shell_upper` and `roof` parts hide
+        // while the player is inside, PLAY-028)
+        let mut boxes: Vec<BoxPlacement> = self.boxes.drain(first..).collect();
+        for b in &mut boxes {
             b.fadeable = false;
+            b.part = e.part as u8;
         }
-        // (the floor and the emblem stay visible)
-        self.roof_boxes
-            .push((e.id.clone(), upper_first..floor_first));
-        self.roof_boxes
-            .push((e.id.clone(), dome_first..self.boxes.len()));
+        let at = Vec2::new(model.x as f32 + model.w as f32 / 2.0, model.z as f32);
+        let k = self.model_at_y("terrarium_house", at, 0.0, 0.0);
+        self.placements[k].part = e.part as u8;
+        self.building_models.push(BuildingModel {
+            element: e.id.clone(),
+            placement: k,
+        });
+        self.fallbacks.push(Fallback {
+            model: "terrarium_house",
+            boxes,
+            placements: Vec::new(),
+        });
+        if let Some(animal) = animal.as_deref().filter(|_| door.is_some()) {
+            self.terrarium_emblem(id, at, animal);
+        }
+        self.terrarium_cases(e, data);
     }
 
     /// A flat cream plate with a dark animal pictogram decal in front of a sign face
@@ -319,10 +334,31 @@ impl LevelScene {
             source: format!("{source}:plate"),
             part,
         });
+        self.pictogram_decal(
+            source,
+            animal,
+            face + out * plate.z,
+            out,
+            centre_y,
+            size.y * 0.45,
+        );
+    }
+
+    /// The dark animal pictogram alone (no plate): `face` = the point on the surface where it
+    /// is centred (level), `out` the unit direction the surface faces, `half_h` the half
+    /// height of the picture (it is 1.5 times as wide as high).
+    pub(super) fn pictogram_decal(
+        &mut self,
+        source: String,
+        animal: &str,
+        face: Vec2,
+        out: Vec2,
+        centre_y: f32,
+        half_h: f32,
+    ) {
         let n = crate::coords::level_to_world(out).normalize();
         let right = Vec3::Y.cross(n);
-        let front = face + out * (plate.z + super::DECAL_LIFT_M);
-        let half_h = size.y * 0.45;
+        let front = face + out * super::DECAL_LIFT_M;
         self.decals.push(super::Decal {
             id: format!("sign:{source}"),
             image: super::DecalImage::Texture(super::silhouette_path(animal)),

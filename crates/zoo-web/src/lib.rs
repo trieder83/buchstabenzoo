@@ -417,6 +417,9 @@ pub struct App {
     openings: Vec<OpeningView>,
     /// Buildings drawn by their model: element id, instance (roof / upper walls hide).
     building_models: Vec<(String, InstanceHandle, Instance)>,
+    /// Mist clouds of the frog terrarium (`mist_puff`): instance, rest pose; they rise and
+    /// swell slowly.
+    mists: Vec<(InstanceHandle, Instance)>,
     /// Garden plants.
     plants: Vec<PlantView>,
     /// Key box models (closed / open).
@@ -756,6 +759,16 @@ impl App {
                 Some((b.element.clone(), h, renderer.instance(h)?))
             })
             .collect();
+        let mists: Vec<(InstanceHandle, Instance)> = scene
+            .placements
+            .iter()
+            .enumerate()
+            .filter(|(_, p)| p.model == "mist_puff")
+            .filter_map(|(i, _)| {
+                let h = handles[i]?;
+                Some((h, renderer.instance(h)?))
+            })
+            .collect();
         let mut plants = Vec::new();
         for pl in &scene.plants {
             let kind = PLANT_KINDS.iter().position(|k| *k == pl.kind).unwrap_or(0);
@@ -1089,6 +1102,7 @@ impl App {
             fireflies,
             openings,
             building_models,
+            mists,
             plants,
             key_boxes,
             hand_lantern: [Instance::model(Vec3::ZERO, 0.0, false)],
@@ -2230,6 +2244,17 @@ impl App {
             } else {
                 0.0
             };
+            self.renderer.set_instance(*h, i);
+        }
+        // the mist of the frog terrarium: rises 8 cm and swells 8 % over a 8 s breath
+        for (k, (h, base)) in self.mists.iter().enumerate() {
+            let a = std::f32::consts::TAU * (self.time as f32 / 8.0 + k as f32 * 0.37);
+            let s = 0.5 + 0.5 * a.sin();
+            let mut i = *base;
+            i.pos_yaw[1] += 0.08 * s;
+            let k = 1.0 + 0.08 * s;
+            i.scale_fade[0] *= k;
+            i.scale_fade[2] *= k;
             self.renderer.set_instance(*h, i);
         }
         self.update_openings(dt);

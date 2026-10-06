@@ -637,6 +637,16 @@ spec = "GAME-NIGHT"
 concept_approved = true
 animations = []
 
+# Terrarium house models (2026-10-06): modelled with tools/blender/props/kit_terrarium.py -> assets/models/props/terrarium_*.glb
+# (house shell <= 3000 tris, every other prop <= 300). Concept = the approved env_terrarium_house cut-away (user 2026-10-06);
+# sheet_v2 (art/props/kit_terrarium) stays the case-look reference. Set concept_approved = false to re-gate.
+[[asset]]
+id = "kit_terrarium"
+kind = "props"
+spec = "GAME-NIGHT"
+concept_approved = true
+animations = []
+
 [[asset]]
 id = "env_terrarium_house"
 kind = "environment"

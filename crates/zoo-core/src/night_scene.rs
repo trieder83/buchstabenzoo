@@ -10,9 +10,9 @@ use glam::{Vec2, Vec3};
 use crate::coords::level_to_world_at;
 use crate::level::{ElementType, LevelData, Rect};
 use crate::scene::{
-    building_model, facing_yaw, info_board_pose, model_offset, moon_door_pose, BoxPlacement, Dir,
-    Placement, BOARD_LAMP_LIGHT, BOARD_LAMP_MAP, LANTERN_LIGHT, MOON_DOOR_LIGHTS, STRING_SPAN_M,
-    WALL_LAMP_LIGHT, WALL_LAMP_MOUNT_M,
+    building_model, facing_yaw, info_board_pose, is_round_house, model_offset, moon_door_pose,
+    BoxPlacement, Dir, Placement, BOARD_LAMP_LIGHT, BOARD_LAMP_MAP, LANTERN_LIGHT,
+    MOON_DOOR_LIGHTS, STRING_SPAN_M, WALL_LAMP_LIGHT, WALL_LAMP_MOUNT_M,
 };
 
 /// Glow and light colours (sRGB) of the art plan's night colour table.
@@ -121,7 +121,10 @@ impl NightScene {
                     let door_lamp = !attached("wall_lamp", &e.id);
                     // a building model has its own glowing windows (`window_glow`) and
                     // ceiling lamps
-                    let model = building_model(e);
+                    // (the round terrarium house is a model too: `terrarium_house`)
+                    let model = building_model(e)
+                        .map(|_| ())
+                        .or(is_round_house(e).then_some(()));
                     if model.is_none() {
                         s.windows(e.rect, door, door_lamp, h, &e.id, part);
                     } else if door_lamp {
@@ -337,7 +340,7 @@ impl NightScene {
                     .is_some_and(|a| {
                         building_model(a).is_some()
                             || data.elements_of(ElementType::Building).any(|b| {
-                                building_model(b).is_some()
+                                (building_model(b).is_some() || is_round_house(b))
                                     && b.model_rect.is_some_and(|m| {
                                         m.contains(glam::IVec2::new(a.rect.x, a.rect.z))
                                     })

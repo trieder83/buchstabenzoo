@@ -114,7 +114,7 @@ door = [-88, 29]
 interior = [-91, 27, 3, 4]
 blocks_view = true
 height_m = 3.5
-notes = "Small wooden food hut (copy of food_storage_n1), enterable: `interior` (-91, 27, 3, 4), door (-88, 29) on the east facade; basic foods in front of its east facade, the two treat boxes inside at its west wall (Q-336). A fridge prop for the frozen insects needs a model (not yet made)."
+notes = "Small wooden food hut (copy of food_storage_n1), enterable: `interior` (-91, 27, 3, 4), door (-88, 29) on the east facade; basic foods in front of its east facade, the two treat boxes inside at its west wall (Q-336). The fridge for the frozen insects (`fridge_n2`) stands at its west wall."
 
 # ---------------------------------------------------------------- terrarium house (north-east): enterable hall + three indoor terrariums
 [[element]]
@@ -361,6 +361,16 @@ facing = "+x"
 food = "frozen_insects"
 pos = [-91.44, 29.8]
 facing = "+x"
+
+# The fridge of the frozen insects at the west wall of the hut (model `fridge`, front = +x; the frozen-insects box stands
+# at its feet).
+[[prop]]
+id = "fridge_n2"
+model = "fridge"
+pos = [-90.6, 30.5]
+facing = "+x"
+size_m = [0.7, 0.68]
+building = "food_storage_n2"
 
 # ================================================================ hiding places (candidates)
 # Same fields as night_1. Every wander cell is >= 22 m from every standing point at the animal's own board and gate.

@@ -89,7 +89,7 @@ const RICH_DECL: &str = r#"
 layout(location = 6) in vec4 a_glow;        // slot: sRGB emission / colour + mode (1 glow, 3 glass, 5 flat)
 layout(location = 7) in vec4 a_node;        // part pivot (model space) + part code (0 = root)
 layout(location = 8) in vec4 a_inst_node;   // instance: open 0..1 (or a turn in rad), hide mask, steer -1..1, glow off (1)
-uniform vec4 u_nodes[8];    // per part: axis (1 X, 2 Y, 3 Z), angle at open 1, hide bit, mode (0 open, 1 clock, 2 night only, 3 steer)
+uniform vec4 u_nodes[8];    // per part: axis (1 X, 2 Y, 3 Z), angle at open 1, hide bit, mode (0 open, 1 clock, 2 night only, 3 steer, 4 breathe)
 vec3 turn(vec3 v, int axis, float a) {
     float c = cos(a), s = sin(a);
     if (axis == 1) return vec3(v.x, c * v.y - s * v.z, s * v.y + c * v.z);
@@ -115,6 +115,12 @@ const RICH_MAIN: &str = r#"
         if (axis > 0 && ang != 0.0) {
             mp = turn(mp - a_node.xyz, axis, ang) + a_node.xyz;
             mn = turn(mn, axis, ang);
+        }
+        if (nd.w > 3.5) {
+            // breathing part (waterfall sheet): longer / shorter about the pivot, slightly
+            // narrower while longer; period 2 s (divides the 16 s water clock)
+            float k = nd.y * sin(TAU * u_time / 2.0);
+            mp = a_node.xyz + (mp - a_node.xyz) * vec3(1.0 - 0.4 * k, 1.0 + k, 1.0);
         }
     }
     // glow slots emit only at night; glass (3) and flat slot colours (5) always apply

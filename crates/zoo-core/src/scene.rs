@@ -21,7 +21,10 @@ use glam::{IVec2, Quat, Vec2, Vec3};
 mod ad_board;
 mod models;
 mod round_house;
+pub use round_house::is_round as is_round_house;
+mod terrarium;
 pub use models::*;
+pub use terrarium::*;
 
 /// Placeholder colours (sRGB, flat) per element kind.
 pub mod colors {
@@ -2288,9 +2291,17 @@ impl LevelScene {
             (ElementType::Decoration, "bamboo") => self.bamboo_thicket(e, grid),
             (ElementType::Decoration, "bench") => self.rect_box(e, 0.0, 0.5, colors::WOOD),
             (ElementType::Decoration, "info_board") if e.is_wall_board() => {
-                // flat board on the facade, not solid (Q-157, LAYOUT-038)
+                // `info_board_wall` on the facade (text panel + round pictogram plate), not
+                // solid (Q-157, LAYOUT-038); the flat board with its cream plate is the
+                // fallback when the model is missing
                 let (pos, dir) = info_board_pose(e, data);
                 let out = dir.offset().as_vec2();
+                let animal = e
+                    .enclosure
+                    .as_deref()
+                    .and_then(|id| data.element(id))
+                    .and_then(|enc| enc.animal.as_deref());
+                let first_box = self.boxes.len();
                 self.boxes.push(BoxPlacement {
                     pos: level_to_world_at(pos + out * (WALL_BOARD.z / 2.0), WALL_BOARD_BOTTOM_M),
                     size: WALL_BOARD,
@@ -2301,12 +2312,7 @@ impl LevelScene {
                     part: e.part as u8,
                 });
                 // the animal's pictogram on a cream plate (LAYOUT-N2-022)
-                if let Some(animal) = e
-                    .enclosure
-                    .as_deref()
-                    .and_then(|id| data.element(id))
-                    .and_then(|enc| enc.animal.as_deref())
-                {
+                if let Some(animal) = animal {
                     let face = pos + out * WALL_BOARD.z;
                     self.pictogram_plate(
                         e.id.clone(),
@@ -2317,6 +2323,28 @@ impl LevelScene {
                         WALL_BOARD_BOTTOM_M + WALL_BOARD.y / 2.0,
                         WALL_PICTOGRAM_PLATE,
                         e.part as u8,
+                    );
+                    self.decals.pop();
+                }
+                let boxes: Vec<BoxPlacement> = self.boxes.drain(first_box..).collect();
+                self.model_scaled("info_board_wall", pos, facing_yaw(dir), WALL_BOARD_SCALE);
+                let k = self.placements.len() - 1;
+                self.placements[k].pos.y = WALL_BOARD_MOUNT_M;
+                self.fallbacks.push(Fallback {
+                    model: "info_board_wall",
+                    boxes,
+                    placements: Vec::new(),
+                });
+                // the pictogram on the model's round plate (`socket_pictogram`)
+                if let Some(animal) = animal {
+                    let s = WALL_BOARD_SCALE;
+                    self.pictogram_decal(
+                        e.id.clone(),
+                        animal,
+                        pos + out * (WALL_BOARD_PICTOGRAM.z * s),
+                        out,
+                        WALL_BOARD_MOUNT_M + WALL_BOARD_PICTOGRAM.y * s,
+                        WALL_BOARD_PLATE_R * s * 0.55,
                     );
                 }
             }
@@ -2408,7 +2436,7 @@ impl LevelScene {
                             NIGHT_HOUSE_SIGN_KEY
                         },
                     );
-                    if building_model(e).is_some() {
+                    if building_model(e).is_some() || round_house::is_round(e) {
                         self.roof_boxes
                             .push((e.id.clone(), first..self.boxes.len()));
                     }
@@ -3653,7 +3681,7 @@ impl LevelScene {
         // walked on, the moon window hangs on the wall
         if !matches!(p.model.as_str(), "rug_round" | "window_moon") {
             let size = match p.model.as_str() {
-                "desk" | "night_table" | "toy_chest" => Vec2::new(sx, sz),
+                "desk" | "night_table" | "toy_chest" | "fridge" => Vec2::new(sx, sz),
                 _ => Vec2::new(sx.max(0.2), sz.max(0.2)),
             };
             self.solid_footprint(c, size);
@@ -3693,6 +3721,7 @@ impl LevelScene {
                     [0.86, 0.36, 0.36],
                 );
             }
+            "fridge" => self.push_box(id, c, 0.0, Vec3::new(sx, 1.15, sz), colors::WHITE),
             "toy_chest" => {
                 self.push_box(id, c, 0.0, Vec3::new(sx, 0.45, sz), [0.86, 0.36, 0.30]);
                 self.push_box(

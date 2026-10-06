@@ -206,3 +206,7 @@ bee_yellow       = { index = 232, hex = "#F5C432" }
 cart_red         = { index = 233, hex = "#D63A38" } # body panels, cushion, roof stripes
 wicker           = { index = 234, hex = "#C9964F" } # basket
 wicker_dark      = { index = 235, hex = "#9A6B32" } # basket rim
+# ---- terrarium house props (kit_terrarium, concept art/environment/env_terrarium_house/cutaway_v2.jpg)
+rock_warm        = { index = 236, hex = "#C99C6E" } # sun-warmed terrarium rocks (snake case)
+rock_warm_dark   = { index = 237, hex = "#A67A52" }
+rock_warm_light  = { index = 238, hex = "#DDB98F" } # lit tops of warm rocks

@@ -81,7 +81,8 @@ pub struct NodeBehaviour {
     /// Hide-mask bit ([`HIDE_ROOF`], [`HIDE_WALLS_UPPER`]) or 0.
     pub hide_bit: f32,
     /// 0 = driven by the instance's open amount, 1 = spins with the clock (windmill sails),
-    /// 2 = shown only while the glow slots are on (night sky of the moon window).
+    /// 2 = shown only while the glow slots are on (night sky of the moon window), 3 = steers
+    /// with the instance's `node.z`, 4 = breathes about the pivot (`angle` = relative amplitude).
     pub mode: f32,
 }
 
@@ -153,8 +154,15 @@ impl NodeBehaviour {
                 hide_bit: HIDE_ROOF as f32,
                 ..Self::STATIC
             },
-            "walls_upper" => Self {
+            "walls_upper" | "shell_upper" => Self {
                 hide_bit: HIDE_WALLS_UPPER as f32,
+                ..Self::STATIC
+            },
+            // waterfall of the terrarium (mode 4): the sheet breathes about its top lip,
+            // +-7 % in length and a hair in width, period 2 s
+            "water_sheet" => Self {
+                angle: 0.07,
+                mode: 4.0,
                 ..Self::STATIC
             },
             "night_sky" => Self {

@@ -313,7 +313,7 @@ pub const BOARD_LAMP_INFO: Vec3 = Vec3::new(0.0, 1.405, -0.236);
 pub const BOARD_LAMP_MAP: Vec3 = Vec3::new(0.0, 1.93, -0.09);
 /// Board-lamp clip above a wall-mounted info board (`mount = "wall"`, Q-157): on the facade
 /// just above the panel (its shade hangs over the panel).
-pub const BOARD_LAMP_WALL: Vec3 = Vec3::new(0.0, 1.85, 0.02);
+pub const BOARD_LAMP_WALL: Vec3 = Vec3::new(0.0, 1.98, 0.16);
 /// `lantern_post` light empty (glTF).
 pub const LANTERN_LIGHT: Vec3 = Vec3::new(0.0, 1.74, 0.57);
 /// `wall_lamp` light empty and its mount height.
@@ -768,6 +768,8 @@ fn furniture_model(m: &str) -> Option<&'static str> {
         // unlabelled stock boxes inside a food storage (GAME-FEED §7, proposal Q-194)
         "food_box",
         "food_box_stack",
+        // the frozen-insects fridge of the night_2 hut (GAME-LEVEL-NIGHT-2)
+        "fridge",
     ]
     .into_iter()
     .find(|x| *x == m)

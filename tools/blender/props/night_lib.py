@@ -49,6 +49,10 @@ GLOW = {
     "window_red_glow": "#E8735A",
     "moon_glow": "#FFF4C9",
     "rim_glow": "#8FB8FF",
+    # terrarium house lamps (kit_terrarium): amber heat lamp, violet UV lamp, teal moist light
+    "terrarium_amber_glow": "#F2A93B",
+    "terrarium_violet_glow": "#9B6BE0",
+    "terrarium_teal_glow": "#5EE0C8",
 }
 FACE_COLOR = {"note_face": "#FBF8EF", "sign_face": "#F3E6C8"}
 GLASS_ALPHA = 0.35

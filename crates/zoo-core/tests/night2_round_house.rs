@@ -162,18 +162,33 @@ fn layout_n2_021_reachable_and_drawn_round() {
             "{id}: glass door"
         );
     }
-    // drawn by the placeholder, not by the rectangular night house model
-    assert!(
-        !scene.building_models.iter().any(|b| b.element == HOUSE),
-        "the terrarium house must not use the night_house model"
-    );
-    let roof: usize = scene
-        .roof_boxes
+    // drawn by its own model (`terrarium_house`, shell_upper + roof hide inside), never by the
+    // rectangular night house model; the placeholder boxes are the fallback of that model
+    let bm = scene
+        .building_models
         .iter()
-        .filter(|(id, _)| id == HOUSE)
-        .map(|(_, r)| r.len())
-        .sum();
-    assert!(roof > 20, "stepped dome roof + upper walls (cut-away)");
+        .find(|b| b.element == HOUSE)
+        .expect("the house is a building model");
+    assert_eq!(scene.placements[bm.placement].model, "terrarium_house");
+    let p = &scene.placements[bm.placement];
+    let at = zoo_core::coords::world_to_level(p.pos);
+    assert!(
+        (at - glam::Vec2::new(-84.5, 39.0)).length() < 0.001 && p.yaw == 0.0,
+        "house model at (-84.5, 39.0), yaw 0: {at}"
+    );
+    let fb = scene
+        .fallbacks
+        .iter()
+        .find(|f| f.model == "terrarium_house")
+        .expect("placeholder fallback");
+    assert!(
+        fb.boxes.len() > 100,
+        "walls, case walls, dome roof and floor stay as the fallback"
+    );
+    assert!(
+        !scene.boxes.iter().any(|b| b.source == HOUSE),
+        "no placeholder box is drawn next to the model"
+    );
 }
 
 // LAYOUT-N2-024: the floor inside is wooden planks, never grass.
@@ -184,7 +199,12 @@ fn layout_n2_024_wooden_floor() {
     let grid = level.grid();
     let house = data.element(HOUSE).unwrap();
     let scene = LevelScene::build(&data);
-    let floor: Vec<_> = scene
+    let fb = scene
+        .fallbacks
+        .iter()
+        .find(|f| f.model == "terrarium_house")
+        .unwrap();
+    let floor: Vec<_> = fb
         .boxes
         .iter()
         .filter(|b| b.source == HOUSE && b.size.y < 0.2 && b.size.x == 1.0 && b.size.z == 1.0)
@@ -261,8 +281,12 @@ fn layout_n2_022_sign_pictograms() {
         }
         // a cream plate behind each pictogram
         for src in [format!("{}:plate", board.id), format!("{case}:plate")] {
+            let all = scene
+                .boxes
+                .iter()
+                .chain(scene.fallbacks.iter().flat_map(|f| &f.boxes));
             assert!(
-                scene.boxes.iter().any(|b| b.source == src),
+                all.into_iter().any(|b| b.source == src),
                 "{src}: cream plate"
             );
         }

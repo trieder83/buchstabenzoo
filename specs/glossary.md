@@ -6,7 +6,7 @@ module: glossary
 status: draft
 depends_on: []
 test_prefix: GLOS
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Glossary
@@ -96,6 +96,10 @@ language for player-facing text.
 | `view_mode` (`zoo`, `look_around`, `first_person`) | Ansicht (Zoo-Ansicht, Umschauen, Ich-Ansicht) † | camera view (zoo view, look-around, first person) | The camera view: the high-angle zoo view (default, GAME-PLAYER §2), the look-around view (held with `F` / right mouse, persistent on touch) and the first-person view (toggle); the one view button cycles them — GAME-CAMERA-VIEWS. |
 | `fog_end` (`FOG_END_M`) | Sichtweite † | visibility distance | Distance from the eye beyond which the comic haze hides everything in the close views (20.8 m since the user's +30 % of 2026-09-27, FIX-056; was 16 m, Q-109); hiding places must lie ≥ 22 m from their own board and gate (CAMV-008, GAME-LAYOUT "Sight"). |
 | `golf_cart` | Golfwagen | golf cart | Small zoo vehicle the player can drive; animals do not follow it (GAME-CART). |
+| `zookeeper_cart` | Karren des Zoowärters | zookeeper's cart | Static hand-cart prop with traffic cones on repair barriers (ART-ENVIRONMENT); cannot be entered or driven. Never called "golf cart" (`golf_cart`). |
+| `cart_key` | Wagenschlüssel | cart key | The key to the golf carts; hangs in the key box, kept in the pocket (HUD 🔑) once taken (GAME-CART). |
+| `key_box` (data `[[item]] kind = "key_box"`: `key_box_l1`) | Schlüsselkasten | key box | Wall box with a 3-wheel combination lock on the zookeeper house of level 1; holds the `cart_key` (GAME-CART 12, 15). |
+| `note_math_fighter` (data `[[item]]`) | Zettel „Math Fighter“ | "Math Fighter" note | Sheet on the desk in the zookeeper house with a math task; its result is the key-box code (GAME-CART 14, CONT-MATH "Cart note"). |
 | `flow` (data key) | Fließrichtung † | flow | Direction a `river` / `stream` element flows in level coordinates (`N`/`E`/`S`/`W`); bridges inherit it; the river pieces chain along it (GAME-LAYOUT "Flowing water"). Not player-facing. |
 | `scenery` (data `[[scenery]]`) | Kulisse † | scenery | Non-solid ground dressing a riddle relies on (tall grass, sand, mud, tree shade, leaf pile); `props` may list ambient animals such as `butterfly` (GAME-LAYOUT). |
 | `ambient_animal` (`duck`, `duckling`, `frog`, `butterfly`) | Umgebungstier † | ambient animal | Small decorative animal with behaviour but no mission, food or collision; never saved (GAME-AMBIENT). Not an `animal` in the sense above. |

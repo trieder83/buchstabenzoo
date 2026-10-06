@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-366** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-375** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-155 answered · 99 open · 10 other (partly answered / proposed / superseded).
+159 answered · 102 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -104,6 +104,9 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-362 — Positions of the seven houses (GAME-HOUSE "Houses per level"): the hippo hut grows from the reserved 4 x 4 to 5 x 4 (x 14-18) and the edge … (GAME-HOUSE, GAME-LEVEL-1, GAME-LEVEL-2)
 - Q-363 — Overview map instead of the explored-fog map (user request 2026-10-04: "a big map to get the overview, button in the settings"). (GAME-MAP)
 - Q-364 — All-done carousel (user request 2026-10-04): when every level is solved and the child taps the 🧭 target, show "You like educational … (GAME-ADS, GAME-HINT)
+- Q-372 — Golf-cart driving rules (decided defaults in GAME-CART): (a) no reversing — the stick pulled back turns the cart on the spot; (b) get-out … (GAME-CART, GAME-LAYOUT (LAYOUT-048))
+- Q-373 — Cart-note task range: the lock has 3 digits so results are 1…999, which caps mathe4/mathe5 tasks (no 6-digit products, decimals only as … (GAME-CART, CONT-MATH)
+- Q-374 — Cart-key hints (built 2026-10-06): they rank behind every other optional hint (garden, treats) and exist only by day, so a child who always … (GAME-HINT, GAME-CART)
 - Q-365 — Secret trail through the middle grove of night_1 (user request 2026-10-04: "a hidden path to walk through, maybe an animal hiding spot"). (GAME-LEVEL-NIGHT-1, GAME-LAYOUT)
 
 ## Partly answered / other
@@ -121,6 +124,10 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-371 — Golf cart look. Recommended green-white with a striped roof. → 2026-10-06: RED and WHITE instead (red body, white roof with red stripes; the zoo has a lot of green already).
+- Q-370 — Carts of locked levels: Recommendation: they exist but show a 🔒 until … → 2026-10-06: as recommended.
+- Q-369 — Wrong key-box codes: feedback after 3 tries? → 2026-10-06: as recommended.
+- Q-368 — Math level setting (golf-cart note, CONT-MATH): where is math_level … → 2026-10-06: as recommended.
 - Q-352 — Info board and names: panel order name → riddle → basic line → treat … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
 - Q-351 — A treat shown to an ESCAPED animal: recommendation gentle "Hmm … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).
 - Q-350 — Treats of the species that had none (proposal, all from boxes already … → 2026-10-04: implement as recommended (night_2 built, see GAME-LEVEL-NIGHT-2; simplifications noted in its spec).

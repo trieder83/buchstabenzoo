@@ -202,3 +202,7 @@ blossom_pink     = { index = 229, hex = "#F39CB8" } # crown
 blossom_pink_dk  = { index = 230, hex = "#D26C94" } # crown shade clumps
 blossom_pink_lt  = { index = 231, hex = "#F9BDD0" } # light blossoms / petals
 bee_yellow       = { index = 232, hex = "#F5C432" }
+# ---- zoo golf cart (art/props/golf_cart/sheet_v3_red.jpg, approved 2026-10-06)
+cart_red         = { index = 233, hex = "#D63A38" } # body panels, cushion, roof stripes
+wicker           = { index = 234, hex = "#C9964F" } # basket
+wicker_dark      = { index = 235, hex = "#9A6B32" } # basket rim

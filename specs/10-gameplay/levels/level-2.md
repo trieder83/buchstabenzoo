@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-RESCUE, GAME-FAMILY, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L2
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Level 2 — koala, elephant, giraffe, lion (behind the fallen tree)
@@ -465,6 +465,18 @@ path; note texts `event-burglar-note-level_2-<reading_level>` (CONT-MISSIONS).
 (0.7 m apart, branch 1.5 m wide); elephants and giraffes keep 2 m, lions 1.5 m. Feeding spots:
 male and female 2 cells apart (FAM-023). No path, board or barrier moved; the walking tables hold.
 
+## Golf cart (GAME-CART, 2026-10-06)
+
+One `[[cart]]` in `level-2.toml`:
+
+| id | pose (centre, facing) | rect (x, z, w, d) | boarding cell | sign | `locked_until` |
+|---|---|---|---|---|---|
+| `cart_l2` | (28.5, 32.0), `+x` | (27, 31, 3, 2) | (28, 30) on `path_l2_entry` | (26.5, 31.5) | "level_2" |
+
+Grass strip between `path_l2_entry` (z 28…30, stays 3 m free) and the koala fence (`enc_koala` starts at z 33), west of `map_board_l2` (x 32). The first spot tried, (30, 26, 3, 2), overlaps the `loc_fountain` rect (28, 22, 3, 6) and was rejected. Spawn (27, 29) is 3.4 m away. The parked cart is a solid box (1.3 × 2.3 m, B(0, 0, 0.65, 1.15))
+that never closes a way (LAYOUT-048) and is never a hint target. The cart needs the cart key (GAME-CART
+rules 12–16) and, from level 2 on, the open level.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -487,6 +499,7 @@ male and female 2 cells apart (FAM-023). No path, board or barrier moved; the wa
 | LAYOUT-L2-016 | Given `enc_elephant`, then `elephant_pool` covers 35–60 % of its cells, is fully inside the enclosure and not adjacent to the gate cells, and the elephant's home wander area includes pool cells. | unit |
 | LAYOUT-L2-017 | Given the approved mockups of the 12 level-2 places, then a reviewer can name each place's riddle details without text, the lion enclosure shows no flat rocks, the elephant pool no jet or coins, the giant tree is clearly twice as tall as all other trees. | manual |
 | LAYOUT-L2-018 | Given `level-2.toml`, then it has one `[[item]] kind = "bed"` (`bed_l2`) with `building = "zookeeper_house_2"` — an enterable `zookeeper_house` (door (32, 17), interior (28, 16, 4, 3), door street cell (33, 17) on `path_l2_sw`) — whose 2 × 1 m footprint lies on walkable interior cells (not the door cell), outside every hiding-place rect and scenery rect; the level is still fully reachable from the spawn with the bed solid, and its `stand` cell is walkable, 1.0–1.5 m from the bed centre, free of colliders and reachable from the spawn through the door; at level 2's nightfall the bed offered is `bed_l2` and the hint target `bed` is its stand cell (Q-141, LAYOUT-047). | unit |
+| LAYOUT-L2-019 | Given `level-2.toml`, then it has exactly the `[[cart]]` `cart_l2` of "Golf cart" (pose, rect, boarding cell on `path_l2_entry`, `locked_until` "level_2"), its rect cells are walkable, overlap no element other than the path, no hiding-place rect, wander area, scenery, garden, event spot or `stand` cell, the boarding cell is reachable from the spawn in <= 10 s and the cart is within 15 m of the spawn (GAME-CART CART-015/016, LAYOUT-048). | unit |
 
 ## Implementation status (M5b, 2026-09-26)
 

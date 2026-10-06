@@ -452,7 +452,7 @@ fn save_v2_across_levels_and_v1_migration() {
     let mut g = unlocked_game(11);
     g.player.pos = Vec2::new(-12.5, 70.5);
     let json = g.to_save().to_json();
-    assert!(json.contains("\"version\":2") && json.contains("\"level_id\":\"zoo\""));
+    assert!(json.contains("\"version\":3") && json.contains("\"level_id\":\"zoo\""));
     let r = Game::from_save_json(common::zoo(), &json).unwrap();
     assert_eq!(r.to_save(), g.to_save());
     assert!(r.level_unlocked("level_3"));

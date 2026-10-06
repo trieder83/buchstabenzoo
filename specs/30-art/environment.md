@@ -6,7 +6,7 @@ module: environment
 status: draft
 depends_on: [ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS]
 test_prefix: AENV
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Environment — mockups and models
@@ -139,6 +139,8 @@ mockups): `hedge` (tall, 3 m), `water_river_*` tiles of `kit_water` (river; the 
 formerly `water_tile_flowing`), `bridge_wood`, `jetty_wood`, `lily_pad`, `reed` (`duck`, `frog`: removed from the kit — animated ambient animals since M6, ART-ANIMALS "Ambient animals", Q-122 answered), `bamboo`, `map_board`, `gate_wood`,
 `road_block`, `repair_sign` (blank, shovel icon), `zookeeper_cart`, `traffic_cone`,
 `fallen_tree`, `flower_bed`.
+
+Golf cart props (GAME-CART, 2026-10-06): `golf_cart` (drivable, **red body, white roof with red stripes**; not the static `zookeeper_cart` repair prop), `parking_sign` (post with a P and a cart icon), `key_box` / `key_box_open`, `cart_key`.
 
 Added for the level-1 candidate hiding places (proposal, zoo-level-designer, 2026-09-26 —
 only where no existing prop fits): `wildflowers` (small tuft with coloured flower heads,

@@ -312,13 +312,16 @@ def note_paper():
     return A
 
 
-def key_box():
+def key_box(opened=False):
     """Wall key box 0.34 x 0.44 x 0.12 m with a 3-wheel combination lock on the door. Wall plane
     at y = 0 (glTF z = 0), box sticks out to the front. Door = child node `door`, pivot on the
     hinge axis (left edge, front face); open = rotate -100 deg about glTF +Y (swings out to the
     front-left).
-    socket_key = where the cart_key hangs (hook inside)."""
-    A = nl.Asset("key_box")
+    socket_key = where the cart_key hangs (hook inside).
+    opened=True builds `key_box_open` (GAME-CART rule 15): the same box with the door standing
+    open (-100 deg about the hinge, baked into the mesh, no `door` node) and no key on the hook;
+    the game swaps it for the closed box when the right code was entered."""
+    A = nl.Asset("key_box_open" if opened else "key_box")
     W, H, D = 0.34, 0.44, 0.12
     p = []
     t = 0.02
@@ -336,7 +339,8 @@ def key_box():
     A.add(p)
     # door
     piv = Vector((-W / 2, FRONT * D, 0))
-    A.node("door", pivot=piv)
+    if not opened:
+        A.node("door", pivot=piv)
     d = [zb.box((W - 0.006, 0.02, H - 0.006), (0, FRONT * (D + 0.01), H / 2), color="keybox_red", bevel=0.006)]
     # lock plate with three number wheels
     d.append(zb.box((0.2, 0.012, 0.09), (0.02, FRONT * (D + 0.026), H * 0.45), color="iron"))
@@ -353,7 +357,12 @@ def key_box():
     # key icon painted on the door
     d.append(zb.box((0.1, 0.004, 0.03), (0.0, FRONT * (D + 0.022), H * 0.8), color="brass"))
     d.append(nl.ring_xz(-0.07, H * 0.8, 0.035, 8, FRONT * (D + 0.024), FRONT * (D + 0.02), "brass", r_in=0.018))
-    A.add(d, node="door")
+    if opened:
+        for part in d:
+            part.rotate_z(-100, pivot=piv)
+        A.add(d)
+    else:
+        A.add(d, node="door")
     A.empty("socket_key", (0, FRONT * 0.07, H - 0.12))
     return A
 
@@ -409,7 +418,8 @@ def main():
         "key_box": key_box,
         "cart_key": cart_key,
     }
-    nl.run(KIT, builders, cols=5, spacing=(2.4, 2.6), extra=extra)
+    nl.run(KIT, builders, cols=5, spacing=(2.4, 2.6), extra=extra,
+           variants={"key_box_open": lambda: key_box(opened=True)})
 
 
 if __name__ == "__main__":

@@ -83,6 +83,10 @@ pub enum HintKind {
     /// 🚪 the open lantern gate between two night levels (night_1 → the terrarium garden,
     /// GAME-LEVEL-NIGHT-2).
     NightGate,
+    /// 📝 read the golf-cart note on the desk (GAME-CART rule 16, optional, priority 4).
+    Note,
+    /// 🔑 open the key box with the combination of the note (optional, priority 4).
+    KeyBox,
 }
 
 impl HintKind {
@@ -105,6 +109,8 @@ impl HintKind {
             HintKind::Help => "help",
             HintKind::MoonDoor => "moon_door",
             HintKind::NightGate => "night_gate",
+            HintKind::Note => "note",
+            HintKind::KeyBox => "keybox",
         }
     }
 
@@ -126,6 +132,8 @@ impl HintKind {
             HintKind::Help => "hint-help",
             HintKind::MoonDoor => "hint-moon",
             HintKind::NightGate => "hint-night-gate",
+            HintKind::Note => "hint-cart-note",
+            HintKind::KeyBox => "hint-cart-keybox",
         }
     }
 }
@@ -643,6 +651,10 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
         }
     }
 
+    // --- the golf-cart key (GAME-HINT "Cart key hints"): exactly one stage while the carts are
+    // locked, by day; optional (priority 4) and behind the other optional hints
+    out.extend(cart_key_hint(g));
+
     // --- night (rule 3.5): the bed, the moon door; at dusk the bed is next
     let dusk = g.daytime.phase == Phase::Dusk || g.daytime.dusk_in.is_some();
     // (by day the bed is only a target while sleeping moves the game on, NIGHT-033)
@@ -755,6 +767,47 @@ pub fn candidates(g: &Game, t: &HintTracker) -> Vec<Hint> {
     out
 }
 
+/// The one cart-key hint of the current stage (GAME-CART rule 16): the note while it was not
+/// read yet or after [`crate::math::LOCK_HELP_TRIES`] wrong codes, else the key box; none once
+/// the key was taken, at night, or without both items in an unlocked level.
+fn cart_key_hint(g: &Game) -> Option<Hint> {
+    if g.has_cart_key
+        || g.key_box_open
+        || g.daytime.phase != Phase::Day
+        || g.daytime.dusk_in.is_some()
+    {
+        return None;
+    }
+    let find = |kind: &str| {
+        g.level
+            .data
+            .items
+            .iter()
+            .find(|it| it.kind == kind && g.part_unlocked(it.part))
+    };
+    let (note, boxx) = (
+        find(crate::cart_key::NOTE_KIND)?,
+        find(crate::cart_key::KEY_BOX_KIND)?,
+    );
+    let stage_note = !g.note_read || g.lock_help();
+    let (it, kind, id) = if stage_note {
+        (note, HintKind::Note, "cart-note")
+    } else {
+        (boxx, HintKind::KeyBox, "cart-keybox")
+    };
+    let stand = it.stand.map_or(it.pos(), |c| cell_center(IVec2::from(c)));
+    let mut h = hint(
+        id.to_owned(),
+        kind,
+        PRIO_OPTIONAL,
+        it.pos(),
+        free_stand(g, stand),
+    );
+    // "only while nothing better exists": behind the other optional hints (garden, treats)
+    h.after_area = true;
+    Some(h)
+}
+
 /// A hint reached this often with an unchanged game state is dropped (HINT-027).
 pub const REPEAT_GUARD: u32 = 2;
 
@@ -823,6 +876,8 @@ pub fn is_useful(e: &GameEvent) -> bool {
                 | GameEvent::TreatRefused { .. }
                 | GameEvent::FoodRefused { .. }
                 | GameEvent::BasketFull
+                | GameEvent::NoteRead
+                | GameEvent::WrongCode { .. }
         )
 }
 
@@ -1321,7 +1376,7 @@ pub fn step_key_for(g: &Game, t: &HintTracker, h: &Hint) -> &'static str {
     if h.kind == HintKind::Bed && g.daytime.phase == Phase::Day && g.daytime.dusk_in.is_none() {
         return "hint-bed-night-zoo";
     }
-    if h.priority >= PRIO_OPTIONAL {
+    if h.priority >= PRIO_OPTIONAL && !matches!(h.kind, HintKind::Note | HintKind::KeyBox) {
         match what_next(g, t) {
             Some("all_done") => return "next-all_done",
             Some(_) => return "next-explore",

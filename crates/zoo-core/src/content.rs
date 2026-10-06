@@ -195,6 +195,19 @@ impl Content {
         self.keys.get(&lang).cloned().unwrap_or_default()
     }
 
+    /// Formatted text of a message with string arguments (`{ $name }`).
+    pub fn text_args(&self, lang: Language, key: &str, args: &[(&str, String)]) -> Option<String> {
+        let bundle = self.bundles.get(&lang)?;
+        let pattern = bundle.get_message(key)?.value()?;
+        let mut fa = fluent_bundle::FluentArgs::new();
+        for (k, v) in args {
+            fa.set(k.to_string(), v.clone());
+        }
+        let mut errors = Vec::new();
+        let s = bundle.format_pattern(pattern, Some(&fa), &mut errors);
+        errors.is_empty().then(|| s.into_owned())
+    }
+
     /// Formatted text of a message without arguments.
     pub fn text(&self, lang: Language, key: &str) -> Option<String> {
         let bundle = self.bundles.get(&lang)?;

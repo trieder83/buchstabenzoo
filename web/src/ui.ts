@@ -5,6 +5,8 @@
 
 import { OverviewMap } from './overview-map';
 import { TelescopeView } from './telescope';
+import { LockPanel } from './lock-panel';
+import { renderAid, type MathAidData } from './math-aid';
 import { SOUND_EVENT } from './audio';
 import { browserEnv, isFullscreen, showFullscreenButton, showIosInstallHint, toggleFullscreen } from './fullscreen';
 import { dragScroll } from './scroll';
@@ -36,6 +38,13 @@ export interface UiApp {
   set_reading_level(id: string): boolean;
   language(): string;
   reading_level(): string;
+  /** GAME-CART rule 21: the math level of the note task (`mathe1` … `mathe5`). */
+  set_math_level?(id: string): boolean;
+  math_level?(): string;
+  /** GAME-CART rules 14/15: key state JSON, a code at the key box, the pause while the lock is open. */
+  cart_key_json?(): string;
+  enter_code?(code: number): string;
+  set_lock_open?(open: boolean): void;
   /** Camera views (GAME-CAMERA-VIEWS): the view to store, the first-person toggle. */
   saved_view_mode?(): string;
   view_mode?(): string;
@@ -93,6 +102,9 @@ export const HINT_ICONS: Record<string, string> = {
   // the lantern gate to the terrarium garden (night_2)
   night_gate: '🚪',
   key_box: '🔑',
+  // the golf-cart key hints (GAME-HINT "Cart key hints"): the note, the key box
+  note: '📝',
+  keybox: '🔑',
   event: '❗',
 };
 
@@ -243,6 +255,9 @@ export function parseBasket(json: string | undefined): Basket {
 
 export const LANGUAGES = ['de', 'en'] as const;
 export const READING_LEVELS = ['kiga', 'klasse1', 'klasse2', 'klasse3'] as const;
+/** Math levels (CONT-MATH, GAME-CART rule 21): the numeral 1…5 over that many dots. */
+export const MATH_LEVELS = ['mathe1', 'mathe2', 'mathe3', 'mathe4', 'mathe5'] as const;
+export const DEFAULT_MATH_LEVEL = 'mathe1';
 
 /** Emoji food pictures for the HUD / lists (food box labels use the vector pictograms.ts). */
 export const FOOD_ICONS: Record<string, string> = {
@@ -380,6 +395,9 @@ export const TARGET_ICONS: Record<string, string> = {
   // GAME-TELESCOPE: look at the planets (night only)
   telescope: '🔭',
   treat: '🧺',
+  // GAME-CART: the note on the desk, the key box with the combination lock
+  note: '📝',
+  key_box: '🔑',
 };
 
 /**
@@ -440,6 +458,8 @@ export interface Settings {
   view?: string;
   /** Sound effects on (ASND-009); default on, stored as `zoo.sound` = `0` when off. */
   sound?: boolean;
+  /** Math level of the golf-cart note (GAME-CART rule 21); default `mathe1`. */
+  mathLevel?: string;
 }
 
 /** Views that are stored (look-around is only held, never stored). */
@@ -449,6 +469,7 @@ const KEY_LANG = 'zoo.language';
 const KEY_LEVEL = 'zoo.readingLevel';
 const KEY_VIEW = 'zoo.view';
 const KEY_SOUND = 'zoo.sound';
+const KEY_MATH = 'zoo.mathLevel';
 
 /**
  * Stored settings, falling back to `defaultLanguage` (always `de`, CONT-L10N §5 — the stored
@@ -459,11 +480,13 @@ export function loadSettings(store: KeyValue | null, defaultLanguage: string): S
   let level: string | null = null;
   let view: string | null = null;
   let sound: string | null = null;
+  let math: string | null = null;
   try {
     lang = store?.getItem(KEY_LANG) ?? null;
     level = store?.getItem(KEY_LEVEL) ?? null;
     view = store?.getItem(KEY_VIEW) ?? null;
     sound = store?.getItem(KEY_SOUND) ?? null;
+    math = store?.getItem(KEY_MATH) ?? null;
   } catch {
     // storage blocked (private mode): defaults
   }
@@ -472,6 +495,7 @@ export function loadSettings(store: KeyValue | null, defaultLanguage: string): S
     readingLevel: (READING_LEVELS as readonly string[]).includes(level ?? '') ? level! : 'klasse1',
     view: (SAVED_VIEWS as readonly string[]).includes(view ?? '') ? view! : 'zoo',
     sound: sound !== '0',
+    mathLevel: (MATH_LEVELS as readonly string[]).includes(math ?? '') ? math! : DEFAULT_MATH_LEVEL,
   };
 }
 
@@ -481,6 +505,7 @@ export function saveSettings(store: KeyValue | null, s: Settings): void {
     store?.setItem(KEY_LEVEL, s.readingLevel);
     if (s.view && (SAVED_VIEWS as readonly string[]).includes(s.view)) store?.setItem(KEY_VIEW, s.view);
     if (s.sound !== undefined) store?.setItem(KEY_SOUND, s.sound ? '1' : '0');
+    if (s.mathLevel && (MATH_LEVELS as readonly string[]).includes(s.mathLevel)) store?.setItem(KEY_MATH, s.mathLevel);
   } catch {
     // storage blocked: settings live for this session only
   }
@@ -511,6 +536,17 @@ interface PanelData {
   start?: string;
   level_text?: string;
   level?: string;
+  /** Golf-cart note (GAME-CART rule 14): title, the pictogram/sentence line, the task text and
+   * numerals, the empty digit boxes, the visual aid (after 3 wrong codes) and the math level. */
+  line?: string;
+  expr?: string;
+  digits?: string;
+  task_kind?: string;
+  pictures?: boolean;
+  aid?: MathAidData | null;
+  /** Key box lock panel: wrong codes so far, and the 📝 pulse. */
+  tries?: number;
+  help?: boolean;
 }
 
 export interface GameEventMsg {
@@ -674,6 +710,20 @@ export class Ui {
     this.telescope = new TelescopeView(this.app, () => {
       this.settings.hidden = true;
     });
+    this.lock = new LockPanel(
+      {
+        t: (k) => this.app.t(k),
+        enter_code: (c) => this.app.enter_code?.(c) ?? 'none',
+        cart_key_json: () => this.app.cart_key_json?.() ?? '{}',
+        set_lock_open: (o) => this.app.set_lock_open?.(o),
+      },
+      () => {
+        this.settings.hidden = true;
+        this.hidePanel();
+      },
+      () => this.lastCarry = '\u0000',
+      () => this.pollEvents(),
+    );
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
     // (CAMV-019)
@@ -699,6 +749,10 @@ export class Ui {
   /** Interact button / key: take from an open food panel, else interact with the target. */
   interact(): void {
     if (this.map.isOpen) return; // the game is paused behind the overview map (MAP-006)
+    if (this.lock.isOpen) {
+      this.lock.submit(); // the interact key at the open lock panel = ✔
+      return;
+    }
     if (this.telescope.isOpen) {
       this.telescope.close(); // the interact key again closes the telescope view (TELE-007)
       return;
@@ -714,7 +768,18 @@ export class Ui {
       this.telescope.open();
       return;
     }
-    if (data.kind === 'info_board' || data.kind === 'food_box' || data.kind === 'garden_sign' || data.kind === 'welcome_board')
+    if (data.kind === 'key_box') {
+      // the key box: the lock panel with the three wheels (GAME-CART rule 15)
+      this.lock.open({ title: data.title, help: data.help });
+      return;
+    }
+    if (
+      data.kind === 'info_board' ||
+      data.kind === 'food_box' ||
+      data.kind === 'garden_sign' ||
+      data.kind === 'welcome_board' ||
+      data.kind === 'note'
+    )
       this.openPanel(data);
     this.pollEvents();
   }
@@ -992,7 +1057,7 @@ export class Ui {
     this.updateHint();
     this.updatePulse();
     this.updateProgress();
-    const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}|${this.app.basket_json?.() ?? ''}`;
+    const carry = `${this.app.carry_food()}|${this.app.carry_bowl?.() ?? ''}|${this.app.basket_json?.() ?? ''}|${this.hasKey()}`;
     if (carry !== this.lastCarry) {
       this.lastCarry = carry;
       this.renderCarry();
@@ -1024,6 +1089,7 @@ export class Ui {
         readingLevel: this.app.reading_level(),
         view,
         sound: this.sound,
+        mathLevel: this.app.math_level?.() ?? DEFAULT_MATH_LEVEL,
       });
     }
   }
@@ -1072,8 +1138,10 @@ export class Ui {
     const bowl = this.app.carry_bowl?.() ?? '';
     const basket = parseBasket(this.app.basket_json?.());
     const treats = basket.carrot + basket.potato + basket.apple + basket.orange;
-    this.hud.hidden = !carry && !bowl && treats === 0;
+    const key = this.hasKey();
+    this.hud.hidden = !carry && !bowl && treats === 0 && !key;
     this.hud.dataset.food = carry;
+    this.hud.dataset.key = key ? '1' : '0';
     this.hud.dataset.bowl = bowl;
     this.hud.replaceChildren();
     if (bowl) {
@@ -1098,7 +1166,23 @@ export class Ui {
       b.dataset.orange = String(basket.orange);
       this.hud.append(b);
     }
+    if (key) {
+      // the golf-cart key (GAME-CART rule 15): a chip next to the basket, for the rest of the game
+      const k = el('span', 'key-chip', '🔑');
+      k.id = 'hud-key';
+      k.setAttribute('aria-label', this.app.t('ui-key'));
+      this.hud.append(k);
+    }
     this.hud.setAttribute('aria-label', `${this.app.t('ui-carrying')} ${this.app.carry_text()}`);
+  }
+
+  /** The golf-cart key is in the pocket. */
+  private hasKey(): boolean {
+    try {
+      return Boolean((JSON.parse(this.app.cart_key_json?.() ?? '{}') as { has_key?: boolean }).has_key);
+    } catch {
+      return false;
+    }
   }
 
   /** Optional consumer of the game events (opt-in analytics, PLAT-030): type + ids only. */
@@ -1107,6 +1191,8 @@ export class Ui {
   /** The big overview map (GAME-MAP), opened from the settings menu or with `M`. */
   readonly map: OverviewMap;
   readonly telescope: TelescopeView;
+  /** The key box lock panel (GAME-CART rule 15). */
+  readonly lock: LockPanel;
 
   /** Adds a row to the settings menu (analytics consent, PLAT-031); `relabel` follows language changes. */
   addSettingsRow(row: HTMLElement, relabel: () => void): void {
@@ -1125,7 +1211,10 @@ export class Ui {
       else if (e.type === 'panel_close' && e.key === this.panelKey) this.hidePanel();
       else if (['dusk', 'morning', 'moon_door', 'level_complete'].includes(e.type) && e.text)
         this.showBanner(e.text, e.key ?? '');
-      else if (e.type === 'sleep') this.hidePanel();
+      else if (e.type === 'key_box_opened' && e.text) {
+        this.say(e.text, e.key ?? '');
+        this.lastCarry = '\u0000'; // the 🔑 chip appears
+      } else if (e.type === 'sleep') this.hidePanel();
       else if (e.type === 'put_down_refused') this.shakeDrop();
     }
   }
@@ -1206,6 +1295,33 @@ export class Ui {
       start.id = 'welcome-start';
       kidsW.push(start);
       kids.push(...kidsW);
+    } else if (data.kind === 'note') {
+      // the golf-cart note (GAME-CART rule 14): title, the task (numerals; kiga with pictures),
+      // the sentence, three empty digit boxes, a small key box picture, the aid after 3 wrong codes
+      const title = el('h2', 'panel-title', `📝 ${data.title ?? ''}`);
+      title.id = 'panel-title';
+      const expr = el('p', 'note-expr', data.expr ?? '');
+      expr.id = 'note-expr';
+      expr.dataset.kind = data.task_kind ?? '';
+      expr.dataset.level = data.level ?? '';
+      const task = el('p', 'panel-text note-task', data.text ?? '');
+      task.id = 'panel-text';
+      const line = el('p', 'note-line', data.line ?? '');
+      line.id = 'note-line';
+      const boxes = el('p', 'note-digits', data.digits ?? '☐☐☐');
+      boxes.id = 'note-digits';
+      const pic = el('span', 'note-keybox', '🗄️🔑');
+      pic.id = 'note-keybox';
+      const code = el('div', 'note-code');
+      code.append(boxes, pic);
+      const main = el('div', 'note-main');
+      main.append(expr, task);
+      kids.push(close, title, code, main, line);
+      if (data.aid) {
+        const aid = renderAid(data.aid);
+        aid.id = 'note-aid';
+        kids.push(aid);
+      }
     } else if (data.kind === 'garden_sign') {
       // garden sign (GARD-009): the vegetable picture, its word, a sentence from klasse1 on
       const pic = el('div', 'panel-picture', FOOD_ICONS[data.food ?? ''] ?? '🌱');
@@ -1236,6 +1352,7 @@ export class Ui {
     this.panel.replaceChildren(body);
     this.panel.dataset.kind = data.kind;
     this.panel.hidden = false;
+    if (data.kind === 'note') dragScroll(body, body);
     if (data.kind === 'welcome_board') {
       dragScroll(body, body);
       // the ▼ cue shows until the end of the long panel is reached (or when it all fits)
@@ -1272,7 +1389,8 @@ export class Ui {
   }
 
   escape(): void {
-    if (this.telescope.isOpen) this.telescope.close();
+    if (this.lock.isOpen) this.lock.close();
+    else if (this.telescope.isOpen) this.telescope.close();
     else if (this.map.isOpen) this.map.close();
     else if (!this.settings.hidden) this.settings.hidden = true;
     else this.closePanel();
@@ -1357,6 +1475,17 @@ export class Ui {
       b.addEventListener('click', () => this.change({ readingLevel: r }));
       levelRow.append(b);
     }
+    // Math level (GAME-CART rule 21, CART-030): 🔢 + five buttons, numeral over that many dots
+    const mathRow = el('div', 'row math');
+    mathRow.id = 'settings-math';
+    mathRow.append(el('span', 'row-icon', '🔢'));
+    MATH_LEVELS.forEach((m, i) => {
+      const b = el('button', 'choice math');
+      b.dataset.math = m;
+      b.append(el('span', 'num', String(i + 1)), el('span', 'dots', '•'.repeat(i + 1)));
+      b.addEventListener('click', () => this.change({ mathLevel: m }));
+      mathRow.append(b);
+    });
     // New game (GAME-SAVE §6): icon button, then a big yes/no icon pair — no reading needed.
     const gameRow = el('div', 'row');
     gameRow.id = 'settings-game';
@@ -1431,18 +1560,20 @@ export class Ui {
     mapBtn.id = 'map-btn';
     mapBtn.addEventListener('click', () => this.map.open());
     mapRow.append(mapBtn);
-    this.settings.replaceChildren(mapRow, langRow, levelRow, soundRow, gameRow, ...extra);
+    this.settings.replaceChildren(mapRow, langRow, levelRow, mathRow, soundRow, gameRow, ...extra);
     this.markSound();
   }
 
   private change(part: Partial<Settings>): void {
     if (part.language) this.app.set_language(part.language);
     if (part.readingLevel) this.app.set_reading_level(part.readingLevel);
+    if (part.mathLevel) this.app.set_math_level?.(part.mathLevel);
     saveSettings(this.store, {
       language: this.app.language(),
       readingLevel: this.app.reading_level(),
       view: this.app.saved_view_mode?.() ?? 'zoo',
       sound: this.sound,
+      mathLevel: this.app.math_level?.() ?? DEFAULT_MATH_LEVEL,
     });
     // All visible texts follow at once (L10N-004): labels, HUD, an open panel.
     const panel = this.panelKey ? this.app.panel_json() : '';
@@ -1461,6 +1592,7 @@ export class Ui {
       readingLevel: this.app.reading_level(),
       view: this.app.saved_view_mode?.() ?? 'zoo',
       sound: on,
+      mathLevel: this.app.math_level?.() ?? DEFAULT_MATH_LEVEL,
     });
     window.dispatchEvent(new CustomEvent(SOUND_EVENT, { detail: { on } }));
     this.markSound();
@@ -1477,7 +1609,10 @@ export class Ui {
   private markSettings(): void {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
       if (b.id === 'sound-toggle' || b.id === 'intro-replay' || b.id === 'map-btn' || b.id === 'fullscreen-toggle' || b.id === 'analytics-toggle') continue;
-      const on = b.dataset.lang === this.app.language() || b.dataset.level === this.app.reading_level();
+      const on =
+        b.dataset.lang === this.app.language() ||
+        b.dataset.level === this.app.reading_level() ||
+        (b.dataset.math !== undefined && b.dataset.math === (this.app.math_level?.() ?? DEFAULT_MATH_LEVEL));
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
     }
@@ -1493,10 +1628,12 @@ export class Ui {
     this.compass?.setAttribute('aria-label', this.app.t('ui-hint'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));
+    this.settings.querySelector('#settings-math')?.setAttribute('aria-label', this.app.t('ui-math-level'));
     this.settings.querySelector('#sound-toggle')?.setAttribute('aria-label', this.app.t('ui-sound'));
     this.settings.querySelector('#map-btn')?.setAttribute('aria-label', this.app.t('map-button'));
     this.map?.relabel();
     this.telescope?.relabel();
+    this.lock?.relabel();
     this.settings.querySelector('#intro-replay')?.setAttribute('aria-label', this.app.t('ui-replay-intro'));
     this.settings.querySelector('#fullscreen-toggle')?.setAttribute('aria-label', this.app.t('ui-fullscreen'));
     const installHint = this.settings.querySelector('#install-hint');
@@ -1508,6 +1645,7 @@ export class Ui {
     for (const b of this.settings.querySelectorAll<HTMLButtonElement>('button')) {
       if (b.dataset.lang) b.setAttribute('aria-label', this.app.t(`ui-lang-${b.dataset.lang}`));
       if (b.dataset.level) b.setAttribute('aria-label', this.app.t(`ui-level-${b.dataset.level}`));
+      if (b.dataset.math) b.setAttribute('aria-label', this.app.t(`ui-level-${b.dataset.math}`));
     }
   }
 }

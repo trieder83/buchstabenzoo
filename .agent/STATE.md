@@ -143,3 +143,14 @@ Done: `#night-progress` removed; `#compass-btn` carries `.badge` (kind of the be
 - Tests: zoo-core `night2_layout` (LAYOUT-N2-001..011, N1-014), `night2_game` (NIGHT-030/031/032, FAM-021..026, FEED-37/38, overview), `night2_content`, `hints.rs` HINT-025 (never stuck through the garden) + NIGHT-031; openings/level_gates now run on the 5-level zoo; vitest ui.test; e2e `web/tests/e2e/night2.spec.ts` (LAYOUT-N2-012/013).
 - Not done / next: real models (terrarium house, glass case parts, fridge, small garden gate, 9 riddle-scenery models, sign silhouettes), 16-species treat master table (FEED-036/039/040/041/042/044, FAM-032) for the 13 older species, Q-337 bed (no), performance run (new level, atlas 2.9 MB).
 - Disk: target/debug test binaries were deleted at 100 % full; use `CARGO_INCREMENTAL=0` for test runs.
+
+### 2026-10-06 golf cart P1 (math core) + P2 (note, key box, lock panel) — uncommitted
+- Done: `zoo-core/src/math.rs` (`MathLevel`, `cart_note_task` on its own RNG stream, answers 1…999, `pad3`, `evaluate`, aids), `cart_key.rs`
+  (`Game::enter_code`, `Target::Note` (reading) / `Target::KeyBox`, flags `has_cart_key`/`key_box_open`/`note_read`/`key_box_tries`/`note_aid`),
+  `HintKind::Note`/`KeyBox` (priority 4, own step lines), save v3 (v2 loads), `Content::text_args`, `math.ftl`+`cart.ftl` de/en,
+  `key_box_open.glb` (kit_bedroom.py variant), scene `key_boxes` (closed+key / open swap in zoo-web), `lock-panel.ts`, `math-aid.ts`,
+  settings row `#settings-math` (`zoo.mathLevel`), HUD 🔑 chip, narrow-phone settings fix (max-width 400 px: 64 px buttons).
+- Tests: `tests/math.rs` (MATH-001…013, CART-012/026/031), `tests/cart_key.rs` (CART-013/022…027, SAVE-012/013), `tests/hints.rs` (HINT-032/033, CART-029 key part),
+  vitest `ui.test.ts`, e2e `web/tests/e2e/cart_key.spec.ts`. `gameplay_qa` PLAY-020 count +2.
+- Not done (P3): carts, driving, `[[cart]]` loading, locked-cart feedback, parking, get-out button. Aid on 780x360 scrolls inside the note panel.
+

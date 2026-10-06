@@ -234,6 +234,11 @@ fn follow_one(s: &mut Sim) {
     }
     let h = s.press();
     s.check_loop(&h);
+    follow_hint(s, h);
+}
+
+/// The child walks to the hint `h` and does what it says.
+fn follow_hint(s: &mut Sim, h: hints::Hint) {
     let animal = h.animal;
     match h.kind {
         HintKind::Board => {
@@ -323,6 +328,45 @@ fn follow_one(s: &mut Sim) {
             let beyond = h.pos + (h.pos - h.stand).normalize_or_zero() * 3.0;
             s.walk_to(cell_of(beyond), 60.0);
             s.idle(0.2);
+        }
+        HintKind::Note => {
+            // CART-029 / HINT-032: read the note on the desk (the panel opens by itself)
+            s.walk_to(cell_of(h.stand), 150.0);
+            s.face(h.pos);
+            s.idle(0.6);
+            assert!(s.g.note_read, "the note was read");
+            s.g.close_panel();
+        }
+        HintKind::KeyBox => {
+            // the child typed what the note says; every odd game first mistypes three times
+            // (the next hint is then the note again: HINT-032) and reads the note once more
+            s.walk_to(cell_of(h.stand), 150.0);
+            s.face(h.pos);
+            s.idle(0.1);
+            assert_eq!(
+                s.g.available_target(),
+                Some(zoo_core::game::Target::KeyBox {
+                    id: "key_box_l1".into()
+                }),
+                "standing at the key box"
+            );
+            let answer = s.g.cart_task().answer;
+            if s.g.key_box_tries == 0 && s.g.hint_signature().is_multiple_of(3) {
+                let wrong = answer % 999 + 1;
+                for _ in 0..3 {
+                    assert!(matches!(
+                        s.g.enter_code(wrong),
+                        zoo_core::cart_key::CodeResult::Wrong { .. }
+                    ));
+                }
+                s.idle(0.1);
+            } else {
+                assert_eq!(
+                    s.g.enter_code(answer),
+                    zoo_core::cart_key::CodeResult::Right
+                );
+                s.idle(0.1);
+            }
         }
         HintKind::PickUp
         | HintKind::Bamboo
@@ -1425,4 +1469,226 @@ fn night_031_gate_hint_leads_into_the_garden() {
         h.kind == HintKind::Board && h.animal.is_some_and(|a| GARDEN.contains(&a)),
         "{h:?}"
     );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Cart key hints (GAME-CART rule 16, GAME-HINT "Cart key hints"): HINT-032, HINT-033, CART-029
+
+fn cart_hint(s: &Sim) -> Option<hints::Hint> {
+    candidates(&s.g, &s.t)
+        .into_iter()
+        .find(|h| matches!(h.kind, HintKind::Note | HintKind::KeyBox))
+}
+
+/// The child takes the cart hint (the other optional hints rank before it): press until it is
+/// the shown one, then follow it.
+fn follow_cart(s: &mut Sim) {
+    let h = cart_hint(s).expect("a cart hint");
+    s.t.hide();
+    s.check_loop(&h);
+    follow_hint(s, h);
+}
+
+/// Every animal home, every pair has its baby: no garden / treat hint, only the cart hints.
+fn quiet_day(seed: u64) -> Sim {
+    let mut s = day_all_home(seed, true);
+    let ids: Vec<String> = s.g.animals.iter().map(|a| a.id().to_owned()).collect();
+    for id in ids {
+        if !s.g.babies.contains(&id) {
+            s.g.babies.push(id);
+        }
+    }
+    s
+}
+
+fn at_box(s: &mut Sim) {
+    let it =
+        s.g.level
+            .data
+            .items
+            .iter()
+            .find(|i| i.id == "key_box_l1")
+            .unwrap();
+    let (pos, stand) = (it.pos(), it.stand.unwrap());
+    s.g.player.pos = cell_center(IVec2::from(stand));
+    s.g.player.facing = (pos - s.g.player.pos).normalize();
+}
+
+// HINT-032: the stages note -> key box -> (3 wrong codes) note -> key box -> none
+#[test]
+fn hint_032_cart_key_stages() {
+    let mut s = quiet_day(3);
+    let h = cart_hint(&s).expect("the note hint");
+    assert_eq!((h.kind, h.id.as_str()), (HintKind::Note, "cart-note"));
+    assert_eq!(h.priority, hints::PRIO_OPTIONAL);
+    assert_eq!(h.kind.id(), "note");
+    assert_eq!(h.kind.step_key(), "hint-cart-note");
+    let note =
+        s.g.level
+            .data
+            .items
+            .iter()
+            .find(|i| i.kind == "note_math_fighter")
+            .unwrap();
+    assert!(h.pos.distance(note.pos()) < 1e-3);
+    // stage 1 -> 2: reading the note
+    let sig = s.g.hint_signature();
+    follow_cart(&mut s);
+    assert!(s.g.note_read);
+    assert_ne!(s.g.hint_signature(), sig, "the stage changes the signature");
+    let h = cart_hint(&s).expect("the key box hint");
+    assert_eq!((h.kind, h.id.as_str()), (HintKind::KeyBox, "cart-keybox"));
+    assert_eq!(h.kind.id(), "keybox");
+    assert_eq!(h.kind.step_key(), "hint-cart-keybox");
+    // 3 wrong codes -> the note again; each wrong code is a state change
+    at_box(&mut s);
+    let wrong = s.g.cart_task().answer % 999 + 1;
+    let mut sigs = vec![s.g.hint_signature()];
+    for i in 1..=3 {
+        s.g.enter_code(wrong);
+        sigs.push(s.g.hint_signature());
+        let kind = cart_hint(&s).unwrap().kind;
+        assert_eq!(
+            kind,
+            if i < 3 {
+                HintKind::KeyBox
+            } else {
+                HintKind::Note
+            },
+            "after {i}"
+        );
+    }
+    sigs.dedup();
+    assert_eq!(sigs.len(), 4, "every wrong code changes the signature");
+    follow_cart(&mut s); // reads the note: tries = 0
+    assert_eq!(s.g.key_box_tries, 0);
+    assert_eq!(cart_hint(&s).unwrap().kind, HintKind::KeyBox);
+    // the right code: no cart hint ever again
+    at_box(&mut s);
+    let answer = s.g.cart_task().answer;
+    s.g.enter_code(answer);
+    assert!(s.g.has_cart_key);
+    assert!(cart_hint(&s).is_none());
+    s.idle(200.0);
+    assert!(cart_hint(&s).is_none(), "never after the key was taken");
+}
+
+// HINT-032: never by night, never in front of a mission step, never without the items
+#[test]
+fn hint_032_cart_hint_ranks_behind_everything_and_not_at_night() {
+    let s = Sim::new(night_game(5));
+    let list = candidates(&s.g, &s.t);
+    assert!(list[0].priority <= hints::PRIO_UNSTARTED, "{:?}", list[0]);
+    let pos = list
+        .iter()
+        .position(|h| h.kind == HintKind::Note)
+        .expect("listed");
+    assert!(list[..pos]
+        .iter()
+        .all(|h| h.priority <= hints::PRIO_OPTIONAL));
+    assert!(list[pos..]
+        .iter()
+        .all(|h| h.priority >= hints::PRIO_OPTIONAL));
+    // dusk and night: carts do not exist, no cart hint
+    let mut s = day_all_home(3, true);
+    assert!(cart_hint(&s).is_some());
+    let _ = s.g.debug_set_daytime("night");
+    assert!(cart_hint(&s).is_none());
+}
+
+// HINT-033: the cart hints never block "what next" / all_done and never loop
+#[test]
+fn hint_033_no_block_no_loop() {
+    let mut s = quiet_day(3);
+    assert!(cart_hint(&s).is_some());
+    assert_eq!(hints::what_next(&s.g, &s.t), Some("all_done"));
+    assert_eq!(compass_badge(&s.g, &s.t).map(|b| b.0), Some("all_done"));
+    // the repeat guard: reached twice without a change -> dropped, the read-again fallback
+    // (priority 6) remains, so the 🧭 still answers
+    let first = s.press();
+    assert_eq!(first.id, "cart-note");
+    for _ in 0..2 {
+        s.t.hide();
+        s.g.player.pos = first.stand;
+        // (looking away: the child does not read the note)
+        s.g.player.facing = (first.stand - first.pos).normalize();
+        s.t.press(&s.g);
+        s.idle(0.5);
+        s.t.hide();
+    }
+    assert!(!s.g.note_read);
+    assert!(
+        cart_hint(&s).is_none(),
+        "reached twice without a change: dropped"
+    );
+    let h = s.press();
+    assert_eq!(h.priority, hints::PRIO_FALLBACK, "{h:?}");
+    // a change of the game state brings it back
+    s.g.note_read = true;
+    assert_eq!(cart_hint(&s).unwrap().kind, HintKind::KeyBox);
+}
+
+// CART-029: the follow-the-hints fuzz with cart actions never loops and reaches the key; once
+// with only the cart hints left (quiet day), once with the garden / treat hints around
+#[test]
+fn cart_029_fuzz_follow_hints_with_cart_actions() {
+    for (seed, quiet) in [
+        (1u64, true),
+        (2, true),
+        (3, true),
+        (4, true),
+        (1, false),
+        (2, false),
+        (5, false),
+    ] {
+        let mut s = if quiet {
+            quiet_day(seed)
+        } else {
+            day_all_home(seed, true)
+        };
+        let mut rng = Pcg32::new(seed * 77);
+        let mut steps = 0;
+        while !s.g.has_cart_key {
+            steps += 1;
+            assert!(
+                steps < 150,
+                "seed {seed} quiet {quiet}: no key after {steps} steps"
+            );
+            match rng.below(7) {
+                // wrong codes, level changes, save + restore (the tracker is not saved: a new
+                // session starts without repeat-guard memory, so the loop detector restarts)
+                0 => {
+                    at_box(&mut s);
+                    let wrong = s.g.cart_task().answer % 999 + 1;
+                    s.g.enter_code(wrong);
+                }
+                1 => {
+                    let l = zoo_core::math::MathLevel::ALL[rng.below(5) as usize];
+                    s.g.set_math_level(l);
+                }
+                2 => {
+                    let json = s.g.to_save().to_json();
+                    s.g = Game::from_save_json(zoo_data(), &json).expect("restores");
+                    s.t = HintTracker::default();
+                    s.run = (String::new(), 0, 0);
+                }
+                _ => {}
+            }
+            s.t.hide();
+            // never stuck: a hint always exists
+            assert!(!candidates(&s.g, &s.t).is_empty());
+            // the child follows the best hint; now and then she goes for the cart hint
+            if cart_hint(&s).is_some() && rng.below(3) == 0 {
+                follow_cart(&mut s);
+            } else {
+                follow_one(&mut s);
+            }
+        }
+        assert!(cart_hint(&s).is_none());
+        // afterwards the hints go on without loops, 40 more steps
+        for _ in 0..40 {
+            s.t.hide();
+            follow_one(&mut s);
+        }
+    }
 }

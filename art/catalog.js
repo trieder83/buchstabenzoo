@@ -1304,7 +1304,7 @@ window.ART_CATALOG = {
     {
       id: "landmarks2",
       title: "Landmarks level 2",
-      intro: "Concept sheets (front, side, back, \u00be, 55\u00b0 game view) for the level-2 landmarks that are still placeholder boxes. In review \u2014 nothing is approved; no modelling before approval (ART-PIPELINE).",
+      intro: "Concept sheets (front, side, back, \u00be, 55\u00b0 game view) for the level-2 landmarks that are still placeholder boxes. Sheet v3 (red-white) approved by the user on 2026-10-06; the green sheets are superseded.",
       items: [
         {
           id: "landmark_zoo_train",
@@ -2289,6 +2289,42 @@ window.ART_CATALOG = {
             { file: "../web/public/icons/apple-touch-icon.png", label: "apple-touch 180" },
             { file: "../web/public/icons/icon-192.png", label: "icon-192" },
             { file: "../web/public/icons/favicon-32.png", label: "favicon 32" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "golf_cart",
+      title: "Zoo golf cart",
+      intro: "Concept sheet for the drivable zoo golf cart (GAME-CART): red-white with a striped roof (changed from green on 2026-10-06, the zoo has enough green), 2 seats, cargo bed. Sheet v3 (red-white) approved by the user on 2026-10-06; the green sheets are superseded.",
+      items: [
+        {
+          id: "golf_cart",
+          title: "Zoo golf cart",
+          status: "approved",
+          description: "Red-white electric golf cart (red body, white roof with red stripes, scalloped edge), one 2-seat bench, steering wheel, headlights, small cargo bed with basket, blank emblem discs. Approve: shape, colours, roof stripes, fit for the 1.20 m player (drive pose).",
+          spec: "GAME-CART",
+          brief: "props/golf_cart/brief.md",
+          notes: "APPROVED 2026-10-06 by the user: sheet v3 (red-white). Green sheets v1/v2 and the green close-up are superseded (kept for reference).",
+          images: [
+            { file: "props/golf_cart/sheet_v3_red.jpg", label: "sheet RED-WHITE \u2014 front, side, back, 3/4 (recommended v3)", required: true },
+            { file: "props/golf_cart/seat_closeup_v2_red.jpg", label: "seat / steering close-up RED-WHITE with 1.2 m child silhouette (drive pose)", required: true },
+            { file: "props/golf_cart/model_preview.png", label: "3D model preview (golf_cart + parking_sign, 55\u00b0 view, day / night)" },
+            { file: "props/golf_cart/sheet_v1.jpg", label: "SUPERSEDED (green) sheet v1", required: true },
+            { file: "props/golf_cart/sheet_v2.jpg", label: "SUPERSEDED (green) sheet v2", required: true },
+            { file: "props/golf_cart/seat_closeup_v1.jpg", label: "SUPERSEDED (green) seat close-up", required: true },
+          ],
+        },
+        {
+          id: "parking_sign",
+          title: "Parking sign",
+          status: "approved",
+          description: "Small post with a blue P plate marking a golf cart parking spot (GAME-CART). 3D model built (golf_cart.py), no separate concept sheet: simple standard parking sign.",
+          spec: "GAME-CART",
+          brief: "props/golf_cart/brief.md",
+          notes: "Covered by the approved golf cart concept (2026-10-06); only the model preview is shown.",
+          images: [
+            { file: "props/golf_cart/model_preview.png", label: "3D model preview (golf_cart + parking_sign)", required: true },
           ],
         },
       ],

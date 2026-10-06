@@ -18,7 +18,9 @@ use crate::rng::Pcg32;
 /// Version 2 (M5b): one save for the joined zoo (`level_id = "zoo"`), the fish bowl, the
 /// second animal of a pair. Version-1 saves (level 1 only, M4b/M5a) are migrated: their
 /// level-1 state is kept, the later levels start fresh (GAME-SAVE §5).
-pub const SAVE_VERSION: u32 = 2;
+pub const SAVE_VERSION: u32 = 3;
+/// Version 3 (golf-cart key, GAME-CART "Save"): `has_cart_key`, `key_box_open`, `note_read`,
+/// `key_box_tries`, `math_level`; all `#[serde(default)]`, so version-2 saves load.
 /// Oldest version that is migrated.
 pub const MIN_SAVE_VERSION: u32 = 1;
 /// Upper size limit of a save (GAME-SAVE §2).
@@ -64,6 +66,24 @@ pub struct SaveState {
     /// Regrowth of the bamboo cut spots by spot id (FEED-021). Missing = all full grown.
     #[serde(default)]
     pub bamboo: Vec<CutSpotSave>,
+    /// The golf-cart key is in the pocket (v3, GAME-CART).
+    #[serde(default)]
+    pub has_cart_key: bool,
+    /// The key box is open (v3). `has_cart_key` implies it (repaired on load).
+    #[serde(default)]
+    pub key_box_open: bool,
+    /// The note was read (v3).
+    #[serde(default)]
+    pub note_read: bool,
+    /// Wrong codes in a row since the note was last read (v3).
+    #[serde(default)]
+    pub key_box_tries: u8,
+    /// The note shows its visual aid (v3): set by the 3rd wrong code in a row.
+    #[serde(default)]
+    pub note_aid: bool,
+    /// Math level id (v3); missing / unknown = `mathe1`.
+    #[serde(default)]
+    pub math_level: String,
 }
 
 fn intro_seen_default() -> bool {
@@ -315,6 +335,12 @@ impl Game {
                     regrow_s: t,
                 })
                 .collect(),
+            has_cart_key: self.has_cart_key,
+            key_box_open: self.key_box_open,
+            note_read: self.note_read,
+            key_box_tries: self.key_box_tries,
+            note_aid: self.note_aid,
+            math_level: self.settings.math_level.id().to_owned(),
         }
     }
 
@@ -329,8 +355,7 @@ impl Game {
         }
         // v1 saves hold level 1 only: accepted by the joined zoo that contains level 1
         // (migration, GAME-SAVE §5); otherwise the ids must match
-        let migrates =
-            s.version < SAVE_VERSION && data.parts.first().is_some_and(|p| p.id == s.level_id);
+        let migrates = s.version < 2 && data.parts.first().is_some_and(|p| p.id == s.level_id);
         if s.level_id != data.level.id && !migrates {
             return Err(SaveError::OtherLevel(s.level_id.clone()));
         }
@@ -500,6 +525,13 @@ impl Game {
         g.all_home = g.all_home && g.missions.iter().all(|m| m.complete);
         g.reopen_night_gates();
         g.intro_seen = s.intro_seen;
+        // the golf-cart key (v3); a key without an open box repairs the box (GAME-CART "Save")
+        g.has_cart_key = s.has_cart_key;
+        g.key_box_open = s.key_box_open || s.has_cart_key;
+        g.note_read = s.note_read;
+        g.key_box_tries = s.key_box_tries;
+        g.note_aid = s.note_aid;
+        g.settings.math_level = crate::math::MathLevel::from_id_or_default(&s.math_level);
         g.babies = s.babies.clone();
         for b in s.babies.clone() {
             g.spawn_baby(&b);

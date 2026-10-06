@@ -122,6 +122,7 @@ async function main(): Promise<void> {
   const settings = loadSettings(store, App.default_language(navigator.language || 'de'));
   app.set_language(settings.language);
   app.set_reading_level(settings.readingLevel);
+  app.set_math_level(settings.mathLevel ?? 'mathe1'); // GAME-CART rule 21
   app.set_view_mode(settings.view ?? 'zoo'); // GAME-CAMERA-VIEWS 9
 
   updateTextTextures(app); // sign texts (re-rendered on language change, in the loop)

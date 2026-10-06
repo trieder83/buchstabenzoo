@@ -6,7 +6,7 @@ module: layout
 status: draft
 depends_on: [GAME-WORLD, ART-ENVIRONMENT, GAME-PLAYER]
 test_prefix: LAYOUT
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Zoo layout and level boundaries
@@ -396,6 +396,15 @@ always has an `interior` rect (LAYOUT-041). Today: `zookeeper_house_1`, `zookeep
   inside of the wall, `pos`, `facing`), `burglar_target` (`target` building whose food box is
   taken), `burglar_hideout` (`rect` of walkable grass where they are caught; never a hiding
   place, scenery, garden or path). One set per day level.
+- `[[cart]]` (golf carts, GAME-CART "Data shape", 2026-10-06): `id`, `pos` [x, z] (centre of the
+  parked cart), `facing` (+x/−x/+z/−z), `rect` [x, z, w, d] (parking footprint cells; the
+  oriented 1.3 × 2.3 m box lies inside), `stand` (walkable boarding cell ≤ 1.5 m from the box),
+  `sign_pos` (parking sign), `locked_until` (level id that must be open, `""` = always), `model`
+  = `golf_cart`. One per day level (levels 1–3); none in night levels. Not grid elements (like
+  `[[item]]`); the parked box is solid for characters and carts but **must never disconnect the
+  walkable grid, nor cover a gate/door/entry/barrier cell, a `stand` cell, a hiding-place rect or
+  wander area, scenery, garden, event spot or light post** (LAYOUT-048). The static repair prop
+  `zookeeper_cart` is not a `[[cart]]`.
 
 ## Levels
 
@@ -678,6 +687,7 @@ README row (glTF z −0.7) so no invisible wall remains (LAYOUT-019).
 | LAYOUT-045 | Given the level data, then every enclosure animal of a level is listed in that level's `missions` (or the field is absent) and has ≥ 3 `[[hiding_place]]` candidates, so no animal of an in-scope enclosure is left without a place. | unit |
 | LAYOUT-046 | Given each level file, then (rule 6) an info board or the food storage lies within 15 m of the spawn / entry cell and on screen in the zoo view; (rule 8) every board, storage door, enclosure gate, garden gate, bed and door has a `path` cell within 2 m and is connected to the spawn over `path` cells only; (rule 10) no mission element of the level lies behind a closed barrier; (rule 11) from every seeded game state (new, board read, food carried, following, level done, dusk, night) the hint has a reachable target; (rule 14) the walking distance from the spawn to the first board is ≤ 15 s and between any two mission steps ≤ 60 s on streets. | unit |
 | LAYOUT-047 | Given every `[[item]] kind = "bed"` of the joined zoo, then it has a `building` that is an enterable `zookeeper_house` (`interior` + `door`, LAYOUT-041), its 2 × 1 m footprint lies inside the interior rect (not on the door cell or the cell inside the door) on walkable cells, its `stand` cell is a walkable interior cell 1.0–1.5 m from the bed centre and free of colliders, the door cell has a `path` cell within 2 m, and the stand cell is reachable from the spawn of the bed's level through the door; each of levels 1, 2 and 3 has one such bed (user request 2026-10-01). | unit |
+| LAYOUT-048 | Given every `[[cart]]` of the joined zoo (levels 1–3, GAME-CART rule 1), then ids are unique, `rect` cells are walkable and overlap no solid element, hiding-place rect, wander area, scenery, garden, event spot, prop collider, light post or `stand` cell of any item/board/storage/hint, lie ≥ 1 cell from every gate, door, entry and barrier cell, the oriented 1.3 × 2.3 m box at `pos`/`facing` lies inside `rect`, `stand` is walkable, ≤ 1.5 m from the box and reachable from the level spawn, the parking sign cell is free, blocking the `rect` cells keeps the walkable grid connected (flood fill from the spawn reaches the same cells), no night level has a `[[cart]]`, and the spec tables of `levels/level-1/2/3.md` agree with the data (LAYOUT-005). | unit |
 
 ## Open questions
 

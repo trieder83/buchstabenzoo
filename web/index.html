@@ -613,6 +613,369 @@
         background: #ffd65c;
         box-shadow: inset 0 0 0 4px #e8604c;
       }
+      /* narrow phones (360 px): the menu keeps inside the screen — buttons 64 px, rows wrap */
+      @media (max-width: 400px) {
+        #settings {
+          right: calc(8px + env(safe-area-inset-right));
+          max-width: calc(100vw - 16px - env(safe-area-inset-right));
+          padding: 10px;
+          gap: 10px;
+        }
+        #settings .row {
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        #settings .choice {
+          width: 64px;
+          height: 64px;
+          font-size: 30px;
+        }
+      }
+      /* Math level row (GAME-CART rule 21): 🔢 + five buttons >= 64 px, numeral over dots; wraps on narrow phones */
+      #settings .row.math {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        max-width: 372px;
+      }
+      #settings .row-icon {
+        font-size: 36px;
+        width: 40px;
+        text-align: center;
+      }
+      #settings .choice.math {
+        width: 64px;
+        height: 64px;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        font-size: 26px;
+        line-height: 1;
+      }
+      #settings .choice.math .dots {
+        font-size: 14px;
+        letter-spacing: 0;
+        line-height: 1;
+        color: #3b2314;
+      }
+      /* The golf-cart key chip in the HUD (GAME-CART rule 15) */
+      #hud-carry .key-chip {
+        font-size: 36px;
+      }
+      /* Note on the desk (GAME-CART rule 14): the task in big numerals, three empty digit boxes */
+      .panel-body[data-kind='note'] {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 2px 16px;
+        overflow-y: auto;
+        padding-right: 80px;
+      }
+      @media (max-width: 560px) {
+        .panel-body[data-kind='note'] {
+          padding-right: 12px;
+        }
+        .panel-body[data-kind='note'] > .panel-title {
+          margin-right: 64px;
+        }
+      }
+      .panel-body[data-kind='note'] > .panel-close {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+      }
+      .panel-body[data-kind='note'] > .panel-title {
+        margin: 0;
+        font-size: max(3.2vh, 20px);
+        flex: 0 0 auto;
+      }
+      .note-main {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0 14px;
+        align-items: baseline;
+        justify-content: center;
+      }
+      .note-expr {
+        margin: 0;
+        font-size: max(5vh, 30px);
+        font-weight: bold;
+        letter-spacing: 1px;
+      }
+      .panel-body .note-task {
+        font-size: max(2.8vh, 18px);
+        line-height: 1.15;
+      }
+      .note-code {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .note-digits {
+        margin: 0;
+        font-size: max(4.4vh, 28px);
+        letter-spacing: 6px;
+      }
+      .note-keybox {
+        font-size: max(4vh, 26px);
+      }
+      .note-line {
+        margin: 0;
+        font-size: max(2.6vh, 16px);
+        font-weight: bold;
+        flex: 1 1 100%;
+      }
+      .math-aid {
+        flex: 1 1 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 6px 10px;
+      }
+      .math-aid .aid-amount {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 3px;
+        max-width: 260px;
+        align-items: center;
+      }
+      .math-aid .aid-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #e8604c;
+        border: 2px solid #3b2314;
+        box-sizing: border-box;
+      }
+      .math-aid .aid-rod {
+        width: 10px;
+        height: 28px;
+        border-radius: 3px;
+        background: #5fb3e8;
+        border: 2px solid #3b2314;
+        box-sizing: border-box;
+      }
+      .math-aid .aid-amount.taken .aid-dot {
+        background: #fff;
+      }
+      .math-aid .aid-op {
+        font-size: 26px;
+        font-weight: bold;
+      }
+      .math-aid .aid-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--cols, 5), 16px);
+        gap: 3px;
+      }
+      .math-aid .aid-cell {
+        width: 16px;
+        height: 16px;
+        background: #7cc46a;
+        border: 2px solid #3b2314;
+        border-radius: 3px;
+        box-sizing: border-box;
+      }
+      .math-aid .aid-rows,
+      .math-aid .aid-groups {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+      }
+      .math-aid .aid-rows {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .math-aid .aid-groups .aid-amount {
+        padding: 3px 5px;
+        border: 2px dashed #8a5a35;
+        border-radius: 10px;
+      }
+      .math-aid .aid-bar {
+        display: flex;
+        width: min(70vw, 320px);
+        height: 28px;
+        border: 3px solid #3b2314;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .math-aid .aid-part {
+        flex: 1;
+        background: #fff;
+        border-right: 2px solid #3b2314;
+      }
+      .math-aid .aid-part:last-child {
+        border-right: 0;
+      }
+      .math-aid .aid-part.shaded {
+        background: #ffd65c;
+      }
+      /* Key box lock panel (GAME-CART rule 15): three wheels >= 72 px, big ✔, ✖ closes */
+      #lock-panel {
+        position: fixed;
+        inset: 0;
+        z-index: 21;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+        background: rgba(40, 24, 12, 0.55);
+        user-select: none;
+        touch-action: manipulation;
+      }
+      #lock-panel[hidden] {
+        display: none;
+      }
+      #lock-panel .lock-card {
+        position: relative;
+        max-height: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: auto;
+        padding: 10px 14px 12px;
+        border-radius: 24px;
+        border: 6px solid #3b2314;
+        background: #b8402f;
+        color: #fff;
+        box-shadow: 0 8px 0 rgba(59, 35, 20, 0.5);
+      }
+      #lock-panel .lock-card.shake {
+        animation: shake 0.4s;
+      }
+      #lock-panel .lock-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      #lock-panel .lock-title {
+        font-size: 24px;
+        font-weight: bold;
+      }
+      #lock-panel .lock-close {
+        width: 64px;
+        height: 64px;
+        font-size: 30px;
+        background: #fff;
+        color: #3b2314;
+        flex: 0 0 auto;
+      }
+      #lock-panel .lock-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 10px 18px;
+      }
+      #lock-panel .lock-wheels {
+        display: flex;
+        gap: 10px;
+        padding: 8px;
+        border-radius: 16px;
+        background: #3b2314;
+      }
+      #lock-panel .lock-wheel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 4px;
+        border-radius: 12px;
+        border: 3px solid transparent;
+      }
+      #lock-panel .lock-wheel.selected {
+        border-color: #ffd65c;
+      }
+      #lock-panel .lock-up,
+      #lock-panel .lock-down {
+        width: 76px;
+        height: 72px;
+        border-radius: 14px;
+        border: 4px solid #3b2314;
+        background: #ffd65c;
+        font-size: 34px;
+        padding: 0;
+      }
+      #lock-panel .lock-digit {
+        width: 76px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #fff8e7;
+        color: #3b2314;
+        font-size: 52px;
+        font-weight: bold;
+        line-height: 1;
+      }
+      #lock-panel .lock-side {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      #lock-panel .lock-ok {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        border: 6px solid #3b2314;
+        background: #7cc46a;
+        font-size: 52px;
+        box-shadow: 0 6px 0 rgba(59, 35, 20, 0.55);
+      }
+      #lock-panel .lock-note {
+        font-size: 44px;
+        line-height: 1;
+        animation: lock-pulse 0.9s ease-in-out infinite;
+      }
+      #lock-panel .lock-note[hidden] {
+        display: none;
+      }
+      @keyframes lock-pulse {
+        50% {
+          transform: scale(1.3);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #lock-panel .lock-note {
+          animation: none;
+        }
+      }
+      @media (orientation: landscape) and (max-height: 460px) {
+        #lock-panel .lock-card {
+          padding: 6px 12px 8px;
+        }
+        #lock-panel .lock-title {
+          font-size: 20px;
+        }
+        #lock-panel .lock-close {
+          width: 64px;
+          height: 64px;
+        }
+        #lock-panel .lock-digit {
+          height: 52px;
+          font-size: 44px;
+        }
+        #lock-panel .lock-up,
+        #lock-panel .lock-down {
+          height: 72px;
+        }
+        #lock-panel .lock-row {
+          flex-wrap: nowrap;
+        }
+        #lock-panel .lock-ok {
+          width: 84px;
+          height: 84px;
+        }
+      }
       /* Close-up text panel (GAME-PLAYER §4): cap height ≥ 3 % of the viewport (ADIR-003). */
       /* Reading panels open by themselves and never block walking (GAME-PLAYER §4): only the
          panel box takes input, and it ends above the player (drawn at the screen centre):

@@ -270,3 +270,60 @@ fn aenv_016_l2_landmark_models() {
         }
     }
 }
+
+// CART-032: `golf_cart` (<= 1000 tris, wheel / steering / headlight nodes, driver socket, glow
+// headlights), `parking_sign` (<= 150 tris) and `key_box_open` (no `door` node) exist and load.
+#[test]
+fn cart_032_golf_cart_models() {
+    let cart = load("assets/models/props/golf_cart.glb");
+    let tris = cart.mesh.indices.len() / 3;
+    assert!(tris > 300 && tris <= 1000, "golf_cart: {tris} triangles");
+    let (lo, hi) = cart.mesh.bounds();
+    assert!(lo.y.abs() < 0.02, "golf_cart: origin at the feet");
+    assert!(
+        (1.4..=1.5).contains(&(hi.x - lo.x)) && (1.95..=2.05).contains(&(hi.y - lo.y)),
+        "golf_cart size"
+    );
+    assert!(
+        hi.z - lo.z <= 2.75 && hi.z > 1.2,
+        "golf_cart faces +Z, ~2.6 m long"
+    );
+    for n in [
+        "wheel_fl",
+        "wheel_fr",
+        "wheel_rl",
+        "wheel_rr",
+        "steering_wheel",
+        "headlight_l",
+        "headlight_r",
+    ] {
+        assert!(cart.node_index(n).is_some(), "golf_cart node {n}");
+    }
+    let hub = cart.nodes[cart.node_index("wheel_fl").unwrap()].pivot;
+    assert!(
+        hub.x > 0.5 && hub.z > 0.5,
+        "front-left wheel hub at +X, front +Z"
+    );
+    let seat = cart.empty("socket_driver").expect("socket_driver");
+    assert!(
+        seat.x > 0.0 && (0.4..0.65).contains(&seat.y),
+        "driver on the left seat"
+    );
+    assert!(cart
+        .materials
+        .iter()
+        .any(|m| m.name == "lamp_glow" && m.is_glow()));
+
+    let sign = load("assets/models/props/parking_sign.glb");
+    let tris = sign.mesh.indices.len() / 3;
+    assert!(tris > 20 && tris <= 150, "parking_sign: {tris} triangles");
+    let (lo, hi) = sign.mesh.bounds();
+    assert!(lo.y.abs() < 0.02 && hi.y > 1.3 && hi.z - lo.z <= 0.25);
+
+    let open = load("assets/models/props/key_box_open.glb");
+    assert!(
+        open.node_index("door").is_none(),
+        "key_box_open has no door node"
+    );
+    assert!(open.empty("socket_key").is_some());
+}

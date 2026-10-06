@@ -33,7 +33,9 @@ BUDGET_OVERRIDES = {"moon_door": 1500, "moon_door_open": 1500,
                     # kit_landmarks_play: level landmarks (<= 600, user brief 2026-10-03)
                     "ice_cream_kiosk": 600, "carousel": 600, "playground_slide": 600, "playground_swings": 600,
                     # kit_landmarks_l2: train (7 axle nodes + smoke) and blossom tree (user order 2026-10-04)
-                    "zoo_train": 2200, "blossom_tree": 1800}
+                    "zoo_train": 2200, "blossom_tree": 1800,
+                    # golf cart (GAME-CART, brief: <= 1000) and its parking sign (<= 150)
+                    "golf_cart": 1000, "parking_sign": 150}
 
 # expected extents (x, y = height, z) in metres; None = not checked. Tolerance 0.06 m.
 EXPECTED_SIZES = {
@@ -111,7 +113,10 @@ EXPECTED_SIZES = {
     "desk": (1.2, 0.9, 0.6),
     "note_paper": (0.24, (0.0, 0.01), 0.32),
     "key_box": (0.38, 0.47, 0.2),
+    "key_box_open": (0.48, 0.47, 0.45),
     "cart_key": (0.13, 0.16, (0.0, 0.03)),
+    "golf_cart": ((1.4, 1.5), (1.95, 2.05), (2.55, 2.75)),
+    "parking_sign": (0.46, 1.53, 0.2),
     "garden_gate": (2.24, 1.12, 0.14),
     "glass_door": (1.95, 2.2, 0.14),
     "door_wood": (0.94, 2.1, 0.2),

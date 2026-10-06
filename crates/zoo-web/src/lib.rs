@@ -301,6 +301,15 @@ struct PlantView {
     shown: Option<usize>,
 }
 
+/// The key box models (GAME-CART rule 15): closed box + key, and the open box; the host shows
+/// one state at a time (`shown` = the last one applied).
+struct KeyBoxView {
+    closed: Option<(InstanceHandle, Instance)>,
+    key: Option<(InstanceHandle, Instance)>,
+    open: Option<(InstanceHandle, Instance)>,
+    shown: Option<bool>,
+}
+
 /// Maps a clip name from the game data to a static name the renderer knows (unknown → idle).
 fn static_clip(name: &str) -> &'static str {
     const CLIPS: [&str; 15] = [
@@ -378,6 +387,8 @@ pub struct App {
     map_open: bool,
     /// The telescope view is open (GAME-TELESCOPE, TELE-007): the game does not advance.
     telescope_open: bool,
+    /// The key box lock panel is open (GAME-CART rule 15): the game does not advance.
+    lock_open: bool,
     /// Debug/e2e: the camera looks at this level point instead of the player.
     look_at: Option<Vec2>,
     /// Debug/e2e: ambient animals simulated and drawn (AMB-007 A/B measurement).
@@ -402,6 +413,8 @@ pub struct App {
     building_models: Vec<(String, InstanceHandle, Instance)>,
     /// Garden plants.
     plants: Vec<PlantView>,
+    /// Key box models (closed / open).
+    key_boxes: Vec<KeyBoxView>,
     /// The hand lantern at night (dynamic instance).
     hand_lantern: [Instance; 1],
 }
@@ -721,6 +734,22 @@ impl App {
                 shown: None,
             });
         }
+        let key_boxes: Vec<KeyBoxView> = scene
+            .key_boxes
+            .iter()
+            .map(|kb| {
+                let get = |i: usize| {
+                    let h = handles[i]?;
+                    Some((h, renderer.instance(h)?))
+                };
+                KeyBoxView {
+                    closed: get(kb.closed),
+                    key: get(kb.key),
+                    open: get(kb.open),
+                    shown: None,
+                }
+            })
+            .collect();
         // placeholder geometry of missing models (e.g. the tiled pool rim, `pool_tiled`)
         for f in &scene.fallbacks {
             if renderer.has_model(f.model) {
@@ -1000,6 +1029,7 @@ impl App {
             paused: false,
             map_open: false,
             telescope_open: false,
+            lock_open: false,
             look_at: None,
             ambient_on: true,
             night_regions,
@@ -1014,6 +1044,7 @@ impl App {
             openings,
             building_models,
             plants,
+            key_boxes,
             hand_lantern: [Instance::model(Vec3::ZERO, 0.0, false)],
         };
         app.reset_views();
@@ -1305,6 +1336,78 @@ impl App {
         self.game.settings.reading_level.id().to_owned()
     }
 
+    /// Sets the math level (`mathe1` … `mathe5`, GAME-CART rule 21); returns false for unknown
+    /// ids and changes nothing. The note task and the combination follow at once.
+    pub fn set_math_level(&mut self, id: &str) -> bool {
+        match zoo_core::math::MathLevel::from_id(id) {
+            Some(l) => {
+                self.game.set_math_level(l);
+                true
+            }
+            None => false,
+        }
+    }
+
+    pub fn math_level(&self) -> String {
+        self.game.math_level().id().to_owned()
+    }
+
+    /// The cart key state for the HUD and the host as JSON `{"has_key", "box_open",
+    /// "note_read", "tries", "help", "aid"}` (GAME-CART rules 14/15).
+    pub fn cart_key_json(&self) -> String {
+        let g = &self.game;
+        format!(
+            "{{\"has_key\":{},\"box_open\":{},\"note_read\":{},\"tries\":{},\"help\":{},\"aid\":{}}}",
+            g.has_cart_key,
+            g.key_box_open,
+            g.note_read,
+            g.key_box_tries,
+            g.lock_help(),
+            g.note_aid()
+        )
+    }
+
+    /// Debug/e2e: the id of the cart-key hint candidate of the current stage (`cart-note`,
+    /// `cart-keybox`) or empty (GAME-HINT "Cart key hints", HINT-032); candidates ranks behind
+    /// mission steps, so the 🧭 cycle of the top 3 may not show it.
+    pub fn debug_cart_hint(&self) -> String {
+        zoo_core::hints::candidates(&self.game, &self.hints)
+            .into_iter()
+            .find(|h| {
+                matches!(
+                    h.kind,
+                    zoo_core::hints::HintKind::Note | zoo_core::hints::HintKind::KeyBox
+                )
+            })
+            .map(|h| h.id)
+            .unwrap_or_default()
+    }
+
+    /// Debug/e2e: the key box model drawn now: `open`, `closed` or empty (no key box).
+    pub fn debug_key_box_shown(&self) -> String {
+        match self.key_boxes.first().and_then(|v| v.shown) {
+            Some(true) => "open",
+            Some(false) => "closed",
+            None => "",
+        }
+        .to_owned()
+    }
+
+    /// A code typed at the key box (the three wheels, `0..=999`): `right` (the box opened, the
+    /// key is in the pocket), `wrong` (counts a try, never a lockout), `far` (the player left
+    /// the box) or `none` (no closed box).
+    pub fn enter_code(&mut self, code: u32) -> String {
+        use zoo_core::cart_key::CodeResult;
+        let r = match self.game.enter_code(code) {
+            CodeResult::Right => "right",
+            CodeResult::Wrong { .. } => "wrong",
+            CodeResult::OutOfReach => "far",
+            CodeResult::NoBox => "none",
+        };
+        self.handle_events();
+        r.to_owned()
+    }
+
     /// Default language for a browser language tag (CONT-L10N §5).
     pub fn default_language(tag: &str) -> String {
         zoo_core::content::default_language(tag).id().to_owned()
@@ -1351,6 +1454,12 @@ impl App {
         let Ok(mut game) = Game::from_save(self.game.level.data.clone(), &state) else {
             return false;
         };
+        // the host's settings win, also the math level (GAME-CART "Save": the tries restart
+        // when the level differs, the task being another one)
+        if game.settings.math_level != self.game.settings.math_level {
+            game.key_box_tries = 0;
+            game.note_aid = false;
+        }
         game.settings = self.game.settings;
         self.game = game;
         if let Some(c) = state.camera {
@@ -1855,7 +1964,7 @@ impl App {
         if self.quality.sample(dt) {
             self.apply_quality();
         }
-        let dt = if self.paused || self.map_open || self.telescope_open {
+        let dt = if self.paused || self.map_open || self.telescope_open || self.lock_open {
             0.0
         } else {
             dt.clamp(0.0, 0.1)
@@ -1945,6 +2054,7 @@ impl App {
         }
         self.update_openings(dt);
         self.update_plants();
+        self.update_key_boxes();
 
         // The fish bowl: glass + water (+ the fish inside, drawn with the animals).
         let bowl_base = self.bowl_base(fwd, player);
@@ -2959,6 +3069,27 @@ impl App {
         }
     }
 
+    /// The key box shows the closed box with its key until the right code was entered, then the
+    /// open box without the key (GAME-CART rule 15, CART-022).
+    fn update_key_boxes(&mut self) {
+        let open = self.game.key_box_open;
+        for v in &mut self.key_boxes {
+            if v.shown == Some(open) {
+                continue;
+            }
+            for (part, visible) in [(v.closed, !open), (v.key, !open), (v.open, open)] {
+                if let Some((h, base)) = part {
+                    let mut i = base;
+                    if !visible {
+                        i.scale_fade = [0.0; 4];
+                    }
+                    self.renderer.set_instance(h, i);
+                }
+            }
+            v.shown = Some(open);
+        }
+    }
+
     /// Garden plants show the model of their growth stage (GAME-GARDEN §3).
     fn update_plants(&mut self) {
         for v in &mut self.plants {
@@ -3186,6 +3317,7 @@ impl App {
                     animals: self.game.part_animal_ids(k),
                 })
             }
+            Target::Note { id } => Some(Interaction::Note { id: id.clone() }),
             _ => None,
         }
     }
@@ -3329,7 +3461,59 @@ impl App {
             Interaction::Telescope { id } => {
                 format!("{{\"kind\":\"telescope\",\"id\":{}}}", js(id))
             }
+            Interaction::Note { id } => self.note_json(id),
+            Interaction::KeyBox { id } => format!(
+                "{{\"kind\":\"key_box\",\"key\":{},\"title\":{},\"tries\":{},\"help\":{}}}",
+                js(&format!("key_box:{id}")),
+                js(&self.text_now("cart-lock-title")),
+                self.game.key_box_tries,
+                self.game.lock_help()
+            ),
         }
+    }
+
+    /// The note on the desk (GAME-CART rule 14): title, the task for the child's math level in
+    /// numerals and words, the visual aid once 3 wrong codes were typed, the three empty digit
+    /// boxes. The code itself is never sent.
+    fn note_json(&self, id: &str) -> String {
+        let lang = self.game.settings.language;
+        let rl = self.game.settings.reading_level;
+        let t = self.game.cart_task();
+        let text = self
+            .content
+            .as_ref()
+            .and_then(|c| c.text_args(lang, &t.text_key(rl), &t.text_args(lang)))
+            .unwrap_or_default();
+        let aid = if self.game.note_aid() {
+            use zoo_core::math::MathAid;
+            match t.aid {
+                MathAid::Dots { a, b, minus } => {
+                    format!("{{\"kind\":\"dots\",\"a\":{a},\"b\":{b},\"minus\":{minus}}}")
+                }
+                MathAid::Blocks { rows, cols } => {
+                    format!("{{\"kind\":\"blocks\",\"rows\":{rows},\"cols\":{cols}}}")
+                }
+                MathAid::Groups { groups, per } => {
+                    format!("{{\"kind\":\"groups\",\"groups\":{groups},\"per\":{per}}}")
+                }
+                MathAid::Bar { parts, shaded } => {
+                    format!("{{\"kind\":\"bar\",\"parts\":{parts},\"shaded\":{shaded}}}")
+                }
+            }
+        } else {
+            "null".to_owned()
+        };
+        format!(
+            "{{\"kind\":\"note\",\"key\":{},\"title\":{},\"line\":{},\"text\":{},\"expr\":{},\"digits\":\"☐☐☐\",\"level\":{},\"task_kind\":{},\"pictures\":{},\"aid\":{aid}}}",
+            js(&format!("note:{id}")),
+            js(&self.text_now("cart-note-title")),
+            js(&self.text_now(&format!("cart-note-line-{}", rl.id()))),
+            js(&text),
+            js(&t.expression(lang)),
+            js(t.level.id()),
+            js(t.kind.id()),
+            rl == zoo_core::ReadingLevel::Kiga,
+        )
     }
 
     fn text_now(&self, key: &str) -> String {
@@ -3484,6 +3668,13 @@ impl App {
                     self.outbox.push(format!(
                         "{{\"type\":\"panel_close\",\"key\":{}}}",
                         js(&target_key(&target))
+                    ));
+                }
+                GameEvent::KeyBoxOpened => {
+                    let text = self.text_now("cart-key-got");
+                    self.outbox.push(format!(
+                        "{{\"type\":\"key_box_opened\",\"key\":\"cart-key-got\",\"text\":{}}}",
+                        js(&text)
                     ));
                 }
                 GameEvent::DuskStarted => {
@@ -4263,6 +4454,16 @@ impl App {
         }
     }
 
+    /// The key box lock panel opens / closes: while open the game is paused and the held
+    /// movement keys and the stick are released (GAME-CART rule 15, "input paused").
+    pub fn set_lock_open(&mut self, open: bool) {
+        self.lock_open = open;
+        if open {
+            self.keys = Keys::default();
+            self.stick = Vec2::ZERO;
+        }
+    }
+
     /// The telescope view data (GAME-TELESCOPE): the eight planets with their look and the
     /// Fluent keys (JSON from `zoo_core::telescope::to_json`).
     pub fn telescope_json(&self) -> String {
@@ -4420,6 +4621,8 @@ fn target_key(t: &Target) -> String {
         Target::WelcomeBoard { level } => format!("welcome_board:{level}"),
         Target::Treat { animal } => format!("treat:{animal}"),
         Target::Telescope { id } => format!("telescope:{id}"),
+        Target::Note { id } => format!("note:{id}"),
+        Target::KeyBox { id } => format!("key_box:{id}"),
     }
 }
 

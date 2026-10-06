@@ -6,7 +6,7 @@ module: hints
 status: draft
 depends_on: [GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN]
 test_prefix: HINT
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Next-target hint
@@ -110,8 +110,8 @@ settings gear** shows **one next possible target** and where to walk.
   nearest to the child; none while she is inside the circle.
 - **Optional** (rule 3.4): ripe plants while the basket has room; animals at home that
   like a treat in the basket or their own carried food (at the animal or its fence). Not in the game yet and therefore skipped:
-  events (priority 1, GAME-EVENTS), golf carts and their key box (GAME-CART), the map board
-  (GAME-MAP), ad boards.
+  events (priority 1, GAME-EVENTS), the map board (GAME-MAP), ad boards. The golf-cart
+  key hints (`note` 📝, `keybox` 🔑, priority 4) are specified in "Cart key hints" below (built 2026-10-06).
 - **Never stuck** (HINT-008): if nothing else is useful, the nearest board in scope (read
   again), else the bed, else an open moon door.
 - **Idle nudge** (rule 6): useful actions are the child's interactions (every progress event,
@@ -155,6 +155,8 @@ settings gear** shows **one next possible target** and where to walk.
 | HINT-027 | No hint loops, repeat guard: given an optional hint (priority 4) reached twice (the child stood at its target) while `Game::hint_signature` stayed the same, then it is not a candidate any more until the signature changes (new item in the basket, mission step, new baby, time of day); a follow-the-hints fuzz (end state with food in the hands and treats in the basket, 3 seeds, and messy states, 6 seeds, 400 steps each, `follow_one` loop detector) never shows the same hint id more than 3 times in a row with an unchanged signature (exempt: the bounded dusk wait for the night, the read-again fallback while the "what next" line is shown). | unit |
 | HINT-028 | Given only optional hints left (no mission step, no bed, no moon door), then `what_next` is `all_done` (every mission of every level complete, nothing more to do) or `explore`, the compass badge is that id (🎉 / 🔍), the hint's step line is `next-all_done` / `next-explore` and the compass bubble `night-progress-info-next-<id>-<reading level>` (kiga: pictograms) exists in de and en; with the night zoo still waiting by day the bed is the hint with the line `hint-bed-night-zoo`; with the night zoo finished no moon door hint is offered at night (the bed is). | unit + vitest |
 | HINT-029 | Given level 3 completed (babies and treats given on the way), then every hint during the celebration and dusk is the bed (never the monkeys, never the garden), the bed brings the morning, and on the new day the bed is hinted again with `hint-bed-night-zoo` while the night zoo waits. | unit |
+| HINT-032 | Cart key stages: given a new game, a note read, 3 wrong codes, the note read again and a taken key, then the optional hint is note → key box → note → key box → none; each stage has priority 4, icon 📝/🔑 and the stand cell of the item; after the key was taken no cart hint exists in any state (incl. save/restore). | unit (`tests/hints.rs`) |
+| HINT-033 | Cart hints never block the end and never loop: given every mission of every level complete, then `what_next` is `all_done` / `explore` as without carts and the badge is not 📝/🔑; given an open mission, the first hint has priority <= 3; the follow-the-hints fuzz with cart actions (CART-029) never repeats a hint more than 3 times with an unchanged signature. | unit |
 | HINT-030 | Next level guidance (user report 2026-10-04: "the target says all animals are home – nothing to do"): given the current level is solved and a later level still has unsolved missions, then the 🧭 target never says "all done": while that level is locked the target is the bed (also by day: sleeping always works by day, NIGHT-033, and brings the evening → night → next morning → the exit opens, NIGHT-021), once it is unlocked the target is its nearest unstarted mission step (entrance / board of that level); "all done" (`next-all_done`) only when every level that exists in the game is solved. | unit |
 | HINT-031 | Given `what_next` is `all_done` (all levels solved) and the 🧭 compass is tapped, then the host offers the ad carousel (GAME-ADS rule 12, ADS-032) instead of the info bubble when a verified campaign is loaded, else the usual bubble `night-progress-info-next-all_done-<level>`; any other `next` never opens it. | vitest + e2e |
 | HINT-018 | NEVER STUCK (split pair): given a zebra pair with member 0 at home and member 1 still out (board read or not, several seeds), then the first hint is about the missing zebra (board / food / search area / gate), never only optional garden work, and the compass strip still lists the zebra as not home. | unit |
@@ -222,6 +224,35 @@ is never a loop because the step line is the celebration.
 
 Known gap (not fixed, see Q-353): the stall `help` hint (priority 1) points at the missing animal even
 when the child does not hold its food.
+
+## Cart key hints (GAME-CART rule 16, built 2026-10-06)
+
+Two optional hint kinds, priority 4 (`PRIO_OPTIONAL`), ids `cart-note` (`HintKind::Note`, icon 📝,
+line `hint-cart-note`) at the `note_math_fighter` item's stand cell and `cart-keybox`
+(`HintKind::KeyBox`, icon 🔑, line `hint-cart-keybox`) at the key box's stand cell. They exist only
+while the child has no cart key (`has_cart_key = false`); exactly one is offered:
+
+| State | Hint | Ends when |
+|---|---|---|
+| `key_box_tries >= 3` (3 wrong codes since the note was last read) | note | the note was read (`tries = 0`) |
+| `note_read = false` | note | the note was read (`note_read = true`) |
+| otherwise | key box | the box opens (`has_cart_key`) — then no cart hint ever again |
+
+- `Game::hint_signature` includes `note_read`, `key_box_tries`, `key_box_open`, `has_cart_key`, so every
+  stage change is a state change and the repeat guard (HINT-027) drops a stage the child reached twice
+  without change. A locked-cart tap (GAME-CART rule 13) activates the current stage's marker for 12 s
+  (child-initiated, never automatic).
+- **Ranking and line (as built):** only by day (`phase == Day`, no dusk pending); behind the other optional hints
+  (priority 4: garden, treats; `after_area`), so they appear when nothing better is left; when a cart hint is the shown one, its own line
+  (`hint-cart-note` / `hint-cart-keybox`) is shown instead of the `next-*` line. Debug getter
+  `App::debug_cart_hint()` (e2e) names the current stage even when the top-3 cycle does not show it.
+- **Never the only candidate** while a mission is open (they rank behind every mission step, bed and
+  moon door) and **never blocks the end**: `what_next` / `all_done` / `explore` / the badge ignore
+  cart hints, so the celebration and `next-all_done` are shown even if the child never opens the box;
+  they stay reachable by pressing 🧭 again (cycle of the top 3). The compass strip is unchanged.
+- While seated in a cart the hint works as always; the child gets out at the target (the interact
+  button is the get-out button while seated).
+- **Tests:** HINT-032 (stages), HINT-033 (no block, no loop); the fuzz of CART-029 follows these hints.
 
 ## Open questions
 

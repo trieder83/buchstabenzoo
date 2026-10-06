@@ -136,11 +136,12 @@ fn play_020_availability_sweep_all_boards_and_boxes() {
         .collect();
     // (the 4 garden signs of `garden_veg` are read like boards, GAME-GARDEN 1, GARD-009;
     // 16 food boxes = 10 outside + 6 inside the storage, Q-194 answered 2026-09-29;
-    // the entrance map board is read like a board too, RESC-028)
+    // the entrance map board is read like a board too, RESC-028; the golf-cart note on the desk
+    // and the key box on the facade have a readable side as well, GAME-CART 14/15)
     assert_eq!(
         targets.len(),
-        3 + 16 + 4 + 1,
-        "3 info boards, 16 food boxes, 4 garden signs, 1 welcome board"
+        3 + 16 + 4 + 1 + 2,
+        "3 info boards, 16 food boxes, 4 garden signs, 1 welcome board, the note and the key box"
     );
     let ang = |u: Vec2, v: Vec2| {
         u.normalize()

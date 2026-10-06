@@ -217,6 +217,18 @@ pub struct PlantPlacement {
     pub part: u8,
 }
 
+/// The models of a key box (`[[item]]` of kind `key_box`): placement indices.
+#[derive(Debug, Clone, PartialEq)]
+pub struct KeyBoxPlacement {
+    pub item: String,
+    /// The closed box.
+    pub closed: usize,
+    /// The cart key on its hook (hidden once the key is taken).
+    pub key: usize,
+    /// The open box (shown instead of the closed one once the right code was entered).
+    pub open: usize,
+}
+
 /// Placements merged into one static mesh (static batching, ARCH-008).
 #[derive(Debug, Clone, PartialEq)]
 pub struct BakeGroup {
@@ -637,19 +649,25 @@ impl LevelScene {
                 }
             }
             "key_box" => {
-                // on the facade (origin on the wall face, 1 m above the ground)
+                // on the facade (origin on the wall face, 1 m above the ground); the closed box
+                // with its key and the open box are separate placements the host swaps
+                // (GAME-CART rule 15): never part of a baked mesh
                 let wall = it.pos()
                     - crate::level::facing_vec(it.facing.as_deref().unwrap_or("-z")) * 0.05;
-                let k = self.model_at_y("key_box", wall, KEY_BOX_MOUNT_M, yaw);
-                self.placements[k].part = it.part as u8;
+                let closed = self.model_at_y("key_box", wall, KEY_BOX_MOUNT_M, yaw);
                 let key = wall + model_offset(KEY_BOX_KEY - CART_KEY_RING, yaw);
                 let y = KEY_BOX_MOUNT_M + KEY_BOX_KEY.y - CART_KEY_RING.y;
-                let k = self.model_at_y("cart_key", key, y, yaw);
-                self.placements[k].part = it.part as u8;
-                if let Some(b) = &it.building {
-                    // the box stays shut (the cart key inside): part of the house's mesh
-                    self.bake_into(b, it.part as u8, k - 1..k + 1);
+                let key = self.model_at_y("cart_key", key, y, yaw);
+                let open = self.model_at_y("key_box_open", wall, KEY_BOX_MOUNT_M, yaw);
+                for k in [closed, key, open] {
+                    self.placements[k].part = it.part as u8;
                 }
+                self.key_boxes.push(KeyBoxPlacement {
+                    item: it.id.clone(),
+                    closed,
+                    key,
+                    open,
+                });
             }
             _ => {}
         }

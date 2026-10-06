@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-LEVEL-1, GAME-LEVEL-2, GAME-RESCUE, GAME-NIGHT, CONT-MISSIONS, GAME-PLAYER]
 test_prefix: LAYOUT-L3
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Level 3 — monkey, goldfish, snow fox (adventure playground and stream)
@@ -407,6 +407,18 @@ note texts `event-burglar-note-level_3-<reading_level>`.
 for the group, FAM-029); on the stone step both jump into the pond (two cells apart). The monkeys
 and foxes keep 1 m; their feeding-spot cells are adjacent (1 cell).
 
+## Golf cart (GAME-CART, 2026-10-06)
+
+One `[[cart]]` in `level-3.toml`:
+
+| id | pose (centre, facing) | rect (x, z, w, d) | boarding cell | sign | `locked_until` |
+|---|---|---|---|---|---|
+| `cart_l3` | (15.5, 51.0), `+x` | (14, 50, 3, 2) | (15, 52) on `path_l3_entry` | (13.5, 50.5) | "level_3" |
+
+Grass strip between `path_l3_entry` (z 52…54, stays 3 m free) and the south hedge `hedge_l3_south_b` (z 48…49); the pirate ship, the map board and the garden street are not touched. Spawn (20, 53) is 4.9 m away. The parked cart is a solid box (1.3 × 2.3 m, B(0, 0, 0.65, 1.15))
+that never closes a way (LAYOUT-048) and is never a hint target. The cart needs the cart key (GAME-CART
+rules 12–16) and, from level 2 on, the open level.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -431,6 +443,7 @@ and foxes keep 1 m; their feeding-spot cells are adjacent (1 cell).
 | LAYOUT-L3-016 | Given the approved mockups of the 9 level-3 places, then a reviewer can name the riddle details without text; the stream shows no bridge or ducks; the sprinkler does not look like a fountain; the pirate ship has no slide and no skull. | manual |
 | LAYOUT-L3-017 | Given the `mill_hut` water wheel, then its lowest paddles lie below the `stream_l3` water surface (≥ 0.25 × radius under water) and inside stream cells, the wheel angle advances continuously over time in the flow direction (≈ 60°/s) by day and night, the wheel is not solid for the player, and a foam obstacle lies where the paddles meet the water. | unit |
 | LAYOUT-L3-018 | Given the level-3 review screenshot of `loc_water_wheel`, then the wheel visibly dips into the stream and two frames 0.5 s apart show a different wheel angle. | e2e |
+| LAYOUT-L3-031 | Given `level-3.toml`, then it has exactly the `[[cart]]` `cart_l3` of "Golf cart" (pose, rect, boarding cell on `path_l3_entry`, `locked_until` "level_3"), its rect cells are walkable, overlap no element other than the path, no hiding-place rect, wander area, scenery, garden, event spot or `stand` cell, the boarding cell is reachable from the spawn in <= 10 s and the cart is within 15 m of the spawn (GAME-CART CART-015/016, LAYOUT-048). | unit |
 
 ## Implementation status (M5b, 2026-09-26)
 

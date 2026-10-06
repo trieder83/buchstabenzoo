@@ -349,6 +349,9 @@ pub struct LevelScene {
     pub text_faces: Vec<TextFace>,
     /// Garden plant spots (their model follows the growth stage).
     pub plants: Vec<PlantPlacement>,
+    /// The key box models (closed box + key, and the open box): the host shows the closed
+    /// pair until `Game::key_box_open`, then the open box (GAME-CART rule 15).
+    pub key_boxes: Vec<KeyBoxPlacement>,
     /// Placements that never move, merged into one static mesh each by the renderer (a
     /// garden, a room's furniture; ARCH-008).
     pub bake_groups: Vec<BakeGroup>,

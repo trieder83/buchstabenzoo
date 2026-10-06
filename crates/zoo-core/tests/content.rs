@@ -88,7 +88,13 @@ fn read_002_klasse1_max_5_words_per_sentence() {
     let c = common::content();
     for lang in Language::ALL {
         for key in c.keys(lang).iter().filter(|k| k.ends_with("-klasse1")) {
-            let text = c.text(lang, key).unwrap();
+            // (math word problems have number arguments)
+            let args = [
+                ("a", "3".to_owned()),
+                ("b", "4".to_owned()),
+                ("c", "5".to_owned()),
+            ];
+            let text = c.text_args(lang, key, &args).unwrap();
             for n in sentence_word_counts(&text) {
                 assert!(
                     n <= 5,

@@ -185,6 +185,14 @@ pub enum GameEvent {
     PanelClosed {
         target: Target,
     },
+    /// The golf-cart note was read (GAME-CART rule 14): `key_box_tries` is 0 again.
+    NoteRead,
+    /// A wrong code at the key box; `tries` = wrong codes in a row (GAME-CART rule 15).
+    WrongCode {
+        tries: u8,
+    },
+    /// The key box opened and the cart key is in the pocket (GAME-CART rule 15).
+    KeyBoxOpened,
 }
 
 /// Reading panels open this long after their target became available (GAME-PLAYER §4).
@@ -287,6 +295,16 @@ pub enum Target {
     Telescope {
         id: String,
     },
+    /// The golf-cart note "Math Fighter" on the desk (GAME-CART rule 14): a reading panel
+    /// with the math task. `id` is the `[[item]]` id.
+    Note {
+        id: String,
+    },
+    /// The key box with the combination lock (GAME-CART rule 15): opens the lock panel. Only
+    /// while it is closed. `id` is the `[[item]]` id.
+    KeyBox {
+        id: String,
+    },
 }
 
 /// What the child gives to an animal at home.
@@ -307,6 +325,7 @@ impl Target {
                 | Target::FoodBox { .. }
                 | Target::GardenSign { .. }
                 | Target::WelcomeBoard { .. }
+                | Target::Note { .. }
         )
     }
 
@@ -329,6 +348,8 @@ impl Target {
             Target::WelcomeBoard { .. } => "welcome_board",
             Target::Treat { .. } => "treat",
             Target::Telescope { .. } => "telescope",
+            Target::Note { .. } => "note",
+            Target::KeyBox { .. } => "key_box",
         }
     }
 }
@@ -377,6 +398,10 @@ pub enum Interaction {
     },
     /// Looked through the telescope (GAME-TELESCOPE): the host opens the planet view.
     Telescope { id: String },
+    /// Reading the golf-cart note (GAME-CART rule 14).
+    Note { id: String },
+    /// The key box: the host opens the lock panel (GAME-CART rule 15).
+    KeyBox { id: String },
     /// Gave the carried food to an animal at home (it stays in the hands).
     FoodGift {
         animal: &'static str,
@@ -538,6 +563,8 @@ pub struct Mission {
 pub struct Settings {
     pub reading_level: ReadingLevel,
     pub language: Language,
+    /// Math level (CONT-MATH): drives the golf-cart note task; default `mathe1`.
+    pub math_level: crate::math::MathLevel,
 }
 
 impl Default for Settings {
@@ -545,6 +572,7 @@ impl Default for Settings {
         Self {
             reading_level: ReadingLevel::Klasse1,
             language: Language::De,
+            math_level: crate::math::MathLevel::Mathe1,
         }
     }
 }
@@ -653,6 +681,17 @@ pub struct Game {
     reconcile_s: f32,
     /// Route of the escaped animals that walk to the player once the stall lasts too long.
     stall_routes: Vec<Vec<IVec2>>,
+    /// The golf-cart key is in the pocket (GAME-CART rule 15); saved.
+    pub has_cart_key: bool,
+    /// The key box is open (its key taken); saved.
+    pub key_box_open: bool,
+    /// The note was read at least once; saved.
+    pub note_read: bool,
+    /// Wrong codes in a row since the note was last read (saturating, never a lockout); saved.
+    pub key_box_tries: u8,
+    /// The note shows its visual aid (CONT-MATH rule 5): set by the 3rd wrong code in a row,
+    /// cleared by a new task (math level change); saved.
+    pub note_aid: bool,
 }
 
 /// A building door opens while the player is this close to the door cell (m).
@@ -733,6 +772,7 @@ impl GameEvent {
                 | GameEvent::BabyBorn { .. }
                 | GameEvent::FoodPutBack { .. }
                 | GameEvent::BambooCut { .. }
+                | GameEvent::KeyBoxOpened
         )
     }
 }
@@ -898,6 +938,11 @@ impl Game {
             stall_sig: 0,
             reconcile_s: 0.0,
             stall_routes: Vec::new(),
+            has_cart_key: false,
+            key_box_open: false,
+            note_read: false,
+            key_box_tries: 0,
+            note_aid: false,
             intro_seen: false,
             babies: Vec::new(),
             baby_states: BTreeMap::new(),
@@ -1493,6 +1538,8 @@ impl Game {
                 }
             }
         }
+        // the golf-cart note and the key box (GAME-CART rules 14/15)
+        self.cart_key_interactables(&mut out);
         // vegetable gardens (GAME-GARDEN): ripe plants, the signs
         for sp in &data.plant_spots {
             let ripe = self
@@ -1697,6 +1744,11 @@ impl Game {
                 .go_through_moon_door(&id)
                 .map(|into_night_zoo| Interaction::MoonDoor { into_night_zoo }),
             Target::Telescope { id } => Some(Interaction::Telescope { id }),
+            Target::Note { id } => {
+                self.read_note();
+                Some(Interaction::Note { id })
+            }
+            Target::KeyBox { id } => Some(Interaction::KeyBox { id }),
             Target::Plant { spot } => self.harvest(&spot),
             Target::GardenSign { bed } => {
                 let b = self.level.data.garden_beds.iter().find(|b| b.id == bed)?;
@@ -2422,6 +2474,9 @@ impl Game {
                 // reading the board starts the mission (RESC-012)
                 let _ = self.read_info_board(animal);
             }
+            if matches!(t, Target::Note { .. }) {
+                self.read_note();
+            }
             self.panel.open = Some(t.clone());
             self.events.push(GameEvent::PanelOpened { target: t });
         }
@@ -3134,6 +3189,11 @@ impl Game {
         mix(self.daytime.phase as u64 + 7);
         mix(u64::from(self.daytime.dusk_in.is_some()));
         mix(self.daytime.nightfalls.len() as u64);
+        // the cart-key stages (GAME-HINT "Cart key hints"): every step is a state change
+        mix(u64::from(self.note_read)
+            + 2 * u64::from(self.key_box_open)
+            + 4 * u64::from(self.has_cart_key)
+            + 8 * u64::from(self.key_box_tries));
         h
     }
 

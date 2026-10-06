@@ -6,7 +6,7 @@ module: levels
 status: draft
 depends_on: [GAME-LAYOUT, GAME-RESCUE, CONT-MISSIONS, GAME-PLAYER, GAME-GARDEN, GAME-NIGHT, GAME-CART, GAME-EVENTS]
 test_prefix: LAYOUT-L1
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Level 1 — entrance, zebra, hippo, panda
@@ -852,6 +852,18 @@ male and female 2 cells apart, the hippo's cells 1 m (fence side crowded by `boa
 `hedge_hippo_nw`, Q-282); the gates (2 m / 1–2 cells wide) let a pair in one after the other. The
 walking tables are unchanged (positions of boards and paths did not move).
 
+## Golf cart (GAME-CART, 2026-10-06)
+
+One `[[cart]]` in `level-1.toml`:
+
+| id | pose (centre, facing) | rect (x, z, w, d) | boarding cell | sign | `locked_until` |
+|---|---|---|---|---|---|
+| `cart_l1` | (4.0, 3.5), `+z` | (3, 2, 2, 3) | (2, 3) on `path_plaza` | (5.5, 2.5) | "" |
+
+East edge of the entrance plaza: in the first screen (LAYOUT-L1-011), 4.3 m from the spawn, the plaza stays 9 m wide, the way to the food storage (x −1…1) and to `path_house` (west) is free, the bench `bench_plaza` (x 6…7) and the ad board stand beyond it. Spawn (0, 2) is 4.3 m away. The parked cart is a solid box (1.3 × 2.3 m, B(0, 0, 0.65, 1.15))
+that never closes a way (LAYOUT-048) and is never a hint target. The cart needs the cart key (GAME-CART
+rules 12–16) and, from level 2 on, the open level.
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -894,6 +906,7 @@ walking tables are unchanged (positions of boards and paths did not move).
 | LAYOUT-L1-036 | Given the `[[light]]` list, then every `lantern_post` / string-light end stands on a walkable cell outside every hiding-place `rect`, scenery rect and the garden, ≥ 0.7 m from every food box; every info board and the map board has one `board_lamp` whose `attach` names it; every `attach` id exists. | unit |
 | LAYOUT-L1-037 | Given the `[[event_spot]]` list, then `l1_burglar_hideout` is walkable grass reachable from `l1_burglar_target` with all barriers closed, and overlaps no hiding-place rect, scenery, garden or path. | unit |
 | LAYOUT-L1-032 | Given the approved `env_garden` mockup, then a reviewer sees carrot and potato beds as clearly different from the 55° camera, the soil does not look like `loc_mud` (dry, not glossy), and no rake, butterflies, wildflowers or running water appear. | manual |
+| LAYOUT-L1-045 | Given `level-1.toml`, then it has exactly the `[[cart]]` `cart_l1` of "Golf cart" (pose, rect, boarding cell on `path_plaza`, `locked_until` ""), its rect cells are walkable, overlap no element other than the path, no hiding-place rect, wander area, scenery, garden, event spot or `stand` cell, the boarding cell is reachable from the spawn in <= 10 s and the cart is within 15 m of the spawn (GAME-CART CART-015/016, LAYOUT-048). | unit |
 
 ## Open questions
 

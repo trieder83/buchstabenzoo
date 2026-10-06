@@ -19,7 +19,11 @@ import {
   TREATS,
   VIEW_ICONS,
   STRIP_OPEN_MS,
+  MATH_LEVELS,
+  DEFAULT_MATH_LEVEL,
 } from './ui';
+import { codeOf, turn } from './lock-panel';
+import { countParts } from './math-aid';
 
 class MapStore implements KeyValue {
   m = new Map<string, string>();
@@ -33,8 +37,8 @@ class MapStore implements KeyValue {
 
 describe('settings persistence (CONT-L10N §6)', () => {
   it('defaults to the given default language (always de, CONT-L10N §5) and klasse1', () => {
-    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true });
-    expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true });
+    expect(loadSettings(new MapStore(), 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true, mathLevel: 'mathe1' });
+    expect(loadSettings(null, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true, mathLevel: 'mathe1' });
   });
   it('L10N-005: browser en without stored choice starts in de; a chosen en is kept', () => {
     const s = new MapStore();
@@ -46,10 +50,10 @@ describe('settings persistence (CONT-L10N §6)', () => {
   it('round-trips and ignores invalid values', () => {
     const s = new MapStore();
     saveSettings(s, { language: 'en', readingLevel: 'kiga' });
-    expect(loadSettings(s, 'de')).toEqual({ language: 'en', readingLevel: 'kiga', view: 'zoo', sound: true });
+    expect(loadSettings(s, 'de')).toEqual({ language: 'en', readingLevel: 'kiga', view: 'zoo', sound: true, mathLevel: 'mathe1' });
     s.setItem('zoo.language', 'fr');
     s.setItem('zoo.readingLevel', 'klasse9');
-    expect(loadSettings(s, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true });
+    expect(loadSettings(s, 'de')).toEqual({ language: 'de', readingLevel: 'klasse1', view: 'zoo', sound: true, mathLevel: 'mathe1' });
   });
   it('survives a throwing storage', () => {
     const bad: KeyValue = {
@@ -197,7 +201,7 @@ describe('GAME-HINT overlay data (HINT-007)', () => {
     expect(parseHint('{"kind":"board"}')).toBeNull();
   });
   it('has an icon for every hint kind of rule 2', () => {
-    for (const k of ['board', 'food', 'animal', 'gate', 'garden', 'potato', 'apple', 'orange', 'key_box', 'bed', 'moon_door', 'event', 'pick_up', 'bamboo', 'water', 'treat']) {
+    for (const k of ['board', 'food', 'animal', 'gate', 'garden', 'potato', 'apple', 'orange', 'key_box', 'note', 'keybox', 'bed', 'moon_door', 'event', 'pick_up', 'bamboo', 'water', 'treat']) {
       expect(HINT_ICONS[k], k).toBeTruthy();
     }
   });
@@ -282,5 +286,41 @@ describe('interact button icon of a plant (GARD-026)', () => {
     expect(targetIcon('plant', 'plant:orange_2')).toBe('🍊');
     expect(targetIcon('plant', 'plant:potato_w1')).toBe('🥔');
     expect(targetIcon('plant', 'plant:carrot_w1')).toBe('🥕');
+  });
+});
+
+// CART-030: the math level setting
+describe('math level setting (GAME-CART rule 21, CART-030)', () => {
+  it('has five levels, default mathe1', () => {
+    expect([...MATH_LEVELS]).toEqual(['mathe1', 'mathe2', 'mathe3', 'mathe4', 'mathe5']);
+    expect(DEFAULT_MATH_LEVEL).toBe('mathe1');
+    expect(loadSettings(new MapStore(), 'de').mathLevel).toBe('mathe1');
+  });
+  it('is stored as zoo.mathLevel and unknown values are ignored', () => {
+    const s = new MapStore();
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', mathLevel: 'mathe4' });
+    expect(s.getItem('zoo.mathLevel')).toBe('mathe4');
+    expect(loadSettings(s, 'de').mathLevel).toBe('mathe4');
+    s.setItem('zoo.mathLevel', 'mathe9');
+    expect(loadSettings(s, 'de').mathLevel).toBe('mathe1');
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', mathLevel: 'mathe2' });
+    saveSettings(s, { language: 'de', readingLevel: 'klasse1', mathLevel: 'mathe7' });
+    expect(s.getItem('zoo.mathLevel')).toBe('mathe2'); // an unknown level is never stored
+  });
+});
+
+describe('key box lock panel maths (CART-014)', () => {
+  it('turns the wheels with wrap-around and composes the code', () => {
+    expect(turn(9, 1)).toBe(0);
+    expect(turn(0, -1)).toBe(9);
+    expect(turn(4, 1)).toBe(5);
+    expect(codeOf([0, 0, 5])).toBe(5);
+    expect(codeOf([9, 9, 9])).toBe(999);
+    expect(codeOf([1, 2, 0])).toBe(120);
+  });
+  it('shows numbers above 20 as tens-rods and dots (visual aid)', () => {
+    expect(countParts(7)).toEqual({ rods: 0, dots: 7 });
+    expect(countParts(20)).toEqual({ rods: 0, dots: 20 });
+    expect(countParts(47)).toEqual({ rods: 4, dots: 7 });
   });
 });

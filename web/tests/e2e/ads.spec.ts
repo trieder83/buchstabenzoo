@@ -106,7 +106,7 @@ test('ADS-003 ADS-004 placeholders (no manifest available): every board has its 
   await page.route('**/ads/**', (r) => r.abort());
   await start(page);
   const list = await boards(page);
-  expect(list.length).toBe(12); // 4 per level (ADS-001)
+  expect(list.length).toBe(18); // 4 per day level + 3 per night level (ADS-001)
   const slots = [1, 2, 3].map((s) => list.filter((b) => b.slot === s).length);
   expect(Math.min(...slots)).toBeGreaterThanOrEqual(2); // ADS-002
   await waitFrames(page, 8);

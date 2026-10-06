@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS]
 test_prefix: ADS
-updated: 2026-10-04
+updated: 2026-10-06
 ---
 
 # Ad billboards (in-world)
@@ -26,19 +26,42 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 
 ## Behaviour
 
-1. **Boards:** 4–6 per level (implemented: 4 per level, 12 in the joined zoo), free-standing
-   on open grass beside the main paths, **facing south** (the camera side). Level data
-   `[[ad_board]]` (`id`, `pos` = board centre, `facing`): a wooden frame on two posts, picture
+1. **Boards:** every level has boards of **all three campaign slots** (user request 2026-10-06:
+   "1 of each of the 3 ad groups in every level"). Day levels `level_1…3`: 4 boards each (12 in the
+   three day levels), `variant = "post"`: free-standing on open grass beside the main paths, **facing
+   south** (the camera side). Night levels `night_1`, `night_2`: **exactly 3 boards each**, one per slot,
+   by default `variant = "poster"`, at most one `flyer` (rule 1a). Level data `[[ad_board]]` (`id`, `pos` = board centre,
+   `facing`, `variant`, default `post`). A post board is a wooden frame on two posts, picture
    2.4 × 1.2 m, footprint 2.6 × 0.3 m, solid (GAME-PLAYER 9). Never on enclosures, info boards,
    the entrance welcome board, hiding places (overlay rects), scenery, gardens, where they
    would block a riddle's sight line or within 4 m of an info board / 4 m of a food box / 5 m
-   of a gate or door (LAYOUT-032…039 keep holding); never inside the night house. Boards on
-   building walls are not implemented (Q-244). The positions were chosen under these rules by
-   the implementer and need a review by `zoo-level-designer`.
-2. **Campaigns and slots:** at most **3 campaign slots**; a session seed assigns every board
-   one slot (`zoo_core::ads::assign_slots`: shuffle by seed + board ids, dealt round-robin over
-   the joined zoo) so that every slot is on ≥ 2 boards (ADS-002) and another seed gives another
-   assignment (ADS-005). What a slot shows is decided by the host (rule 3/7).
+   of a gate or door (LAYOUT-032…039 keep holding); never inside the night house or the terrarium
+   house hall. Boards on building walls of the day levels are not implemented (Q-244); the night
+   levels use posters instead. The positions were chosen under these rules by the implementer and
+   need a review by `zoo-level-designer`.
+1a. **Variants** (user request 2026-10-06; Q-377):
+   - `post`: the free-standing sign above (day levels; one in `night_1`).
+   - `poster`: a **framed poster mounted flat on a wall face** (building facade, hedge): picture
+     2.0 × 1.0 m (same 2 : 1 texture, same host pipeline, same placeholder texts), frame 0.06 m,
+     0.05 m deep, lower edge 0.9 m above the ground. `pos` is the centre **on the wall face**
+     (the plane of the wall), `facing` the outward normal; it has **no footprint of its own** (the wall
+     is solid) and no posts. A night poster gets a small **board lamp** (the wall-board socket of the
+     info boards) that lights it softly (rule 5). Placement: only `facing = "-z"` (the camera side;
+     a poster facing east or west is edge-on to the ~55° camera), the cell behind the poster's whole
+     width is solid and the stand area in front (2 m wide, 3 m deep) is open walkable ground
+     without tree canopy (nothing that blocks the view to the poster); not over a door, window,
+     info board or lamp, and the same clearances as a post board (≥ 4 m to an info board / food box,
+     ≥ 4 m to a gate or door (no footprint, so no walkway is needed; post boards keep 5 m), not on hiding
+     places or scenery).
+   - `flyer` (user request 2026-10-06): a **paper flyer lying flat on the ground** (picture
+     1.2 × 0.6 m, cream sheet 2.5 cm thick, top edge to the north so the ~55° camera from the south
+     reads it upright). `pos` = centre. Not solid (no collider, walk over it); read from **any side**
+     within 2.5 m (it has no front). It stands on open **grass** (walkable, not a path cell), keeps
+     the post board's clearances (≥ 4 m to info boards and food boxes, 4 m to gates/doors, not on
+     hiding places, scenery, gardens, lamps) so a free stand area is next to it. **At most one flyer
+     per night level**; the other boards of that level are posters (or posts). Used once in `night_1` and once in `night_2`.
+   - Reading range, panel, 🔗 button, parental gate and carousel are **identical** for all variants
+     (rule 10, ADS-007).
 3. **Placeholders:** a slot without a verified campaign shows `ad-placeholder-1/2/3` =
    "Deine Werbung 1/2/3" / "Your ad 1/2/3" (Fluent, big lettering on a cream board, drawn by the
    host's text-texture path like the "Futter" sign). They are passive (rule 4) and are what the
@@ -51,7 +74,8 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
    (`klasse1+`) and a link button; the link opens only after the parental gate (rule 8). Content
    rules: age-appropriate, no food/sweets marketing to children, no gambling, no in-app purchase
    hints (to be confirmed legally).
-5. At night the boards are lit softly like the other signs (GAME-NIGHT, category b).
+5. At night the boards are lit softly like the other signs (GAME-NIGHT, category b): the picture
+   shows in warm lamp light, and every night poster has its own small board lamp.
 6. **First campaigns** (Q-128 answered, user 2026-09-27): own cross-promotion (Math Fighter, ABC
    Smash, EduGameGalaxy); a legal/child-safety check is required before any third-party ad.
 
@@ -153,8 +177,11 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| ADS-001 | Given a level, then it has 4–6 ad boards with unique ids, none on enclosures, info boards (≥ 4 m), hiding places, scenery, gardens, within 4 m of a food box, 5 m of a gate/door, or on a path/solid cell (LAYOUT-L*-006, -032…039 still hold). | unit |
-| ADS-002 | Given the joined zoo and any seed, then every one of the 3 slots is on ≥ 2 boards and all boards have a slot. | unit |
+| ADS-001 | Given a day level, then it has 4 `post` boards (night level: exactly 3 boards, rule 1) with unique ids, none on enclosures, info boards (≥ 4 m), hiding places, scenery, gardens, within 4 m of a food box, 5 m of a gate/door, or on a path/solid cell (LAYOUT-L*-006, -032…039 still hold). The whole game (5 levels) has 18 boards. | unit |
+| ADS-002 | Given the whole game and any seed, then **in every level** (`level_1`, `level_2`, `level_3`, `night_1`, `night_2`) each of the 3 slots is on ≥ 1 board (night levels: exactly one each), all boards have a slot, and every slot is on ≥ 2 boards over the zoo. | unit |
+| ADS-035 | Given a `poster` board (night levels), then it faces `-z`, its whole width has a solid cell behind it and open walkable ground (grass or path, no tree canopy) in the 2 × 3 m area in front, it is ≥ 4 m from info boards and food boxes, ≥ 4 m from gates/doors, not inside a hiding place / scenery / garden rect, not inside the night house or the terrarium house hall; its geometry adds no collider; the scene has a board lamp for it at night; `near_board` finds it from the front only. | unit |
+| ADS-037 | Given a `flyer` board, then the scene adds no collider, its picture decal faces up (normal +y), the cells under it are open grass, and `near_board` finds it from every side within 2.5 m (not from 3 m); a night level has at most one flyer. | unit |
+| ADS-036 | Given `night_1` or `night_2` in the browser at night, then the level has 3 boards with the slots 1, 2, 3, each shows its picture (placeholder text or verified campaign), standing in front of it opens the panel / gate behaviour exactly like a day board (✔ guard, 🔗 button), and the screenshot from the game camera shows the lit, readable poster. | e2e |
 | ADS-003 | Given no campaign is loaded (or a slot's campaign is not delivered), then every board has its picture texture and the placeholders read "Deine Werbung 1/2/3" (de) / "Your ad 1/2/3" (en) from Fluent. | e2e |
 | ADS-004 | Given an ad board whose slot has no verified campaign (or any board without a verified own campaign), then it is not interactable (no panel, no interact target) and the game makes no network request for ads — in the release build (no key compiled) no request at all. | e2e |
 | ADS-005 | Given two play sessions with different seeds, then the slot-to-board assignment differs; with the same seed (and any order of the data) it is identical. | unit |
@@ -195,6 +222,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 - Q-240 signature scheme and key custody, Q-241 compiled campaign ids / link hosts, Q-242 gate
   difficulty, Q-243 caching / offline / Capacitor origin, Q-244 board placement and review,
   Q-245 test-key hook, Q-246 taglines from the manifest (not Fluent), Q-247 panel behaviour.
+- Q-377 night-level boards (posters, 3 per night level, per-level slot deal): implemented as recommended; open for the user.
 - Q-364 all-done carousel (rule 12): implemented as recommended; open for the user.
 - Q-128 answered 2026-09-27: passive boards only (no links, no tracking, no network), own
   cross-promotion first, legal/child-safety check before any third-party ad (rules 4, 6).

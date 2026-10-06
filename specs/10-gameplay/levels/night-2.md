@@ -188,6 +188,12 @@ Grid rect = `x, z, w, d`. Solid = every type except `path`. The table mirrors th
 | `vine_arch_n2` | decoration (vine_arch) | −76, 16, 2, 2 | Wooden gate arch overgrown with green creepers, pink flowers, a crossbar (loc_vine_arch). |
 | `rain_barrel_n2` | decoration (rain_barrel) | −110, 48, 2, 2 | Big wooden barrel with iron rings under a small eave and drain pipe; drips (loc_rain_barrel). |
 
+- `ad_n2_house` — flyer at (-76.5, 36.0): paper flyer on the grass in front of the east end of the terrarium house (the level's one flyer; a wall poster there would sit behind a lit window).
+- `ad_n2_hut` — poster at (-90.9, 26.0): Poster on the south wall of `food_storage_n2`; own board lamp.
+- `ad_n2_nw` — poster at (-113.5, 52.0): Poster on the south face of `hedge_n2_north`, north-west corner; own board lamp.
+
+**Ad boards** — `[[ad_board]]` entries (GAME-ADS rule 1/1a, ADS-001/002/035/037): exactly 3 boards, one per campaign slot (dealt per level by the session seed), not grid elements, so no solid cell of their own.
+
 ## Scenery (non-solid `[[scenery]]` entries of the hiding places)
 
 Walkable ground dressing a riddle relies on; not elements (LAYOUT-N2-004 checks them against `[[scenery]]`).

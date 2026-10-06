@@ -30,6 +30,35 @@ pub const READ_MIN_M: f32 = 0.3;
 /// How far beside the board's centre the player may stand (m).
 pub const READ_SIDE_M: f32 = 3.0;
 
+/// Poster variant (GAME-ADS rule 1a): a framed picture flat on a wall face. Picture size (m),
+/// frame width, depth and the height of the lower frame edge above the ground.
+pub const POSTER_PICTURE_M: Vec2 = Vec2::new(2.0, 1.0);
+pub const POSTER_FRAME_M: f32 = 0.06;
+pub const POSTER_DEPTH_M: f32 = 0.05;
+pub const POSTER_BOTTOM_M: f32 = 0.9;
+
+/// Flyer variant (GAME-ADS rule 1a): a paper flyer lying flat on the ground. Picture size (m),
+/// paper thickness and the height of its top face above the ground surface (m).
+pub const FLYER_PICTURE_M: Vec2 = Vec2::new(1.2, 0.6);
+pub const FLYER_PAPER_M: f32 = 0.025;
+pub const FLYER_BASE_M: f32 = 0.045;
+/// A flyer is read from any side within this distance (m); it is not solid.
+pub const FLYER_READ_M: f32 = 2.5;
+
+/// Look of an ad board (`variant` in the level data, GAME-ADS rule 1a).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AdVariant {
+    /// Free-standing sign on two posts (default, day levels).
+    #[default]
+    Post,
+    /// Framed poster mounted flat on a wall / hedge face (night levels).
+    Poster,
+    /// Paper flyer lying on the ground (not solid, read from any side; at most one per night
+    /// level).
+    Flyer,
+}
+
 /// One ad board (`[[ad_board]]` in a level file, GAME-ADS rule 1).
 #[derive(Debug, Clone, Deserialize)]
 pub struct AdBoardData {
@@ -39,6 +68,9 @@ pub struct AdBoardData {
     /// The side the picture faces and is read from (`+x`, `-x`, `+z`, `-z`).
     #[serde(default = "south")]
     pub facing: String,
+    /// `post` (default) or `poster` (on a wall face; `pos` is then on the wall plane).
+    #[serde(default)]
+    pub variant: AdVariant,
     #[serde(skip)]
     pub part: usize,
 }
@@ -57,9 +89,21 @@ impl AdBoardData {
         facing_vec(&self.facing)
     }
 
-    /// The grid cells under the footprint (for layout tests and the level designer).
+    /// The grid cells under the footprint (for layout tests and the level designer). A poster
+    /// hangs on a wall and has no footprint of its own (only its thin plate).
     pub fn footprint_half(&self) -> Vec2 {
         let f = self.facing();
+        if self.variant == AdVariant::Flyer {
+            return FLYER_PICTURE_M / 2.0;
+        }
+        if self.variant == AdVariant::Poster {
+            let w = POSTER_PICTURE_M.x + 2.0 * POSTER_FRAME_M;
+            return if f.x.abs() > 0.5 {
+                Vec2::new(POSTER_DEPTH_M, w) / 2.0
+            } else {
+                Vec2::new(w, POSTER_DEPTH_M) / 2.0
+            };
+        }
         if f.x.abs() > 0.5 {
             Vec2::new(FOOTPRINT_M.y, FOOTPRINT_M.x) / 2.0
         } else {
@@ -94,6 +138,23 @@ pub fn assign_slots(ids: &[&str], seed: u64) -> Vec<u8> {
     out
 }
 
+/// Like [`assign_slots`], but dealt **per level** (`parts[i]` = level index of board `i`): every
+/// level gets all slots when it has ≥ 3 boards, a 3-board level exactly one each (ADS-002).
+pub fn assign_slots_by_level(ids: &[&str], parts: &[usize], seed: u64) -> Vec<u8> {
+    let mut out = vec![0u8; ids.len()];
+    let mut levels: Vec<usize> = parts.to_vec();
+    levels.sort_unstable();
+    levels.dedup();
+    for level in levels {
+        let idx: Vec<usize> = (0..ids.len()).filter(|&i| parts[i] == level).collect();
+        let sub: Vec<&str> = idx.iter().map(|&i| ids[i]).collect();
+        for (&i, slot) in idx.iter().zip(assign_slots(&sub, seed)) {
+            out[i] = slot;
+        }
+    }
+    out
+}
+
 /// Index of the board the player at `p` stands in front of (inside the reading range, in front
 /// of the picture), the nearest one; `None` when there is none (ADS-007).
 pub fn near_board(boards: &[AdBoardData], p: Vec2) -> Option<usize> {
@@ -101,6 +162,13 @@ pub fn near_board(boards: &[AdBoardData], p: Vec2) -> Option<usize> {
     for (i, b) in boards.iter().enumerate() {
         let f = b.facing();
         let d = p - b.pos();
+        if b.variant == AdVariant::Flyer {
+            let dist = d.length();
+            if dist <= FLYER_READ_M && best.is_none_or(|(_, bd)| dist < bd) {
+                best = Some((i, dist));
+            }
+            continue;
+        }
         let front = d.dot(f);
         let side = d.dot(Vec2::new(-f.y, f.x)).abs();
         let dist = d.length();

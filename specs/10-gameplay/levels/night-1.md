@@ -202,6 +202,12 @@ Grid rect = `x, z, w, d` in 1 m cells (south-west corner + size). Solid = every 
 | `hill_n1` | landmark (hill) | -69, 42, 3, 3 | Small round grassy hill (2 m) with one big round stone on top, no trees — the brightest moonlit spot of the garden (loc_hilltop). |
 | `fir_n1` | decoration (fir_tree) | -62, 48, 2, 2 | The one tall dark pointed fir tree in the north-west corner, with cones (loc_fir). The only fir in the zoo. |
 
+- `ad_n1_hut` — poster at (-42.9, 26.0): Framed poster flat on the south wall of `food_storage_n1`, facing -z; own board lamp. GAME-ADS rule 1a.
+- `ad_n1_nw` — poster at (-67.0, 52.0): Poster on the south face of `hedge_n1_north` in the north-west corner (open grass in front); own board lamp.
+- `ad_n1_lawn` — flyer at (-32.5, 20.5): Paper flyer lying on the grass lawn east of `path_n1_s_link` (the level's one flyer, not solid, read from any side within 2.5 m).
+
+**Ad boards** — `[[ad_board]]` entries (GAME-ADS rule 1/1a, ADS-001/002/035/037): exactly 3 boards, one per campaign slot (dealt per level by the session seed), not grid elements, so no solid cell of their own.
+
 ## Secret trail (user request 2026-10-04, Q-365)
 
 A **hidden path** winds through the middle grove from the north ring to the south ring — a

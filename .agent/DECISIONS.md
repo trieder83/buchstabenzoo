@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-377** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-378** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-160 answered · 103 open · 10 other (partly answered / proposed / superseded).
+160 answered · 104 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -107,6 +107,7 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-372 — Golf-cart driving rules (decided defaults in GAME-CART): (a) no reversing — the stick pulled back turns the cart on the spot; (b) get-out … (GAME-CART, GAME-LAYOUT (LAYOUT-048))
 - Q-373 — Cart-note task range: the lock has 3 digits so results are 1…999, which caps mathe4/mathe5 tasks (no 6-digit products, decimals only as … (GAME-CART, CONT-MATH)
 - Q-374 — Cart-key hints (built 2026-10-06): they rank behind every other optional hint (garden, treats) and exist only by day, so a child who always … (GAME-HINT, GAME-CART)
+- Q-377 — Ad boards in the night levels (user request 2026-10-06): every level shows all three campaign slots; night levels get 3 boards each as … (GAME-ADS)
 - Q-376 — Should the animals at home use the socket_perch_* points of the chameleon's terrarium_branch / terrarium_tree (the chameleon sits on a … (GAME-LEVEL-NIGHT-2, GAME-ANIMALS)
 - Q-365 — Secret trail through the middle grove of night_1 (user request 2026-10-04: "a hidden path to walk through, maybe an animal hiding spot"). (GAME-LEVEL-NIGHT-1, GAME-LAYOUT)
 

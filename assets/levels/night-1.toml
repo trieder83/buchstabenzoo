@@ -850,6 +850,29 @@ pos = [-29.5, 32.0]
 facing = "+x"
 attach = "map_board_n1"
 
+# ================================================================ ad boards (GAME-ADS rule 1/1a, user request 2026-10-06)
+# Night levels: exactly 3 boards (one per campaign slot, dealt per level). `poster` = framed picture
+# flat on a wall face (pos on the wall plane, facing = outward normal, only -z = the camera side);
+# `flyer` = paper flyer lying on the grass (at most one per night level);
+# `post` = free-standing sign on grass. Each poster has an automatic small board lamp.
+[[ad_board]]
+id = "ad_n1_hut"
+pos = [-42.9, 26.0]
+facing = "-z"
+variant = "poster"
+
+[[ad_board]]
+id = "ad_n1_nw"
+pos = [-67.0, 52.0]
+facing = "-z"
+variant = "poster"
+
+[[ad_board]]
+id = "ad_n1_lawn"
+pos = [-32.5, 20.5]
+facing = "-z"
+variant = "flyer"
+
 # ================================================================ burglar event: none in night levels
 # GAME-EVENTS rule 4: burglars come only to unlocked DAY levels at night (see level-1/2/3
 # [[event_spot]]).

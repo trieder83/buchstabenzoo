@@ -84,6 +84,7 @@ test('LAYOUT-N2-013: the terrarium hall renders and a led pair is home behind th
 });
 
 test('LAYOUT-N2-023: the round terrarium house shows its pictograms (outside and in the hall)', async ({ page }) => {
+  test.setTimeout(300_000); // software GL: ~2 min under load
   const errors = await start(page);
   await toOpenGate(page);
   await page.evaluate(() => window.__zoo!.app.debug_teleport(-76.5, 25.5));

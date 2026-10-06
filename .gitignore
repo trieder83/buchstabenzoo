@@ -64,3 +64,9 @@ firebase-debug.log
 *.key
 !web/tests/fixtures/ads/TEST-ONLY-*.key
 *.pem
+out/
+# heavy marketing masters stay local (not in git history)
+art/marketing/screens/*_3840x2160.png
+art/marketing/screens/*_2160x3840.png
+art/marketing/screens/*.mp4
+art/marketing/screens/*.webm

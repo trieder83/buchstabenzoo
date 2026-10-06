@@ -95,6 +95,22 @@ impl NightScene {
                 .iter()
                 .any(|l| l.kind == kind && l.attach.as_deref() == Some(id))
         };
+        // every wall poster of the ad boards gets a small board lamp (GAME-ADS rule 5)
+        for b in data
+            .ad_boards
+            .iter()
+            .filter(|b| b.variant == crate::ads::AdVariant::Poster)
+        {
+            s.board_lamp(
+                &b.id,
+                b.pos(),
+                facing_yaw(Dir::from_vec(b.facing())),
+                // clip in the top-left corner so its shade does not cover the lettering
+                Vec3::new(-0.8, 1.98, 0.16),
+                default_radius("board_lamp") * 1.4,
+                b.part as u8,
+            );
+        }
         for e in &data.elements {
             let part = e.part as u8;
             let kind = e.kind.as_deref().unwrap_or("");

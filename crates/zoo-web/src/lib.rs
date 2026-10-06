@@ -1752,7 +1752,8 @@ impl App {
     pub fn ad_boards_json(&self) -> String {
         let boards = &self.game.level.data.ad_boards;
         let ids: Vec<&str> = boards.iter().map(|b| b.id.as_str()).collect();
-        let slots = zoo_core::ads::assign_slots(&ids, self.game.to_save().seed);
+        let parts: Vec<usize> = boards.iter().map(|b| b.part).collect();
+        let slots = zoo_core::ads::assign_slots_by_level(&ids, &parts, self.game.to_save().seed);
         let mut count = [0u32; zoo_core::ads::SLOTS];
         let rows: Vec<String> = boards
             .iter()
@@ -1761,9 +1762,14 @@ impl App {
                 let n = count[slot as usize];
                 count[slot as usize] += 1;
                 format!(
-                    "{{\"id\":{},\"slot\":{},\"n\":{n},\"w\":{},\"h\":{},\"x\":{},\"z\":{},\"fx\":{},\"fz\":{}}}",
+                    "{{\"id\":{},\"slot\":{},\"n\":{n},\"variant\":\"{}\",\"w\":{},\"h\":{},\"x\":{},\"z\":{},\"fx\":{},\"fz\":{}}}",
                     js(&b.id),
                     slot + 1,
+                    match b.variant {
+                        zoo_core::ads::AdVariant::Post => "post",
+                        zoo_core::ads::AdVariant::Poster => "poster",
+                        zoo_core::ads::AdVariant::Flyer => "flyer",
+                    },
                     zoo_core::ads::TEXTURE_PX.0,
                     zoo_core::ads::TEXTURE_PX.1,
                     b.pos[0],

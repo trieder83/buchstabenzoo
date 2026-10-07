@@ -26,23 +26,33 @@ ITCH_TARGET=edugamegalaxy/letter-zoo:html5 scripts/itch-build.sh --push
 ```
 Never ask for / store the itch API key; `butler login` is done by the user (`! butler login`).
 
-## 2b. Browser upload (no butler)
-Claude in Chrome cannot use the native file dialog, so capture the file input:
-1. `tabs_context_mcp`, `navigate` to `https://itch.io/game/edit/5113050` (the `*.itch.io` subdomains are blocked for the browser tool; use itch.io/…).
-2. `javascript_tool`: hook the click so the input lands in the DOM:
+## 2b. Browser upload (no butler) — recipe that worked on 2026-10-07
+Claude in Chrome cannot use the native file dialog (clicking an upload button can freeze the tab until the
+user closes a native picker — never click an upload button without the hook below). Feed files from a local server instead:
+1. Serve the zip with CORS on localhost, e.g. `python3 cors.py` (ThreadingTCPServer, `Access-Control-Allow-Origin: *`,
+   `Access-Control-Allow-Private-Network: true`) in a temp dir holding `game.zip`; Chrome may ask the user once to
+   allow local-network access ("Allow") — ask them to click it.
+2. `tabs_context_mcp` (create a tab), `navigate` to `https://itch.io/game/edit/5113050` (*.itch.io subdomains are blocked for the browser tool).
+3. `javascript_tool`: install the hook BEFORE clicking, so the file input is captured instead of opening a dialog:
    ```js
-   const o = HTMLInputElement.prototype.click;
-   HTMLInputElement.prototype.click = function () {
-     if (this.type === 'file') { this.id = 'captured_file'; this.style.cssText='position:fixed;left:0;top:0;width:10px;height:10px;opacity:.01;z-index:99999'; document.body.appendChild(this); return; }
-     return o.call(this);
-   };
+   window.__log = []; const oc = HTMLInputElement.prototype.click;
+   HTMLInputElement.prototype.click = function () { if (this.type === 'file') { window.__log.push('click'); this.id = 'cap_file_' + window.__log.length; this.style.cssText = 'position:fixed;left:0;top:0;width:10px;height:10px;opacity:.01;z-index:99999'; if (!this.isConnected) document.body.appendChild(this); return; } return oc.call(this); };
+   window.addEventListener('click', e => { const t = e.target; if (t && t.tagName === 'INPUT' && t.type === 'file') e.preventDefault(); }, true);
    ```
-3. `find` the **Upload files** button, click it (ref click), then `find`/`read_page` the file input (a `type=file` button ref) and `file_upload` the zip. **The upload tool limit is 10 MB** — if the zip is larger, use butler or ask the user to drag it in.
-4. Wait for the upload bar, tick **"This file will be played in the browser"** on the new file, delete the previous zip entry, click **Save**.
-5. Check the page (View page works only on itch.io links; ask the user to test play in a normal browser: sound, touch, fullscreen).
+4. Click **Upload files** with a real click (coordinates; check `window.__log`/`input[type=file]` appeared). Then set the file from the local server and fire `change`:
+   ```js
+   const inp = document.getElementById('cap_file_1'); const b = await (await fetch('http://127.0.0.1:4191/game.zip')).blob();
+   const dt = new DataTransfer(); dt.items.add(new File([b], 'letter-zoo-html5.zip', {type: 'application/zip'}));
+   inp.files = dt.files; inp.dispatchEvent(new Event('change', {bubbles: true}));
+   ```
+   (The tool's `file_upload` did not work here: the captured input is not in the accessibility tree.) Same for **Add screenshots** / **Replace Cover Image**.
+5. After "Success": delete the previous zip row, tick `input[name$="[embed]"]` ("This file will be played in the browser"), click **Save**; reload the edit page to verify.
+6. Verify with `curl -s https://edugamegalaxy.itch.io/letter-zoo` (public page). Test play in a normal browser (the browser tool cannot open the subdomain).
 
-Cover, screenshots, tags and description are edited the same way on the edit page
-(`art/marketing/covers/…`, `art/marketing/screens/…`; cover currently `cover_3_reading_square.png`).
+### YouTube trailer (same trick)
+Studio → Create → Upload videos: the dialog already has a file input (inside shadow DOM); fetch the mp4 from the local server and set it
+as above. Replace the channel's default title/description (it is pre-filled with Math Fighter text), answer "made for kids" truthfully,
+Visibility → Public → Publish, then like it. Paste the watch URL into the itch "Gameplay video or trailer" field.
 
 ## Notes
 - The build is static (`base: './'`), runs inside the itch iframe; the signed ads (`ads/`) and the

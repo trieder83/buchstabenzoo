@@ -70,3 +70,4 @@ art/marketing/screens/*_3840x2160.png
 art/marketing/screens/*_2160x3840.png
 art/marketing/screens/*.mp4
 art/marketing/screens/*.webm
+__pycache__/

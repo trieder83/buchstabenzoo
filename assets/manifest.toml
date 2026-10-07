@@ -1245,6 +1245,149 @@ script = "tools/sound/ui.py"
 approved = false
 
 [[asset]]
+id = "cart_board"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/cart_board_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "cart_get_out"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/cart_get_out_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "cart_horn"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/cart_horn_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "cart_bump"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 2
+files = "assets/audio/cart/cart_bump_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "cart_locked"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/cart_locked_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "cart_park_refuse"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/cart_park_refuse_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "key_box_open"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/key_box_open_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "key_pickup"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/key_pickup_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "lock_wheel_tick"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 3
+files = "assets/audio/cart/lock_wheel_tick_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "lock_wrong"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/lock_wrong_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
+id = "lock_ok"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "cart"
+variants = 1
+files = "assets/audio/cart/lock_ok_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+approved = false
+
+[[asset]]
 id = "step_path"
 kind = "audio"
 spec = "ART-SOUND"
@@ -2143,5 +2286,33 @@ retrieved = "2026-10-01"
 script = "tools/sound/crickets.py"
 note = "seamless 21.8 s night loop (ambient, ASND-020), -22 LUFS, plays at gain <= 0.05"
 approved = true
+
+[[asset]]
+id = "cart_engine_path"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "engine"
+variants = 1
+files = "assets/audio/engine/cart_engine_path_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+note = "seamless 2.0 s engine loop (ASND-030), -22 LUFS, plays at gain <= 0.28 with pitch rate 0.75-1.30"
+approved = false
+
+[[asset]]
+id = "cart_engine_grass"
+kind = "audio"
+spec = "ART-SOUND"
+concept_approved = false
+group = "engine"
+variants = 1
+files = "assets/audio/engine/cart_engine_grass_<n>.ogg"
+licence = "own"
+source = "synthesised"
+script = "tools/sound/cart_sounds.py"
+note = "seamless 2.0 s engine loop (ASND-030), -22 LUFS, plays at gain <= 0.28 with pitch rate 0.75-1.30"
+approved = false
 
 # END audio

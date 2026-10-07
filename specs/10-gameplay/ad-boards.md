@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS]
 test_prefix: ADS
-updated: 2026-10-06
+updated: 2026-10-07
 ---
 
 # Ad billboards (in-world)
@@ -109,9 +109,11 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
      header = declared (64…2048 px), **SHA-256 equal to the signed value**, browser decode
      gives the same dimensions (ADS-012/013/014).
    Loading starts after the first frame (never blocks play), same origin only, `credentials:
-   omit`, no referrer, timeout **4 s for the manifest and 15 s for the images** (a phone on mobile
-   data needs more than 4 s for up to 3 × 512 KB; user report 2026-10-03, ADS-029); a failed load
-   is retried **once** after 20 s (no loop); offline → placeholders. The
+   omit`, no referrer, timeout **10 s for the manifest and 15 s for the images** (a phone on mobile
+   data needs more than 4 s for the TLS handshake plus up to 3 × 512 KB; user reports 2026-10-03
+   and 2026-10-07, ADS-029/039); a failed or **incomplete** load (not every active campaign arrived)
+   is retried after 20 s, at once when the phone is `online` again or the tab becomes visible
+   again; at most **4 loads** in total (no loop); offline → placeholders. The
    verified images live in memory only (Q-243).
 9. **Test key hook.** `?adkey=<base64 public key>` replaces the compiled keys **only** in the dev
    server and in the e2e test build (`VITE_AD_TEST=1`, `dist-adtest`, Q-245); the release build
@@ -163,6 +165,36 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
     (landscape) / below the compass (portrait), never covering `#settings-btn`, `#compass-btn`,
     `#view-btn`, `#act`.
 
+13. **Phone robustness and field diagnostics** (user report 2026-10-07: "does not work on Android, on
+    the web it does"; no real phone available, so the flow is emulated and the phone can report itself).
+    - **Release of the hold.** The link opens at the finger release (`pointerup`, ADS-030). If the
+      touch is **cancelled** after the full hold (`pointercancel`, an Android gesture), nothing is
+      opened (a cancel is no gesture); the hold button turns into a big real link (`<a id="ad-open"
+      href=canonical target=_blank rel="noopener noreferrer">`, ≥ 64 px) that the child taps (a tap on a
+      link is never blocked). Losing the pointer capture while the finger is down never resets the
+      hold. A mouse leaving the button during the ✔ counts as a cancel, not as a release.
+    - **Blocked pop-up.** After `window.open` the page must have been hidden by the new tab within
+      1.5 s; if not (blocked, or the browser did nothing), a card `#ad-fallback` ("Der Link hat sich
+      nicht geöffnet. Tippe hier:" / "The link did not open. Tap here:") with the same real link
+      appears for 15 s (✖ closes it).
+    - **Back button.** While the gate or the carousel is open one history entry is pushed; Android
+      Back / swipe-back closes the top layer instead of leaving the game, and closing by ✖ removes
+      the entry again. (The auto-opening board panel does not push an entry.)
+    - **Hold text.** `ad-gate-hold` no longer names a number of seconds ("Halte den Knopf gedrückt,
+      bis ✔ erscheint. Dann lass los.").
+    - **Field diagnostics (ADS-038).** `?adsdebug=1` (release builds too; no network, no storage, no
+      tracking) opens a full-screen dismissible text panel (≥ 15 px monospace, selectable, buttons
+      *copy* and *close* ≥ 48 px high; a round `AD` chip reopens it) with the live state: user agent,
+      secure context, `crypto.subtle`, iframe, online, DPR, viewport, touch points, WebGL version,
+      `MAX_TEXTURE_SIZE`, renderer; manifest fetch state/ms/bytes/version; signature result, the
+      verifier (`subtle` or pure `js`) and its ms; per image load state / bytes / ms / decode result;
+      the board texture upload result per board; the nearest board, its distance and whether one is
+      in reach; panel / gate / carousel state; the pointer counters of the hold (down, up, cancel,
+      lost capture, context menu, leave, the last event); the `window.open` call (result, whether the
+      page was hidden afterwards); WebGL context losses; the last 20 errors and events.
+      `window.__zoo.adsDebug()` returns the same data as an object. The recording itself is always on
+      (a few counters, nothing per frame); only the overlay needs the parameter.
+
 ### Threat model (what the signature does and does not protect)
 
 | Attacker | Can | Cannot |
@@ -196,7 +228,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-014 | Given an image whose magic bytes differ from the declared type (or are not PNG/WebP/JPEG), or a path with traversal / scheme / outside `img/`, then the campaign is dropped. | unit |
 | ADS-015 | Given a link with http, another host, another campaign's host, user info, port, path, query, fragment or a look-alike host, then the campaign is dropped; a valid one is opened in its canonical form. | unit |
 | ADS-016 | Given a tagline with markup characters, control characters or over 80 characters, then the campaign is dropped; shown texts are set as text only. | unit |
-| ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the timeout (4 s manifest, 15 s images); only same-origin `ads/` URLs are requested. | unit |
+| ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the timeout (10 s manifest, 15 s images); only same-origin `ads/` URLs are requested. | unit |
 | ADS-024 | Given a browser without Web Crypto (plain http on a LAN IP, e.g. the phone on the dev server http://192.168.x.x:5173), then the signature check and the SHA-256 image hashes use the pure-JS fallback (@noble/hashes) and give exactly the same result (a tampered manifest is still rejected), so the signed ads show there too. | unit |
 | ADS-025 | Given the gate of the reading campaign (ABC Smash), then it asks a language question instead of a sum: German a noun and its right article (e.g. "… Gabel" → der / die / das, answer die), English the right plural (one mouse → mice) with 4 answers; the maths campaign keeps the plus/minus task up to 20. | unit, e2e |
 | ADS-018 | Given the parental gate, then (after the right answer and 2 s holding the open button appears; `window.open` is not called before it is tapped) holding without the right answer never opens, a wrong answer ends it, the right answer + 3 s holding opens it, releasing early resets; the task is a plus or minus task with numbers and result in 0…20 and 4 distinct answers; the gate shows no "adults only" claim (title "Zur Webseite" / "To the website"). | unit |
@@ -214,6 +246,12 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-032 | Given all levels solved (`next = all_done`) and a verified campaign set, when the compass is tapped, then the carousel opens with the headline (de / en) and the first campaign, ◀ ▶ are ≥ 64 px, there is one dot per campaign; ▶ / ◀ / a dot / the 4 s timer change the slide and wrap; ✖ and Esc close it. | e2e |
 | ADS-033 | Given the carousel, when the picture is tapped, then the parental gate starts and `window.open` is not called; after the right answer + 2 s hold + release the link of the shown campaign opens exactly once and the carousel closes; the timer does not advance while the gate is up. | e2e |
 | ADS-034 | Given `next = all_done` but no verified campaign (no key / failed load) or `next` is not `all_done`, when the compass is tapped, then no carousel opens (the normal bubble shows). On 780x360 and 360x780 the carousel is inside the viewport, its buttons are ≥ 64 px and it overlaps none of `#settings-btn`, `#compass-btn`, `#view-btn`, `#act`. | e2e |
+
+| ADS-038 | Given `?adsdebug=1`, then the overlay `#ads-debug` is visible with the listed fields (UA, secure context, subtle, MAX_TEXTURE_SIZE, manifest, signature + verifier, images, near, pointer, windowOpen, errors), its text is ≥ 14 px, *copy* is ≥ 48 px high, *close* hides it and the `AD` chip shows it again; `window.__zoo.adsDebug()` has the same fields; without the parameter there is no overlay and no chip; the recording makes no request. Unit: the recorder keeps the last 20 errors and the last 30 events. | e2e + unit |
+| ADS-039 | Given a failed first load (offline, 4 s manifest timeout was too short for slow networks), then the manifest timeout is 10 s; a failed or incomplete load (an active campaign missing) is retried after 20 s and at once on the `online` event / when the tab becomes visible; at most 4 loads; a complete load is never repeated. | unit + e2e |
+| ADS-040 | Given the full hold, when the touch is cancelled (`touchCancel`), then `window.open` has NOT been called and `#ad-gate a#ad-open` (canonical href, `_blank`, `noopener noreferrer`) is visible; when `window.open` was called but the page did not become hidden within 1.5 s, `#ad-fallback a#ad-open` shows and ✖ closes it; a lost pointer capture while the finger is down does not reset the hold. | e2e |
+| ADS-041 | Given the gate (or the carousel) is open, when the browser Back button is pressed, then the gate (carousel) closes and the page URL and the game stay; closing by ✖ does not leave an extra history entry behind. | e2e |
+| ADS-042 | Given Android Chrome emulation (Pixel 7, Galaxy S9+ and a low-end 640x360 DPR 3 profile; touch, mobile UA, CPU 4-6x, slow-network model for `ads/**`, CDP touch hold), then on every profile all three campaigns load and verify, near a board of each slot the panel shows the campaign picture and the board texture is uploaded, the gate flow with a real 2 s touch hold opens the link once on release, rotation keeps the panel in the viewport, a frozen + resumed tab still works, and the game inside a cross-origin iframe (itch.io style) loads and verifies the ads. Report table per step: `web/test-results/ads-android-<profile>.json`. | e2e |
 
 ## Open questions
 

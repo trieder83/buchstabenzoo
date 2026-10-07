@@ -69,7 +69,77 @@ pub const CUES: &[&str] = &[
     "ui_tap",
     "ui_refuse",
     "ui_success",
+    "cart_board",
+    "cart_get_out",
+    "cart_horn",
+    "cart_bump",
+    "cart_locked",
+    "cart_park_refuse",
+    "key_box_open",
+    "key_pickup",
+    "lock_wheel_tick",
+    "lock_wrong",
+    "lock_ok",
 ];
+
+/// Cue ids of the two engine loops (own channel in the host, not in [`CUES`]).
+pub const ENGINE_CUES: [&str; 2] = ["cart_engine_path", "cart_engine_grass"];
+
+/// Delay of `key_box_open` after the event, so it follows `lock_ok` (Q-380, s).
+pub const KEY_BOX_OPEN_DELAY_S: f32 = 0.6;
+/// Delay of `key_pickup` after the event (Q-380, s).
+pub const KEY_PICKUP_DELAY_S: f32 = 1.2;
+
+// ---- golf cart engine channel (ASND-034/035) ----
+/// Final engine gain at full path speed (no master / group factor on top).
+pub const ENGINE_GAIN_MAX: f32 = 0.28;
+/// Fraction of the maximum while seated and standing still.
+pub const ENGINE_IDLE: f32 = 0.25;
+/// Path speed (m/s) that gives the full engine level and pitch.
+pub const ENGINE_SPEED_REF: f32 = 4.5;
+/// The grass layer is softer than the path layer.
+pub const GRASS_GAIN_FACTOR: f32 = 0.7;
+/// Seconds the surface blend needs for a full swing 0 to 1.
+pub const ENGINE_BLEND_S: f32 = 0.5;
+
+fn engine_s(speed: f32) -> f32 {
+    (speed.abs() / ENGINE_SPEED_REF).clamp(0.0, 1.0)
+}
+
+/// Engine loop gain at `speed` m/s (abs): 0.07 standing, 0.28 at 4.5 m/s and above.
+pub fn engine_gain(speed: f32) -> f32 {
+    ENGINE_GAIN_MAX * (ENGINE_IDLE + (1.0 - ENGINE_IDLE) * engine_s(speed))
+}
+
+/// Engine loop pitch (playback rate) at `speed` m/s (abs): 0.75 standing, 1.30 at 4.5 m/s.
+pub fn engine_rate(speed: f32) -> f32 {
+    0.75 + 0.55 * engine_s(speed)
+}
+
+/// Gains of the two engine layers `(path, grass)` at grass blend `b` (0 path, 1 grass).
+pub fn engine_layer_gains(speed: f32, b: f32) -> (f32, f32) {
+    let g = engine_gain(speed);
+    let b = b.clamp(0.0, 1.0);
+    (g * (1.0 - b), g * GRASS_GAIN_FACTOR * b)
+}
+
+/// Target of the grass blend for the ground under the cart: grass and sand 1, else 0.
+pub fn grass_blend_target(s: StepSurface) -> f32 {
+    match s {
+        StepSurface::Grass | StepSurface::Sand => 1.0,
+        StepSurface::Path | StepSurface::Wood | StepSurface::Water => 0.0,
+    }
+}
+
+/// Moves the grass blend towards `target` by at most `dt / ENGINE_BLEND_S`.
+pub fn advance_blend(b: f32, target: f32, dt: f32) -> f32 {
+    let step = dt.max(0.0) / ENGINE_BLEND_S;
+    if b < target {
+        (b + step).min(target)
+    } else {
+        (b - step).max(target)
+    }
+}
 
 /// Loudness group of a cue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -79,6 +149,8 @@ pub enum Group {
     Animals,
     Doors,
     Pickups,
+    /// Golf cart one-shots (not the engine loops).
+    Cart,
 }
 
 impl Group {
@@ -90,6 +162,7 @@ impl Group {
             Group::Animals => 0.8,
             Group::Doors => 0.8,
             Group::Pickups => 0.7,
+            Group::Cart => 0.8,
         }
     }
 }
@@ -100,8 +173,12 @@ pub fn group_of(cue: &str) -> Group {
         Group::Animals
     } else if cue.starts_with("step_") {
         Group::Steps
-    } else if cue.starts_with("ui_") {
+    } else if cue.starts_with("ui_") || cue.starts_with("lock_") {
         Group::Ui
+    } else if cue.starts_with("cart_") {
+        Group::Cart
+    } else if cue.starts_with("key_") || cue.starts_with("pickup_") || cue.starts_with("drop_") {
+        Group::Pickups
     } else if cue.starts_with("door_")
         || cue.starts_with("gate_")
         || cue.starts_with("glass_")
@@ -214,23 +291,50 @@ pub fn step_surface(level: &Level, p: Vec2) -> StepSurface {
 
 /// A cue to play; `animal` names the animal whose position is the source (else the event's
 /// place: the player).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CueRequest {
     pub cue: String,
     pub animal: Option<String>,
+    /// The cart whose position is the source (`CartBoarded` / `CartLeft`).
+    pub cart: Option<String>,
+    /// The key box is the source.
+    pub key_box: bool,
+    /// Seconds the host waits before playing it (0 = at once).
+    pub delay: f32,
+    /// Factor on the final gain (bump strength).
+    pub strength: f32,
 }
 
 fn plain(cue: &str) -> CueRequest {
     CueRequest {
         cue: cue.to_owned(),
         animal: None,
+        cart: None,
+        key_box: false,
+        delay: 0.0,
+        strength: 1.0,
+    }
+}
+
+fn at_cart(cue: &str, id: &str) -> CueRequest {
+    CueRequest {
+        cart: Some(id.to_owned()),
+        ..plain(cue)
+    }
+}
+
+fn at_key_box(cue: &str, delay: f32) -> CueRequest {
+    CueRequest {
+        key_box: true,
+        delay,
+        ..plain(cue)
     }
 }
 
 fn animal(animal: &str, what: &str) -> CueRequest {
     CueRequest {
-        cue: format!("animal_{animal}_{what}"),
         animal: Some(animal.to_owned()),
+        ..plain(&format!("animal_{animal}_{what}"))
     }
 }
 
@@ -254,10 +358,21 @@ pub fn cues_for_event(e: &GameEvent) -> Vec<CueRequest> {
         GameEvent::TreatRefused { animal: a, .. } | GameEvent::FoodRefused { animal: a, .. } => {
             vec![plain("ui_refuse"), animal(a, "refuse")]
         }
-        GameEvent::PutDownRefused | GameEvent::BasketFull | GameEvent::WrongCode { .. } => {
-            vec![plain("ui_refuse")]
-        }
-        GameEvent::KeyBoxOpened => vec![plain("pickup_item")],
+        GameEvent::PutDownRefused | GameEvent::BasketFull => vec![plain("ui_refuse")],
+        // golf cart (ASND-032); the lock panel cues (tick / wrong / ok) come from the host
+        GameEvent::CartBoarded { id, .. } => vec![at_cart("cart_board", id)],
+        GameEvent::CartLeft { id } => vec![at_cart("cart_get_out", id)],
+        GameEvent::CartLocked { .. } => vec![plain("cart_locked")],
+        GameEvent::CartNoPark => vec![plain("cart_park_refuse")],
+        GameEvent::CartHorn => vec![plain("cart_horn")],
+        GameEvent::CartBump { strength } => vec![CueRequest {
+            strength: *strength,
+            ..plain("cart_bump")
+        }],
+        GameEvent::KeyBoxOpened => vec![
+            at_key_box("key_box_open", KEY_BOX_OPEN_DELAY_S),
+            at_key_box("key_pickup", KEY_PICKUP_DELAY_S),
+        ],
         GameEvent::MissionComplete { .. } | GameEvent::LevelComplete { .. } => {
             vec![plain("ui_success")]
         }

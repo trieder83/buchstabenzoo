@@ -7,6 +7,11 @@
 //  - `.ogg` is preferred, `.m4a` is the fallback (Q-212).
 //  - Night ambience (ART-SOUND "Ambient loops", ASND-020..027): a looping cricket bed on its own
 //    gain node; zoo-core gives the target (`App.ambient_target()`), the gain follows it linearly in 3 s.
+//  - Golf cart engine (ASND-034..037): two looping sources (`path`, `grass`) on their own gain nodes,
+//    created lazily on the first boarding after a gesture; zoo-core gives the target level / pitch
+//    / grass blend of the seated cart (`engine_*`), the host smooths them (0.2 s / 0.15 s) and fades
+//    in 0.5 s / out 0.4 s. One pair of sources at most, released once faded out.
+//  - Sound events may carry a delay `d` (key box cues): scheduled at `currentTime + d`.
 //  - Every failure is silent: the game works without audio (ASND-019).
 
 /** Fired on `window` by the settings menu: `detail.on` = sound switched on / off (ASND-009). */
@@ -25,6 +30,20 @@ export const AMBIENT_FADE_S = 3;
 /** Cue id and group of the night cricket loop. */
 export const AMBIENT_CUE = 'ambient_crickets';
 
+/** Engine channel (ASND-034/036): safety clamp = `zoo_core::sound::ENGINE_GAIN_MAX`. */
+export const ENGINE_GAIN_MAX = 0.28;
+/** Layer factor of the grass loop = `zoo_core::sound::GRASS_GAIN_FACTOR`. */
+export const GRASS_GAIN_FACTOR = 0.7;
+/** Smoothing time constants (s) of the engine gain and pitch. */
+export const ENGINE_GAIN_TAU_S = 0.2;
+export const ENGINE_RATE_TAU_S = 0.15;
+/** Fade in on boarding / out on leaving (s). */
+export const ENGINE_FADE_IN_S = 0.5;
+export const ENGINE_FADE_OUT_S = 0.4;
+/** Cue ids of the two engine loops (group `engine`). */
+export const ENGINE_PATH_CUE = 'cart_engine_path';
+export const ENGINE_GRASS_CUE = 'cart_engine_grass';
+
 const LOG_LIMIT = 500;
 
 /** One sound event of `App.poll_sounds()`. */
@@ -38,6 +57,8 @@ export interface SoundEvent {
   r: number;
   /** Variation number (`v mod n` picks the file). */
   v: number;
+  /** Start delay in seconds (default 0): the key box cues follow the lock sound. */
+  d?: number;
 }
 
 export type Format = 'ogg' | 'm4a';
@@ -59,6 +80,8 @@ export interface LogEntry {
   x: number;
   z: number;
   muted: boolean;
+  /** Start delay in seconds (0 = at once). */
+  delay: number;
   /** `played`, `muted`, `locked` (no user gesture yet), `missing` (no files), `loading`, `failed`. */
   result: string;
 }
@@ -69,6 +92,12 @@ export interface AudioApp {
   /** Target gain of the ambient bed (0 by day, 0.05 at dusk / night). */
   ambient_target?(): number;
   ui_tap?(): void;
+  /** Seated golf cart: speed in m/s (abs), -1 when not seated (or paused); then `engine_gain` /
+   *  `engine_rate` (the law of ASND-034) and `engine_grass` (blend 0 path .. 1 grass). */
+  engine_speed?(): number;
+  engine_gain?(): number;
+  engine_rate?(): number;
+  engine_grass?(): number;
 }
 
 /** Everything the module needs from the browser (replaceable in tests). */
@@ -86,6 +115,7 @@ export interface AudioEnv {
 /** The subset of `AudioContext` used here. */
 export interface AudioContextLike {
   state: string;
+  currentTime?: number;
   destination: unknown;
   resume(): Promise<void>;
   suspend?(): Promise<void>;
@@ -99,13 +129,18 @@ export interface AudioContextLike {
     playbackRate: { value: number };
     loop?: boolean;
     connect(n: unknown): void;
-    start(): void;
+    start(when?: number): void;
     stop?(): void;
     disconnect?(): void;
   };
   createGain(): { gain: { value: number }; connect(n: unknown): void; disconnect?(): void };
 }
 export type AudioBufferLike = object;
+
+interface EngineLayer {
+  src: ReturnType<AudioContextLike['createBufferSource']>;
+  node: ReturnType<AudioContextLike['createGain']>;
+}
 
 const FILE_RE = /^audio\/([^/]+)\/(.+)_(\d+)\.(ogg|m4a)$/;
 
@@ -194,6 +229,19 @@ export class GameAudio {
   private ambLoading = false;
   private ambFailed = false;
   private ambSuspended = false;
+  // golf cart engine channel
+  private engLast = -1;
+  /** Smoothed level (before the layer split and the fade) and pitch. */
+  private engLevel = 0;
+  private engRate = 0.75;
+  private engFade = 0;
+  private engGrass = 0;
+  private engSeated = false;
+  private engSrc: { path: EngineLayer; grass: EngineLayer } | null = null;
+  private engLoading = false;
+  private engFailed = false;
+  /** Gain nodes of delayed cues that have not started yet (zeroed when muted meanwhile). */
+  private pending: { gain: { value: number }; at: number }[] = [];
 
   constructor(index: readonly string[], env: AudioEnv = browserEnv()) {
     this.env = env;
@@ -221,8 +269,36 @@ export class GameAudio {
     };
   }
 
+  /** Debug / e2e state of the golf cart engine (`__zoo.audio.engine`, ASND-040). */
+  get engine(): {
+    playing: boolean;
+    gain: number;
+    rate: number;
+    grass: number;
+    fetched: boolean;
+    /** Final gains of the two loops (path, grass). */
+    layers: [number, number];
+  } {
+    return {
+      layers: this.engSrc ? [this.engSrc.path.node.gain.value, this.engSrc.grass.node.gain.value] : [0, 0],
+      playing: this.engSrc !== null,
+      gain: this.engSrc ? this.engLevel * this.engFade : 0,
+      rate: this.engRate,
+      grass: this.engGrass,
+      fetched: this.fetched.some((f) => f.includes('/engine/')),
+    };
+  }
+
   setEnabled(on: boolean): void {
     this.enabled = on;
+    if (!on) this.silencePending();
+  }
+
+  /** Delayed cues that have not started yet do not play after muting. */
+  private silencePending(): void {
+    const t = this.ctx?.currentTime ?? 0;
+    for (const p of this.pending) if (p.at > t) p.gain.value = 0;
+    this.pending = [];
   }
 
   /** Listens for the first gesture (`pointerdown` / `keydown`) on `target`. */
@@ -268,6 +344,7 @@ export class GameAudio {
     }
     const now = this.env.now();
     this.tickAmbient(app, now);
+    this.tickEngine(app, now);
     if (this.unlocked && now - this.lastPrefetch > 2000) {
       this.lastPrefetch = now;
       this.prefetch(app);
@@ -300,7 +377,7 @@ export class GameAudio {
     }
     if (!this.unlocked || !this.ctx) return;
     try {
-      if (hidden && this.ambSrc && !this.ambSuspended && this.ctx.state === 'running') {
+      if (hidden && (this.ambSrc || this.engSrc) && !this.ambSuspended && this.ctx.state === 'running') {
         this.ambSuspended = true;
         void this.ctx.suspend?.()?.catch(() => undefined);
       } else if (!hidden && this.ambSuspended) {
@@ -313,6 +390,116 @@ export class GameAudio {
     if (target > 0 && !this.ambSrc && !this.ambLoading && !this.ambFailed) this.startAmbient();
     if (this.ambSrc && this.ambGain === 0 && target === 0) this.stopAmbient();
     if (this.ambNode) this.ambNode.gain.value = this.ambGain;
+  }
+
+  /**
+   * The golf cart engine (ASND-034..037). While seated (`engine_speed() >= 0`) the level, pitch
+   * and grass blend come from zoo-core; this only smooths them, fades and keeps one pair of
+   * looping sources. Muted / hidden tab / title overlay: fades to 0 (hidden: at once).
+   */
+  private tickEngine(app: AudioApp, now: number): void {
+    const dt = this.engLast < 0 ? 0 : Math.min(0.25, Math.max(0, (now - this.engLast) / 1000));
+    this.engLast = now;
+    if (!app.engine_speed) return;
+    let speed = -1;
+    let level = 0;
+    let rate = 0.75;
+    let grass = 0;
+    try {
+      speed = Number(app.engine_speed()) || 0;
+      if (speed >= 0) {
+        level = Math.min(ENGINE_GAIN_MAX, Math.max(0, Number(app.engine_gain?.() ?? 0) || 0));
+        rate = Math.min(2, Math.max(0.25, Number(app.engine_rate?.() ?? 1) || 1));
+        grass = Math.min(1, Math.max(0, Number(app.engine_grass?.() ?? 0) || 0));
+      }
+    } catch {
+      speed = -1;
+    }
+    const seated = speed >= 0;
+    const hidden = this.env.hidden?.() ?? false;
+    const blocked = this.env.blocked?.() ?? false;
+    const want = seated && this.enabled && !blocked && !hidden;
+    if (seated) {
+      if (!this.engSeated || this.engLevel === 0) {
+        // a new ride starts at the law value (the fade-in covers the start)
+        this.engLevel = level;
+        this.engRate = rate;
+      } else {
+        this.engLevel += (level - this.engLevel) * (1 - Math.exp(-dt / ENGINE_GAIN_TAU_S));
+        this.engRate += (rate - this.engRate) * (1 - Math.exp(-dt / ENGINE_RATE_TAU_S));
+      }
+      this.engGrass = grass;
+    }
+    this.engSeated = seated;
+    if (hidden) this.engFade = 0;
+    else if (want) this.engFade = Math.min(1, this.engFade + dt / ENGINE_FADE_IN_S);
+    else this.engFade = Math.max(0, this.engFade - dt / ENGINE_FADE_OUT_S);
+    if (!this.unlocked || !this.ctx) return;
+    if (want && !this.engSrc && !this.engLoading && !this.engFailed) this.startEngine();
+    if (this.engSrc && this.engFade === 0 && !want) {
+      this.stopEngine();
+      return;
+    }
+    const e = this.engSrc;
+    if (!e) return;
+    const g = Math.min(ENGINE_GAIN_MAX, this.engLevel * this.engFade);
+    e.path.node.gain.value = g * (1 - this.engGrass);
+    e.grass.node.gain.value = g * GRASS_GAIN_FACTOR * this.engGrass;
+    e.path.src.playbackRate.value = this.engRate;
+    e.grass.src.playbackRate.value = this.engRate;
+  }
+
+  private startEngine(): void {
+    const ctx = this.ctx;
+    const pf = this.cues.get(ENGINE_PATH_CUE);
+    const gf = this.cues.get(ENGINE_GRASS_CUE);
+    if (!ctx || !pf || !gf) {
+      this.engFailed = true; // no files: silent, never retried
+      return;
+    }
+    const pb = this.buffers.get(ENGINE_PATH_CUE)?.[0];
+    const gb = this.buffers.get(ENGINE_GRASS_CUE)?.[0];
+    if (!pb || !gb) {
+      this.engLoading = true;
+      void this.load(pf.group).finally(() => {
+        this.engLoading = false; // loaded: the next tick starts it; failed: never retried
+        this.engFailed = !this.buffers.has(ENGINE_PATH_CUE) || !this.buffers.has(ENGINE_GRASS_CUE);
+      });
+      return;
+    }
+    try {
+      const mk = (buffer: AudioBufferLike): EngineLayer => {
+        const src = ctx.createBufferSource();
+        const node = ctx.createGain();
+        src.buffer = buffer;
+        src.loop = true;
+        src.playbackRate.value = this.engRate;
+        node.gain.value = 0;
+        src.connect(node);
+        node.connect(ctx.destination);
+        src.start();
+        return { src, node };
+      };
+      this.engSrc = { path: mk(pb), grass: mk(gb) };
+    } catch {
+      this.engSrc = null; // playback failed: silent
+      this.engFailed = true;
+    }
+  }
+
+  private stopEngine(): void {
+    const e = this.engSrc;
+    this.engSrc = null;
+    if (!e) return;
+    for (const l of [e.path, e.grass]) {
+      try {
+        l.src.stop?.();
+        l.src.disconnect?.();
+        l.node.disconnect?.();
+      } catch {
+        // silent
+      }
+    }
   }
 
   private startAmbient(): void {
@@ -392,6 +579,7 @@ export class GameAudio {
       x: e.x,
       z: e.z,
       muted: !this.enabled,
+      delay: Math.max(0, Number(e.d) || 0),
       result: 'played',
     };
     if (!files || !list.length) entry.result = 'missing';
@@ -401,15 +589,19 @@ export class GameAudio {
     if (this.log.push(entry) > LOG_LIMIT) this.log.shift();
     if (entry.result !== 'played' || !files) return entry;
 
+    const delay = Math.max(0, Number(e.d) || 0);
+    const at = (this.ctx?.currentTime ?? 0) + delay;
     const buffers = this.buffers.get(e.cue);
     if (buffers?.length) {
-      this.start(buffers[k % buffers.length], e);
+      this.start(buffers[k % buffers.length], e, at);
     } else {
       entry.result = 'loading';
       const t0 = this.env.now();
       void this.load(files.group).then((all) => {
         const b = all.get(e.cue);
-        if (b?.length && this.env.now() - t0 <= STALE_MS && this.enabled) this.start(b[k % b.length], e);
+        if (b?.length && this.env.now() - t0 <= STALE_MS + delay * 1000 && this.enabled) {
+          this.start(b[k % b.length], e, Math.max(at, this.ctx?.currentTime ?? 0));
+        }
       });
     }
     return entry;
@@ -474,10 +666,12 @@ export class GameAudio {
     }
   }
 
-  private start(buffer: AudioBufferLike, e: SoundEvent): void {
+  private start(buffer: AudioBufferLike, e: SoundEvent, at = 0): void {
     const ctx = this.ctx;
     if (!ctx) return;
     try {
+      const now = ctx.currentTime ?? 0;
+      const delayed = at > now + 0.001;
       const src = ctx.createBufferSource();
       const gain = ctx.createGain();
       src.buffer = buffer;
@@ -485,7 +679,13 @@ export class GameAudio {
       gain.gain.value = e.g;
       src.connect(gain);
       gain.connect(ctx.destination);
-      src.start();
+      if (delayed) {
+        this.pending = this.pending.filter((p) => p.at > now);
+        this.pending.push({ gain: gain.gain, at });
+        src.start(at);
+      } else {
+        src.start();
+      }
     } catch {
       // playback failed: silent
     }

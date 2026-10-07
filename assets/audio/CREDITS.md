@@ -42,3 +42,6 @@ Footsteps (downloaded 2026-09-30, all CC0, pitched, filtered, cut):
 | https://opengameart.org/content/different-steps-on-wood-stone-leaves-gravel-and-mud | CC0 | TinyWorlds | step_wood, step_sand |
 
 Goldfish cues are synthesised (`tools/sound/animals.py`, licence `own`).
+
+Golf-cart, key-box and lock cues and the engine loops (`cart_*`, `key_*`, `lock_*`) are synthesised by
+`tools/sound/cart_sounds.py` (licence `own`, no third-party material).

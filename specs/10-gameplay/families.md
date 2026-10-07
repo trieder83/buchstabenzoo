@@ -223,6 +223,7 @@ character costs its parts' draw calls like any animal, measured in the performan
 | FAM-032 | Given a save in which a baby was born by the retired own-favourite-food rule (FAM-030), then the baby stays and is not born twice; FAM-030 itself is retired (superseded by FEED-036..040). | unit |
 | FAM-033 | Given the new pairs `snake`, `chameleon`, `poison_dart_frog` at their hiding place and at home, then pair gaps 1.0 / 0.7 (perch offset) / 0.5 m, home wander areas ≥ 12 cells, split pairs and a waiting partner are fetched like every pair (GARD-014), group look-ups use the species and never the first member. | unit |
 | FAM-034 | Given the baby speed factors, then each equals the first design (0.7 / 1.25 / 1.6 / 2.2) × 0.85 (babies run 15 % slower, user request 2026-10-04) and a baby never exceeds `walk × BURST_FACTOR`. | unit |
+| FAM-035 | Given the terrarium chameleons (user request 2026-10-07: "the chameleon baby should be slower — chameleons generally move slowly"), then at home the adult chameleons wander at 0.4 × the normal wander speed (≈ 0.2 m/s, the authored `walk` speed) and the chameleon baby never moves faster than 0.12 m/s while it plays at home; while following the child (led home) it keeps the normal baby speeds; other species are unaffected. | unit |
 | FAM-007 | Given male and female models side by side from the default camera, then children can tell they are a pair of the same species and spot the difference (manual review). | manual |
 
 ## Open questions

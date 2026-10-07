@@ -2,7 +2,7 @@
 // "on mobile phone the advertisement billboards do not show a dialog or link". Runs on the release
 // build (real signed campaigns, `scripts/e2e.sh web/tests/e2e/ads_phone.spec.ts`).
 import { expect, test, devices, type Browser, type Page } from '@playwright/test';
-import { face, goto, nextFrames, waitFrames, START_URL } from './helpers';
+import { face, nextFrames, waitFrames, START_URL } from './helpers';
 
 interface Board {
   id: string;
@@ -57,7 +57,9 @@ const near = (page: Page) => page.evaluate(() => window.__zoo!.app.ad_near());
 
 /** Stands `d` m south (in front) of the board, `dx` m aside. */
 async function standAt(page: Page, b: Board, d: number, dx = 0): Promise<void> {
-  await goto(page, b.x + dx, b.z - d);
+  // Teleport, not a scripted walk: the autopilot's grid path from the spawn runs into the parked golf cart
+  // (cart_l1, x 3..5 / z 2..5; its box is not in the nav grid) and stops without reaching the board.
+  await page.evaluate(([x, z]) => window.__zoo!.app.debug_teleport(x, z), [b.x + dx, b.z - d]);
   await page.evaluate(() => window.__zoo!.app.debug_step(0.3));
   await nextFrames(page, 3);
   expect(await near(page), `near ${b.id} at ${d} m / ${dx} m aside`).toBe(b.id);
@@ -66,7 +68,9 @@ async function standAt(page: Page, b: Board, d: number, dx = 0): Promise<void> {
 /** Walks to a spot where no board is near (any of a few offsets). */
 async function walkAway(page: Page, b: Board): Promise<void> {
   for (const [dx, dz] of [[0, -9], [0, 9], [9, 0], [-9, 0], [0, -12], [12, 0]]) {
-    await goto(page, b.x + dx, b.z + dz).catch(() => undefined);
+    await page.evaluate(([x, z]) => window.__zoo!.app.debug_teleport(x, z), [b.x + dx, b.z + dz]);
+    await page.evaluate(() => window.__zoo!.app.debug_step(0.3));
+    await nextFrames(page, 2);
     if ((await near(page)) === '') return;
   }
   throw new Error('no free spot away from the boards');
@@ -128,8 +132,7 @@ test('ADS-027 phone: accidental ✖ ignored, interact button reopens, walking aw
     ([x, z]) =>
       new Promise<boolean>((resolve) => {
         const app = window.__zoo!.app;
-        app.debug_goto(x, z);
-        app.debug_step(90);
+        app.debug_teleport(x, z); // (the scripted walk from the spawn is blocked by the parked golf cart)
         app.debug_step(0.3);
         const poll = () => {
           const btn = document.querySelector<HTMLButtonElement>('#ad-panel .ad-x');

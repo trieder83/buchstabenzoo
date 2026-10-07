@@ -22,7 +22,7 @@ import {
   MATH_LEVELS,
   DEFAULT_MATH_LEVEL,
 } from './ui';
-import { codeOf, turn } from './lock-panel';
+import { codeOf, resultSound, turn } from './lock-panel';
 import { countParts } from './math-aid';
 
 class MapStore implements KeyValue {
@@ -331,5 +331,15 @@ describe('golf cart icons', () => {
     expect(TARGET_ICONS.cart).toBe('🛻');
     expect(TARGET_ICONS.get_out).toBe('🚶');
     expect(targetIcon('get_out', 'get_out')).toBe('🚶');
+  });
+});
+
+// ASND-038: the lock panel sound of an enter_code result
+describe('lock panel sounds (ASND-038)', () => {
+  it('maps the results to wrong / ok, others are silent', () => {
+    expect(resultSound('wrong')).toBe('wrong');
+    expect(resultSound('right')).toBe('ok');
+    expect(resultSound('far')).toBeNull();
+    expect(resultSound('none')).toBeNull();
   });
 });

@@ -438,3 +438,40 @@ fn overview_lists_the_terrarium_garden_with_its_progress() {
     let p = o.parts.iter().find(|p| p.id == "night_2").unwrap();
     assert_eq!((p.state, p.home), (PartState::Solved, 3));
 }
+
+/// FAM-035 (user request 2026-10-07): chameleons crawl at home — the adults at ≈ 0.2 m/s and the
+/// baby never faster than 0.12 m/s; while the chameleons are led (not at home) nothing is limited.
+#[test]
+fn fam_035_chameleons_are_slow_at_home() {
+    let mut save = garden(21).to_save();
+    save.babies = vec!["chameleon".to_string()];
+    let mut g = Game::from_save(common::zoo_with_night2(), &save).expect("restores");
+    assert!(g.debug_send_home("chameleon"));
+    for _ in 0..120 {
+        g.update(1.0 / 60.0, Vec2::ZERO); // the baby appears next to its mother
+    }
+    g.player.pos = Vec2::new(-300.0, -300.0); // far away: they wander on their own
+    let adults: Vec<usize> = g.group("chameleon");
+    let (mut max_adult, mut max_baby) = (0.0f32, 0.0f32);
+    let mut prev_a: Vec<Vec2> = adults.iter().map(|&i| g.animals[i].pos).collect();
+    let mut prev_b = g.baby_states.get("chameleon").map(|b| b.pos);
+    let dt = 1.0 / 60.0;
+    for _ in 0..(120 * 60) {
+        g.update(dt, Vec2::ZERO);
+        for (k, &i) in adults.iter().enumerate() {
+            max_adult = max_adult.max(g.animals[i].pos.distance(prev_a[k]) / dt);
+            prev_a[k] = g.animals[i].pos;
+        }
+        if let (Some(b), Some(p)) = (g.baby_states.get("chameleon"), prev_b) {
+            max_baby = max_baby.max(b.pos.distance(p) / dt);
+        }
+        prev_b = g.baby_states.get("chameleon").map(|b| b.pos);
+    }
+    assert!(max_adult <= 0.21, "adult chameleon {max_adult} m/s");
+    assert!(max_baby <= 0.13, "baby chameleon {max_baby} m/s");
+    assert!(g.baby_states.contains_key("chameleon"), "the baby exists");
+    assert!(
+        max_baby > 0.01 && max_adult > 0.01,
+        "they do move: {max_adult} / {max_baby}"
+    );
+}

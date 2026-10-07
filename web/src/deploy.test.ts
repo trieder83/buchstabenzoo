@@ -71,6 +71,14 @@ describe('firebase.json', () => {
     expect(audio.every((f) => /\.(ogg|m4a)$/.test(f))).toBe(true); // CREDITS.md is not served
   });
 
+  it('ASND-039 the cart and engine sounds are in the asset index, with a .ogg and a .m4a twin', () => {
+    const audio = listAssets().filter((f) => f.startsWith('audio/'));
+    for (const cue of ['cart/cart_board', 'cart/cart_bump', 'cart/key_pickup', 'cart/lock_ok', 'engine/cart_engine_path', 'engine/cart_engine_grass']) {
+      expect(audio.some((f) => f.startsWith(`audio/${cue}_`) && f.endsWith('.ogg')), `${cue} .ogg`).toBe(true);
+      expect(audio.some((f) => f.startsWith(`audio/${cue}_`) && f.endsWith('.m4a')), `${cue} .m4a`).toBe(true);
+    }
+  });
+
   it('PLAT-005 caches hashed files long, index.html never, assets briefly', () => {
     const bundle = header('bundle/**', 'Cache-Control');
     expect(bundle).toContain('immutable');

@@ -218,6 +218,20 @@
       #view-btn[data-view='look_around'] {
         background: #ffd65c;
       }
+      /* Golf cart horn (Q-378): only while seated, in the slot of the view button (which is
+         hidden then), above the get-out button; sound only. */
+      #horn-btn {
+        position: fixed;
+        right: calc(34px + env(safe-area-inset-right));
+        bottom: calc(144px + env(safe-area-inset-bottom));
+        width: 76px;
+        height: 76px;
+        font-size: 38px;
+        background: #ffd65c;
+      }
+      #horn-btn.honk {
+        animation: nudge 0.4s ease-in-out;
+      }
       #settings-btn {
         position: fixed;
         right: calc(16px + env(safe-area-inset-right));
@@ -468,6 +482,7 @@
       @media (orientation: landscape) and (max-height: 460px), (orientation: portrait) and (max-width: 480px) {
         #settings-btn,
         #compass-btn,
+        #horn-btn,
         #view-btn {
           right: calc(16px + env(safe-area-inset-right));
           width: 64px;
@@ -487,7 +502,8 @@
           height: 80px;
           font-size: 42px;
         }
-        #view-btn {
+        #view-btn,
+        #horn-btn {
           bottom: calc(96px + env(safe-area-inset-bottom));
         }
         #compass-btn .strip {
@@ -1725,6 +1741,7 @@
     <button id="settings-btn" class="round" type="button">⚙️</button>
     <button id="compass-btn" class="round" type="button">🧭<span class="badge" hidden></span><span class="strip"></span></button>
     <button id="view-btn" class="round" type="button" data-view="zoo">🗺️</button>
+    <button id="horn-btn" class="round" type="button" hidden>🔔</button>
     <div id="intro" hidden><div class="intro-card"><div class="intro-pic"></div><p class="intro-text"></p><div class="intro-dots"></div><button class="intro-skip round" type="button">✖</button><button class="intro-next round" type="button">➤</button></div></div>
     <div id="settings" hidden></div>
     <button id="hint" type="button" hidden><span class="key">E</span><span class="icon"></span></button>

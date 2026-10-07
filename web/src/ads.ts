@@ -10,6 +10,7 @@
 import * as ed from '@noble/ed25519';
 import { sha256 as nobleSha256, sha512 as nobleSha512 } from '@noble/hashes/sha2.js';
 import { AD_PUBLIC_KEYS } from './ad-keys';
+import { adsTelemetry, logAdError, logAdEvent } from './ads-debug';
 
 /** Build-time switch (vite `define`): true only in the e2e test build (`VITE_AD_TEST=1`). */
 declare const __AD_TEST__: boolean;
@@ -21,7 +22,8 @@ export const MAX_DIM = 2048;
 export const MIN_DIM = 64;
 export const MAX_TAGLINE = 80;
 export const MAX_CAMPAIGNS = 3;
-export const FETCH_TIMEOUT_MS = 4000;
+/** Manifest + signature (2.7 KB): generous, because a phone on a weak mobile network needs seconds for the TLS handshake alone (ADS-039). */
+export const FETCH_TIMEOUT_MS = 10000;
 /** The images get longer: up to 3 x 512 KB over mobile data (ADS-029, user report 2026-10-03). */
 export const IMAGE_TIMEOUT_MS = 15000;
 /** Clock skew tolerated for `issued` (ms). */
@@ -100,6 +102,8 @@ export interface AdContent {
   version: number;
   /** Verified campaigns by slot (1…3); a missing slot shows its placeholder. */
   bySlot: Map<number, VerifiedCampaign>;
+  /** True if an active campaign of the manifest did not arrive (timeout / hash) — the host retries (ADS-039). */
+  incomplete?: boolean;
 }
 
 // ------------------------------------------------------------------ small helpers
@@ -245,6 +249,7 @@ export async function verifySignature(body: Uint8Array, sigB64: string, keys: re
   if (!sig || sig.length !== 64) return false;
   const msg = concat(DOMAIN, body);
   const secure = !!globalThis.crypto?.subtle;
+  adsTelemetry.sig.verifier = secure ? 'subtle' : 'js';
   if (!secure) ed.hashes.sha512 = nobleSha512; // no Web Crypto (plain http): pure-JS SHA-512
   for (const key of keys) {
     try {
@@ -361,8 +366,8 @@ async function fetchBytes(o: LoadOptions, path: string, signal: AbortSignal, max
   let res: Response;
   try {
     res = await o.fetchFn(o.base + path, { signal, cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
-  } catch {
-    throw new AdError('network', path);
+  } catch (e) {
+    throw new AdError('network', `${path} ${(e as Error).name ?? ''}`.trim());
   }
   if (!res.ok) throw new AdError('network', `${path} ${res.status}`);
   const len = Number(res.headers.get('content-length') ?? '0');
@@ -394,6 +399,12 @@ async function withDeadline<T>(ms: number, job: (signal: AbortSignal) => Promise
 export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
   if (o.keys.length === 0) return null;
   const timeout = o.timeoutMs ?? FETCH_TIMEOUT_MS;
+  const tel = adsTelemetry;
+  const t0 = performance.now();
+  tel.attempts += 1;
+  tel.manifest = { state: 'loading' };
+  tel.sig = { ok: null, verifier: null };
+  tel.images = {};
   try {
     const { body, sig } = await withDeadline(timeout, async (signal) => {
       const [b, s] = await Promise.all([
@@ -402,7 +413,11 @@ export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
       ]);
       return { body: b, sig: new TextDecoder().decode(s) };
     });
-    if (!(await verifySignature(body, sig, o.keys))) throw new AdError('signature');
+    tel.manifest = { state: 'loading', ms: Math.round(performance.now() - t0), bytes: body.length };
+    const tv = performance.now();
+    const verified = await verifySignature(body, sig, o.keys);
+    tel.sig = { ok: verified, verifier: tel.sig.verifier, ms: Math.round(performance.now() - tv) };
+    if (!verified) throw new AdError('signature');
     let last = 0;
     try {
       last = Number(o.store?.getItem(VERSION_KEY) ?? '0') || 0;
@@ -415,6 +430,7 @@ export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
     } catch {
       /* no storage: the rollback check then only works within the session */
     }
+    tel.manifest = { ...tel.manifest, state: 'ok', version: manifest.version };
     const bySlot = new Map<number, VerifiedCampaign>();
     try {
       await withDeadline(o.timeoutMs ?? IMAGE_TIMEOUT_MS, async (signal) => {
@@ -423,9 +439,17 @@ export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
             try {
               const images: VerifiedImage[] = [];
               for (const im of c.images) {
-                const data = await fetchBytes(o, im.path, signal, MAX_IMAGE_BYTES);
-                await checkImageBytes(im, data);
-                images.push({ ...im, data });
+                const ti = performance.now();
+                tel.images[im.path] = { state: 'loading' };
+                try {
+                  const data = await fetchBytes(o, im.path, signal, MAX_IMAGE_BYTES);
+                  await checkImageBytes(im, data);
+                  images.push({ ...im, data });
+                  tel.images[im.path] = { state: 'ok', bytes: data.length, ms: Math.round(performance.now() - ti) };
+                } catch (e) {
+                  tel.images[im.path] = { state: 'failed', ms: Math.round(performance.now() - ti), error: String((e as Error).message ?? e) };
+                  throw e;
+                }
               }
               bySlot.set(c.slot, { ...c, images });
             } catch {
@@ -436,10 +460,17 @@ export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
       });
     } catch {
       /* deadline: the campaigns that arrived in time are shown, the others keep the placeholder */
+      for (const im of Object.values(tel.images)) if (im.state === 'loading') Object.assign(im, { state: 'failed', error: 'timeout' });
     }
-    return bySlot.size > 0 ? { version: manifest.version, bySlot } : null;
-  } catch {
+    const incomplete = bySlot.size < manifest.campaigns.length;
+    return bySlot.size > 0 ? { version: manifest.version, bySlot, incomplete } : null;
+  } catch (e) {
+    const msg = String((e as Error).message ?? e);
+    tel.manifest = { ...tel.manifest, state: 'failed', error: msg, ms: tel.manifest.ms ?? Math.round(performance.now() - t0) };
+    logAdError(`load: ${msg}`);
     return null;
+  } finally {
+    logAdEvent(`load #${tel.attempts} ${tel.manifest.state}`);
   }
 }
 

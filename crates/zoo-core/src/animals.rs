@@ -328,3 +328,21 @@ pub enum AnimalState {
     /// In a carried container (the goldfish in the fish bowl, GAME-RESCUE "goldfish bowl").
     InBowl,
 }
+
+/// Speed limit (m/s) of an animal's baby while it plays at home: chameleons move slowly (user
+/// request 2026-10-07, FAM-035); everyone else is unlimited.
+pub fn baby_home_max_speed(species: &str) -> f32 {
+    match species {
+        "chameleon" => 0.12,
+        _ => f32::INFINITY,
+    }
+}
+
+/// Multiplier of the home wander speed (GAME-ANIMALS ≈ 0.5 m/s): chameleons crawl at ≈ 0.2 m/s,
+/// the authored `walk` speed of their model (FAM-035).
+pub fn home_wander_scale(species: &str) -> f32 {
+    match species {
+        "chameleon" => 0.4,
+        _ => 1.0,
+    }
+}

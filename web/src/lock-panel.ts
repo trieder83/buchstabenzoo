@@ -9,6 +9,8 @@ export interface LockApp {
   enter_code(code: number): string;
   cart_key_json?(): string;
   set_lock_open?(open: boolean): void;
+  /** Lock panel sounds (ASND-038): `tick` per digit step, `wrong` / `ok` per result; core decides gain and pitch. */
+  lock_sound?(kind: 'tick' | 'wrong' | 'ok'): void;
 }
 
 export interface LockOpenData {
@@ -20,6 +22,11 @@ export interface LockOpenData {
 /** The code of three wheel digits. */
 export function codeOf(digits: readonly number[]): number {
   return digits[0] * 100 + digits[1] * 10 + digits[2];
+}
+
+/** The sound of an `enter_code` result (ASND-038): `wrong`, `ok` (opened), none for the rest. */
+export function resultSound(r: string): 'wrong' | 'ok' | null {
+  return r === 'wrong' ? 'wrong' : r === 'right' ? 'ok' : null;
 }
 
 /** A wheel one step up / down (wraps 9 -> 0 and 0 -> 9). */
@@ -188,6 +195,7 @@ export class LockPanel {
   private step(i: number, delta: 1 | -1): void {
     this.selected = i;
     this.digits[i] = turn(this.digits[i], delta);
+    this.app.lock_sound?.('tick');
     this.render();
   }
 
@@ -195,6 +203,8 @@ export class LockPanel {
   submit(): void {
     if (!this.opened) return;
     const r = this.app.enter_code(this.code);
+    const snd = resultSound(r);
+    if (snd) this.app.lock_sound?.(snd);
     this.onResult(r);
     if (r === 'wrong') {
       this.card.classList.remove('shake');
@@ -247,6 +257,7 @@ export class LockPanel {
         if (m) {
           e.preventDefault();
           this.digits[this.selected] = Number(m[1]);
+          this.app.lock_sound?.('tick');
           this.select(Math.min(2, this.selected + 1));
         }
       }

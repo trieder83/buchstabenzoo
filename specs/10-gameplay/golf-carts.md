@@ -28,7 +28,7 @@ props) is a different prop: it cannot be entered, driven or locked and has no `[
 `web/src/lock-panel.ts`, `math-aid.ts`, the get-out button / 🔒 badge / bubbles in `ui.ts`, the dynamic cart batch,
 seated child, wheels / steering wheel / headlights in `zoo-web` + `zoo-render`. Tests `tests/{math,cart_key,cart,cart_fuzz}.rs`,
 `tests/hints.rs` (HINT-032/033, CART-029), `view.rs` (CAMV-024), e2e `web/tests/e2e/{cart_key,cart}.spec.ts`.
-Not built: cart sounds (no cue in ART-SOUND yet), `drive` clip of `player_boy` (no boy model; the girl has `drive`,
+Cart sounds: files made (ART-SOUND "Golf cart sounds", ASND-030..040, review in `art/index.html`), playback wiring pending. Not built: `drive` clip of `player_boy` (no boy model; the girl has `drive`,
 `drive_turn_l/r`). Implementation notes: the closed box and its `cart_key` and the
 open box (`key_box_open.glb`, same kit script `kit_bedroom.py`) are separate placements the host swaps
 (`LevelScene::key_boxes`); the note is a reading target (its panel opens by itself like a board and counts as
@@ -92,7 +92,7 @@ Parked carts are prop colliders of the level (`Level::set_cart_shapes`); the dri
      when the held stick makes no progress for 1 s and points backwards the cart backs out at
      1.5 m/s (`REVERSE_SPEED_MS`); after 3 s without any progress the cart is lifted to the nearest
      **roomy pose** within 8 m (one where it can turn through every heading, no animal within
-     1 m; `Game::cart_rescues`). A friendly 🔔 horn button is optional.
+     1 m; `Game::cart_rescues`). A friendly 🔔 horn button (Q-378, 2026-10-07: >= 64 px, only while seated, right column above the get-out button, key `H` while seated) makes only the sound `cart_horn` (`Game::honk()`, 0.6 s cooldown); animals do not react.
    - **Speed:** paths **4.5 m/s** (≈ 2.3 × walking), grass **2.0 m/s** (Q-120 answered),
      chosen from the surface of the cell under the box centre, smooth blend (the
      acceleration limits above).

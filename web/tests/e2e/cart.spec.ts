@@ -216,10 +216,25 @@ for (const [name, w, h] of [
         expect(overlap, `${id} overlaps the get-out button`).toBe(false);
       }
       await expect(page.locator('#view-btn')).toBeHidden();
+      // the 🔔 horn (Q-378, ASND-040): visible while seated, >= 64 px, on screen, apart from the other buttons
+      const horn = page.locator('#horn-btn');
+      await expect(horn).toBeVisible();
+      const hb = (await horn.boundingBox())!;
+      expect(hb.width).toBeGreaterThanOrEqual(64);
+      expect(hb.height).toBeGreaterThanOrEqual(64);
+      expect(hb.x + hb.width).toBeLessThanOrEqual(w);
+      expect(hb.y + hb.height).toBeLessThanOrEqual(h);
+      for (const id of ['#act', '#settings-btn', '#compass-btn']) {
+        const o = await page.locator(id).boundingBox();
+        if (!o) continue;
+        const overlap = !(hb.x + hb.width <= o.x || o.x + o.width <= hb.x || hb.y + hb.height <= o.y || o.y + o.height <= hb.y);
+        expect(overlap, `${id} overlaps the horn button`).toBe(false);
+      }
       // the right thumb gets out
       await act.tap();
       await nextFrames(page, 3);
       expect(await page.evaluate(() => window.__zoo!.app.driving())).toBe(false);
+      await expect(horn).toBeHidden();
       await page.screenshot({ path: `${shots}/cart-small-${name}.png` });
     });
   });

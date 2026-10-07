@@ -32,4 +32,5 @@ ui-lock-close = Schließen
 
 ## Buttons (aria labels, no text needed on screen)
 ui-cart-get-out = Aussteigen
+ui-cart-horn = Hupe
 ui-cart-board = In den Golfwagen einsteigen

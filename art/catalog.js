@@ -2051,6 +2051,81 @@ window.ART_CATALOG = {
           ]
         },
         {
+          "id": "sound_cart",
+          "title": "Golf cart, key box and lock panel",
+          "status": "in-review",
+          "description": "Cart board / get-out, horn, bump, locked, parking refusal, two engine loops (path, grass), key box latch + chime, key jingle, lock wheel tick / wrong / ok (ASND-030..). Soft, friendly, synthesised; engine loops are 2 s seamless and played with pitch and gain following the speed.",
+          "spec": "ART-SOUND",
+          "brief": "sound/brief.md",
+          "notes": "All synthesised by tools/sound/cart_sounds.py (licence own, seeded). Not listened to by a human - please review and say which cues to change (manifest: approved = false). The engine loops sound like a steady hum here; in the game they are pitched 0.75-1.30 and played at gain <= 0.28.",
+          "audio": [
+            {
+              "file": "../assets/audio/cart/cart_board_1.ogg",
+              "label": "cart_board_1"
+            },
+            {
+              "file": "../assets/audio/cart/cart_bump_1.ogg",
+              "label": "cart_bump_1"
+            },
+            {
+              "file": "../assets/audio/cart/cart_bump_2.ogg",
+              "label": "cart_bump_2"
+            },
+            {
+              "file": "../assets/audio/cart/cart_get_out_1.ogg",
+              "label": "cart_get_out_1"
+            },
+            {
+              "file": "../assets/audio/cart/cart_horn_1.ogg",
+              "label": "cart_horn_1"
+            },
+            {
+              "file": "../assets/audio/cart/cart_locked_1.ogg",
+              "label": "cart_locked_1"
+            },
+            {
+              "file": "../assets/audio/cart/cart_park_refuse_1.ogg",
+              "label": "cart_park_refuse_1"
+            },
+            {
+              "file": "../assets/audio/cart/key_box_open_1.ogg",
+              "label": "key_box_open_1"
+            },
+            {
+              "file": "../assets/audio/cart/key_pickup_1.ogg",
+              "label": "key_pickup_1"
+            },
+            {
+              "file": "../assets/audio/cart/lock_ok_1.ogg",
+              "label": "lock_ok_1"
+            },
+            {
+              "file": "../assets/audio/cart/lock_wheel_tick_1.ogg",
+              "label": "lock_wheel_tick_1"
+            },
+            {
+              "file": "../assets/audio/cart/lock_wheel_tick_2.ogg",
+              "label": "lock_wheel_tick_2"
+            },
+            {
+              "file": "../assets/audio/cart/lock_wheel_tick_3.ogg",
+              "label": "lock_wheel_tick_3"
+            },
+            {
+              "file": "../assets/audio/cart/lock_wrong_1.ogg",
+              "label": "lock_wrong_1"
+            },
+            {
+              "file": "../assets/audio/engine/cart_engine_grass_1.ogg",
+              "label": "cart_engine_grass_1 (loop)"
+            },
+            {
+              "file": "../assets/audio/engine/cart_engine_path_1.ogg",
+              "label": "cart_engine_path_1 (loop)"
+            }
+          ]
+        },
+        {
           "id": "sound_ui",
           "title": "UI sounds",
           "status": "in-review",

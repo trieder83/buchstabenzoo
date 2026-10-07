@@ -1,6 +1,7 @@
 """Decodes every audio file of the manifest and checks ASND-001 (decodes), ASND-003 (loudness
 -16 LUFS +/- 2, peak <= -1 dBFS, length <= 1.5 s / animal calls <= 3 s). Group `ambient` (loops,
 ASND-020/021): -22 LUFS +/- 2, 20-40 s, ogg <= 150 KB, spectral peak 3-6 kHz, seamless loop point.
+Group `engine` (ASND-030): 1-3 s seamless loops, -22 LUFS +/- 2, ogg <= 60 KB.
 Prints one line per problem; exit code 1 if any. Run: python3 tools/sound/check_audio.py"""
 import glob
 import os
@@ -63,6 +64,27 @@ def check_ambient(path, x):
     return out
 
 
+def check_engine(path, x):
+    """ASND-030: seamless engine loops (group `engine`): 1-3 s, -22 +/- 2 LUFS, peak <= -1 dBFS, ogg <= 60 KB."""
+    out = []
+    dur = len(x) / process.SR
+    if not 1.0 <= dur <= 3.0:
+        out.append(f"{path}: engine loop {dur:.2f}s not in 1-3 s")
+    l, p = process.lufs(x), process.peak_db(x)
+    if not -24.0 <= l <= -20.0:
+        out.append(f"{path}: {l:.1f} LUFS not in -22 +/- 2")
+    if p > -1.0:
+        out.append(f"{path}: peak {p:.1f} dBFS > -1")
+    if path.endswith(".ogg") and os.path.getsize(path) > 60_000:
+        out.append(f"{path}: {os.path.getsize(path)} bytes > 60 KB")
+    jump, lvl = loop_seam(x)
+    if jump > 1.0:
+        out.append(f"{path}: loop seam click (jump {jump:.2f} x the largest normal step)")
+    if abs(lvl) > 3.0:
+        out.append(f"{path}: level at the loop seam {lvl:+.1f} dB (> 3 dB)")
+    return out
+
+
 def main():
     problems, n = [], 0
     files = sorted(glob.glob(os.path.join(REPO, "assets", "audio", "*", "*.ogg")) +
@@ -72,6 +94,9 @@ def main():
         x = decode(path)
         if x is None:
             problems.append(f"{path}: does not decode")
+            continue
+        if "/engine/" in path:
+            problems += check_engine(path, x)
             continue
         if "/ambient/" in path:
             problems += check_ambient(path, x)

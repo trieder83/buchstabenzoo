@@ -125,3 +125,17 @@ rotated 37 % and resampled +3 %) joined with 0.8 s equal-power crossfades, wrap-
 loop point, -22 LUFS (ungated K-weighted), low-pass 9 kHz, Vorbis q0 / AAC 32 kbit.
 Analysis: spectral peak 3.3 kHz, peak -9.2 dBFS, loop jump 0.22 x the largest normal sample step, level
 at the seam +1.2 dB vs the file. ogg 119 KB, m4a 93 KB. Nobody listened (approved = false).
+
+## Group cart / engine (`tools/sound/cart_sounds.py`, 2026-10-07, golf cart sounds)
+
+Source order: nothing searched, all **synthesised** (licence `own`, seeded numpy/scipy; the sounds are
+simple knocks, clicks, bells, FM beeps and hum, source order 4). 11 one-shot cues in `assets/audio/cart/`
+(`cart_board`, `cart_get_out`, `cart_horn`, `cart_bump` x2, `cart_locked`, `cart_park_refuse`, `key_box_open`,
+`key_pickup`, `lock_wheel_tick` x3, `lock_wrong`, `lock_ok`) via `process.build` (-16 LUFS, peak <= -1.2 dBFS,
+0.05-0.97 s), and 2 engine loops in `assets/audio/engine/` (`cart_engine_path`: 90 Hz electric hum + 600 Hz whine +
+fine gravel crackle; `cart_engine_grass`: 74 Hz, softer whine, low-passed swish of grass), each **2.0 s, periodic
+by construction** (integer cycles of every partial / modulation, FFT-domain noise), -22 LUFS, start offset chosen so
+the decoded seam of both .ogg and .m4a is smooth (jump <= 0.56 x the largest step). Design notes: horn = FM beep
+640 Hz twice (0.17 s, gap 0.09 s), `lock_wrong` = two rounded low-passed tones going down (no buzzer),
+`park_refuse` = two soft down-blips (different from `ui_refuse`). No prompt, no download. Nobody listened.
+Audio total after this run 1 448 KB of the 1.5 MB budget (Q-379).

@@ -289,3 +289,134 @@ fn asnd_022_ambient_target_follows_the_phase() {
         .unwrap();
     assert_eq!(v, AMBIENT_GAIN);
 }
+
+const CART_CUES: [&str; 11] = [
+    "cart_board",
+    "cart_get_out",
+    "cart_horn",
+    "cart_bump",
+    "cart_locked",
+    "cart_park_refuse",
+    "key_box_open",
+    "key_pickup",
+    "lock_wheel_tick",
+    "lock_wrong",
+    "lock_ok",
+];
+
+// ASND-031: groups and peak gains of the golf cart cues
+#[test]
+fn asnd_031_cart_cue_groups_and_peaks() {
+    for c in CART_CUES {
+        assert!(CUES.contains(&c), "{c} in CUES");
+        let g = peak_gain(c);
+        assert!(g > 0.0 && g <= MAX_PEAK_GAIN, "{c}: {g}");
+    }
+    for c in ["cart_board", "cart_horn", "cart_bump", "cart_park_refuse"] {
+        assert_eq!(group_of(c), Group::Cart, "{c}");
+        assert!((peak_gain(c) - 0.28).abs() < 1e-6);
+    }
+    for c in ["key_box_open", "key_pickup"] {
+        assert_eq!(group_of(c), Group::Pickups, "{c}");
+        assert!((peak_gain(c) - 0.245).abs() < 1e-6);
+    }
+    for c in ["lock_wheel_tick", "lock_wrong", "lock_ok"] {
+        assert_eq!(group_of(c), Group::Ui, "{c}");
+        assert!((peak_gain(c) - 0.21).abs() < 1e-6);
+    }
+}
+
+// ASND-032: the events of the cue table
+#[test]
+fn asnd_032_cart_events_to_cues() {
+    let z = |s: &str| s.to_owned();
+    let one = |e: &GameEvent| {
+        let mut r = cues_for_event(e);
+        assert_eq!(r.len(), 1, "{e:?}");
+        r.remove(0)
+    };
+    let r = one(&GameEvent::CartBoarded {
+        id: z("cart_1"),
+        followers: false,
+    });
+    assert_eq!(
+        (r.cue.as_str(), r.cart.as_deref()),
+        ("cart_board", Some("cart_1"))
+    );
+    let r = one(&GameEvent::CartLeft { id: z("cart_1") });
+    assert_eq!(
+        (r.cue.as_str(), r.cart.as_deref()),
+        ("cart_get_out", Some("cart_1"))
+    );
+    for closed in [false, true] {
+        assert_eq!(
+            one(&GameEvent::CartLocked {
+                closed_level: closed
+            })
+            .cue,
+            "cart_locked"
+        );
+    }
+    assert_eq!(one(&GameEvent::CartNoPark).cue, "cart_park_refuse");
+    assert_eq!(one(&GameEvent::CartHorn).cue, "cart_horn");
+    let r = one(&GameEvent::CartBump { strength: 0.6 });
+    assert_eq!((r.cue.as_str(), r.strength), ("cart_bump", 0.6));
+    let r = cues_for_event(&GameEvent::KeyBoxOpened);
+    assert_eq!(names(r.clone()), ["key_box_open", "key_pickup"]);
+    assert!(r.iter().all(|c| c.key_box));
+    assert_eq!((r[0].delay, r[1].delay), (0.6, 1.2));
+    // the wrong code has no core cue any more: the host plays lock_wrong with the shake
+    assert!(cues_for_event(&GameEvent::WrongCode { tries: 1 }).is_empty());
+    assert!(cues_for_event(&GameEvent::NoteRead).is_empty());
+    // a seeded run gives the same variation numbers
+    let (mut a, mut b) = (Pcg32::new(3), Pcg32::new(3));
+    for _ in 0..20 {
+        assert_eq!(variation(&mut a), variation(&mut b));
+    }
+}
+
+// ASND-034: the engine law
+#[test]
+fn asnd_034_engine_gain_and_pitch() {
+    assert!((engine_gain(0.0) - 0.07).abs() < 1e-6);
+    assert!((engine_gain(4.5) - 0.28).abs() < 1e-6);
+    assert!((engine_gain(20.0) - 0.28).abs() < 1e-6, "clamped above");
+    assert!(
+        (engine_gain(-1.5) - engine_gain(1.5)).abs() < 1e-9,
+        "abs for the wedge reverse"
+    );
+    assert!((engine_rate(0.0) - 0.75).abs() < 1e-6);
+    assert!((engine_rate(4.5) - 1.30).abs() < 1e-6);
+    assert!((engine_rate(-1.5) - engine_rate(1.5)).abs() < 1e-9);
+    let mut last = -1.0;
+    for i in 0..=60 {
+        let g = engine_gain(i as f32 * 0.1);
+        assert!(g >= last && g <= ENGINE_GAIN_MAX + 1e-6);
+        last = g;
+    }
+    let (p, g) = engine_layer_gains(2.0, 0.0);
+    assert!((p - engine_gain(2.0)).abs() < 1e-6 && g == 0.0);
+    let (p, g) = engine_layer_gains(2.0, 1.0);
+    assert!(p == 0.0 && (g - 0.113).abs() < 2e-3, "{g}");
+    assert!((engine_rate(2.0) - 0.994).abs() < 1e-2);
+    let (p, g) = engine_layer_gains(4.5, 0.5);
+    assert!((p - 0.14).abs() < 1e-6 && (g - 0.28 * 0.7 * 0.5).abs() < 1e-6);
+    const { assert!(ENGINE_GAIN_MAX <= MAX_PEAK_GAIN) };
+}
+
+// ASND-035: the grass blend
+#[test]
+fn asnd_035_surface_blend() {
+    assert_eq!(grass_blend_target(StepSurface::Path), 0.0);
+    assert_eq!(grass_blend_target(StepSurface::Grass), 1.0);
+    assert_eq!(grass_blend_target(StepSurface::Sand), 1.0);
+    assert_eq!(grass_blend_target(StepSurface::Wood), 0.0);
+    let mut b = 0.0;
+    b = advance_blend(b, 1.0, 0.25);
+    assert!((b - 0.5).abs() < 1e-6, "1 per 0.5 s");
+    b = advance_blend(b, 1.0, 10.0);
+    assert_eq!(b, 1.0);
+    b = advance_blend(b, 0.0, 0.1);
+    assert!((b - 0.8).abs() < 1e-6);
+    assert_eq!(advance_blend(0.0, 0.0, 1.0), 0.0);
+}

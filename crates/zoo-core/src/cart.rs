@@ -46,6 +46,19 @@ pub const REVERSE_AFTER_S: f32 = 1.0;
 pub const REVERSE_SPEED_MS: f32 = 1.5;
 /// Seconds without progress after which the cart is lifted to a roomy pose.
 pub const RESCUE_S: f32 = 3.0;
+/// A tap on the horn within this long after the last horn is ignored (ASND-033).
+pub const HORN_COOLDOWN_S: f32 = 0.6;
+/// A bump needs at least this much speed lost to a collision in one step (m/s).
+pub const BUMP_MIN_LOST_MS: f32 = 1.0;
+/// Speed loss (m/s) that gives the full bump strength.
+pub const BUMP_FULL_LOST_MS: f32 = 4.5;
+/// At most one bump sound per this long (s).
+pub const BUMP_COOLDOWN_S: f32 = 0.8;
+
+/// Strength 0.3..=1 of a bump that lost `lost` m/s, or `None` when it was too soft (ASND-033).
+pub fn bump_strength(lost: f32) -> Option<f32> {
+    (lost >= BUMP_MIN_LOST_MS).then(|| (lost / BUMP_FULL_LOST_MS).clamp(0.3, 1.0))
+}
 /// Pose of the child's feet above the seat is the `socket_driver` empty itself (no offset).
 pub const ENTER_RANGE_PLAYER_M: f32 = BOARD_RANGE_M;
 
@@ -495,6 +508,8 @@ impl Game {
 
         // move in sub-steps; slide along obstacles by pushing the box out
         let total = cart.speed * dt;
+        let speed_before = cart.speed;
+        let mut braked_by_things = false;
         let steps = (total.abs() / 0.2).ceil().max(1.0) as usize;
         let delta = cart.dir * (total / steps as f32);
         let mut moved = 0.0;
@@ -513,10 +528,19 @@ impl Game {
             let new = Self::clearance(q, cart.dir, &ents);
             if new < STOP_MARGIN_M && new < old {
                 cart.speed = 0.0;
+                braked_by_things = true;
                 break;
             }
             moved += q.distance(cart.pos) * total.signum();
             cart.pos = q;
+        }
+        // a bump: speed lost to a wall / fence / building slide (not to ducks, not backing out of
+        // a wedge, never from the rescue or the animal push-out; ASND-033)
+        if total > 0.0 && !cart.reversing && !braked_by_things && self.bump_cooldown <= 0.0 {
+            if let Some(strength) = bump_strength(speed_before - moved / dt) {
+                self.bump_cooldown = BUMP_COOLDOWN_S;
+                self.events.push(GameEvent::CartBump { strength });
+            }
         }
         if total != 0.0 && moved.abs() < total.abs() * 0.25 {
             cart.speed = cart.speed.signum() * cart.speed.abs().min(moved.abs() / dt);
@@ -550,6 +574,17 @@ impl Game {
         self.player.facing = c.dir;
         self.player.last_speed = 0.0;
         self.cart_speed_now = c.speed;
+    }
+
+    /// Sounds the horn of the seated cart (sound only; a tap within [`HORN_COOLDOWN_S`] of the
+    /// last one and any tap on foot are ignored). True when the horn sounded.
+    pub fn honk(&mut self) -> bool {
+        if self.seated.is_none() || self.horn_cooldown > 0.0 {
+            return false;
+        }
+        self.horn_cooldown = HORN_COOLDOWN_S;
+        self.events.push(GameEvent::CartHorn);
+        true
     }
 
     /// Animals never stand inside a cart's box: a pushed-out copy keeps them beside it.

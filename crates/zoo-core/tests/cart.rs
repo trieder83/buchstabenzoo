@@ -756,3 +756,113 @@ fn layout_048_cart_parking_data() {
         assert!(grid.is_passable(c.stand_cell(), false), "{}: stand", c.id);
     }
 }
+
+fn bumps(g: &mut Game) -> Vec<f32> {
+    g.drain_events()
+        .into_iter()
+        .filter_map(|e| match e {
+            GameEvent::CartBump { strength } => Some(strength),
+            _ => None,
+        })
+        .collect()
+}
+
+// ASND-033: bump strength law, free driving is silent, a wall bump is one bonk per 0.8 s
+#[test]
+fn asnd_033_bump_rules() {
+    use zoo_core::cart::{bump_strength, BUMP_COOLDOWN_S};
+    assert_eq!(bump_strength(0.99), None);
+    assert!((bump_strength(1.0).unwrap() - 0.3).abs() < 1e-6);
+    assert!((bump_strength(4.5).unwrap() - 1.0).abs() < 1e-6);
+    assert_eq!(bump_strength(9.0), Some(1.0));
+
+    // free driving on a path: no bump
+    let mut g = with_key(game());
+    board(&mut g, 0);
+    let (start, dir) = find_run(&g, Surface::Path, 9.0);
+    put_cart(&mut g, 0, start, dir);
+    g.drain_events();
+    run(&mut g, 2.0, dir);
+    assert!(bumps(&mut g).is_empty(), "no bump on a free run");
+
+    // driving at a barrier / fence / wall from 6 m: the first hit is a bump, never more than
+    // one per BUMP_COOLDOWN_S while the stick keeps pushing
+    let mut hits = 0;
+    let g0 = with_key(game());
+    let mut targets: Vec<IVec2> = Vec::new();
+    for e in &g0.level.data.elements {
+        use zoo_core::ElementType::*;
+        if matches!(e.ty, Barrier | Landmark | Boundary) {
+            targets.push(IVec2::new(e.rect.x, e.rect.z));
+        }
+    }
+    for target in targets {
+        let mut g = with_key(game());
+        board(&mut g, 0);
+        let t = cell_center(target);
+        let mut found = None;
+        'o: for r in [4.5f32, 6.0, 8.0] {
+            for k in 0..32 {
+                let a = k as f32 * std::f32::consts::TAU / 32.0;
+                let p = t + Vec2::new(a.cos(), a.sin()) * r;
+                let dir = (t - p).normalize();
+                if !g.cart_pose_overlaps(p, dir)
+                    && g.level.grid().surface(cell_of(p)) == Some(Surface::Path)
+                {
+                    found = Some((p, dir));
+                    break 'o;
+                }
+            }
+        }
+        let Some((p, dir)) = found else { continue };
+        put_cart(&mut g, 0, p, dir);
+        g.drain_events();
+        let mut times = Vec::new();
+        for i in 0..300 {
+            g.update(DT, dir);
+            for s in bumps(&mut g) {
+                assert!((0.3..=1.0).contains(&s), "{s}");
+                times.push(i as f32 * DT);
+            }
+        }
+        for w in times.windows(2) {
+            assert!(w[1] - w[0] >= BUMP_COOLDOWN_S - DT, "{times:?}");
+        }
+        if !times.is_empty() {
+            hits += 1;
+        }
+    }
+    assert!(hits >= 1, "at least one obstacle gave a bump");
+
+    // getting out and a wedge escape (reversing) give none
+    let mut g = with_key(game());
+    board(&mut g, 0);
+    g.carts[0].reversing = true;
+    g.carts[0].wedged_s = 1.5;
+    g.drain_events();
+    g.update(DT, -g.carts[0].dir);
+    assert!(bumps(&mut g).is_empty());
+}
+
+// ASND-033: honk only while seated, one per 0.6 s
+#[test]
+fn asnd_033_honk_cooldown_and_seat() {
+    let mut g = with_key(game());
+    g.drain_events();
+    assert!(!g.honk(), "never on foot");
+    assert!(g.drain_events().is_empty());
+    board(&mut g, 0);
+    g.drain_events();
+    assert!(g.honk());
+    assert!(!g.honk(), "second tap at once is dropped");
+    g.update(0.3, Vec2::ZERO);
+    assert!(!g.honk(), "0.3 s later still dropped");
+    g.update(0.35, Vec2::ZERO);
+    assert!(g.honk(), "after 0.6 s again");
+    let n = g
+        .drain_events()
+        .iter()
+        .filter(|e| matches!(e, GameEvent::CartHorn))
+        .count();
+    assert_eq!(n, 2);
+}

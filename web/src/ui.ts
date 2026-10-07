@@ -48,6 +48,9 @@ export interface UiApp {
   cart_key_json?(): string;
   enter_code?(code: number): string;
   set_lock_open?(open: boolean): void;
+  /** Lock panel sounds (ASND-038) and the horn (Q-378, sound only; false = ignored). */
+  lock_sound?(kind: string): void;
+  honk?(): boolean;
   /** Camera views (GAME-CAMERA-VIEWS): the view to store, the first-person toggle. */
   saved_view_mode?(): string;
   view_mode?(): string;
@@ -657,6 +660,8 @@ export class Ui {
   readonly hud = document.getElementById('hud-carry') as HTMLDivElement;
   /** GAME-FEED §8: the put-down button next to the carried item (✋⬇, no text). */
   readonly dropBtn = document.getElementById('drop-btn') as HTMLButtonElement | null;
+  /** Golf cart horn (Q-378): shown only while seated; sound only. */
+  readonly hornBtn = document.getElementById('horn-btn') as HTMLButtonElement | null;
   /** GAME-FEED §10: readable icons above lying foods near the player. */
   readonly lyingIcons = document.getElementById('lying-icons') as HTMLDivElement | null;
   private lastLying = '';
@@ -712,6 +717,11 @@ export class Ui {
       e.stopPropagation();
       this.putDown();
     });
+    this.hornBtn?.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.honk();
+    });
     // the badge and the strip are children of the button: a tap on them is this tap
     this.compass?.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -742,6 +752,7 @@ export class Ui {
         enter_code: (c) => this.app.enter_code?.(c) ?? 'none',
         cart_key_json: () => this.app.cart_key_json?.() ?? '{}',
         set_lock_open: (o) => this.app.set_lock_open?.(o),
+        lock_sound: (k) => this.app.lock_sound?.(k),
       },
       () => {
         this.settings.hidden = true;
@@ -1056,6 +1067,14 @@ export class Ui {
     this.pollEvents();
   }
 
+  /** The 🔔 horn (Q-378): sound only; a short pulse on the button when it sounded. */
+  honk(): void {
+    if (!this.app.honk?.() || !this.hornBtn) return;
+    this.hornBtn.classList.remove('honk');
+    void this.hornBtn.offsetWidth; // restart the animation
+    this.hornBtn.classList.add('honk');
+  }
+
   private shakeDrop(): void {
     if (!this.dropBtn) return;
     this.dropBtn.classList.remove('shake');
@@ -1087,6 +1106,7 @@ export class Ui {
     if (document.body.classList.contains('driving') !== driving) {
       document.body.classList.toggle('driving', driving);
     }
+    if (this.hornBtn && this.hornBtn.hidden === driving) this.hornBtn.hidden = !driving;
     const key = this.app.target_key();
     if (key !== this.lastTarget || lock !== this.lastLock) {
       this.lastTarget = key;
@@ -1686,6 +1706,7 @@ export class Ui {
     this.act.setAttribute('aria-label', this.app.t('ui-interact'));
     this.hint.setAttribute('aria-label', this.app.t('ui-interact'));
     this.dropBtn?.setAttribute('aria-label', this.app.t('ui-put-down'));
+    this.hornBtn?.setAttribute('aria-label', this.app.t('ui-cart-horn'));
     this.compass?.setAttribute('aria-label', this.app.t('ui-hint'));
     this.settings.querySelector('#settings-lang')?.setAttribute('aria-label', this.app.t('ui-language'));
     this.settings.querySelector('#settings-level')?.setAttribute('aria-label', this.app.t('ui-reading-level'));

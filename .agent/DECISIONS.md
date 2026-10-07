@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-378** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-381** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-160 answered · 104 open · 10 other (partly answered / proposed / superseded).
+163 answered · 104 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -126,6 +126,9 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-380 — Key-box sound timing (ART-SOUND "Golf cart sounds"): right code -> … → 2026-10-07: as recommended; wired (ASND-031..040).
+- Q-379 — Audio size budget: assets/audio is now 1 448 KB of 1.5 MB (ASND-008 … → 2026-10-07: as recommended; wired (ASND-031..040).
+- Q-378 — Golf-cart horn trigger (GAME-CART rule 5 only says "a friendly 🔔 horn … → 2026-10-07: as recommended; wired (ASND-031..040).
 - Q-375 — Terrarium house look (user request 2026-10-06): the terrarium house … → request 2026-10-06 ("implement as specified"); real models listed in night-2.md "Model needs".
 - Q-371 — Golf cart look. Recommended green-white with a striped roof. → 2026-10-06: RED and WHITE instead (red body, white roof with red stripes; the zoo has a lot of green already).
 - Q-370 — Carts of locked levels: Recommendation: they exist but show a 🔒 until … → 2026-10-06: as recommended.

@@ -2,6 +2,7 @@
 // asset files, forwards input and shows the HTML overlays. All game logic, what is
 // interactable and every text live in Rust (zoo-web / zoo-core, Fluent).
 import init, { App, required_assets } from '../../crates/zoo-web/pkg/zoo_web.js';
+import { installErrorCapture } from './ads-debug';
 import { AdsHost } from './ads-ui';
 import { Analytics, browserAnalyticsEnv } from './analytics';
 import { MEASUREMENT_ID } from './analytics-config';
@@ -13,6 +14,8 @@ import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
 import { introEnabled, loadSettings, Ui } from './ui';
+
+installErrorCapture(); // field diagnostics of the ad boards (ADS-038): last errors, context loss
 
 /** The day levels, joined into one zoo (GAME-LAYOUT "Joining levels", proposal Q-088). */
 const LEVELS = [
@@ -34,6 +37,8 @@ export interface ZooDebug {
   slot: SaveSlot;
   /** Ad billboards (GAME-ADS): content state for tests. */
   ads: AdsHost;
+  /** Field diagnostics of the ad boards as JSON data (ADS-038; the same as `?adsdebug=1` shows). */
+  adsDebug: () => Record<string, unknown>;
   /** Opt-in analytics (PLAT-022). */
   analytics: Analytics;
   frames: number;
@@ -178,7 +183,7 @@ async function main(): Promise<void> {
   window.addEventListener(SOUND_EVENT, (e) => audio.setEnabled((e as CustomEvent<{ on: boolean }>).detail.on));
   canvas.focus();
 
-  const debug: ZooDebug = { app, ui, audio, slot, ads, analytics, frames: 0, frameMs: 0, intervalMs: 0 };
+  const debug: ZooDebug = { app, ui, audio, slot, ads, adsDebug: () => ads.debug(), analytics, frames: 0, frameMs: 0, intervalMs: 0 };
   window.__zoo = debug;
   let last = performance.now();
   const loop = (now: number) => {

@@ -15,7 +15,7 @@
 
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
-| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 37 | Q-364, Q-377 | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
+| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 42 | Q-364, Q-377 | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
 | GAME-ADS-C1 | Ad campaign 1 — Math Fighter | draft | GAME-ADS, CONT-MATH, GAME-CART | 6 | — | [10-gameplay/ads/campaign-1-mathfighter/campaign.md](10-gameplay/ads/campaign-1-mathfighter/campaign.md) |
 | GAME-ADS-C2 | Ad campaign 2 — ABC Smash | draft | GAME-ADS, GAME-ADS-C1, CONT-READING | 4 | — | [10-gameplay/ads/campaign-2-abcsmash/campaign.md](10-gameplay/ads/campaign-2-abcsmash/campaign.md) |
 | GAME-ADS-C3 | Ad campaign 3 — EduGameGalaxy | draft | GAME-ADS, GAME-ADS-C1, GAME-ADS-C2 | 4 | — | [10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md](10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md) |
@@ -25,7 +25,7 @@
 | GAME-CART | Golf carts | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE, CONT-MATH, GAME-HINT | 32 | Q-034, Q-372, Q-373 | [10-gameplay/golf-carts.md](10-gameplay/golf-carts.md) |
 | GAME-ECON | Visitors, shops and coins (idea) | draft | GAME-LEVEL-3, GAME-FEED, GAME-EVENTS, CONT-MATH, GAME-SAVE, GAME-HINT | 10 | — | [10-gameplay/economy.md](10-gameplay/economy.md) |
 | GAME-EVENTS | Zoo events | draft | GAME-RESCUE, GAME-NIGHT, GAME-FAMILY, GAME-GARDEN, GAME-HINT, GAME-SAVE | 10 | — | [10-gameplay/events.md](10-gameplay/events.md) |
-| GAME-FAMILY | Animal pairs and babies | draft | GAME-ANIMALS, GAME-RESCUE, GAME-FEED, GAME-SAVE | 29 | Q-030, Q-074, Q-075, Q-097, Q-100, Q-106, Q-204, Q-280, Q-282, Q-283 | [10-gameplay/families.md](10-gameplay/families.md) |
+| GAME-FAMILY | Animal pairs and babies | draft | GAME-ANIMALS, GAME-RESCUE, GAME-FEED, GAME-SAVE | 30 | Q-030, Q-074, Q-075, Q-097, Q-100, Q-106, Q-204, Q-280, Q-282, Q-283 | [10-gameplay/families.md](10-gameplay/families.md) |
 | GAME-FEED | Food boxes, bamboo forest, carrying and putting down items | draft | GAME-WORLD, CONT-READING, GAME-PLAYER | 44 | Q-025, Q-032, Q-034, Q-042, Q-065, Q-070, Q-154 | [10-gameplay/feeding.md](10-gameplay/feeding.md) |
 | GAME-GARDEN | Vegetable garden, fruit garden and treats | draft | GAME-FEED, GAME-FAMILY, GAME-LAYOUT, GAME-SAVE, CONT-READING | 24 | Q-100, Q-101, Q-102, Q-103, Q-154, Q-320, Q-321, Q-322, Q-323, Q-324 | [10-gameplay/garden.md](10-gameplay/garden.md) |
 | GAME-HINT | Next-target hint | draft | GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-NIGHT, GAME-CAMERA-VIEWS, GAME-FEED, GAME-GARDEN | 33 | Q-008, Q-031, Q-262, Q-353 | [10-gameplay/hints.md](10-gameplay/hints.md) |
@@ -64,7 +64,7 @@
 | ART-ENVIRONMENT | Environment — mockups and models | draft | ART-PIPELINE, ART-DIRECTION, GAME-WORLD, CONT-MISSIONS | 19 | Q-005, Q-044, Q-048, Q-059, Q-060, Q-061, Q-064, Q-098, Q-099, Q-147, Q-149, Q-151, Q-153, Q-154 | [30-art/environment.md](30-art/environment.md) |
 | ART-PIPELINE | Asset pipeline — concept to game | draft | ART-DIRECTION | 10 | Q-009, Q-026, Q-153, Q-154 | [30-art/asset-pipeline.md](30-art/asset-pipeline.md) |
 | ART-RIG | Character rig and animation — technical contract | draft | ART-PIPELINE, GAME-PLAYER, TECH-ARCH | 23 | Q-009, Q-014, Q-024, Q-025, Q-026, Q-027, Q-029, Q-042, Q-050, Q-051, Q-063 | [30-art/character-rig-and-animation.md](30-art/character-rig-and-animation.md) |
-| ART-SOUND | Sound effects — sourcing and pipeline | draft | ART-PIPELINE, ART-ANIMALS, GAME-ANIMALS, GAME-FEED, GAME-PLAYER, PERF-BUDGETS | 27 | Q-008, Q-211, Q-213, Q-214, Q-215, Q-216, Q-220, Q-221, Q-250, Q-251 | [30-art/sound.md](30-art/sound.md) |
+| ART-SOUND | Sound effects — sourcing and pipeline | draft | ART-PIPELINE, ART-ANIMALS, GAME-ANIMALS, GAME-FEED, GAME-PLAYER, PERF-BUDGETS | 38 | Q-008, Q-211, Q-213, Q-214, Q-215, Q-216, Q-220, Q-221, Q-250, Q-251 | [30-art/sound.md](30-art/sound.md) |
 
 ## Tech
 
@@ -82,4 +82,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 862 test cases; questions: answered: 161, open: 104, partly answered: 7, proposed: 2.
+**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 879 test cases; questions: answered: 164, open: 104, partly answered: 7, proposed: 2.

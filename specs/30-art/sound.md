@@ -6,7 +6,7 @@ module: sound
 status: draft
 depends_on: [ART-PIPELINE, ART-ANIMALS, GAME-ANIMALS, GAME-FEED, GAME-PLAYER, PERF-BUDGETS]
 test_prefix: ASND
-updated: 2026-10-01
+updated: 2026-10-07
 ---
 
 # Sound effects — sourcing and pipeline
@@ -28,6 +28,7 @@ playing a named cue). Voice / read-aloud is a separate topic (Q-008).
 | Doors | `door_wood_open/close`, `gate_open/close` (enclosure gates, garden gate), `glass_door`, `moon_door` | door / gate open and close events |
 | Drop / pickup | `pickup_food`, `drop_food`, `pickup_item` (bowl, bamboo), `drop_item`, `harvest_plant`, `basket_add` | GAME-FEED §8/§13, GAME-GARDEN |
 | UI | `ui_tap`, `ui_refuse`, `ui_success` | existing `ui-refuse` etc. |
+| Golf cart, key box, lock | `cart_board`, `cart_get_out`, `cart_horn`, `cart_bump` (2), `cart_locked`, `cart_park_refuse`, `cart_engine_path` / `cart_engine_grass` (loops), `key_box_open`, `key_pickup`, `lock_wheel_tick` (3), `lock_wrong`, `lock_ok` | GAME-CART; see "Golf cart sounds" |
 
 A cue with several variations is one manifest entry with `variants = N`; the host picks
 one at random (seeded in tests) and varies pitch ±5 % so repetition is not noticed.
@@ -58,7 +59,7 @@ sounds cute. Lions may roar softly, never scary (child-friendly UX).
   (peaks ≤ −1 dBFS), fade in/out 5 ms, mono for positional cues.
 - Delivered as **Ogg Vorbis/Opus `.ogg` plus `.m4a` (AAC)** fallback where needed (Safari/iOS),
   in `assets/audio/<group>/<cue>_<n>.ogg`. Short cues ≤ 1.5 s (animal calls ≤ 3 s).
-- **Size budget:** whole first set ≤ 1.5 MB (PERF-BUDGETS budget 24, Q-200 answered 2026-09-30); loaded
+- **Size budget:** whole set ≤ 2.0 MB (raised from 1.5 MB on 2026-10-07, Q-379; PERF-BUDGETS budget 24, Q-200 answered 2026-09-30); loaded
   lazily by group, never blocking the first frame.
 - Every cue is listed in `assets/manifest.toml` (`kind = "audio"`, `source`, `licence`,
   `origin_url`/`prompt`/`script`, `approved`); a human sets `approved = true` after listening
@@ -154,6 +155,102 @@ audio device), `fetched` the audio URLs requested so far.
     is stopped and released, a later night starts a new one; phase flips while fading just change the target.
   - Debug: `window.__zoo.audio.ambient` = `{ playing, gain, target, fetched }`.
 
+## Golf cart sounds (user request 2026-10-07, GAME-CART)
+
+Files exist (`tools/sound/cart_sounds.py`, all synthesised, licence `own`, `approved = false` until a human
+listens; brief `art/sound/brief.md` "Group cart / engine"). Playback is **wired** (2026-10-07): zoo-core `sound.rs` /
+`cart.rs`, `zoo-web` (`lock_sound`, `honk`, `engine_*`), `web/src/audio.ts`, `lock-panel.ts`, `ui.ts`.
+
+**Assets** (mono, `.ogg` + `.m4a`; one-shots -16 LUFS, peak <= -1.2 dBFS, <= 1.5 s; loops -22 LUFS):
+
+| Cue | Group dir | Variants | Length | Character |
+|---|---|---|---|---|
+| `cart_board` | `cart` | 1 | 0.84 s | door / seat thump, click, rising electric whirr |
+| `cart_get_out` | `cart` | 1 | 0.52 s | motor winds down, click, soft thump |
+| `cart_horn` | `cart` | 1 | 0.43 s | FM "beep-beep" 640 Hz, soft |
+| `cart_bump` | `cart` | 2 | 0.15 s | soft bonk (wood / rubber), no crash |
+| `cart_locked` | `cart` | 1 | 0.31 s | two dull wooden knocks ("nope") |
+| `cart_park_refuse` | `cart` | 1 | 0.26 s | two short soft down-blips (not `ui_refuse`) |
+| `key_box_open` | `cart` | 1 | 0.86 s | metal latch click-clack, lid, soft chime |
+| `key_pickup` | `cart` | 1 | 0.64 s | key jingle |
+| `lock_wheel_tick` | `cart` | 3 | 0.05 s | tiny tick |
+| `lock_wrong` | `cart` | 1 | 0.39 s | two rounded tones going down, no buzzer |
+| `lock_ok` | `cart` | 1 | 0.97 s | happy rising sparkle |
+| `cart_engine_path` | `engine` | 1 | 2.00 s loop | soft electric hum + whine + fine gravel crackle |
+| `cart_engine_grass` | `engine` | 1 | 2.00 s loop | lower, softer hum + grass swish |
+
+Total `assets/audio` = 1 448 KB of 2.0 MB (ASND-008; Q-379 answered).
+
+**Loudness groups** (constants in `zoo-core/src/sound.rs`; new `Group::Cart`):
+`cart_*` (not the engine) -> `Group::Cart` x**0.8** (peak chain 0.28), `key_*` -> `Pickups` x0.7 (0.245),
+`lock_*` -> `Ui` x0.6 (0.21). `group_of` must not send the new ids to the `Pickups` fallback by accident:
+match the prefixes `cart_`, `key_`, `lock_` explicitly. All peak gains <= 0.5 (ASND-010 list extended).
+
+**Cue table** (position: spatial = distance law from the player as usual, `ui` = distance 0, i.e. full group gain):
+
+| Cue | Trigger | Position | Gain `g` | Rate limit / notes |
+|---|---|---|---|---|
+| `cart_board` | `GameEvent::CartBoarded` | cart | group | once per event; also starts the engine channel |
+| `cart_get_out` | `GameEvent::CartLeft` | cart | group | once per event; also stops the engine channel |
+| `cart_locked` | `GameEvent::CartLocked` (both reasons: key missing / level closed) | cart | group | the event is already one per tap; at most 1 per 0.4 s |
+| `cart_park_refuse` | `GameEvent::CartNoPark` | cart | group | at most 1 per 0.4 s |
+| `cart_horn` | new `GameEvent::CartHorn` from `Game::honk()` (only while seated; trigger = Q-378 horn button, recommendation below) | cart | group | a tap within 0.6 s of the last horn is ignored (`HORN_COOLDOWN_S = 0.6`); no game effect, animals do not react |
+| `cart_bump` | new `GameEvent::CartBump { strength }` from `cart.rs` when, while seated, the speed lost to collision slide in one step `lost = speed_before - moved/dt >= BUMP_MIN_LOST_MS (1.0)` | cart | group x `strength` = clamp(lost / 4.5, 0.3, 1.0) | `BUMP_COOLDOWN_S = 0.8`; never from the wedge escape / rescue / push-out of animals; variation `v mod 2` |
+| `key_box_open` | `GameEvent::KeyBoxOpened` | key box | group (Pickups) | delayed `d = KEY_BOX_OPEN_DELAY_S = 0.6` s so it follows `lock_ok` |
+| `key_pickup` | same event | key box | group (Pickups) | delayed `d = KEY_PICKUP_DELAY_S = 1.2` s |
+| `lock_wheel_tick` | host: every digit step of a wheel in `lock-panel.ts` (button, key, wheel drag) | `ui` | group (Ui) | host only like `ui_tap`; one per step, pitch +-5 % |
+| `lock_wrong` | host: `enter_code` result "wrong" (together with the 0.4 s shake) | `ui` | group (Ui) | once per try |
+| `lock_ok` | host: `enter_code` result "opened" (plays at once, before `key_box_open`) | `ui` | group (Ui) | once |
+
+A sound event with a delay carries an extra JSON field `d` (seconds, default 0): `{cue, x, z, g, r, v, d}`;
+the host schedules it at `currentTime + d` (no timers in the host logic beyond that; muted / hidden tab at
+fire time -> not played). The sound switch (off) silences all of these as before; a cue without files is skipped.
+
+**Engine channel** (own channel like the ambient bed: two looping `AudioBufferSourceNode`s `path` and `grass`,
+each with its own `GainNode`, `loop = true`, `playbackRate` = pitch). Exists only while seated.
+
+Pure functions in `zoo-core/src/sound.rs` (f32, unit-tested, ASND-034/035); `speed` = `Game::cart_speed_now`
+(m/s, never negative except the 1.5 m/s wedge escape, then use `abs`):
+
+```
+ENGINE_GAIN_MAX     = 0.28     // final gain at 4.5 m/s on a path; no master / group factor on top
+ENGINE_IDLE         = 0.25     // fraction of the max while seated and standing still
+ENGINE_SPEED_REF    = 4.5      // m/s (path speed)
+GRASS_GAIN_FACTOR   = 0.7      // the grass layer is softer
+s                   = clamp(abs(speed) / ENGINE_SPEED_REF, 0, 1)
+engine_gain(speed)  = ENGINE_GAIN_MAX * (ENGINE_IDLE + (1 - ENGINE_IDLE) * s)      // 0.07 at 0, 0.28 at 4.5
+engine_rate(speed)  = 0.75 + 0.55 * s                                              // 0.75 .. 1.30
+layer gains         = { path: engine_gain * (1 - b),  grass: engine_gain * GRASS_GAIN_FACTOR * b }
+b                   = grass blend 0..1: target 1 when the cell under the cart centre is grass or sand,
+                      0 on path / wood / bridge (`step_surface` mapping), moved linearly at 1 / 0.5 s
+```
+Examples: 2.0 m/s on grass -> gain 0.162 x 0.7 = 0.113, rate 0.99; 4.5 m/s on a path -> 0.28, rate 1.30;
+standing -> 0.07, rate 0.75. The host smooths: gain with a one-pole low-pass (time constant 0.2 s), rate
+(0.15 s), advanced per frame from the frame clock, no per-frame allocation, no `setTargetAtTime` pile-up.
+**Fades:** on `CartBoarded` the engine gain ramps from 0 to the law value in **0.5 s** (the `cart_board` whirr
+covers the start); on `CartLeft` it ramps to 0 in **0.4 s**, then both nodes are stopped and released.
+At most one pair of sources at any time (like ASND-024). Effective target x sound switch (off -> fades to 0,
+setting untouched) x tab visible (hidden -> 0 at once, `AudioContext.suspend()`) x game not paused / no title
+overlay. Fetched lazily the first time the player boards a cart after the first gesture (group `engine`,
+not prefetched; the group `cart` is prefetched with `steps/ui/doors/pickups` when idle). Peak check: loop file
+-22 LUFS x 0.28 = about -34 LUFS, ~3 dB below a footstep (-31 LUFS): never loud. Debug:
+`window.__zoo.audio.engine` = `{ playing, gain, rate, grass, fetched }`.
+Loop-point caveat: `.ogg` decodes sample-exact; the `.m4a` fallback may carry AAC priming (a few ms); the
+files start at the offset whose decoded seam is smoothest (<= 0.56 x the largest step, both formats), so a
+residual click is below the engine noise floor. No separate tyre-on-gravel loop: it is part of `cart_engine_path`.
+
+**Horn button (Q-378, answered 2026-10-07, wired):** a 🔔 button (`#horn-btn`, >= 64 px: 76 px, 64 px on small
+screens) shown only while seated, in the right column in the slot of the view button (which is hidden while
+driving), above the get-out button, plus key `H` while seated (on foot `H` stays the 🧭 hint key). Both call
+`Game::honk()` (sound only, animals do not react, 0.6 s cooldown, a pulse on the button when it sounded).
+
+**Host API** (`App`, wasm): `lock_sound("tick" | "wrong" | "ok")` (lock panel; at the player = full group gain, seeded
+pitch), `honk() -> bool`, `engine_speed()` (abs m/s, -1 when not seated or paused: the seated flag), `engine_gain()`,
+`engine_rate()` (the law of ASND-034, single-sourced in Rust) and `engine_grass()` (the blend, moved at 1 / 0.5 s
+by `update_engine_blend`, a new ride starts at its target). `GameEvent::WrongCode` no longer maps to `ui_refuse`
+(the host plays `lock_wrong`); `KeyBoxOpened` no longer maps to `pickup_item`. Debug log entries carry `delay`;
+`__zoo.audio.engine` also has `layers: [path, grass]` (final gains of the two loops).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -165,7 +262,7 @@ audio device), `fetched` the audio URLs requested so far.
 | ASND-005 | Given the player walks on path, grass, sand, wood and shallows, then the matching `step_*` cue plays once per footfall of the walk clip, and nothing plays while standing. | unit (ASND-011/012) + e2e (path / grass / standing) |
 | ASND-006 | Given the player opens a door / gate and picks up / drops a box, then the matching cue plays exactly once per event, at the event's position. | e2e |
 | ASND-007 | Given the first frame, then no audio file has been fetched yet (lazy loading); audio starts only after the first user gesture (browser autoplay rule). | e2e |
-| ASND-008 | Given the total size of `assets/audio`, then it is ≤ 1.5 MB. | unit |
+| ASND-008 | Given the total size of `assets/audio`, then it is ≤ 2.0 MB. | unit |
 | ASND-009 | Given the sound switch in the settings (mute), then no cue plays; the setting is saved. | e2e + vitest |
 | ASND-010 | Given every cue id of the sound list and the gain constants, then the peak gain (distance ≤ 2 m) of every cue is ≤ 0.5: master 0.35, ui ×0.6, steps ×0.5, animals ×0.8. | unit |
 | ASND-011 | Given the player walks for 2 s at 1.93 m/s (clip rate 1.38), then the footfall clock fires once per 0.4 clip-seconds (first one at once), nothing while standing, and a new walk starts with a step again. | unit |
@@ -185,6 +282,17 @@ audio device), `fetched` the audio URLs requested so far.
 | ASND-025 | Given the sound switch off (target > 0), then the bed fades to silence and the saved setting is unchanged; switching on fades it back in; a hidden tab silences it at once and suspends the context, visible again resumes it. | vitest |
 | ASND-026 | Given no gesture yet / no `AudioContext` / failing fetch or decode, then nothing is fetched, nothing throws and nothing is logged to the console; the first fetch happens only after the first gesture and only when the target is > 0. | vitest |
 | ASND-027 | Given a game forced to night, then after the first gesture the loop is fetched and plays with gain ≤ 0.05 (`__zoo.audio.ambient`); by day it has faded out and stopped; the page logs no console error. | e2e |
+| ASND-030 | Given the entries of the 13 cart / key / lock cues and the checker, then each has licence `own`, `script`, `approved`, both files exist; `check_audio.py` accepts the group `engine` (1-3 s, -22 +/- 2 LUFS, peak <= -1 dBFS, ogg <= 60 KB, seamless seam: decoded jump <= 1 x the largest step, level within +-3 dB) and the one-shots (-16 +/- 2 LUFS, <= 1.5 s); the review page lists them. | unit (`zoo-assets` `audio.rs`, `check_audio.py`) |
+| ASND-031 | Given the cue ids of "Golf cart sounds", then `group_of` returns Cart for `cart_*`, Pickups for `key_*`, Ui for `lock_*`, every peak gain <= 0.5 (0.28 / 0.245 / 0.21), and `CUES` lists them all. | unit (`tests/sound.rs`) |
+| ASND-032 | Given `CartBoarded`, `CartLeft`, `CartLocked` (both reasons), `CartNoPark`, `CartHorn`, `CartBump`, `KeyBoxOpened`, then the mapping of the cue table holds (`KeyBoxOpened` -> `key_box_open` d 0.6 and `key_pickup` d 1.2, both at the box; the cart cues at the cart's position), a seeded run gives the same variation numbers, other cart events give none. | unit |
+| ASND-033 | Given the `cart_bump` rule, then: lost speed < 1 m/s gives none; lost 4.5 gives strength 1.0; lost 1.0 gives 0.3; a second bump within 0.8 s is dropped; a wedge escape / animal push-out / get-out gives none. Given `honk()`: a second tap within 0.6 s gives no second event, never while on foot. | unit (`tests/sound.rs`, `tests/cart.rs`) |
+| ASND-034 | Given the engine law, then `engine_gain` is 0.07 at 0, 0.28 at 4.5 (clamped above), monotone, never > 0.28; `engine_rate` is 0.75 at 0, 1.30 at 4.5; `abs` for the wedge reverse speed; layer gains at b = 0 / 1 / 0.5 follow the formulas; 2.0 m/s on grass -> 0.113. | unit |
+| ASND-035 | Given the surface under the cart centre (path, grass, sand, wood bridge), then the grass blend target is 0 / 1 / 1 / 0, and the blend moves at most 1 per 0.5 s. | unit |
+| ASND-036 | Given the engine channel (fake `AudioContext`), then boarding ramps the gain to the law value in 0.5 s, leaving ramps to 0 in 0.4 s and then stops and releases both nodes, one pair of sources at most (also after board / leave / board in quick succession), gain and rate follow speed with the time constants above, never > 0.28; the file is fetched once, only after the first gesture and the first boarding. | vitest (`audio-engine.test.ts`) |
+| ASND-037 | Given the sound switch off while driving, then the engine fades to 0 in 0.4 s without touching the saved setting; hidden tab -> 0 and `suspend()`; no throw and no console output without `AudioContext` / on fetch or decode failure. | vitest (`audio-engine.test.ts`) |
+| ASND-038 | Given a sound event with `d > 0`, then the host plays it at `currentTime + d` and not at all when muted at that moment; `lock_wheel_tick` plays once per digit step, `lock_wrong` / `lock_ok` once per result, all with distance 0 and pitch +-5 %. | vitest (`audio.test.ts` delayed events, `ui.test.ts` `resultSound`; the tick per step is covered by e2e: no DOM in vitest) |
+| ASND-039 | Given the build, then `assets/audio/cart` and `assets/audio/engine` files are in `assets/index.json` and served with `audio/ogg` / `audio/mp4` (extends ASND-018). | vitest |
+| ASND-040 | Given a started game with the key, then board -> `__zoo.audio.log` has `cart_board` once and `__zoo.audio.engine.playing`; driving on a path raises `engine.gain` towards 0.28 (never above), on grass it is lower; get-out -> `cart_get_out`, engine stopped; a locked cart tap logs `cart_locked`; a wrong code logs `lock_wrong`, the right code `lock_ok`, then `key_box_open` and `key_pickup`; a refused park logs `cart_park_refuse`; no console error. | e2e (`web/tests/e2e/audio_cart.spec.ts`; also: horn button only while seated, `H`, one horn per 0.6 s, tick per digit step, muted = nothing) |
 
 ## Open questions
 
@@ -195,4 +303,5 @@ audio device), `fetched` the audio URLs requested so far.
   not in this version (only the player's steps). Proposal: later, quietly, per follower.
 - Q-221 Stereo pan: not in this version (the camera yaw would have to reach the host). Proposal:
   add a pan from the direction to the emitter relative to the camera when headphones are common.
+- Q-378 (horn button + key H), Q-379 (budget 2.0 MB), Q-380 (delays 0.6 s / 1.2 s) answered 2026-10-07: recommendations adopted.
 - Q-222 answered 2026-10-01: night crickets only ("Ambient loops"), no music, no daytime ambience.

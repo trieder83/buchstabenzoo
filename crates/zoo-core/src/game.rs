@@ -48,7 +48,7 @@ impl Default for FollowParams {
 }
 
 /// Events for presentation (animation, audio, UI). Drained with [`Game::drain_events`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum GameEvent {
     MissionStarted {
         animal: String,
@@ -208,6 +208,12 @@ pub enum GameEvent {
     },
     /// Getting out was refused: the parked cart would be harmful (🅿️✖).
     CartNoPark,
+    /// The horn was sounded while seated ([`Game::honk`]); sound only, no game effect.
+    CartHorn,
+    /// The seated cart bumped into something and lost speed; `strength` 0.3..=1 (sound only).
+    CartBump {
+        strength: f32,
+    },
 }
 
 /// Reading panels open this long after their target became available (GAME-PLAYER §4).
@@ -740,6 +746,9 @@ pub struct Game {
     pub cart_rescues: u32,
     /// Speed of the driven cart in the last update (m/s).
     pub cart_speed_now: f32,
+    /// Seconds until the next horn / bump sound may be made (ASND-033).
+    pub(crate) horn_cooldown: f32,
+    pub(crate) bump_cooldown: f32,
 }
 
 /// A building door opens while the player is this close to the door cell (m).
@@ -999,6 +1008,8 @@ impl Game {
             cart_resets: 0,
             cart_rescues: 0,
             cart_speed_now: 0.0,
+            horn_cooldown: 0.0,
+            bump_cooldown: 0.0,
             intro_seen: false,
             babies: Vec::new(),
             baby_states: BTreeMap::new(),
@@ -2342,6 +2353,11 @@ impl Game {
             grid: self.level.grid(),
             path_speed: self.move_params.speed_on(Surface::Path),
             grass_speed: self.move_params.speed_on(Surface::Grass),
+            max_speed: if home {
+                crate::animals::baby_home_max_speed(id)
+            } else {
+                f32::INFINITY
+            },
             dt,
         };
         if let Some(b) = self.baby_states.get_mut(id) {
@@ -2450,6 +2466,8 @@ impl Game {
     /// Advances the simulation by `dt` seconds with the joystick `input` (level
     /// coordinates `(x, z)`).
     pub fn update(&mut self, dt: f32, input: Vec2) {
+        self.horn_cooldown = (self.horn_cooldown - dt).max(0.0);
+        self.bump_cooldown = (self.bump_cooldown - dt).max(0.0);
         // lantern posts are solid while they are shown (LAYOUT-035)
         self.level.set_night_solid(self.daytime.lamps_on());
         let leading = self.is_leading();
@@ -3037,7 +3055,7 @@ impl Game {
             let speed = if day_dark {
                 wander::GIFT_SPEED
             } else {
-                wander::WANDER_SPEED
+                wander::WANDER_SPEED * crate::animals::home_wander_scale(a.id())
             };
             let (_, dir) = wander::follow_route(&mut a.pos, &mut a.wander.route, speed * dt);
             if dir != Vec2::ZERO {

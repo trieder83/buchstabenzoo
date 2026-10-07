@@ -365,6 +365,10 @@ pub struct App {
     snd_rng: Pcg32,
     footfall: FootfallClock,
     notice: NoticeTracker,
+    /// Grass blend of the engine loops (0 path, 1 grass; ASND-035) and whether the engine ran
+    /// in the last step (a new boarding starts at the target at once).
+    engine_blend: f32,
+    engine_was_seated: bool,
     time: f64,
     /// Decals of the level scene (debug getters, AENV-011/012).
     decals: Vec<Decal>,
@@ -1069,6 +1073,8 @@ impl App {
             snd_out: Vec::new(),
             snd_rng: Pcg32::new(0x0053_4f55_4e44),
             footfall: FootfallClock::default(),
+            engine_blend: 0.0,
+            engine_was_seated: false,
             notice: NoticeTracker::default(),
             time: 0.0,
             decals,
@@ -1236,8 +1242,13 @@ impl App {
             }
             "KeyG" => {}
             // GAME-HINT rule 1: H = the 🧭 hint button
+            // while seated in a golf cart H is the horn instead (Q-378; the 🧭 button stays)
             "KeyH" if down => {
-                self.hint_press();
+                if self.game.seated.is_some() {
+                    self.honk();
+                } else {
+                    self.hint_press();
+                }
             }
             "KeyH" => {}
             // FIX-024: E interacts, so rotation is Q (left) / R (right).
@@ -2121,9 +2132,9 @@ impl App {
         out
     }
 
-    /// Sound events since the last call (empty string = none) as a JSON array `{"cue", "x", "z", "g", "r", "v"}`:
+    /// Sound events since the last call (empty string = none) as a JSON array `{"cue", "x", "z", "g", "r", "v", "d"?}`:
     /// cue id, level position, final gain (master × group × distance), pitch rate, variation
-    /// number (ART-SOUND "Playback"). The host only plays them.
+    /// number and the optional delay `d` in seconds (ART-SOUND "Playback"). The host only plays them.
     pub fn poll_sounds(&mut self) -> String {
         if self.snd_out.is_empty() {
             return String::new(); // no allocation in the common frame
@@ -2131,6 +2142,53 @@ impl App {
         let out = format!("[{}]", self.snd_out.join(","));
         self.snd_out.clear();
         out
+    }
+
+    /// Lock panel sounds (host, ASND-038): `tick` (one per digit step), `wrong`, `ok`; at the
+    /// player, i.e. full group gain, with the seeded pitch variation.
+    pub fn lock_sound(&mut self, kind: &str) {
+        let cue = match kind {
+            "tick" => "lock_wheel_tick",
+            "wrong" => "lock_wrong",
+            "ok" => "lock_ok",
+            _ => return,
+        };
+        let at = self.game.player.pos;
+        self.emit_cue(cue, at);
+    }
+
+    /// The horn button / key (GAME-CART, Q-378): sounds the horn while seated, sound only.
+    /// True when it sounded (a tap within 0.6 s of the last one, or on foot, does nothing).
+    pub fn honk(&mut self) -> bool {
+        let r = self.game.honk();
+        self.handle_events();
+        r
+    }
+
+    /// Engine channel input (ASND-034): the driven cart's speed in m/s (abs), or -1 when not
+    /// seated or the game is paused (pause, map, telescope).
+    pub fn engine_speed(&self) -> f32 {
+        let paused = self.paused || self.map_open || self.telescope_open || self.lock_open;
+        if self.game.seated.is_some() && !paused {
+            self.game.cart_speed_now.abs()
+        } else {
+            -1.0
+        }
+    }
+
+    /// Engine channel input: the loop level for the current speed (ASND-034).
+    pub fn engine_gain(&self) -> f32 {
+        sound::engine_gain(self.game.cart_speed_now)
+    }
+
+    /// Engine channel input: the loop pitch (playback rate) for the current speed (ASND-034).
+    pub fn engine_rate(&self) -> f32 {
+        sound::engine_rate(self.game.cart_speed_now)
+    }
+
+    /// Engine channel input: grass blend 0 (path) .. 1 (grass), moved at 1 per 0.5 s (ASND-035).
+    pub fn engine_grass(&self) -> f32 {
+        self.engine_blend
     }
 
     /// A tap on a settings button (host): queues the `ui_tap` cue at the player.
@@ -3257,24 +3315,52 @@ impl App {
     /// Queues a sound event for the host: gain by distance to the player (silent = dropped),
     /// seeded variation number and pitch (ASND-013/016).
     fn emit_cue(&mut self, cue: &str, at: Vec2) {
+        self.emit_cue_with(cue, at, 0.0, 1.0);
+    }
+
+    /// [`App::emit_cue`] with a start delay `delay` s (optional JSON field `d`) and a factor
+    /// `strength` on the final gain (golf cart bump).
+    fn emit_cue_with(&mut self, cue: &str, at: Vec2, delay: f32, strength: f32) {
         let d = at.distance(self.game.player.pos);
-        let g = sound::cue_gain(cue, d);
+        let g = sound::cue_gain(cue, d) * strength;
         if g <= 0.0 {
             return;
         }
         let (v, r) = sound::variation(&mut self.snd_rng);
+        let delay = if delay > 0.0 {
+            format!(",\"d\":{delay:.2}")
+        } else {
+            String::new()
+        };
         self.snd_out.push(format!(
-            "{{\"cue\":{},\"x\":{:.2},\"z\":{:.2},\"g\":{g:.4},\"r\":{r:.4},\"v\":{v}}}",
+            "{{\"cue\":{},\"x\":{:.2},\"z\":{:.2},\"g\":{g:.4},\"r\":{r:.4},\"v\":{v}{delay}}}",
             js(cue),
             at.x,
             at.y
         ));
     }
 
+    /// The grass blend of the engine loops follows the ground under the cart (ASND-035); the
+    /// first step of a ride starts at the target.
+    fn update_engine_blend(&mut self, dt: f32) {
+        let Some(c) = self.game.seated_cart() else {
+            self.engine_was_seated = false;
+            return;
+        };
+        let target = sound::grass_blend_target(sound::step_surface(&self.game.level, c.pos));
+        self.engine_blend = if self.engine_was_seated {
+            sound::advance_blend(self.engine_blend, target, dt)
+        } else {
+            target
+        };
+        self.engine_was_seated = true;
+    }
+
     /// New game / restored save: no sounds for what changed silently.
     fn reset_sound(&mut self) {
         self.snd_out.clear();
         self.footfall = FootfallClock::default();
+        self.engine_was_seated = false;
         self.notice = NoticeTracker::default();
         for v in &mut self.openings {
             v.sounded = None;
@@ -3625,6 +3711,7 @@ impl App {
             let cue = sound::step_surface(&self.game.level, pos).cue();
             self.emit_cue(cue, pos);
         }
+        self.update_engine_blend(dt);
         self.handle_events();
         self.hints.update(&self.game, dt);
         self.update_animals(dt);
@@ -3956,12 +4043,21 @@ impl App {
             self.hints.observe(&e);
             for r in sound::cues_for_event(&e) {
                 if !sounded.contains(&r) {
-                    let at = r
-                        .animal
-                        .as_deref()
-                        .and_then(|id| self.game.animals.iter().find(|a| a.id() == id))
-                        .map_or(self.game.player.pos, |a| a.pos);
-                    self.emit_cue(&r.cue, at);
+                    let player = self.game.player.pos;
+                    let at = if let Some(id) = r.animal.as_deref() {
+                        self.game
+                            .animals
+                            .iter()
+                            .find(|a| a.id() == id)
+                            .map_or(player, |a| a.pos)
+                    } else if let Some(id) = r.cart.as_deref() {
+                        self.game.cart(id).map_or(player, |c| c.pos)
+                    } else if r.key_box {
+                        self.game.key_box_point().unwrap_or(player)
+                    } else {
+                        player
+                    };
+                    self.emit_cue_with(&r.cue, at, r.delay, r.strength);
                     sounded.push(r);
                 }
             }

@@ -119,6 +119,8 @@ pub struct Ctx<'a> {
     /// Follow speeds (m/s) on a path / on grass.
     pub path_speed: f32,
     pub grass_speed: f32,
+    /// Species speed limit (m/s) while at home, e.g. slow chameleons (FAM-035); `f32::INFINITY` = none.
+    pub max_speed: f32,
     pub dt: f32,
 }
 
@@ -311,7 +313,11 @@ pub fn step(b: &mut Baby, ctx: &Ctx, rng: &mut Pcg32) {
             _ => ctx.grass_speed,
         }
         .max(wander::WANDER_SPEED);
-        let (moved, dir) = wander::follow_route(&mut b.pos, &mut b.route, base * speed_factor * dt);
+        let (moved, dir) = wander::follow_route(
+            &mut b.pos,
+            &mut b.route,
+            (base * speed_factor).min(ctx.max_speed) * dt,
+        );
         if dir != Vec2::ZERO {
             b.facing = dir;
         }

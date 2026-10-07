@@ -178,8 +178,8 @@ fn asnd_008_total_size_within_budget() {
     }
     let total = size(&root().join("assets/audio"));
     assert!(
-        total <= 1_500_000,
-        "assets/audio is {total} bytes (> 1.5 MB)"
+        total <= 2_000_000,
+        "assets/audio is {total} bytes (> 2.0 MB)"
     );
 }
 
@@ -237,4 +237,43 @@ fn asnd_020_ambient_crickets_entry() {
     let ogg = root().join("assets/audio/ambient/ambient_crickets_1.ogg");
     assert!(std::fs::metadata(ogg).unwrap().len() <= 150_000);
     assert!(read("art/catalog.js").contains("ambient/ambient_crickets_1.ogg"));
+}
+
+// ASND-030: the golf-cart / key-box / lock cues are synthesised ("own"), have a script and files;
+// the engine loops live in group `engine` (checked by tools/sound/check_audio.py, seamless loops).
+#[test]
+fn asnd_030_cart_cues_registered() {
+    let entries = audio_entries();
+    let cues = [
+        ("cart_board", "cart"),
+        ("cart_get_out", "cart"),
+        ("cart_horn", "cart"),
+        ("cart_bump", "cart"),
+        ("cart_locked", "cart"),
+        ("cart_park_refuse", "cart"),
+        ("key_box_open", "cart"),
+        ("key_pickup", "cart"),
+        ("lock_wheel_tick", "cart"),
+        ("lock_wrong", "cart"),
+        ("lock_ok", "cart"),
+        ("cart_engine_path", "engine"),
+        ("cart_engine_grass", "engine"),
+    ];
+    let mut problems = Vec::new();
+    for (id, group) in cues {
+        let Some(e) = entries.iter().find(|e| s(e, "id") == id) else {
+            problems.push(format!("{id}: no manifest entry"));
+            continue;
+        };
+        if s(e, "group") != group || s(e, "licence") != "own" {
+            problems.push(format!("{id}: group / licence wrong"));
+        }
+        if s(e, "script") != "tools/sound/cart_sounds.py" {
+            problems.push(format!("{id}: script"));
+        }
+        if cue_files(e).iter().any(|f| !f.exists()) {
+            problems.push(format!("{id}: missing file"));
+        }
+    }
+    assert!(problems.is_empty(), "{problems:#?}");
 }

@@ -11,6 +11,7 @@ import {
   Carousel,
   carouselItems,
   CAROUSEL_MS,
+  FETCH_TIMEOUT_MS,
   type AdContent,
   type VerifiedCampaign,
   checkLink,
@@ -33,6 +34,7 @@ import {
   VERSION_KEY,
   type LoadOptions,
 } from './ads';
+import { adsDebugEnabled, adsTelemetry, logAdError, logAdEvent } from './ads-debug';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.resolve(here, '../tests/fixtures/ads');
@@ -572,5 +574,57 @@ describe('carousel', () => {
     expect(c.tick(23999)).toBe(false);
     expect(c.tick(24000)).toBe(true);
     expect(new Carousel(1, 0).tick(99999)).toBe(false);
+  });
+});
+
+describe('phone robustness and diagnostics (ADS-038, ADS-039)', () => {
+  it('ADS-039 the manifest timeout is 10 s (a slow mobile network needs more than 4 s)', () => {
+    expect(FETCH_TIMEOUT_MS).toBe(10_000);
+  });
+
+  it('ADS-039 a complete load is not flagged incomplete; a load with a missing image is', async () => {
+    const s = await server(fixtureManifest());
+    const ok = await loadAds(options(s));
+    expect(ok?.incomplete).toBe(false);
+    const s2 = await server(fixtureManifest());
+    const o = options(s2, {
+      timeoutMs: 300,
+      fetchFn: async (url, init) => {
+        if (url.includes('abcsmash-en')) return new Promise((_, rej) => init.signal.addEventListener('abort', () => rej(new Error('abort'))));
+        return options(s2).fetchFn(url, init);
+      },
+    });
+    const c = await loadAds(o);
+    expect(c?.incomplete).toBe(true);
+  });
+
+  it('ADS-038 the recorder notes the manifest, the verifier and every image of a load', async () => {
+    const s = await server(fixtureManifest());
+    await loadAds(options(s));
+    expect(adsTelemetry.manifest.state).toBe('ok');
+    expect(adsTelemetry.manifest.bytes).toBeGreaterThan(100);
+    expect(adsTelemetry.sig.ok).toBe(true);
+    expect(adsTelemetry.sig.verifier).toMatch(/^(subtle|js)$/);
+    const states = Object.values(adsTelemetry.images).map((i) => i.state);
+    expect(states.length).toBeGreaterThan(0);
+    expect(states.every((x) => x === 'ok')).toBe(true);
+    const bad = options(s, { fetchFn: () => Promise.reject(new TypeError('offline')) });
+    await loadAds(bad);
+    expect(adsTelemetry.manifest.state).toBe('failed');
+    expect(adsTelemetry.manifest.error).toContain('network');
+  });
+
+  it('ADS-038 keeps only the last 20 errors and 30 events; the overlay needs ?adsdebug=1', () => {
+    for (let i = 0; i < 40; i++) {
+      logAdError(`e${i}`);
+      logAdEvent(`v${i}`);
+    }
+    expect(adsTelemetry.errors.length).toBe(20);
+    expect(adsTelemetry.errors[19]).toContain('e39');
+    expect(adsTelemetry.events.length).toBe(30);
+    expect(adsDebugEnabled('?adsdebug=1')).toBe(true);
+    expect(adsDebugEnabled('?seed=3&adsdebug=1')).toBe(true);
+    expect(adsDebugEnabled('?adsdebug=0')).toBe(false);
+    expect(adsDebugEnabled('')).toBe(false);
   });
 });

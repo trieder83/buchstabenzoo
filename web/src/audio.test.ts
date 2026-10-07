@@ -197,3 +197,50 @@ describe('host playback', () => {
     warn.mockRestore();
   });
 });
+
+// ASND-038: delayed events (key box cues) are scheduled at currentTime + d, not when muted
+describe('delayed sound events', () => {
+  class TimedCtx extends FakeCtx {
+    currentTime = 10;
+    whens: (number | undefined)[] = [];
+    gains: { value: number }[] = [];
+    createBufferSource() {
+      const s = {
+        buffer: null as object | null,
+        playbackRate: { value: 1 },
+        connect() {},
+        start: (when?: number) => this.whens.push(when),
+      };
+      return s;
+    }
+    createGain() {
+      const g = { gain: { value: 0 }, connect: () => 0 };
+      this.gains.push(g.gain);
+      return g;
+    }
+  }
+  const delayed = async (mute = false) => {
+    const ctx = new TimedCtx();
+    const audio = new GameAudio(INDEX, env({}, ctx).e);
+    audio.unlock();
+    audio.prefetch();
+    await new Promise((r) => setTimeout(r, 20));
+    audio.play({ ...ev('ui_refuse'), d: 0.6 });
+    audio.play({ ...ev('ui_refuse'), d: 1.2 });
+    audio.play(ev('ui_refuse'));
+    if (mute) audio.setEnabled(false);
+    return ctx;
+  };
+  it('ASND-038 plays at currentTime + d', async () => {
+    const ctx = await delayed();
+    expect(ctx.whens[0]).toBeCloseTo(10.6, 6);
+    expect(ctx.whens[1]).toBeCloseTo(11.2, 6);
+    expect(ctx.whens[2]).toBeUndefined(); // no d: at once
+  });
+  it('ASND-038 a cue muted before it fires does not play', async () => {
+    const ctx = await delayed(true);
+    expect(ctx.gains[0].value).toBe(0);
+    expect(ctx.gains[1].value).toBe(0);
+    expect(ctx.gains[2].value).toBeGreaterThan(0); // the immediate one already started
+  });
+});

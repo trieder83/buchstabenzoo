@@ -103,7 +103,7 @@ impl Game {
     }
 
     /// The key box and the stand cell the player must be near (level `[[item]]`).
-    fn key_box_point(&self) -> Option<Vec2> {
+    pub fn key_box_point(&self) -> Option<Vec2> {
         self.cart_items(KEY_BOX_KIND).map(|it| it.pos()).next()
     }
 

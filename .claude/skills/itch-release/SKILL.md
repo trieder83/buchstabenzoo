@@ -39,14 +39,14 @@ user closes a native picker — never click an upload button without the hook be
    HTMLInputElement.prototype.click = function () { if (this.type === 'file') { window.__log.push('click'); this.id = 'cap_file_' + window.__log.length; this.style.cssText = 'position:fixed;left:0;top:0;width:10px;height:10px;opacity:.01;z-index:99999'; if (!this.isConnected) document.body.appendChild(this); return; } return oc.call(this); };
    window.addEventListener('click', e => { const t = e.target; if (t && t.tagName === 'INPUT' && t.type === 'file') e.preventDefault(); }, true);
    ```
-4. Click **Upload files** with a real click (coordinates; check `window.__log`/`input[type=file]` appeared). Then set the file from the local server and fire `change`:
+4. Trigger **Upload files** with a SCRIPTED click, which reliably hits the hook: `document.querySelector('button[data-max_size]').click()` (real coordinate clicks were hit-or-miss; check `window.__log` / `input[type=file]` appeared). Then set the file from the local server and fire `change`:
    ```js
    const inp = document.getElementById('cap_file_1'); const b = await (await fetch('http://127.0.0.1:4191/game.zip')).blob();
    const dt = new DataTransfer(); dt.items.add(new File([b], 'letter-zoo-html5.zip', {type: 'application/zip'}));
    inp.files = dt.files; inp.dispatchEvent(new Event('change', {bubbles: true}));
    ```
    (The tool's `file_upload` did not work here: the captured input is not in the accessibility tree.) Same for **Add screenshots** / **Replace Cover Image**.
-5. After "Success": delete the previous zip row, tick `input[name$="[embed]"]` ("This file will be played in the browser"), click **Save**; reload the edit page to verify.
+5. After "Success" (uploading a file with the same name replaced the old zip row on 2026-10-07; otherwise delete the previous zip row): tick `input[name$="[embed]"]` ("This file will be played in the browser"), click **Save**; reload the edit page to verify.
 6. Verify with `curl -s https://edugamegalaxy.itch.io/letter-zoo` (public page). Test play in a normal browser (the browser tool cannot open the subdomain).
 
 ### YouTube trailer (same trick)

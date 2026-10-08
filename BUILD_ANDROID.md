@@ -19,7 +19,7 @@ Version name = `web/package.json` version, version code = run number.
 
 ## First upload (manual, once)
 
-1. Play Console → **Create app**: name *Letter Zoo: Read & Rescue*, default language German (de-DE), **Game**, **Free**, accept the declarations.
+1. Play Console → **Create app**: name *Buchstabenzoo* (the name is in the default language), default language German (de-DE), **Game**, **Free**, accept the declarations. The English name *Letter Zoo: Read & Rescue* is added later as the en-US translation of the store listing (step 2).
 2. Left menu → **Dashboard → Set up your app**: fill every task using the answers in `store/play/README.md` (privacy policy, ads, app access,
    content rating, target audience, data safety, advertising ID, government/financial/health, store listing + graphics).
 3. **Testing → Internal testing → Create new release**: choose *Play App Signing* (default, "Continue"), upload the `.aab`, release name = version,

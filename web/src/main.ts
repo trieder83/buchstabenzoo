@@ -10,7 +10,9 @@ import { createAnalyticsRow } from './analytics-ui';
 import { AD_TEST_BUILD, resolveKeys, testKeyParam } from './ads';
 import { attachUiTaps, GameAudio, SOUND_EVENT } from './audio';
 import { attachInput, type StickView } from './input';
-import { adKeys, analyticsId } from './native';
+import { adKeys, analyticsId, NATIVE } from './native';
+import { countGameEvent, countLevel, initCounter } from './counter';
+import { APP_VERSION } from './counter-config';
 import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
@@ -150,10 +152,19 @@ async function main(): Promise<void> {
     browserAnalyticsEnv(() => ({ language: app.language(), readingLevel: app.reading_level() })),
     analyticsId(MEASUREMENT_ID), // '' in the native app build (PLAT-036)
   );
+  // anonymous first-party counters (PLAT-044..053): no identifiers, independent of the GA consent, also in the native app
+  const capacitor = (window as unknown as { Capacitor?: { getPlatform?: () => string } }).Capacitor;
+  const nativePlatform = capacitor?.getPlatform?.() === 'android' ? 'android' : 'ios';
+  initCounter(() => app.language(), NATIVE ? nativePlatform : 'web', APP_VERSION);
+  ui.onGameEvent = (e) => countGameEvent(e);
+  window.setInterval(() => countLevel(app.player_level()), 1000);
   if (analytics.available) {
     const { row, relabel, showWelcome } = createAnalyticsRow(app, analytics);
     ui.addSettingsRow(row, relabel);
-    ui.onGameEvent = (e) => analytics.onGameEvent(e);
+    ui.onGameEvent = (e) => {
+      countGameEvent(e);
+      analytics.onGameEvent(e);
+    };
     // the level part the player stands in, once a second and only while analytics is on (no per-frame code)
     window.setInterval(() => {
       if (analytics.on) analytics.observeLevel(app.player_level());

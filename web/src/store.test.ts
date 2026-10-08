@@ -122,4 +122,21 @@ describe('iOS packaging (PLAT-034..041)', () => {
     expect(h).toMatch(/iOS app/);
     expect(h).toContain('https://letterzoo.rcms.ch');
   });
+  it('PLAT-053 privacy page and store texts describe the anonymous counters, not "Data Not Collected"', () => {
+    const h = read('web/public/privacy.html');
+    expect(h).toContain('Anonyme Zähler');
+    expect(h).toContain('Anonymous counters');
+    expect(h).not.toMatch(/keine Daten erhoben, geteilt|no data is collected, shared/);
+    expect(h).toMatch(/Do Not Track/);
+    for (const f of ['store/appstore/README.md', 'BUILD_IOS.md']) {
+      const t = read(f);
+      expect(t, f).toMatch(/Product Interaction/);
+      expect(t, f).toMatch(/Not Linked to You/i);
+    }
+    expect(read('store/appstore/review_notes.txt')).toMatch(/anonymous first-party counting/);
+    expect(read('store/appstore/review_notes.txt')).not.toMatch(/sends no data/);
+    expect(read('specs/40-tech/app-store.md')).not.toMatch(/Privacy label: Data Not Collected/);
+    // the native build still has no Google Analytics (PLAT-036) although the counters run
+    expect(read('web/src/native.ts')).toMatch(/return native \? '' : id/);
+  });
 });

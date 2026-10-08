@@ -21,8 +21,8 @@ interface Hosting {
   rewrites?: unknown[];
   redirects?: unknown[];
 }
-// PLAT-028: the CSP allowlist of the opt-in analytics (exactly this and nothing else)
-const CONNECT_SRC = "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com";
+// PLAT-028 / PLAT-048: the CSP allowlist of the opt-in analytics and the anonymous counters (exactly this and nothing else)
+const CONNECT_SRC = "connect-src 'self' https://firestore.googleapis.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com";
 const SCRIPT_SRC = "script-src 'self' 'wasm-unsafe-eval' https://www.googletagmanager.com";
 const IMG_SRC = "img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com";
 const hosting: Hosting = JSON.parse(read('firebase.json')).hosting;
@@ -107,7 +107,7 @@ describe('no external network except the opt-in analytics', () => {
     }
     // every http(s) source of the whole policy is one of the analytics hosts
     const hosts = csp.match(/https:\/\/[^\s;]+/g) ?? [];
-    expect(new Set(hosts)).toEqual(new Set(['https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com']));
+    expect(new Set(hosts)).toEqual(new Set(['https://firestore.googleapis.com', 'https://www.googletagmanager.com', 'https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com']));
   });
 
   it('PLAT-006 default-src is own files only', () => {
@@ -130,7 +130,7 @@ describe('no external network except the opt-in analytics', () => {
         .map((f) => `web/src/${f}`),
     );
     // the opt-in analytics module is the one place that names the Google script URL (PLAT-006/028)
-    const analyticsFiles = ['web/src/analytics.ts', 'web/src/analytics-config.ts'];
+    const analyticsFiles = ['web/src/analytics.ts', 'web/src/analytics-config.ts', 'web/src/counter.ts', 'web/src/counter-config.ts']; // + the anonymous counters (PLAT-048)
     for (const f of files.filter((f) => !analyticsFiles.includes(f))) {
       const text = read(f);
       expect(text, f).not.toMatch(/https?:\/\/(?!www\.w3\.org\/)/);

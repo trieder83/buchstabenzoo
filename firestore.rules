@@ -1,0 +1,68 @@
+rules_version = '2';
+
+// Anonymous first-party counters (specs/40-tech/platforms-and-testing.md "Anonymous counters", PLAT-044..053).
+// Clients may only create / increment documents of /c with exactly the fields below; nobody can read or delete.
+// The event list is the SAME as COUNTER_EVENTS in web/src/counter.ts (checked by a unit test).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /c/{id} {
+      function fields() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['date', 'event', 'param', 'platform', 'lang', 'v', 'n'])
+          && d.keys().hasAll(['date', 'event', 'param', 'platform', 'lang', 'v', 'n']);
+      }
+
+      function shapes() {
+        let d = request.resource.data;
+        return d.date is string && d.date.matches('^20[0-9]{6}$')
+          && d.event is string
+          && d.event in [
+          'session_start',
+          'level_started',
+          'level_completed',
+          'mission_complete',
+          'all_animals_home',
+          'baby_born',
+          'night_started',
+          'sleep_started',
+          'hint_used',
+          'key_note_read',
+          'key_box_opened',
+          'lock_wrong',
+          'lock_ok',
+          'cart_boarded',
+          'cart_locked_tap',
+          'cart_park_refused',
+          'board_panel_opened',
+          'board_link_tapped',
+          'gate_answer_right',
+          'gate_answer_wrong',
+          'gate_hold_started',
+          'gate_hold_complete',
+          'gate_hold_cancelled',
+          'board_link_opened',
+          'board_link_blocked_fallback',
+          'board_rescue_dialog',
+          'board_blocked_detected',
+          'carousel_opened',
+          'carousel_link_opened'
+          ]
+          && d.param is string && d.param.matches('^[a-z0-9_-]{0,32}$')
+          && d.platform in ['web', 'ios', 'android']
+          && d.lang in ['de', 'en']
+          && d.v is string && d.v.matches('^[a-z0-9][a-z0-9.-]{0,15}$')
+          && d.n is int
+          && id == d.date + '_' + d.event + '_' + d.param + '_' + d.platform + '_' + d.lang + '_' + d.v;
+      }
+
+      allow get, list, delete: if false;
+      allow create: if fields() && shapes() && request.resource.data.n == 1;
+      allow update: if fields() && shapes() && request.resource.data.n == resource.data.n + 1;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

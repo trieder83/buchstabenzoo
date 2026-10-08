@@ -36,8 +36,8 @@ the SDK requirement; Apple allows at most two distribution certificates per team
    (Guideline 4.2): nothing is fetched from the web to start or play; origin `capacitor://localhost` (never change it after release:
    it would reset the saves). `.wasm`: Capacitor's scheme handler may send an unknown MIME type, `wasm-bindgen` then falls back to
    `ArrayBuffer` instantiation (works; verify on a device, PLAT-043 manual).
-2. **Native flag.** `VITE_NATIVE=1` (`npm run build:native`) -> `web/src/native.ts`: analytics id forced to `''` (no button, no
-   script load, no consent dialog, no request) and no web posters. The web build is unchanged.
+2. **Native flag.** `VITE_NATIVE=1` (`npm run build:native`) -> `web/src/native.ts`: Google Analytics id forced to `''` (no button, no
+   script load, no consent dialog, no GA request) and no web posters. The anonymous first-party counters (PLAT-044..053) still run. The web build is unchanged.
 3. **Signing/CI.** `.github/workflows/ios.yml` (manual): web native build, `cap sync ios`, archive Release with manual signing set
    on the App target (profile `Letter Zoo App Store`, team `AZFUSL233G`), export, bundle checks, validate + upload to TestFlight.
    Secrets (names only): `IOS_DIST_CERT_P12`, `IOS_DIST_CERT_PASSWORD`, `IOS_PROVISIONING_PROFILE`, `ASC_KEY_ID`, `ASC_ISSUER_ID`,
@@ -49,8 +49,8 @@ the SDK requirement; Apple allows at most two distribution certificates per team
 5. **Audio.** `AVAudioSession` `.playback` + `.mixWithOthers`, re-activated when the app becomes active (Q-395).
 6. **Icon and splash.** `tools/make_icons.py` writes the 1024x1024 RGB (no alpha) App Store icon and the cream launch image into
    `web/ios`. The user approves the icon (ART-PIPELINE gate).
-7. **Compliance.** Kids Category: no analytics/ads network (5.1.4), links out only behind the parental gate (1.3), no donation or
-   purchase prompt (3.1.1), no names of other platforms (2.3.10). Privacy label: Data Not Collected. Age rating 4+. Details and the
+7. **Compliance.** Kids Category: no third-party analytics/ads network (5.1.4; first-party anonymous counters without identifiers are allowed), links out only behind the parental gate (1.3), no donation or
+   purchase prompt (3.1.1), no names of other platforms (2.3.10). Privacy label: Usage Data > Product Interaction, Analytics, Not Linked to You, no tracking (anonymous counters, PLAT-044..053). Age rating 4+. Details and the
    listing: `store/appstore/README.md`.
 8. **Texts.** `store/appstore/{en-US,en-GB,de-DE}/` one file per field within the limits (name 30, subtitle 30, promotional text 170,
    description 4000, keywords 100), `review_notes.txt`. The listing positions the app as a reading game with small in-world posters of
@@ -81,7 +81,7 @@ ADS-002 "every slot on every level"). Links are `https://apps.apple.com/app/id<I
 ## What Apple allows and what is a review risk (Guidelines read 2026-10-08, developer.apple.com)
 
 Allowed: links out of a Kids Category app **inside a designated area behind a parental gate** (1.3); first-party promotion of own
-apps (the 3rd-party-advertising ban of 1.3/5.1.4 concerns third parties); a free app without purchase prompts; Data Not Collected.
+apps (the 3rd-party-advertising ban of 1.3/5.1.4 concerns third parties); a free app without purchase prompts; anonymous first-party counters (privacy label Product Interaction / Analytics / not linked / no tracking).
 Risks: **4.2.2** ("apps shouldn't primarily be marketing materials, advertisements ... or a collection of links": the posters are a
 small decoration of a full game; keep them small, never in menus, say so in the review notes); **1.3** ("must not include links out
 ... or other distractions to kids unless ... behind a parental gate": the gate must be robust: the existing sum + hold + release);

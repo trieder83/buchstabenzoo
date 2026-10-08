@@ -25,9 +25,14 @@ Availability (Pricing and Availability): United States, United Kingdom, Germany,
 
 ## Privacy nutrition label ("App Privacy")
 
-**Data Not Collected.** The native build has no analytics, no ad network, no account, no network request during play;
-the save game lives in the app's local storage. (The posters link to our own App Store pages; that is a link, not data
-collection.) Tracking: **No**. If analytics is ever enabled in the native build this answer and the privacy page change.
+**Data Used to Track You: none. Data Linked to You: none. Data Not Linked to You: Usage Data -> Product Interaction**, purpose **Analytics**
+(App Store Connect -> App Privacy: answer "Yes, we collect data", pick *Product Interaction* only, purpose *Analytics*, *not linked to the
+user's identity*, *not used for tracking*; nothing else, no Identifiers, no Diagnostics). Reason: the app sends anonymous first-party
+counters (`web/src/counter.ts`, spec TECH-PLATFORMS "Anonymous counters"): plain daily totals per event to our own Firebase Firestore,
+no identifier, no cookie, no stored IP, no third-party SDK. This is consistent with the Kids Category (1.3 / 5.1.4: no third-party analytics;
+the native build still has no Google Analytics, no `gtag`, no ad network).
+The save game lives in the app's local storage. (The posters link to our own App Store pages; that is a link, not data
+collection.) Tracking: **No**. The old answer "Data Not Collected" is NO LONGER correct since the counters (2026-10-08).
 
 ## Age rating questionnaire (new 2025/26 questionnaire; answer all "None"/"No")
 

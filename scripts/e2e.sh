@@ -39,7 +39,7 @@ cd "$ROOT/web"
 # bundle plus the ?adkey= test-key hook; the release `dist` never has it (PLAT-012).
 # the analytics spec needs the test build too (fake measurement id, PLAT-029)
 DEFAULT_DIST=dist
-[[ "$*" == *analytics.spec* ]] && DEFAULT_DIST=dist-adtest
+[[ "$*" == *analytics.spec* || "$*" == *counters.spec* ]] && DEFAULT_DIST=dist-adtest # + the counters ad flow (signed fixture, ?adkey=)
 DIST="${E2E_DIST:-$DEFAULT_DIST}"
 export E2E_DIST="$DIST"
 if [[ $BUILD -eq 1 || ! -f "$DIST/index.html" ]]; then

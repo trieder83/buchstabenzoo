@@ -6,7 +6,7 @@ module: platforms-and-testing
 status: draft
 depends_on: [TECH-ARCH]
 test_prefix: PLAT
-updated: 2026-10-04
+updated: 2026-10-08
 ---
 
 # Platforms, performance and testing
@@ -76,7 +76,7 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 | PLAT-003 | Given `firebase.json`, then `hosting.public` is `web/dist` and it has no `rewrites` or `redirects` (unknown paths are 404). | unit |
 | PLAT-004 | Given `firebase.json`, then `.wasm` is served as `application/wasm` and `.glb` as `model/gltf-binary`. | unit |
 | PLAT-005 | Given `firebase.json`, then `bundle/**` is `immutable` with a one-year max-age, `/` and `**/*.html` are `no-cache`, and `assets/**` has a max-age ≤ 1 hour. | unit |
-| PLAT-006 | Given `firebase.json`, `web/index.html` and `web/src`, then `default-src` is `'self'` and no source loads an external URL or a Firebase/Google Analytics SDK, except the opt-in analytics (`analytics.ts`, `analytics-config.ts` only, PLAT-028). | unit |
+| PLAT-006 | Given `firebase.json`, `web/index.html` and `web/src`, then `default-src` is `'self'` and no source loads an external URL or a Firebase/Google Analytics SDK, except the opt-in analytics (`analytics.ts`, `analytics-config.ts` only, PLAT-028) and the anonymous counters (`counter.ts`, `counter-config.ts`: the Firestore REST endpoint only, no SDK, PLAT-048). | unit |
 | PLAT-007 | Given a release build in `web/dist`, then it contains `index.html`, a `.wasm` and `assets/index.json`, and its total size is ≤ 30 MB. | unit (skipped without a build) |
 | PLAT-008 | Given `scripts/deploy-preview.sh`, then it deploys with `hosting:channel:deploy … --expires` (≤ 30 days by default) and never runs a live `firebase deploy`. | unit |
 | PLAT-009 | Given the preview URL on a phone (Android Chrome, iOS Safari), then the game loads over HTTPS and the player can walk; after a redeploy the same URL shows the new build. | manual |
@@ -106,13 +106,81 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 | PLAT-033 | Given analytics is available (measurement id set), no decision was made and the intro is enabled (a new player), when the game starts, then BEFORE the intro a welcome dialog shows: the story ("Die Tiere sind aus dem Zoo ausgebrochen – bring sie nach Hause!"), a smaller data note ("Das Spiel sammelt anonyme Daten, nur um das Spiel zu analysieren und zu bewerben."), and two buttons ≥ 64 px: light "Nein, ich will nicht spielen" and bold green "Ja, einverstanden, los geht's!"; Yes grants consent (analytics starts) and the intro follows; No stores nothing, sends nothing and shows a goodbye card whose ↩ button asks again; given consent was granted/denied earlier or the id is empty, no welcome shows; the button texts always stay inside their boxes: on small screens the text wraps and the font scales down (≥ 11 px), the two buttons stack below 340 px width (user request 2026-10-08); the ⚙️ 📊 button (parental gate) still changes the decision later (user request 2026-10-04, replaces the 3 s notice). | e2e |
 | PLAT-034 | Given `web/capacitor.config.ts`, then appId is `ch.rcms.letterzoo`, appName `Letter Zoo`, webDir `dist`, the default origin is kept and no `server.url` loads the game from the web (TECH-STORE). | unit |
 | PLAT-035 | Given `web/ios` Info.plist and project, then `ITSAppUsesNonExemptEncryption` is false, no `NS*UsageDescription` / background modes, `CFBundleLocalizations` de + en, portrait + landscape, deployment target 15.0, bundle id `ch.rcms.letterzoo`. | unit |
-| PLAT-036 | Given `VITE_NATIVE=1` (`npm run build:native`), then the analytics id is `''` (no button, no script, no request) and ads are off unless `NATIVE_ADS`; the web build keeps both. | unit |
+| PLAT-036 | Given `VITE_NATIVE=1` (`npm run build:native`), then the Google Analytics id is `''` (no button, no gtag script, no GA request; the anonymous counters of PLAT-044 still run) and ads are off unless `NATIVE_ADS`; the web build keeps both. | unit |
 | PLAT-037 | Given the iOS `AppDelegate`, then the audio session is `.playback` (sound with the ringer on silent) and re-activated when the app becomes active. | unit, manual |
 | PLAT-038 | Given `tools/ads/campaigns-native.template.json` (and `boards-native/index.json` once signed), then all three slots are covered and every link is `https://apps.apple.com/app/id<ID>`; the native build emits `boards-native/` instead of `boards/`. | unit |
 | PLAT-039 | Given `.github/workflows/ios.yml`, then it starts manually only, runs on macOS, builds with `npm run build:native`, uses the six secret names and contains no key material. | unit |
 | PLAT-040 | Given `tools/store/make_appstore_screenshots.py`, then it knows the exact App Store sizes (6.9", 6.5", iPad 13") and never upscales. | unit |
 | PLAT-041 | Given the App Store icon, then it is 1024x1024 RGB without alpha and the launch image exists. | unit |
-| PLAT-042 | Given `web/public/privacy.html`, then it covers the iOS app (no data collected) and the alias `https://letterzoo.rcms.ch`. | unit |
+| PLAT-042 | Given `web/public/privacy.html`, then it covers the iOS app (no third-party analytics, only the anonymous counters), the section "Anonyme Zähler / Anonymous counters" in both languages and the alias `https://letterzoo.rcms.ch`. | unit |
+| PLAT-044 | Given the counter module, when `count(event, param)` is called, then it queues one write per count and sends (every ~10 s, on page hide) a Firestore REST `documents:commit` to `c/<yyyymmdd UTC>_<event>_<param>_<platform>_<lang>_<version>` with exactly the fields `date, event, param, platform, lang, v` (update mask) and an `updateTransforms` increment of `n` by 1; unknown events and wrong param shapes are dropped; a document appears at most once per commit (repeats go into a later commit); per event at most 30 counts per minute and 200 queued; errors are swallowed (no retry), nothing blocks. | unit |
+| PLAT-045 | Given `COUNTER_EVENTS` in `web/src/counter.ts` and `firestore.rules`, then the event lists are identical, and the rules require exactly the keys `date,event,param,platform,lang,v,n`, `param` ~ `[a-z0-9_-]{0,32}`, platform in web/ios/android, lang in de/en, id = the composed name, `n == 1` on create and `n == old + 1` on update, and deny get/list/delete and every other path. | unit |
+| PLAT-046 | Given the counters run, then no cookie, `localStorage`, `sessionStorage` or IndexedDB access happens, the source contains no id/random/user-agent code and the request body holds no identifier or finer timestamp than the UTC day. | unit, e2e |
+| PLAT-047 | Given Do-Not-Track (`navigator.doNotTrack` = 1), Global Privacy Control, `?nocount=1`, automation (`navigator.webdriver`) or a dev host (localhost, 127.*, 10.*, 172.16-31.*, 192.168.*, *.local), then nothing is counted; `?count=1` re-enables automation and dev hosts (tests, `test_ping`) but never overrides DNT / GPC / `?nocount=1`. | unit |
+| PLAT-048 | Given `firebase.json`, then `connect-src` additionally allows `https://firestore.googleapis.com` and no other directive does; `main.ts` starts the counters in every build (also `VITE_NATIVE=1`) before the Google Analytics block and the native Google Analytics id stays `''`. | unit |
+| PLAT-049 | Given the game with `?count=1` and a stubbed Firestore endpoint, when the child reads the note, enters a wrong and then the right code, taps the compass and walks, then commit bodies contain `session_start`, `key_note_read`, `lock_wrong`, `lock_ok`, `key_box_opened`, `hint_used` (`compass`) and `level_started`, each with the allowed fields only. | e2e |
+| PLAT-050 | Given a stubbed endpoint, then with Do-Not-Track, Global Privacy Control, `?nocount=1`, or automation without `?count=1` no request is made. | e2e |
+| PLAT-051 | Given a signed campaign (test build), when the panel opens and the gate is answered wrong, then right, the hold is released early and then after the full hold, then `board_panel_opened`, `board_link_tapped`, `gate_answer_wrong`, `gate_answer_right`, `gate_hold_started`, `gate_hold_cancelled`, `gate_hold_complete`, `board_link_opened` are counted with the param `s1_web`. | e2e |
+| PLAT-052 | Given the live project, then `node --experimental-strip-types tools/analytics/rules_check.mjs` shows: a valid increment returns 200, and an extra field, unknown event, `n = 5`, bad platform/lang/param, wrong id, other collection, read, list and delete return 403. | manual (live) |
+| PLAT-053 | Given `web/public/privacy.html`, `store/appstore/README.md`, `BUILD_IOS.md` and `store/appstore/review_notes.txt`, then they describe the counters (web: always, also without consent; iOS: Product Interaction / Analytics / not linked / no tracking) and none states "Data Not Collected" as the current iOS label. | unit |
+
+## Anonymous counters
+
+User decision 2026-10-08 (approved proposal): the game counts how often events happen, **with no identifier**, so that
+the iOS app can stay in Apple's Kids Category (Guidelines 1.3 / 5.1.4: no third-party analytics; first-party anonymous
+counting is fine) and the web build gets the same numbers independent of the Google Analytics consent (PLAT-022..033,
+which stay unchanged). Free Firebase Spark plan, no server code: the client writes to Firestore through the REST API.
+
+1. **Data.** One document `c/<yyyymmdd>_<event>_<param>_<platform>_<lang>_<v>` per UTC day, event, param, platform
+   (`web` | `ios` | `android`), language (`de` | `en`) and short build id `v` (git hash). Fields: `date, event, param,
+   platform, lang, v` and the number `n` (increment by 1 per count). No cookie, no `localStorage`, no user/device/session id,
+   no free text, nothing finer than the day; the IP address is not stored by us. (`lang` and `v` are part of the id so that
+   the fields of a document never change.)
+2. **Client.** `web/src/counter.ts` (`count(event, param)`), project and public web API key in `counter-config.ts`
+   (the key only names the project; the rules decide). Queue in memory, flush every ~10 s and on `visibilitychange`
+   hidden / `pagehide` with `fetch(..., {keepalive: true})`; the same document at most once per commit; failures are dropped.
+   Wired at the existing hooks only: `Ui.onGameEvent` (the `poll_events` stream; same hook as the Google Analytics events),
+   `countLevel` (once per level and session, next to `observeLevel`), the lock panel result, the compass tap and the
+   interact results of `ui.ts`, and the ad flow of `ads-ui.ts` / `ads-rescue.ts`.
+3. **Off switches.** Do-Not-Track, Global Privacy Control, `?nocount=1`; automation (`navigator.webdriver`) and dev hosts unless
+   `?count=1` (tests intercept `firestore.googleapis.com`; nothing in the tests reaches production).
+4. **Firestore.** Database `(default)`, location `eur3` (EU). `firestore.rules`: create / update of `/c/{id}` only with exactly
+   the keys above, an allowlisted event, `n == 1` (create) or `n == old + 1` (update); no read, list or delete by anyone
+   (clients cannot read the numbers). Deploy: `firebase deploy --only firestore:rules --project letterzoo`. The numbers are
+   read by the operator with `tools/analytics/report.mjs` (README "How to read the numbers") or in the Firebase console.
+5. **Allowlist** (the same list is in `firestore.rules`, parity test PLAT-045). `param` is `''` unless stated; `slot param`
+   = `s<1|2|3>_<ios|android|web>` (poster slot + the link type actually used on this device).
+
+| Event | Param | Counted when |
+|---|---|---|
+| `session_start` | – | page / app start |
+| `level_started` | level id | first time per session the player stands in a level part |
+| `level_completed` | level id | `level_complete` game event |
+| `mission_complete` | animal id | an animal is home (rescue mission done) |
+| `all_animals_home` | – | every animal of the level is home |
+| `baby_born` | animal id | a baby is born |
+| `night_started` | – | the night event |
+| `sleep_started` | – | the sleep event |
+| `hint_used` | `compass` | the compass / hint button was tapped |
+| `key_note_read` | – | the golf-cart note panel opened |
+| `key_box_opened` | – | the cart key was unlocked |
+| `lock_wrong` | – | every wrong code (the count is also the number of tries) |
+| `lock_ok` | – | the right code |
+| `cart_boarded` | – | she got into a golf cart |
+| `cart_locked_tap` | `no_key` \| `closed_level` | a locked cart was tapped |
+| `cart_park_refused` | – | parking was refused |
+| `board_panel_opened` | slot param | an ad poster panel opened |
+| `board_link_tapped` | slot param | the poster link was tapped (parental gate shown) |
+| `gate_answer_right` / `gate_answer_wrong` | slot param | the gate question was answered |
+| `gate_hold_started` | slot param | the 2 s hold started |
+| `gate_hold_complete` | slot param | the hold reached the ✔ |
+| `gate_hold_cancelled` | slot param | the hold was released early (or the touch was cancelled) |
+| `board_link_opened` | slot param | the link was opened (released after the full hold, or the link button tapped) |
+| `board_link_blocked_fallback` | slot param | the browser did not open the link: the fallback link card is shown |
+| `board_rescue_dialog` | slot param | a blocker hid the panel / gate: the native fallback dialog is used |
+| `board_blocked_detected` | view name | an element of the poster flow was hidden by the browser / an ad blocker |
+| `carousel_opened` | – | the all-done poster carousel opened |
+| `carousel_link_opened` | slot param | a link was opened from the carousel |
 
 ## Analytics (opt-in)
 

@@ -11,6 +11,7 @@ import { SOUND_EVENT } from './audio';
 import { browserEnv, isFullscreen, showFullscreenButton, showIosInstallHint, toggleFullscreen } from './fullscreen';
 import { dragScroll } from './scroll';
 import { pictogramCanvas } from './pictograms';
+import { count, countLockResult } from './counter';
 
 /** The gate intro (RESC-029) is shown in a new game; automated tests skip it unless `?intro=1`. */
 export function introEnabled(search: string, webdriver: boolean): boolean {
@@ -729,6 +730,7 @@ export class Ui {
       // everything done: the compass offers the campaign carousel (ADS-031, HINT-031)
       if (this.allDoneTap()) return;
       this.expandStrip();
+      count('hint_used', 'compass');
       this.pressHint();
       this.sayProgressInfo();
     });
@@ -759,7 +761,10 @@ export class Ui {
         this.hidePanel();
       },
       () => this.lastCarry = '\u0000',
-      () => this.pollEvents(),
+      (r) => {
+        countLockResult(r);
+        this.pollEvents();
+      },
     );
     this.gear.addEventListener('click', () => this.toggleSettings());
     // pointerdown, not click: a second finger (left thumb on the stick) never gets a click
@@ -808,16 +813,19 @@ export class Ui {
     if (data.kind === 'cart_locked') {
       // tapping a locked cart: 🔒🔑 bubble, the hint marker points at the next key step
       this.say(`${data.reason === 'closed_level' ? '🔒' : '🔒🔑'} ${data.text ?? ''}`, data.key ?? '', 3500);
+      count('cart_locked_tap', data.reason === 'closed_level' ? 'closed_level' : 'no_key');
       if (data.reason !== 'closed_level') this.cartPulse = true;
       this.pollEvents();
       return;
     }
     if (data.kind === 'cart_no_park') {
+      count('cart_park_refused');
       this.say(`🅿️✖ ${data.text ?? ''}`, data.key ?? '', 3000);
       this.pollEvents();
       return;
     }
     if (data.kind === 'cart_boarded') {
+      count('cart_boarded');
       if (data.text) this.say(`🐾 ${data.text}`, 'cart-walk', 3000);
       this.pollEvents();
       return;

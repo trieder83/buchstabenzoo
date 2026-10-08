@@ -46,7 +46,7 @@ No Mac needed: the build runs on a GitHub macOS runner (`.github/workflows/ios.y
 9. **Store page** (App Store Connect -> the app -> iOS app version 1.0): add the localisations English (U.S.), English (U.K.), German and
    paste the files of `store/appstore/<locale>/` (name, subtitle, promotional text, description, keywords, support / marketing URL);
    copyright `2026 Thomas Rieder`; screenshots from `python3 tools/store/make_appstore_screenshots.py` (iPhone 6.9", iPad 13");
-   App Privacy -> **Data Not Collected**; Age Rating questionnaire all "None" (-> 4+); Kids Category with age band 6-8; category Games ->
+   App Privacy -> **Usage Data -> Product Interaction, purpose Analytics, Not Linked to You, not used for Tracking** (NOT "Data Not Collected": the anonymous first-party counters, `store/appstore/README.md`); Age Rating questionnaire all "None" (-> 4+); Kids Category with age band 6-8; category Games ->
    Educational; price Free; Availability: US, GB, DE, AT, CH; "Sign-in required": no; Notes for Review: `store/appstore/review_notes.txt`;
    Export compliance is answered by `ITSAppUsesNonExemptEncryption = false`; Content Rights: no third-party content; release:
    *Manually release this version*. Details: `store/appstore/README.md`.
@@ -67,7 +67,7 @@ the game is bundled, every change needs a new build and review.
 
 ## Native build differences (VITE_NATIVE=1)
 
-- Analytics is fully off (no 📊 button, no welcome consent dialog, no Google script or request). The web build is unchanged.
+- Google Analytics is fully off (no 📊 button, no welcome consent dialog, no `gtag` script, no Google Analytics request). The anonymous first-party counters (`web/src/counter.ts`, no identifiers) run in the native build too and send plain daily totals to our own Firestore (`firestore.googleapis.com`). The web build is unchanged.
 - Posters: only the developer's own App Store pages via the native manifest (`boards-native/`), behind the parental gate; see
   `specs/40-tech/app-store.md` "Native posters" for the three code steps that are still to apply and the signing command
   (the production key stays offline). Until `NATIVE_ADS = true` the native build shows only placeholders and makes no ad request.

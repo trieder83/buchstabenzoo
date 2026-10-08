@@ -15,6 +15,8 @@ export interface RescueOptions {
   /** Starts directly at the gate question (the gate view itself was hidden). */
   startAtGate?: boolean;
   /** The link must be opened now (called from the finger release = a user gesture). */
+  /** Gate steps for the anonymous counters (counter.ts). */
+  onStep?: (s: 'answer_right' | 'answer_wrong' | 'hold_started' | 'hold_complete' | 'hold_cancelled') => void;
   onOpen: (url: string) => void;
   /** `opened`: closed because the link was opened (else ✖ / Esc / wrong answer). */
   onClose: (opened: boolean) => void;
@@ -97,8 +99,13 @@ export function showRescue(o: RescueOptions): Rescue {
       const b = make('button', `${BTN};background:#ffd65c`, q.labels ? q.labels[n] : String(n));
       b.type = 'button';
       b.addEventListener('click', () => {
-        if (gate.answer(n) === 'hold') showHold(gate);
-        else close();
+        if (gate.answer(n) === 'hold') {
+          o.onStep?.('answer_right');
+          showHold(gate);
+        } else {
+          o.onStep?.('answer_wrong');
+          close();
+        }
       });
       choices.append(b);
     }
@@ -120,6 +127,7 @@ export function showRescue(o: RescueOptions): Rescue {
       hold.style.background = `conic-gradient(#e8604c ${Math.round(p * 360)}deg,#ffd65c 0)`;
       if (gate.stage === 'open') {
         ready = true;
+        o.onStep?.('hold_complete');
         hold.textContent = '✔';
         raf = 0;
         return;
@@ -133,6 +141,7 @@ export function showRescue(o: RescueOptions): Rescue {
       } catch {
         /* synthetic pointer */
       }
+      o.onStep?.('hold_started');
       gate.holdStart(performance.now());
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);
@@ -143,6 +152,7 @@ export function showRescue(o: RescueOptions): Rescue {
         close(true);
         return;
       }
+      o.onStep?.('hold_cancelled');
       gate.holdEnd();
       cancelAnimationFrame(raf);
       hold.style.background = '#ffd65c';

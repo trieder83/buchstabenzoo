@@ -6,6 +6,7 @@
 // `assets/{levels,models,textures,i18n,audio}` under `/assets/` in dev and preview, emits them
 // into `dist/assets/` on build, and publishes `/assets/index.json` (the list of files) so
 // the host only fetches files that exist (no 404s in the console).
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -128,6 +129,15 @@ function zooAssets(): Plugin {
   };
 }
 
+/** Short build id for the anonymous counters (counter.ts): git hash, else the package version. */
+function appVersion(): string {
+  try {
+    return execSync('git rev-parse --short=8 HEAD', { cwd: repoRoot, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    return String((JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8')) as { version?: string }).version ?? 'dev');
+  }
+}
+
 export default defineConfig(({ command }) => ({
   base: './',
   // `?adkey=` (test public key for the ad signature) exists only in the dev server and in the
@@ -135,6 +145,7 @@ export default defineConfig(({ command }) => ({
   define: {
     __AD_TEST__: JSON.stringify(command === 'serve' || process.env.VITE_AD_TEST === '1'),
     // fake GA4 id for the e2e test build only (PLAT-029); '' in the release build
+    __APP_VERSION__: JSON.stringify(appVersion()),
     __ANALYTICS_TEST_ID__: JSON.stringify(process.env.VITE_ANALYTICS_TEST_ID ?? ''),
   },
   appType: 'mpa', // no SPA fallback: unknown paths are 404, never index.html

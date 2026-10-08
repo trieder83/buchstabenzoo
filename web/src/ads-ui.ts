@@ -19,6 +19,7 @@ import {
 } from './ads';
 import { AdsDebugOverlay, BLOCKED_VERDICT, adsDebugEnabled, adsTelemetry, envInfo, logAdError, logAdEvent, logBlocked } from './ads-debug';
 import { showRescue, type Rescue } from './ads-rescue';
+import { count, slotParam } from './counter';
 import { currentPlatform, type Platform } from './platform';
 import { CREAM, renderTextTexture } from './text';
 
@@ -165,6 +166,8 @@ export class AdsHost {
   private fallbackTimer = 0;
   /** The last-resort native dialog while the browser hides our own views (ADS-045). */
   private rescue: Rescue | null = null;
+  /** Anonymous counter param of the campaign in view: `s<slot>_<ios|android|web>` (counter.ts). */
+  private ctx = 's1_web';
   readonly actBtn = el('button', 'zb-act', '🔗');
   readonly panel = el('div', 'zb-panel');
   readonly gateView = el('div', 'zb-gate');
@@ -335,6 +338,10 @@ export class AdsHost {
     };
   }
 
+  private setCtx(c: VerifiedCampaign): void {
+    this.ctx = slotParam(c.slot, this.linkOf(c));
+  }
+
   /** The link for this device: the store link of its platform, else the web link (ADS rule 16). */
   private linkOf(c: VerifiedCampaign): string {
     return linkFor(c, this.o.platform ? this.o.platform() : currentPlatform().platform);
@@ -493,6 +500,9 @@ export class AdsHost {
   }
 
   private open(id: string): void {
+    const c = this.content?.bySlot.get(this.boards.get(id)?.slot ?? 0);
+    if (c) this.setCtx(c);
+    count('board_panel_opened', this.ctx);
     this.shown = id;
     this.openedAt = performance.now();
     this.render();
@@ -571,7 +581,10 @@ export class AdsHost {
     const link = el('button', 'zb-link');
     link.type = 'button';
     link.append(el('span', undefined, '🔗'), el('span', 'zb-link-text', new URL(this.linkOf(campaign)).hostname));
-    link.addEventListener('click', () => this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash'));
+    link.addEventListener('click', () => {
+      this.setCtx(campaign);
+      this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash');
+    });
     link.setAttribute('aria-label', this.app.t('ad-link-open'));
     text.append(link);
     this.panel.replaceChildren(body);
@@ -596,6 +609,7 @@ export class AdsHost {
       if (ok) return;
       logBlocked(`element #${view.id} (${name}) hidden by the browser: display:${cs.display} ${Math.round(r.width)}x${Math.round(r.height)}`);
       if (!second) {
+        count('board_blocked_detected', name.replace(/[^a-z0-9_-]/g, '').slice(0, 32) || 'view');
         view.style.setProperty('display', 'flex', 'important');
         view.style.setProperty('visibility', 'visible', 'important');
         window.setTimeout(() => probe(true), 120);
@@ -627,7 +641,9 @@ export class AdsHost {
     const lang = this.app.language() === 'en' ? 'en' : 'de';
     const im = pickImage(campaign, lang, board.n);
     const imageUrl = URL.createObjectURL(new Blob([im.data as BlobPart], { type: im.mime }));
+    count('board_rescue_dialog', this.ctx);
     this.rescue = showRescue({
+      onStep: (s) => this.countStep(s),
       t: (k) => this.app.t(k),
       url: this.linkOf(campaign),
       card: { imageUrl, tagline: this.app.reading_level() !== 'kiga' ? campaign.tagline[lang] : null },
@@ -646,7 +662,9 @@ export class AdsHost {
   private rescueGate(url: string, language: boolean): void {
     if (this.rescue) return;
     this.closeGate();
+    count('board_rescue_dialog', this.ctx);
     this.rescue = showRescue({
+      onStep: (s) => this.countStep(s),
       t: (k) => this.app.t(k),
       url,
       question: language ? makeLanguageGateQuestion(this.app.language()) : makeGateQuestion(),
@@ -705,6 +723,7 @@ export class AdsHost {
     this.carousel = new Carousel(carouselItems(this.content, this.lang).length, performance.now());
     this.pushModal();
     this.carouselOpenedAt = performance.now();
+    count('carousel_opened');
     this.renderCarousel();
     return true;
   }
@@ -770,6 +789,7 @@ export class AdsHost {
         this.renderCarousel();
       } else if (Math.hypot(dx, dy) < 12) {
         car.go(car.index, now());
+        this.setCtx(campaign);
         this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash');
       }
     });
@@ -815,7 +835,13 @@ export class AdsHost {
 
   // ------------------------------------------------------------ parental gate
 
+  /** The gate steps (also of the rescue dialog) as anonymous counters. */
+  private countStep(s: 'answer_right' | 'answer_wrong' | 'hold_started' | 'hold_complete' | 'hold_cancelled'): void {
+    count(`gate_${s}`, this.ctx);
+  }
+
   private startGate(url: string, language = false): void {
+    count('board_link_tapped', this.ctx);
     // the reading-game campaign asks a language question (article / plural), the maths game a sum
     const gate = new ParentalGate(language ? makeLanguageGateQuestion(this.app.language()) : undefined);
     this.gate = gate;
@@ -836,8 +862,13 @@ export class AdsHost {
       b.className = 'zb-choice';
       b.type = 'button';
       b.addEventListener('click', () => {
-        if (gate.answer(n) === 'hold') this.showHold(card, gate, url);
-        else this.closeGate();
+        if (gate.answer(n) === 'hold') {
+          this.countStep('answer_right');
+          this.showHold(card, gate, url);
+        } else {
+          this.countStep('answer_wrong');
+          this.closeGate();
+        }
       });
       choices.append(b);
     }
@@ -866,6 +897,7 @@ export class AdsHost {
         // user gesture, ADS-029/030); the ✔ shows that the hold is complete.
         this.raf = 0;
         ready = true;
+        this.countStep('hold_complete');
         hold.classList.add('ready');
         hold.replaceChildren(el('span', undefined, '✔'));
         return;
@@ -874,6 +906,7 @@ export class AdsHost {
     };
     /** `up`: the finger was lifted. `cancel`: the system took the touch away (Android gesture, mouse left). */
     const end = (kind: 'up' | 'cancel') => {
+      const wasDown = down;
       down = false;
       if (ready) {
         ready = false;
@@ -883,11 +916,13 @@ export class AdsHost {
         } else {
           // no release gesture (pointercancel): a window.open would be blocked, so offer a real link to tap (ADS-040)
           logAdEvent('hold complete but the touch was cancelled: link button shown');
+          this.countStep('hold_cancelled');
           hold.classList.remove('ready');
           card.append(this.linkAnchor(url, () => this.openedByAnchor()));
         }
         return;
       }
+      if (wasDown) this.countStep('hold_cancelled');
       gate.holdEnd();
       cancelAnimationFrame(this.raf);
       this.raf = 0;
@@ -904,6 +939,7 @@ export class AdsHost {
       } catch {
         /* synthetic pointers cannot be captured */
       }
+      this.countStep('hold_started');
       gate.holdStart(now());
       cancelAnimationFrame(this.raf);
       this.raf = requestAnimationFrame(frame);
@@ -955,6 +991,7 @@ export class AdsHost {
 
   /** Opens the link once (only reached after the gate and the full hold). */
   private openLink(url: string): void {
+    count(this.carousel ? 'carousel_link_opened' : 'board_link_opened', this.ctx);
     this.opened.push(url);
     this.closeGate();
     let result = 'custom';
@@ -1021,6 +1058,7 @@ export class AdsHost {
   }
 
   private showFallback(url: string): void {
+    count('board_link_blocked_fallback', this.ctx);
     const note = el('div', undefined, this.app.t('ad-link-blocked'));
     const close = el('button', 'zb-fallback-close', '✖');
     close.className = 'zb-x';
@@ -1045,6 +1083,7 @@ export class AdsHost {
 
   /** The anchor inside the gate card was tapped after a cancelled hold: the browser opens it; close the gate. */
   private openedByAnchor(): void {
+    count(this.carousel ? 'carousel_link_opened' : 'board_link_opened', this.ctx);
     window.setTimeout(() => {
       this.closeGate();
       this.dismiss();

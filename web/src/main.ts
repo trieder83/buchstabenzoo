@@ -10,6 +10,7 @@ import { createAnalyticsRow } from './analytics-ui';
 import { AD_TEST_BUILD, resolveKeys, testKeyParam } from './ads';
 import { attachUiTaps, GameAudio, SOUND_EVENT } from './audio';
 import { attachInput, type StickView } from './input';
+import { adKeys, analyticsId } from './native';
 import { qualityMode } from './quality';
 import { newGameSeed, SaveSlot } from './save';
 import { updateTextTextures } from './text';
@@ -147,7 +148,7 @@ async function main(): Promise<void> {
   // opt-in analytics (PLAT-022..032): nothing happens until a parent allowed it; an empty id = off entirely
   const analytics = new Analytics(
     browserAnalyticsEnv(() => ({ language: app.language(), readingLevel: app.reading_level() })),
-    MEASUREMENT_ID,
+    analyticsId(MEASUREMENT_ID), // '' in the native app build (PLAT-036)
   );
   if (analytics.available) {
     const { row, relabel, showWelcome } = createAnalyticsRow(app, analytics);
@@ -162,7 +163,7 @@ async function main(): Promise<void> {
     if (introEnabled(window.location.search, navigator.webdriver === true)) showWelcome();
   }
   // ad billboards (GAME-ADS): signed external campaigns load after the first frame
-  const ads = new AdsHost(app, { keys: resolveKeys(AD_TEST_BUILD ? testKeyParam(window.location.search) : null), store });
+  const ads = new AdsHost(app, { keys: adKeys(resolveKeys(AD_TEST_BUILD ? testKeyParam(window.location.search) : null)), store });
   ui.onAllDone = () => ads.openCarousel();
   attachInput(app, {
     canvas,

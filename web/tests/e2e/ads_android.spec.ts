@@ -18,6 +18,8 @@ const LIVE = process.env.ADS_LIVE_URL ?? '';
 const TEST_BUILD = process.env.E2E_DIST === 'dist-adtest' && !LIVE;
 const fixtures = path.join(repo, 'web/tests/fixtures/ads');
 const PUB = fs.existsSync(path.join(fixtures, 'TEST-ONLY-public.key')) ? fs.readFileSync(path.join(fixtures, 'TEST-ONLY-public.key'), 'utf8').trim() : '';
+// Android user agents open the Play Store page of Math Fighter (ADS-049); the live site still serves the older manifest without store links
+const MF_ANDROID_LINK = LIVE ? 'https://mathfighter.rcms.ch/' : 'https://play.google.com/store/apps/details?id=com.mathfighter.app';
 const CAMPAIGN_BY_SLOT: Record<number, string> = { 1: 'mathfighter', 2: 'abcsmash', 3: 'edugamegalaxy' };
 
 interface Board {
@@ -61,10 +63,10 @@ const url = (query = '') => {
 };
 
 function fixtureFiles(): Map<string, Buffer> {
-  const adsDir = path.join(fixtures, 'ads');
+  const adsDir = path.join(fixtures, 'boards');
   const files = new Map<string, Buffer>();
-  files.set('campaigns.json', fs.readFileSync(path.join(adsDir, 'campaigns.json')));
-  files.set('campaigns.sig', fs.readFileSync(path.join(adsDir, 'campaigns.sig')));
+  files.set('index.json', fs.readFileSync(path.join(adsDir, 'index.json')));
+  files.set('index.sig', fs.readFileSync(path.join(adsDir, 'index.sig')));
   for (const f of fs.readdirSync(path.join(adsDir, 'img'))) files.set(`img/${f}`, fs.readFileSync(path.join(adsDir, 'img', f)));
   return files;
 }
@@ -73,9 +75,9 @@ function fixtureFiles(): Map<string, Buffer> {
 async function routeAds(page: Page, net: Profile['net'], timeline: string[], offline: () => boolean = () => false): Promise<void> {
   const files = TEST_BUILD ? fixtureFiles() : null;
   let busyUntil = 0;
-  await page.route('**/ads/**', async (route) => {
+  await page.route('**/boards/**', async (route) => {
     if (offline()) return route.abort('internetdisconnected');
-    const rel = new URL(route.request().url()).pathname.replace(/^.*\/ads\//, '');
+    const rel = new URL(route.request().url()).pathname.replace(/^.*\/boards\//, '');
     let status = 200;
     let body: Buffer;
     let contentType: string;
@@ -186,19 +188,19 @@ function gateAnswer(q: string): number | string {
 
 /** Passes the gate question of whichever campaign is open (sum, article or plural). */
 async function answerGate(page: Page): Promise<void> {
-  const q = (await page.locator('#ad-gate-question').textContent())!;
+  const q = (await page.locator('#zb-gate-question').textContent())!;
   const a = gateAnswer(q);
   if (typeof a === 'number') {
-    await page.locator('.ad-choice', { hasText: new RegExp(`^${a}$`) }).tap();
+    await page.locator('.zb-choice', { hasText: new RegExp(`^${a}$`) }).tap();
     return;
   }
   // abcsmash gate: the right article / plural — read the answer from the internal gate
   const right = await page.evaluate(() => (window.__zoo!.ads as unknown as { gate: { question: { labels?: string[]; answer: number } } | null }).gate?.question);
-  await page.locator('.ad-choice', { hasText: new RegExp(`^${right!.labels![right!.answer]}$`) }).tap();
+  await page.locator('.zb-choice', { hasText: new RegExp(`^${right!.labels![right!.answer]}$`) }).tap();
 }
 
 async function touchHold(page: Page, cdp: CDPSession, ms: number, wiggle: boolean): Promise<void> {
-  const hb = (await page.locator('#ad-hold').boundingBox())!;
+  const hb = (await page.locator('#zb-hold').boundingBox())!;
   const x = hb.x + hb.width / 2;
   const y = hb.y + hb.height / 2;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
@@ -246,12 +248,12 @@ for (const p of PROFILES) {
     for (const b of pick) {
       await run(steps, `board ${b.id} (slot ${b.slot}): near -> panel with the campaign picture + texture uploaded`, async () => {
         await standAt(page, b);
-        await expect(page.locator('#ad-panel')).toBeVisible({ timeout: 20_000 });
-        await expect(page.locator('.ad-body')).toHaveAttribute('data-campaign', CAMPAIGN_BY_SLOT[b.slot]);
-        await expect.poll(() => page.evaluate(() => (document.querySelector('#ad-image') as HTMLImageElement | null)?.naturalWidth ?? 0), { timeout: 10_000 }).toBeGreaterThan(64);
+        await expect(page.locator('#zb-panel')).toBeVisible({ timeout: 20_000 });
+        await expect(page.locator('.zb-body')).toHaveAttribute('data-card', CAMPAIGN_BY_SLOT[b.slot]);
+        await expect.poll(() => page.evaluate(() => (document.querySelector('#zb-image') as HTMLImageElement | null)?.naturalWidth ?? 0), { timeout: 10_000 }).toBeGreaterThan(64);
         const d = await dbg(page);
         if (d.uploads) expect(d.uploads[b.id], 'texture uploaded').toBe(true);
-        const box = (await page.locator('#ad-link').boundingBox())!;
+        const box = (await page.locator('#zb-link').boundingBox())!;
         expect(box.x + box.width).toBeLessThanOrEqual(p.width + 0.5);
         expect(box.y + box.height).toBeLessThanOrEqual(p.height + 0.5);
       });
@@ -259,28 +261,28 @@ for (const p of PROFILES) {
     const b1 = list.find((b) => b.slot === 1)!;
     await run(steps, 'close, 🔗 button reopens (touch)', async () => {
       await standAt(page, b1);
-      await expect(page.locator('#ad-panel')).toBeVisible();
+      await expect(page.locator('#zb-panel')).toBeVisible();
       await page.waitForTimeout(600);
-      await page.locator('#ad-panel .ad-x').tap();
-      await expect(page.locator('#ad-panel')).toBeHidden();
-      await expect(page.locator('#ad-act')).toBeVisible();
-      await page.locator('#ad-act').tap();
-      await expect(page.locator('#ad-panel')).toBeVisible();
+      await page.locator('#zb-panel .zb-x').tap();
+      await expect(page.locator('#zb-panel')).toBeHidden();
+      await expect(page.locator('#zb-act')).toBeVisible();
+      await page.locator('#zb-act').tap();
+      await expect(page.locator('#zb-panel')).toBeVisible();
     });
     await run(steps, 'gate: sum, 2 s CDP touch hold (moving finger), ✔, release opens the link once', async () => {
-      await page.locator('#ad-link').tap();
-      await expect(page.locator('#ad-gate')).toBeVisible();
+      await page.locator('#zb-link').tap();
+      await expect(page.locator('#zb-gate')).toBeVisible();
       await answerGate(page);
-      await expect(page.locator('#ad-hold')).toBeVisible();
+      await expect(page.locator('#zb-hold')).toBeVisible();
       await touchHold(page, cdp, 800, false);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await page.waitForTimeout(200);
-      expect(await page.locator('#ad-hold.ready').count(), 'early release resets').toBe(0);
+      expect(await page.locator('#zb-hold.ready').count(), 'early release resets').toBe(0);
       await touchHold(page, cdp, 2600 * Math.min(2, p.cpu), true);
-      await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 6000 });
+      await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 6000 });
       expect(await opens(page)).toEqual([]);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await expect.poll(() => opens(page), { timeout: 3000 }).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
+      await expect.poll(() => opens(page), { timeout: 3000 }).toEqual([[MF_ANDROID_LINK, '_blank', 'noopener,noreferrer']]);
       const d = await dbg(page);
       return `pointer ${JSON.stringify(d.pointer)} open ${JSON.stringify(d.windowOpen)}`;
     });
@@ -288,57 +290,57 @@ for (const p of PROFILES) {
       await page.evaluate(() => ((window as unknown as Win).__opens.length = 0));
       await walkAway(page, b1);
       await standAt(page, b1);
-      await expect(page.locator('#ad-panel')).toBeVisible();
+      await expect(page.locator('#zb-panel')).toBeVisible();
       await page.waitForTimeout(600);
-      await page.locator('#ad-link').tap();
+      await page.locator('#zb-link').tap();
       await answerGate(page);
       await touchHold(page, cdp, 2600 * Math.min(2, p.cpu), false);
-      await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 6000 });
+      await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 6000 });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchCancel', touchPoints: [] });
-      await expect(page.locator('#ad-gate a#ad-open')).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('#zb-gate a#zb-open')).toBeVisible({ timeout: 3000 });
       expect(await opens(page)).toEqual([]);
-      const href = await page.locator('#ad-gate a#ad-open').getAttribute('href');
-      expect(href).toBe('https://mathfighter.rcms.ch/');
-      expect(await page.locator('#ad-gate a#ad-open').getAttribute('rel')).toBe('noopener noreferrer');
-      expect(await page.locator('#ad-gate a#ad-open').getAttribute('target')).toBe('_blank');
+      const href = await page.locator('#zb-gate a#zb-open').getAttribute('href');
+      expect(href).toBe(MF_ANDROID_LINK);
+      expect(await page.locator('#zb-gate a#zb-open').getAttribute('rel')).toBe('noopener noreferrer');
+      expect(await page.locator('#zb-gate a#zb-open').getAttribute('target')).toBe('_blank');
       const d = await dbg(page);
       return `pointer ${JSON.stringify(d.pointer)}`;
     });
     await run(steps, 'blocked pop-up (window.open without effect): fallback link shows after 1.5 s', async () => {
-      await page.locator('#ad-gate .ad-x').tap();
-      await expect(page.locator('#ad-gate')).toBeHidden();
+      await page.locator('#zb-gate .zb-x').tap();
+      await expect(page.locator('#zb-gate')).toBeHidden();
       await page.evaluate(() => ((window as unknown as Win).__opens.length = 0));
-      await page.locator('#ad-link').tap();
+      await page.locator('#zb-link').tap();
       await answerGate(page);
       await touchHold(page, cdp, 2600 * Math.min(2, p.cpu), false);
-      await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 6000 });
+      await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 6000 });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await expect(page.locator('#ad-fallback a#ad-open')).toBeVisible({ timeout: 4000 });
+      await expect(page.locator('#zb-fallback a#zb-open')).toBeVisible({ timeout: 4000 });
       expect((await opens(page)).length).toBe(1);
-      await page.locator('#ad-fallback .ad-x').tap();
-      await expect(page.locator('#ad-fallback')).toBeHidden();
+      await page.locator('#zb-fallback .zb-x').tap();
+      await expect(page.locator('#zb-fallback')).toBeHidden();
     });
     await run(steps, 'Back button with the gate open closes the gate, the game stays', async () => {
       await walkAway(page, b1);
       await standAt(page, b1);
       await page.waitForTimeout(600);
-      await expect(page.locator('#ad-panel')).toBeVisible();
-      await page.locator('#ad-link').tap();
-      await expect(page.locator('#ad-gate')).toBeVisible();
+      await expect(page.locator('#zb-panel')).toBeVisible();
+      await page.locator('#zb-link').tap();
+      await expect(page.locator('#zb-gate')).toBeVisible();
       const before = page.url();
       await page.goBack();
-      await expect(page.locator('#ad-gate')).toBeHidden({ timeout: 3000 });
+      await expect(page.locator('#zb-gate')).toBeHidden({ timeout: 3000 });
       expect(page.url()).toBe(before);
       expect(await page.evaluate(() => !!window.__zoo)).toBe(true);
     });
     await run(steps, 'rotation while the panel is open keeps it inside the viewport', async () => {
       await walkAway(page, b1);
       await standAt(page, b1);
-      await expect(page.locator('#ad-panel')).toBeVisible();
+      await expect(page.locator('#zb-panel')).toBeVisible();
       for (const [w, h] of [[p.height, p.width], [p.width, p.height]]) {
         await page.setViewportSize({ width: w, height: h });
         await page.waitForTimeout(400);
-        const r = (await page.locator('.ad-body').boundingBox())!;
+        const r = (await page.locator('.zb-body').boundingBox())!;
         expect(r.x).toBeGreaterThanOrEqual(0);
         expect(r.x + r.width).toBeLessThanOrEqual(w + 0.5);
         expect(r.y + r.height).toBeLessThanOrEqual(h + 0.5);
@@ -350,7 +352,7 @@ for (const p of PROFILES) {
       await cdp.send('Page.setWebLifecycleState', { state: 'active' });
       await walkAway(page, b1);
       await standAt(page, b1);
-      await expect(page.locator('#ad-panel')).toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('#zb-panel')).toBeVisible({ timeout: 10_000 });
     });
     await run(steps, 'diagnostics JSON is complete', async () => {
       const d = await dbg(page);
@@ -394,16 +396,16 @@ test('ADS-039 android: images that do not all arrive in time are retried (incomp
   const ctx = await browser.newContext({ viewport: { width: p.width, height: p.height }, hasTouch: true, isMobile: true, deviceScaleFactor: p.dpr, userAgent: p.ua });
   const page = await ctx.newPage();
   const files = TEST_BUILD ? fixtureFiles() : null;
-  await page.route('**/ads/img/**', async (route) => {
+  await page.route('**/boards/img/**', async (route) => {
     if (slow && /edugalaxy|edugamegalaxy/.test(route.request().url())) return new Promise(() => undefined); // never answers
     if (files) {
-      const rel = new URL(route.request().url()).pathname.replace(/^.*\/ads\//, '');
+      const rel = new URL(route.request().url()).pathname.replace(/^.*\/boards\//, '');
       return route.fulfill({ body: files.get(rel)!, contentType: 'image/png' });
     }
     return route.continue();
   });
-  if (files) await page.route('**/ads/campaigns.*', (route) => {
-    const rel = new URL(route.request().url()).pathname.replace(/^.*\/ads\//, '');
+  if (files) await page.route('**/boards/index.*', (route) => {
+    const rel = new URL(route.request().url()).pathname.replace(/^.*\/boards\//, '');
     return route.fulfill({ body: files.get(rel)!, contentType: 'text/plain' });
   });
   await page.goto(url());
@@ -421,18 +423,18 @@ test('ADS-038 android: ?adsdebug=1 shows the readable, copyable diagnostics over
   const p = PROFILES[0];
   const { ctx, page } = await phone(browser, p, { query: '&adsdebug=1' });
   await verified(page);
-  const ov = page.locator('#ads-debug');
+  const ov = page.locator('#zb-dbg');
   await expect(ov).toBeVisible();
   const text = (await ov.locator('pre').textContent())!;
   for (const k of ['ua', 'secureContext', 'subtle', 'maxTextureSize', 'manifest', 'signature', 'verifier', 'images', 'near', 'pointer', 'windowOpen', 'errors']) expect(text, k).toContain(k);
   const fs0 = await ov.locator('pre').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   expect(fs0).toBeGreaterThanOrEqual(14);
-  await expect(page.locator('#ads-debug-copy')).toBeVisible();
-  expect(((await page.locator('#ads-debug-copy').boundingBox())!.height)).toBeGreaterThanOrEqual(48);
-  await page.screenshot({ path: path.join(repo, 'web/test-results/ads-debug-overlay.png') });
-  await page.locator('#ads-debug-close').tap();
+  await expect(page.locator('#zb-dbg-copy')).toBeVisible();
+  expect(((await page.locator('#zb-dbg-copy').boundingBox())!.height)).toBeGreaterThanOrEqual(48);
+  await page.screenshot({ path: path.join(repo, 'web/test-results/zb-dbg-overlay.png') });
+  await page.locator('#zb-dbg-close').tap();
   await expect(ov).toBeHidden();
-  await page.locator('#ad-dbg-chip').tap();
+  await page.locator('#zb-dbg-chip').tap();
   await expect(ov).toBeVisible();
   const json = await dbg(page);
   expect(json.signature.verifier).toMatch(/subtle|js/);
@@ -442,8 +444,8 @@ test('ADS-038 android: ?adsdebug=1 shows the readable, copyable diagnostics over
 
 test('ADS-038 android: without ?adsdebug=1 there is no overlay and no chip', async ({ browser }) => {
   const { ctx, page } = await phone(browser, PROFILES[0]);
-  await expect(page.locator('#ads-debug')).toHaveCount(0);
-  await expect(page.locator('#ad-dbg-chip')).toHaveCount(0);
+  await expect(page.locator('#zb-dbg')).toHaveCount(0);
+  await expect(page.locator('#zb-dbg-chip')).toHaveCount(0);
   await ctx.close();
 });
 
@@ -467,14 +469,14 @@ test('ADS-042 android: the game inside a cross-origin iframe (itch.io style) loa
     const res = await route.fetch({ url: local + u.pathname.replace(/^\/game/, '') + u.search });
     return route.fulfill({ response: res });
   });
-  if (TEST_BUILD) await routeAds(page, null, []); // registered last, so it wins for **/ads/** (fixture campaigns, test key)
+  if (TEST_BUILD) await routeAds(page, null, []); // registered last, so it wins for **/boards/** (fixture campaigns, test key)
   await page.goto(`${origin}/index.html`);
   const frame = page.frameLocator('#g');
   const fr = await (await page.waitForSelector('#g')).contentFrame();
   expect(fr).not.toBeNull();
   await fr!.waitForFunction(() => (window as Window).__zoo?.ads?.state().settled, undefined, { timeout: 120_000 });
   expect(await fr!.evaluate(() => window.__zoo!.ads.state().loaded)).toBe(true);
-  await expect(frame.locator('#ad-panel')).toBeHidden();
+  await expect(frame.locator('#zb-panel')).toBeHidden();
   const d = await fr!.evaluate(() => window.__zoo!.adsDebug() as { env: { framed: boolean; origin: string } });
   expect(d.env.framed).toBe(true);
   await page.unrouteAll({ behavior: 'ignoreErrors' });

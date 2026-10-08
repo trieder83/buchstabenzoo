@@ -111,14 +111,16 @@ test('CART-002/003/004/008 + CAMV-024: board, drive, slide along the bench, zoo 
   expect(b.kind).toBe('cart_boarded');
   await nextFrames(page, 30);
   expect(await page.evaluate(() => window.__zoo!.app.driving())).toBe(true);
-  // only the zoo view while driving, the view keys do nothing, the camera zooms out +3 m
-  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('zoo');
-  await page.keyboard.press('KeyV');
+  // CAMV-024 (was: forced zoo view, Q-125; now Q-381): boarding keeps first person, F / right mouse
+  // (look-around) do nothing, the view button stays, the stored view is the one before boarding
+  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
   await page.keyboard.down('KeyF');
   await page.keyboard.up('KeyF');
+  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
+  await page.keyboard.press('KeyV');
   expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('zoo');
   expect(await page.evaluate(() => window.__zoo!.app.camera_extra_distance())).toBeCloseTo(3, 1);
-  await expect(page.locator('#view-btn')).toBeHidden();
+  await expect(page.locator('#view-btn')).toBeVisible();
   expect(await page.evaluate(() => window.__zoo!.app.target_kind())).toBe('get_out');
   // the stored view is kept for the settings
   expect(await page.evaluate(() => window.__zoo!.app.saved_view_mode())).toBe('first_person');
@@ -154,6 +156,58 @@ test('CART-002/003/004/008 + CAMV-024: board, drive, slide along the bench, zoo 
   // first person returns
   expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
   expect(await page.evaluate(() => window.__zoo!.app.camera_extra_distance())).toBeLessThan(2);
+  expect(errors).toEqual([]);
+});
+
+test('CAMV-024/029/030: first person from the driver seat in the golf cart', async ({ page }) => {
+  const errors = await start(page);
+  await page.evaluate(() => window.__zoo!.app.debug_give_cart_key());
+  await atCart(page);
+  await page.evaluate(() => window.__zoo!.app.interact());
+  await nextFrames(page, 30);
+  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('zoo');
+  await expect(page.locator('#view-btn')).toBeVisible();
+  // the view button: zoo -> first person -> zoo (never look-around while seated)
+  await page.locator('#view-btn').click();
+  await nextFrames(page, 60);
+  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
+  const seat = async () => {
+    const c = (await carts(page))[0];
+    const eye = await page.evaluate(() => window.__zoo!.app.camera_eye());
+    return { c, eye };
+  };
+  let { c, eye } = await seat();
+  // the eye sits at the driver's seat: inside the cart box, below the 2.0 m roof, above the seat
+  expect(Math.hypot(eye[0] - c.x, eye[2] + c.z), `eye ${eye} cart ${c.x},${c.z}`).toBeLessThan(1.3);
+  expect(eye[1], `eye ${eye}`).toBeGreaterThan(1.0);
+  expect(eye[1], `eye ${eye}`).toBeLessThan(1.95);
+  expect(await page.evaluate(() => window.__zoo!.app.player_drawn())).toBe(false);
+  // looks along the cart heading, a right-thumb drag turns the head, the cart does not
+  const yaw0 = await page.evaluate(() => window.__zoo!.app.camera_view_yaw_deg());
+  await page.evaluate(() => window.__zoo!.app.look_drag(120, 0));
+  await nextFrames(page, 40);
+  const yaw1 = await page.evaluate(() => window.__zoo!.app.camera_view_yaw_deg());
+  expect(Math.abs(yaw1 - yaw0)).toBeGreaterThan(5);
+  expect((await carts(page))[0].yaw).toBeCloseTo(c.yaw, 3);
+  await page.screenshot({ path: `${shots}/cart-first-person.png` });
+  // drive a bit: the eye follows the cart
+  const before = c;
+  await drive(page, 'KeyW', 1.2);
+  await nextFrames(page, 20);
+  ({ c, eye } = await seat());
+  expect(Math.hypot(c.x - before.x, c.z - before.z)).toBeGreaterThan(1);
+  expect(Math.hypot(eye[0] - c.x, eye[2] + c.z), `eye ${eye} cart ${c.x},${c.z}`).toBeLessThan(1.3);
+  expect(await page.evaluate(() => window.__zoo!.app.debug_cart_overlaps(0))).toBe(false);
+  await page.screenshot({ path: `${shots}/cart-first-person-driving.png` });
+  // F / right mouse (look-around) do nothing; V returns to the zoo view; the stored view is the one before boarding
+  await page.keyboard.down('KeyF');
+  await page.keyboard.up('KeyF');
+  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
+  await page.keyboard.press('KeyV');
+  await nextFrames(page, 40);
+  expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('zoo');
+  expect(await page.evaluate(() => window.__zoo!.app.player_drawn())).toBe(true);
+  expect(await page.evaluate(() => window.__zoo!.app.saved_view_mode())).toBe('zoo');
   expect(errors).toEqual([]);
 });
 
@@ -215,7 +269,8 @@ for (const [name, w, h] of [
         const overlap = !(box.x + box.width <= o.x || o.x + o.width <= box.x || box.y + box.height <= o.y || o.y + o.height <= box.y);
         expect(overlap, `${id} overlaps the get-out button`).toBe(false);
       }
-      await expect(page.locator('#view-btn')).toBeHidden();
+      // the view button stays (CAMV-029); checked against horn / get-out below
+      await expect(page.locator('#view-btn')).toBeVisible();
       // the 🔔 horn (Q-378, ASND-040): visible while seated, >= 64 px, on screen, apart from the other buttons
       const horn = page.locator('#horn-btn');
       await expect(horn).toBeVisible();
@@ -230,6 +285,26 @@ for (const [name, w, h] of [
         const overlap = !(hb.x + hb.width <= o.x || o.x + o.width <= hb.x || hb.y + hb.height <= o.y || o.y + o.height <= hb.y);
         expect(overlap, `${id} overlaps the horn button`).toBe(false);
       }
+      // CAMV-029: the view button is >= 64 px, on screen and overlaps neither the horn, the get-out
+      // button, the gear nor the compass; tapping it gives first person at the driver's seat
+      const vb = (await page.locator('#view-btn').boundingBox())!;
+      expect(vb.width).toBeGreaterThanOrEqual(64);
+      expect(vb.height).toBeGreaterThanOrEqual(64);
+      expect(vb.x + vb.width).toBeLessThanOrEqual(w);
+      expect(vb.y + vb.height).toBeLessThanOrEqual(h);
+      for (const id of ['#act', '#horn-btn', '#settings-btn', '#compass-btn']) {
+        const o = await page.locator(id).boundingBox();
+        if (!o) continue;
+        const overlap = !(vb.x + vb.width <= o.x || o.x + o.width <= vb.x || vb.y + vb.height <= o.y || o.y + o.height <= vb.y);
+        expect(overlap, `${id} overlaps the view button`).toBe(false);
+      }
+      await page.locator('#view-btn').tap();
+      await nextFrames(page, 40);
+      expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('first_person');
+      await page.screenshot({ path: `${shots}/cart-first-person-small-${name}.png` });
+      await page.locator('#view-btn').tap();
+      await nextFrames(page, 10);
+      expect(await page.evaluate(() => window.__zoo!.app.view_mode())).toBe('zoo');
       // the right thumb gets out
       await act.tap();
       await nextFrames(page, 3);

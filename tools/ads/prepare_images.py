@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Compresses the campaign source images (specs/10-gameplay/ads/*/resources/) into the
-served copies in ads/img/ (GAME-ADS "External content", ADS-013): 1024 px wide WebP,
+served copies in boards/img/ (GAME-ADS "External content", ADS-013): 1024 px wide WebP,
 <= 512 KB. Re-run after changing a source image, then run tools/ads/sign.py again.
 
     python3 tools/ads/prepare_images.py
@@ -10,17 +10,17 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "specs/10-gameplay/ads"
-OUT = ROOT / "ads/img"
+OUT = ROOT / "boards/img"
 MAX_BYTES = 512 * 1024
 WIDTH = 1024
 
 JOBS = {
-    "mathfighter-wide.webp": "campaign-1-mathfighter/resources/feature_graphic_5.png",
-    "mathfighter-alt.webp": "campaign-1-mathfighter/resources/feature_graphic_2.png",
-    "abcsmash-de.webp": "campaign-2-abcsmash/resources/feature-graphic-de-de.png",
-    "abcsmash-en.webp": "campaign-2-abcsmash/resources/feature-graphic-en-us.png",
-    "edugamegalaxy-de.webp": "campaign-3-edugamegalaxy/resources/edugamegalaxy-de.png",
-    "edugamegalaxy-en.webp": "campaign-3-edugamegalaxy/resources/edugamegalaxy-en.png",
+    "c1-a.webp": "campaign-1-mathfighter/resources/feature_graphic_5.png",
+    "c1-b.webp": "campaign-1-mathfighter/resources/feature_graphic_2.png",
+    "c2-de.webp": "campaign-2-abcsmash/resources/feature-graphic-de-de.png",
+    "c2-en.webp": "campaign-2-abcsmash/resources/feature-graphic-en-us.png",
+    "c3-de.webp": "campaign-3-edugamegalaxy/resources/edugamegalaxy-de.png",
+    "c3-en.webp": "campaign-3-edugamegalaxy/resources/edugamegalaxy-en.png",
 }
 
 

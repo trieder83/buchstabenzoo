@@ -1,0 +1,7 @@
+Letter Zoo (Buchstabenzoo) is a 3D reading game for children (Kids Category, ages 6-8): the zoo animals have escaped; the child reads a riddle, picks the right food box by reading its label and leads the animal home. It is a full game bundled in the app (WebGL2 game core in WebAssembly, all 3D models, sounds and texts are inside the app) and works completely offline. No account, no login, no in-app purchases, no ads network, no analytics (the native build has Google Analytics removed and sends no data), no network requests at all during play. Game progress is stored locally only.
+
+Posters: a few in-world billboards in the zoo show other apps by the same developer (Thomas Rieder: Math Fighter, ABC Smash). They are small decoration only; tapping a poster opens a parental gate (a sum plus a 2-3 second hold); only after passing it the App Store product page of our own app opens. There is no other link out of the app. The poster content is a signed file bundled in the app; it is not downloaded.
+
+No camera, microphone, location, contacts or tracking. ITSAppUsesNonExemptEncryption = NO (only Ed25519 signature verification of the bundled poster file).
+
+How to test: start the app, walk with the left stick / drag, tap an info board to read the riddle, take the matching food from a food box, walk to the animal. The settings (gear) offer language (German/English), reading level and sound. 3D art in the app was created with AI-assisted image tools and modelled by the developer in Blender; all rights are held by the developer.

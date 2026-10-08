@@ -4,6 +4,8 @@
 Deterministic (Pillow, no randomness): a green rounded square with zebra stripes, a cream badge
 with a bold "ABC" and a yellow paw dot, dark brown outlines (art/style/style.md palette).
 Writes web/public/icons/{icon-192,icon-512,icon-maskable-512,apple-touch-icon,favicon-32}.png.
+Also writes the iOS app icon (1024, opaque, full bleed, no alpha) and the launch image of the
+Capacitor project web/ios (PLAT-034, specs/40-tech/app-store.md); iOS rounds the corners itself.
 Usage: python3 tools/make_icons.py
 """
 from pathlib import Path
@@ -26,7 +28,7 @@ def font(size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.load_default(size)
 
 
-def master(maskable: bool) -> Image.Image:
+def master(maskable: bool, scale: float | None = None) -> Image.Image:
     """Full-bleed art for maskable, a rounded square with transparent corners otherwise."""
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     bg = Image.new("RGBA", (S, S), GREEN)
@@ -35,7 +37,7 @@ def master(maskable: bool) -> Image.Image:
     for x in range(-S, 2 * S, 220):
         d.polygon([(x, S), (x + 90, S), (x + 90 + S, 0), (x + S, 0)], fill=DARK_GREEN)
     # content scale: maskable keeps everything inside the central 80 % circle (safe zone)
-    k = 0.78 if maskable else 1.0
+    k = scale or (0.78 if maskable else 1.0)
     c = S / 2
 
     def box(x0, y0, x1, y1):
@@ -70,6 +72,23 @@ def save(img: Image.Image, name: str, size: int, flatten: bool = False) -> None:
     out.save(OUT / name, optimize=True)
 
 
+IOS = Path(__file__).resolve().parent.parent / "web" / "ios" / "App" / "App" / "Assets.xcassets"
+
+
+def ios_assets() -> None:
+    """App Store icon: 1024x1024 RGB (no alpha), full-bleed art; launch image: cream with the icon."""
+    icon = master(True, 0.92).convert("RGB")
+    app_icon = IOS / "AppIcon.appiconset"
+    if not app_icon.is_dir():
+        return
+    icon.save(app_icon / "AppIcon-512@2x.png", optimize=True)
+    splash = Image.new("RGB", (2732, 2732), CREAM)
+    badge = master(False).resize((820, 820), Image.LANCZOS)
+    splash.paste(badge, ((2732 - 820) // 2, (2732 - 820) // 2), badge)
+    for name in ("splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"):
+        splash.save(IOS / "Splash.imageset" / name, optimize=True)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     rounded, full = master(False), master(True)
@@ -78,6 +97,7 @@ def main() -> None:
     save(full, "icon-maskable-512.png", 512)
     save(master(False).resize((S, S)), "apple-touch-icon.png", 180, flatten=True)
     save(rounded, "favicon-32.png", 32)
+    ios_assets()
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 # Decisions digest (generated — do not edit)
 
-Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-381** (parallel agents: use the range assigned in `.agent/STATE.md`).
+Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/agent_state.py`. **Next free question number: Q-398** (parallel agents: use the range assigned in `.agent/STATE.md`).
 
-163 answered · 104 open · 10 other (partly answered / proposed / superseded).
+165 answered · 111 open · 10 other (partly answered / proposed / superseded).
 
 ## Open
 
@@ -110,6 +110,13 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 - Q-377 — Ad boards in the night levels (user request 2026-10-06): every level shows all three campaign slots; night levels get 3 boards each as … (GAME-ADS)
 - Q-376 — Should the animals at home use the socket_perch_* points of the chameleon's terrarium_branch / terrarium_tree (the chameleon sits on a … (GAME-LEVEL-NIGHT-2, GAME-ANIMALS)
 - Q-365 — Secret trail through the middle grove of night_1 (user request 2026-10-04: "a hidden path to walk through, maybe an animal hiding spot"). (GAME-LEVEL-NIGHT-1, GAME-LAYOUT)
+- Q-390 — iOS App Store: Kids Category or not (user request 2026-10-08)? (TECH-STORE)
+- Q-391 — iOS device families: iPhone only or universal? (TECH-STORE)
+- Q-392 — Native posters (user decision 2026-10-08: the iOS build links to the developer's own App Store pages, Math Fighter id6760628828 and ABC … (GAME-ADS, TECH-STORE)
+- Q-393 — Name availability: the App Store name must be unique store-wide and is only checked when the record is created; web searches found no app … (TECH-STORE)
+- Q-394 — Store screenshots are German-UI renders of the day and night zoo. (TECH-STORE)
+- Q-395 — Audio and the ringer switch: the native app plays sound even when the iPhone is on silent (.playback session, as ABC Smash). (TECH-STORE)
+- Q-396 — App Store needs a real contact: the privacy page still has the placeholder "[Name, address and e-mail of the controller]" and the support … (TECH-STORE, TECH-PLATFORMS)
 
 ## Partly answered / other
 
@@ -126,6 +133,8 @@ Source: `specs/open-questions.md` (the full text). Regenerate: `python3 tools/ag
 
 ## Answered (newest first)
 
+- Q-397 — Math Fighter App Store id: the request named id6760028628, but no … → 2026-10-08: id6760628828 verified by fetching the App Store page ("Math Fighter - Learn Math App"); id6760028628 was a mistaken …
+- Q-381 — First person in the golf cart (user request 2026-10-08, replaces … → recommendation taken, awaiting user check (2026-10-08)
 - Q-380 — Key-box sound timing (ART-SOUND "Golf cart sounds"): right code -> … → 2026-10-07: as recommended; wired (ASND-031..040).
 - Q-379 — Audio size budget: assets/audio is now 1 448 KB of 1.5 MB (ASND-008 … → 2026-10-07: as recommended; wired (ASND-031..040).
 - Q-378 — Golf-cart horn trigger (GAME-CART rule 5 only says "a friendly 🔔 horn … → 2026-10-07: as recommended; wired (ASND-031..040).

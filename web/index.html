@@ -218,11 +218,11 @@
       #view-btn[data-view='look_around'] {
         background: #ffd65c;
       }
-      /* Golf cart horn (Q-378): only while seated, in the slot of the view button (which is
-         hidden then), above the get-out button; sound only. */
+      /* Golf cart horn (Q-378): only while seated, left of the view button, above the get-out
+         button; sound only. */
       #horn-btn {
         position: fixed;
-        right: calc(34px + env(safe-area-inset-right));
+        right: calc(120px + env(safe-area-inset-right));
         bottom: calc(144px + env(safe-area-inset-bottom));
         width: 76px;
         height: 76px;
@@ -261,7 +261,7 @@
       #compass-btn.pulse3 {
         animation: nudge 1.1s ease-in-out 3;
       }
-      /* golf cart: 🔒 badge on the interact button; only the zoo view while driving (CAMV-024) */
+      /* golf cart: 🔒 badge on the interact button; the view button stays while driving (CAMV-024/029) */
       #act {
         overflow: visible;
       }
@@ -275,9 +275,6 @@
         border: 3px solid #3b2314;
         border-radius: 50%;
         padding: 2px;
-      }
-      body.driving #view-btn {
-        display: none;
       }
       @keyframes nudge {
         50% {
@@ -482,9 +479,14 @@
       @media (orientation: landscape) and (max-height: 460px), (orientation: portrait) and (max-width: 480px) {
         #settings-btn,
         #compass-btn,
-        #horn-btn,
         #view-btn {
           right: calc(16px + env(safe-area-inset-right));
+          width: 64px;
+          height: 64px;
+          font-size: 32px;
+        }
+        #horn-btn {
+          right: calc(88px + env(safe-area-inset-right));
           width: 64px;
           height: 64px;
           font-size: 32px;

@@ -1,7 +1,7 @@
 // External, signed ad content (GAME-ADS "External content", ADS-007…ADS-019, Q-240).
 //
-// The game accepts ONLY campaigns signed by us: `ads/campaigns.json` + detached Ed25519
-// signature `ads/campaigns.sig` (over DOMAIN + the exact manifest bytes), public key compiled
+// The game accepts ONLY campaigns signed by us: `boards/index.json` + detached Ed25519
+// signature `boards/index.sig` (over DOMAIN + the exact manifest bytes), public key compiled
 // into the game (ad-keys.ts). Before anything is shown we check: signature, format, version
 // (never lower than the last seen), validity window, per campaign: known id + slot + link host
 // (hard-coded allowlist, https only), plain-text tagline, and per image: path, size, SHA-256,
@@ -10,7 +10,7 @@
 import * as ed from '@noble/ed25519';
 import { sha256 as nobleSha256, sha512 as nobleSha512 } from '@noble/hashes/sha2.js';
 import { AD_PUBLIC_KEYS } from './ad-keys';
-import { adsTelemetry, logAdError, logAdEvent } from './ads-debug';
+import { adsTelemetry, logAdError, logAdEvent, logBlocked } from './ads-debug';
 
 /** Build-time switch (vite `define`): true only in the e2e test build (`VITE_AD_TEST=1`). */
 declare const __AD_TEST__: boolean;
@@ -32,10 +32,14 @@ export const VERSION_KEY = 'zoo.ads.version';
 const SCHEME = 'https:';
 
 /** The campaigns compiled into the game (Q-241): id → slot and the ONLY host its link may use. */
-export const KNOWN_CAMPAIGNS: Readonly<Record<string, { slot: number; host: string }>> = {
+export const KNOWN_CAMPAIGNS: Readonly<Record<string, { slot: number; host: string; path?: string }>> = {
   mathfighter: { slot: 1, host: 'mathfighter.rcms.ch' },
   abcsmash: { slot: 2, host: 'abcsmash.rcms.ch' },
   edugamegalaxy: { slot: 3, host: 'edugamegalaxy.rcms.ch' },
+  // native app build only (boards-native/, PLAT-038): the developer's own App Store pages, id fixed here
+  'mathfighter-ios': { slot: 1, host: 'apps.apple.com', path: '/app/id6760628828' },
+  'abcsmash-ios': { slot: 2, host: 'apps.apple.com', path: '/app/id6790508038' },
+  'mathfighter-ios-b': { slot: 3, host: 'apps.apple.com', path: '/app/id6760628828' },
 };
 
 export type AdErrorCode =
@@ -79,6 +83,8 @@ export interface AdCampaign {
   active: boolean;
   /** Canonical link (scheme + allowlisted host + "/"), built by us, not copied from the manifest. */
   link: string;
+  /** Store links per platform (ADS rule 16); a missing entry falls back to {@link link}. */
+  links: { ios?: string; android?: string };
   tagline: { de: string; en: string };
   images: AdImage[];
 }
@@ -132,7 +138,15 @@ export async function sha256Hex(data: Uint8Array): Promise<string> {
   const subtle = globalThis.crypto?.subtle;
   // Web Crypto only exists in secure contexts (https, localhost); on plain http (LAN test
   // server, phone on the Wi-Fi) the pure-JS SHA-256 gives the same result.
-  const d = subtle ? new Uint8Array(await subtle.digest('SHA-256', data as BufferSource)) : nobleSha256(data);
+  let d: Uint8Array | null = null;
+  if (subtle) {
+    try {
+      d = new Uint8Array(await subtle.digest('SHA-256', data as BufferSource));
+    } catch (e) {
+      logAdError(`subtle.digest failed, pure-JS SHA-256 used: ${String((e as Error)?.message ?? e)}`);
+    }
+  }
+  if (!d) d = nobleSha256(data);
   return [...d].map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
@@ -208,11 +222,44 @@ export function checkLink(campaignId: string, link: unknown): string | null {
     u.port === '' &&
     u.search === '' &&
     u.hash === '' &&
-    (u.pathname === '/' || u.pathname === '') &&
+    (known.path ? u.pathname === known.path : u.pathname === '/' || u.pathname === '') &&
     !link.includes('?') &&
     !link.includes('#') &&
     !link.includes('@');
-  return ok ? `${SCHEME}//${known.host}/` : null;
+  return ok ? `${SCHEME}//${known.host}${known.path ?? '/'}` : null;
+}
+
+export const IOS_HOSTS: readonly string[] = ['apps.apple.com', 'itunes.apple.com'];
+export const ANDROID_HOST = 'play.google.com';
+
+/**
+ * A store link (ADS rule 16): https, no user info / port / fragment, and
+ * - `ios`: host `apps.apple.com` or `itunes.apple.com`, path `/app/id123…` or `/<cc>/app/<slug>/id123…`, no query;
+ * - `android`: host `play.google.com`, path `/store/apps/details`, query exactly `id=<package name>`.
+ * Returns the canonical URL we open (rebuilt, never the raw manifest string) or null.
+ */
+export function checkStoreLink(platform: 'ios' | 'android', link: unknown): string | null {
+  if (typeof link !== 'string' || link.length > 160 || link.includes('@') || link.includes('#') || /[\s\\]/.test(link)) return null;
+  let u: URL;
+  try {
+    u = new URL(link);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== SCHEME || u.username !== '' || u.password !== '' || u.port !== '' || u.hash !== '') return null;
+  if (platform === 'ios') {
+    if (!IOS_HOSTS.includes(u.hostname) || u.search !== '' || link.includes('?')) return null;
+    if (!/^\/(?:[a-z]{2}\/)?app\/(?:[a-z0-9-]{1,60}\/)?id\d{6,12}$/.test(u.pathname)) return null;
+    return `${SCHEME}//${u.hostname}${u.pathname}`;
+  }
+  if (u.hostname !== ANDROID_HOST || u.pathname !== '/store/apps/details') return null;
+  const m = /^\?id=([A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+)$/.exec(u.search);
+  return m ? `${SCHEME}//${ANDROID_HOST}/store/apps/details?id=${m[1]}` : null;
+}
+
+/** The link to open for a platform: its store link, else the web link. */
+export function linkFor(c: { link: string; links: { ios?: string; android?: string } }, platform: 'ios' | 'android' | 'web'): string {
+  return (platform === 'web' ? undefined : c.links[platform]) ?? c.link;
 }
 
 /** Plain text of 1…MAX_TAGLINE characters without markup characters or control characters. */
@@ -250,13 +297,31 @@ export async function verifySignature(body: Uint8Array, sigB64: string, keys: re
   const msg = concat(DOMAIN, body);
   const secure = !!globalThis.crypto?.subtle;
   adsTelemetry.sig.verifier = secure ? 'subtle' : 'js';
-  if (!secure) ed.hashes.sha512 = nobleSha512; // no Web Crypto (plain http): pure-JS SHA-512
+  const tries: string[] = [];
+  adsTelemetry.sig.tries = tries;
+  ed.hashes.sha512 = nobleSha512; // the pure-JS path is always available (no Web Crypto, or Web Crypto misbehaves)
   for (const key of keys) {
+    // 1st: Web Crypto SHA-512 (fast). If it throws or says "no" (older / odd Chromium, e.g. Samsung Internet), 2nd: pure JS.
+    if (secure) {
+      try {
+        if (await ed.verifyAsync(sig, msg, key, { zip215: false })) {
+          tries.push('subtle: ok');
+          return true;
+        }
+        tries.push('subtle: false');
+      } catch (e) {
+        tries.push(`subtle: threw ${String((e as Error)?.message ?? e).slice(0, 80)}`);
+      }
+    }
     try {
-      const ok = secure ? await ed.verifyAsync(sig, msg, key, { zip215: false }) : ed.verify(sig, msg, key, { zip215: false });
-      if (ok) return true;
-    } catch {
-      /* try the next key */
+      if (ed.verify(sig, msg, key, { zip215: false })) {
+        tries.push('js: ok');
+        adsTelemetry.sig.verifier = 'js';
+        return true;
+      }
+      tries.push('js: false');
+    } catch (e) {
+      tries.push(`js: threw ${String((e as Error)?.message ?? e).slice(0, 80)}`);
     }
   }
   return false;
@@ -302,6 +367,13 @@ export function parseManifest(body: Uint8Array, nowMs: number, lastVersion: numb
       drop('link');
       continue;
     }
+    // optional store links; an invalid one is dropped (that platform then opens the web link)
+    const rawLinks = (typeof c.links === 'object' && c.links !== null ? c.links : {}) as Record<string, unknown>;
+    const links: { ios?: string; android?: string } = {};
+    const ios = rawLinks.ios === undefined ? null : checkStoreLink('ios', rawLinks.ios);
+    const android = rawLinks.android === undefined ? null : checkStoreLink('android', rawLinks.android);
+    if (ios) links.ios = ios;
+    if (android) links.android = android;
     const tl = (c.tagline ?? {}) as Record<string, unknown>;
     const de = checkTagline(tl.de);
     const en = checkTagline(tl.en);
@@ -315,7 +387,7 @@ export function parseManifest(body: Uint8Array, nowMs: number, lastVersion: numb
       continue;
     }
     slots.add(known.slot);
-    if (c.active) out.campaigns.push({ id, slot: known.slot, active: true, link, tagline: { de, en }, images: imgs as AdImage[] });
+    if (c.active) out.campaigns.push({ id, slot: known.slot, active: true, link, links, tagline: { de, en }, images: imgs as AdImage[] });
   }
   return out;
 }
@@ -353,7 +425,7 @@ export interface KeyValue {
 }
 
 export interface LoadOptions {
-  /** URL prefix of the ads directory, ending with `/` (same origin, e.g. `ads/`). */
+  /** URL prefix of the ads directory, ending with `/` (same origin, e.g. `boards/`). */
   base: string;
   keys: readonly Uint8Array[];
   fetchFn: (url: string, init: { signal: AbortSignal; cache?: RequestCache; credentials?: RequestCredentials; referrerPolicy?: ReferrerPolicy }) => Promise<Response>;
@@ -367,6 +439,9 @@ async function fetchBytes(o: LoadOptions, path: string, signal: AbortSignal, max
   try {
     res = await o.fetchFn(o.base + path, { signal, cache: 'no-cache', credentials: 'omit', referrerPolicy: 'no-referrer' });
   } catch (e) {
+    // a TypeError ("Failed to fetch", net::ERR_BLOCKED_BY_CLIENT) that is not our own timeout: offline, or a
+    // browser / ad blocker that filters the URL (ADS-044); the debug panel names the URL
+    if (!signal.aborted && (e as Error)?.name === 'TypeError') logBlocked(`request ${o.base}${path}: ${String((e as Error).message)}`);
     throw new AdError('network', `${path} ${(e as Error).name ?? ''}`.trim());
   }
   if (!res.ok) throw new AdError('network', `${path} ${res.status}`);
@@ -408,15 +483,15 @@ export async function loadAds(o: LoadOptions): Promise<AdContent | null> {
   try {
     const { body, sig } = await withDeadline(timeout, async (signal) => {
       const [b, s] = await Promise.all([
-        fetchBytes(o, 'campaigns.json', signal, 64 * 1024),
-        fetchBytes(o, 'campaigns.sig', signal, 256),
+        fetchBytes(o, 'index.json', signal, 64 * 1024),
+        fetchBytes(o, 'index.sig', signal, 256),
       ]);
       return { body: b, sig: new TextDecoder().decode(s) };
     });
     tel.manifest = { state: 'loading', ms: Math.round(performance.now() - t0), bytes: body.length };
     const tv = performance.now();
     const verified = await verifySignature(body, sig, o.keys);
-    tel.sig = { ok: verified, verifier: tel.sig.verifier, ms: Math.round(performance.now() - tv) };
+    tel.sig = { ok: verified, verifier: tel.sig.verifier, tries: tel.sig.tries, ms: Math.round(performance.now() - tv) };
     if (!verified) throw new AdError('signature');
     let last = 0;
     try {

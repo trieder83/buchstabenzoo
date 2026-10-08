@@ -1,0 +1,80 @@
+{
+  "format": "buchstabenzoo-ads/1",
+  "version": 1,
+  "issued": "2026-10-08T13:52:03Z",
+  "valid_until": "2027-10-08T13:52:03Z",
+  "campaigns": [
+    {
+      "id": "mathfighter-ios",
+      "slot": 1,
+      "active": true,
+      "link": "https://apps.apple.com/app/id6760628828",
+      "tagline": {
+        "de": "Lerne Mathe in einem lustigen Turnier",
+        "en": "Learn math in a fun tournament"
+      },
+      "images": [
+        {
+          "lang": "*",
+          "path": "img/c1-a.webp",
+          "mime": "image/webp",
+          "bytes": 78740,
+          "width": 1024,
+          "height": 578,
+          "sha256": "4f9e2e63fefc3f7da0858c06355d2dc3d2bc67f8603ec05722417c06a80243e4"
+        }
+      ]
+    },
+    {
+      "id": "abcsmash-ios",
+      "slot": 2,
+      "active": true,
+      "link": "https://apps.apple.com/app/id6790508038",
+      "tagline": {
+        "de": "Lesen lernen – flüssig und schnell",
+        "en": "Learn to read – fluent and fast"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/c2-de.webp",
+          "mime": "image/webp",
+          "bytes": 44614,
+          "width": 1024,
+          "height": 500,
+          "sha256": "1a79f9368f9d546ddfd84af479702edf23177de14aa7b779fa8a532455104029"
+        },
+        {
+          "lang": "en",
+          "path": "img/c2-en.webp",
+          "mime": "image/webp",
+          "bytes": 44708,
+          "width": 1024,
+          "height": 500,
+          "sha256": "638caab3e9120795c8a1edf69cbe44e70d05ef5e58c80f6201f8836f6a2171f0"
+        }
+      ]
+    },
+    {
+      "id": "mathfighter-ios-b",
+      "slot": 3,
+      "active": true,
+      "link": "https://apps.apple.com/app/id6760628828",
+      "tagline": {
+        "de": "Lerne Mathe in einem lustigen Turnier",
+        "en": "Learn math in a fun tournament"
+      },
+      "images": [
+        {
+          "lang": "*",
+          "path": "img/c1-b.webp",
+          "mime": "image/webp",
+          "bytes": 88198,
+          "width": 1024,
+          "height": 578,
+          "sha256": "eae52e6c4fdc9662b7be7e17b89564c4bcdcc8e132af9b2eb6c1b4d4b5813efe"
+        }
+      ]
+    }
+  ]
+}

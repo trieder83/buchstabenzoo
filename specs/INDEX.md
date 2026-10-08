@@ -15,13 +15,13 @@
 
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
-| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 42 | Q-364, Q-377 | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
+| GAME-ADS | Ad billboards (in-world) | draft | GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS | 50 | Q-364, Q-377 | [10-gameplay/ad-boards.md](10-gameplay/ad-boards.md) |
 | GAME-ADS-C1 | Ad campaign 1 — Math Fighter | draft | GAME-ADS, CONT-MATH, GAME-CART | 6 | — | [10-gameplay/ads/campaign-1-mathfighter/campaign.md](10-gameplay/ads/campaign-1-mathfighter/campaign.md) |
 | GAME-ADS-C2 | Ad campaign 2 — ABC Smash | draft | GAME-ADS, GAME-ADS-C1, CONT-READING | 4 | — | [10-gameplay/ads/campaign-2-abcsmash/campaign.md](10-gameplay/ads/campaign-2-abcsmash/campaign.md) |
 | GAME-ADS-C3 | Ad campaign 3 — EduGameGalaxy | draft | GAME-ADS, GAME-ADS-C1, GAME-ADS-C2 | 4 | — | [10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md](10-gameplay/ads/campaign-3-edugamegalaxy/campaign.md) |
 | GAME-AMBIENT | Ambient animals (ducks, frogs, butterflies) | implemented | GAME-LAYOUT, GAME-ANIMALS, ART-ENVIRONMENT, TECH-WATER | 14 | Q-107, Q-108 | [10-gameplay/ambient.md](10-gameplay/ambient.md) |
 | GAME-ANIMALS | Animals and enclosures | draft | GAME-WORLD | 15 | Q-002, Q-004, Q-005, Q-007, Q-030, Q-043, Q-044, Q-070, Q-097, Q-280 | [10-gameplay/animals.md](10-gameplay/animals.md) |
-| GAME-CAMERA-VIEWS | Camera views — zoo view, first person and look-around (one view button) | draft | GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-SAVE, ART-DIRECTION, TECH-ARCH | 28 | — | [10-gameplay/camera-views.md](10-gameplay/camera-views.md) |
+| GAME-CAMERA-VIEWS | Camera views — zoo view, first person and look-around (one view button) | draft | GAME-PLAYER, GAME-RESCUE, GAME-LAYOUT, GAME-SAVE, ART-DIRECTION, TECH-ARCH | 30 | — | [10-gameplay/camera-views.md](10-gameplay/camera-views.md) |
 | GAME-CART | Golf carts | draft | GAME-PLAYER, GAME-LAYOUT, GAME-RESCUE, GAME-SAVE, CONT-MATH, GAME-HINT | 32 | Q-034, Q-372, Q-373 | [10-gameplay/golf-carts.md](10-gameplay/golf-carts.md) |
 | GAME-ECON | Visitors, shops and coins (idea) | draft | GAME-LEVEL-3, GAME-FEED, GAME-EVENTS, CONT-MATH, GAME-SAVE, GAME-HINT | 10 | — | [10-gameplay/economy.md](10-gameplay/economy.md) |
 | GAME-EVENTS | Zoo events | draft | GAME-RESCUE, GAME-NIGHT, GAME-FAMILY, GAME-GARDEN, GAME-HINT, GAME-SAVE | 10 | — | [10-gameplay/events.md](10-gameplay/events.md) |
@@ -71,7 +71,8 @@
 | ID | Title | Status | Depends on | Tests | Open Q | File |
 |---|---|---|---|---|---|---|
 | TECH-ARCH | Technical architecture | draft | — | 8 | Q-026, Q-050 | [40-tech/architecture.md](40-tech/architecture.md) |
-| TECH-PLATFORMS | Platforms, performance and testing | draft | TECH-ARCH | 33 | Q-011, Q-012, Q-013, Q-104, Q-325, Q-355, Q-356, Q-357, Q-358 | [40-tech/platforms-and-testing.md](40-tech/platforms-and-testing.md) |
+| TECH-PLATFORMS | Platforms, performance and testing | draft | TECH-ARCH | 42 | Q-011, Q-012, Q-013, Q-104, Q-325, Q-355, Q-356, Q-357, Q-358 | [40-tech/platforms-and-testing.md](40-tech/platforms-and-testing.md) |
+| TECH-STORE | App Store packaging (iOS) | draft | TECH-PLATFORMS, GAME-ADS | 5 | Q-390, Q-391, Q-392, Q-393, Q-394, Q-395, Q-396 | [40-tech/app-store.md](40-tech/app-store.md) |
 | TECH-WATER | Animated cartoon water (rendering) | implemented | ART-ENVIRONMENT, TECH-ARCH, GAME-LAYOUT | 16 | — | [40-tech/water-rendering.md](40-tech/water-rendering.md) |
 
 ## Performance
@@ -82,4 +83,4 @@
 | PERF-MEASUREMENTS | Performance measurement log | draft | PERF-BUDGETS | 0 | Q-012, Q-013, Q-104, Q-153 | [50-performance/measurements.md](50-performance/measurements.md) |
 | PERF-RECOMMENDATIONS | Performance recommendations (tracked) | draft | PERF-BUDGETS, PERF-MEASUREMENTS | 0 | Q-013, Q-104, Q-153 | [50-performance/recommendations.md](50-performance/recommendations.md) |
 
-**Summary:** 48 specs — draft: 45, review: 0, approved: 0, implemented: 3, deprecated: 0; 879 test cases; questions: answered: 164, open: 104, partly answered: 7, proposed: 2.
+**Summary:** 49 specs — draft: 46, review: 0, approved: 0, implemented: 3, deprecated: 0; 903 test cases; questions: answered: 166, open: 111, partly answered: 7, proposed: 2.

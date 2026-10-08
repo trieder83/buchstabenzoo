@@ -1,14 +1,18 @@
 {
   "format": "buchstabenzoo-ads/1",
-  "version": 2,
-  "issued": "2026-10-01T20:10:32Z",
-  "valid_until": "2026-12-30T20:10:32Z",
+  "version": 3,
+  "issued": "2026-10-08T13:47:28Z",
+  "valid_until": "2027-01-06T13:47:28Z",
   "campaigns": [
     {
       "id": "mathfighter",
       "slot": 1,
       "active": true,
       "link": "https://mathfighter.rcms.ch",
+      "links": {
+        "ios": "https://apps.apple.com/app/id6760628828",
+        "android": "https://play.google.com/store/apps/details?id=com.mathfighter.app"
+      },
       "tagline": {
         "de": "Lerne Mathe in einem lustigen Turnier",
         "en": "Learn math in a fun tournament"
@@ -16,7 +20,7 @@
       "images": [
         {
           "lang": "*",
-          "path": "img/mathfighter-wide.webp",
+          "path": "img/c1-a.webp",
           "mime": "image/webp",
           "bytes": 78740,
           "width": 1024,
@@ -25,7 +29,7 @@
         },
         {
           "lang": "*",
-          "path": "img/mathfighter-alt.webp",
+          "path": "img/c1-b.webp",
           "mime": "image/webp",
           "bytes": 88198,
           "width": 1024,
@@ -39,6 +43,10 @@
       "slot": 2,
       "active": true,
       "link": "https://abcsmash.rcms.ch",
+      "links": {
+        "ios": "https://apps.apple.com/app/id6790508038",
+        "android": "https://play.google.com/store/apps/details?id=app.abcshooter.twa"
+      },
       "tagline": {
         "de": "Lesen lernen – flüssig und schnell",
         "en": "Learn to read – fluent and fast"
@@ -46,7 +54,7 @@
       "images": [
         {
           "lang": "de",
-          "path": "img/abcsmash-de.webp",
+          "path": "img/c2-de.webp",
           "mime": "image/webp",
           "bytes": 44614,
           "width": 1024,
@@ -55,7 +63,7 @@
         },
         {
           "lang": "en",
-          "path": "img/abcsmash-en.webp",
+          "path": "img/c2-en.webp",
           "mime": "image/webp",
           "bytes": 44708,
           "width": 1024,
@@ -76,7 +84,7 @@
       "images": [
         {
           "lang": "de",
-          "path": "img/edugamegalaxy-de.webp",
+          "path": "img/c3-de.webp",
           "mime": "image/webp",
           "bytes": 64418,
           "width": 1024,
@@ -85,7 +93,7 @@
         },
         {
           "lang": "en",
-          "path": "img/edugamegalaxy-en.webp",
+          "path": "img/c3-en.webp",
           "mime": "image/webp",
           "bytes": 62628,
           "width": 1024,

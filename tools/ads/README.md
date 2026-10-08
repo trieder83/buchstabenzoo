@@ -23,28 +23,41 @@ python3 tools/ads/keygen.py --private ~/secrets/zoo-ads.key
 ## Every campaign change
 
 1. Put/refresh the source images in `specs/10-gameplay/ads/campaign-*/resources/`, then
-   `python3 tools/ads/prepare_images.py` (1024 px wide WebP, ≤ 512 KB, into `ads/img/`).
+   `python3 tools/ads/prepare_images.py` (1024 px wide WebP, ≤ 512 KB, into `boards/img/`).
 2. Edit `tools/ads/campaigns.template.json` (taglines de/en ≤ 80 characters, plain text, `active`,
    image list per language; `lang` `*` = every language). Campaign ids, slots and link hosts are
    fixed in the game (`web/src/ads.ts` `KNOWN_CAMPAIGNS`: `mathfighter` slot 1
    `mathfighter.rcms.ch`, `abcsmash` slot 2 `abcsmash.rcms.ch`, `edugamegalaxy` slot 3 `edugamegalaxy.rcms.ch`); a new advertiser needs a game
    release (Q-241) and a legal / child-safety check (GAME-ADS rule 6).
+   Each campaign may carry `"links": {"ios": "https://apps.apple.com/app/id…", "android":
+   "https://play.google.com/store/apps/details?id=…"}` next to the web `link` (GAME-ADS rule 16; the
+   game opens the link of the visitor's platform, else the web link; `sign.py` checks the same
+   rules as the game).
 3. Sign (fills sizes, dimensions and SHA-256 of the images, checks the game's limits):
 
    ```bash
-   python3 tools/ads/sign.py --key ~/secrets/zoo-ads.key --version 2 --valid-days 90
+   python3 tools/ads/sign.py --key ~/secrets/zoo-ads.key --version 4 --valid-days 90
    ```
 
    `--version` must be **higher than the last deployed one** (the game never accepts a lower one;
    a first run uses 1). `--valid-days` is the lifetime: after `valid_until` the game falls back to
-   the placeholders, so re-sign before it runs out. This writes `ads/campaigns.json` and
-   `ads/campaigns.sig`.
-4. Deploy: commit `ads/` (manifest, signature, images) and deploy the site (the `deploy` skill /
-   `firebase deploy`). `ads/**` is cached for 5 minutes, so players see a change within minutes —
+   the placeholders, so re-sign before it runs out. This writes `boards/index.json` and
+   `boards/index.sig`.
+4. Deploy: commit `boards/` (manifest, signature, images) and deploy the site (the `deploy` skill /
+   `firebase deploy`). `boards/**` is cached for 5 minutes, so players see a change within minutes —
    no app update is needed (only for a new key, a new campaign id or link host).
 5. Check: open the game with your key compiled in, stand in front of a board of each campaign.
    If a board shows the placeholder, something is wrong and the game refused it silently — run
    `npm --prefix web test` and compare the file sizes/hashes (`PLAT-011`).
+
+## Why the names are neutral (ADS-043)
+
+Browser ad blockers (EasyList, EasyPrivacy, Samsung Internet / Brave / AdGuard …) filter requests
+by path and hide DOM elements by id / class. Everything the browser sees therefore avoids the words
+`ad`, `ads`, `advert`, `banner`, `sponsor`, `promo`: the URL is `boards/` (not `ads/`), the files are
+`index.json`, `index.sig`, `img/c1-a.webp` …, the DOM ids are `zb-*`. Keep it that way for new
+campaigns and images (a vitest check, ADS-043, fails otherwise). The version of the last signed
+manifest was 3 (2026-10-08, files renamed); the next must be 4 or higher.
 
 ## What is checked in the game
 

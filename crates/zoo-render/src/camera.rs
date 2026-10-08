@@ -84,6 +84,10 @@ pub struct FollowCamera {
     /// done) and the first-person pitch it starts from.
     link: f32,
     link_from_pitch: f32,
+    /// World eye position of the driver's seat (golf cart, CAMV-030) and the eased offset of
+    /// the first-person eye from the normal one.
+    seat_eye: Option<Vec3>,
+    seat_off: Vec3,
 }
 
 /// One camera pose (the zoo pose, a close pose or a blend of both).
@@ -152,6 +156,8 @@ impl FollowCamera {
             look_pitch_target: 0.0,
             link: 1.0,
             link_from_pitch: 0.0,
+            seat_eye: None,
+            seat_off: Vec3::ZERO,
         }
     }
 
@@ -210,6 +216,22 @@ impl FollowCamera {
         self.extra_target = m.max(0.0);
     }
 
+    /// Sets the first-person eye to a world position (the driver's seat of a golf cart,
+    /// CAMV-030) or back to the normal eye height (`None`); the move is eased.
+    pub fn set_seat_eye(&mut self, eye: Option<Vec3>) {
+        self.seat_eye = eye;
+    }
+
+    /// Turns the close view to look along `yaw` with level pitch (e.g. the cart heading).
+    pub fn face(&mut self, yaw: f32) {
+        self.set_look(yaw, 0.0);
+    }
+
+    fn seat_target(&self, feet: Vec3) -> Vec3 {
+        self.seat_eye
+            .map_or(Vec3::ZERO, |e| e - (feet + Vec3::Y * FP_EYE_HEIGHT_M))
+    }
+
     /// The extra distance now (m).
     pub fn extra_distance(&self) -> f32 {
         self.extra
@@ -232,6 +254,11 @@ impl FollowCamera {
             self.extra = self.extra_target;
         }
         self.target = player_world + Vec3::Y * LOOK_AT_HEIGHT_M;
+        let off = self.seat_target(player_world);
+        self.seat_off += (off - self.seat_off) * k;
+        if (off - self.seat_off).length() < 1e-3 {
+            self.seat_off = off;
+        }
         // GAME-CAMERA-VIEWS: glide between the zoo pose and the close pose, ease the turn
         let goal = if self.mode.is_close() { 1.0 } else { 0.0 };
         let step = dt.max(0.0) / TRANSITION_S;
@@ -248,6 +275,7 @@ impl FollowCamera {
         self.distance = self.target_distance;
         self.extra = self.extra_target;
         self.target = player_world + Vec3::Y * LOOK_AT_HEIGHT_M;
+        self.seat_off = self.seat_target(player_world);
         self.blend = if self.mode.is_close() { 1.0 } else { 0.0 };
         self.link = 1.0;
         self.look_yaw = self.look_yaw_target;
@@ -387,7 +415,10 @@ impl FollowCamera {
                 feet + Vec3::Y * LOOK_UP_M - fwd * LOOK_BACK_M,
                 -LOOK_PITCH_DEG.to_radians(),
             ),
-            _ => (feet + Vec3::Y * FP_EYE_HEIGHT_M, self.look_pitch),
+            _ => (
+                feet + Vec3::Y * FP_EYE_HEIGHT_M + self.seat_off,
+                self.look_pitch,
+            ),
         };
         Pose {
             eye,
@@ -411,7 +442,7 @@ impl FollowCamera {
             // zoom out: blend the first-person pose into the look-around pose
             let feet = self.target - Vec3::Y * LOOK_AT_HEIGHT_M;
             let t = smoothstep(self.link);
-            let eye0 = feet + Vec3::Y * FP_EYE_HEIGHT_M;
+            let eye0 = feet + Vec3::Y * FP_EYE_HEIGHT_M + self.seat_off;
             close.eye = eye0.lerp(close.eye, t);
             close.pitch = self.link_from_pitch + (close.pitch - self.link_from_pitch) * t;
         }
@@ -770,6 +801,35 @@ mod tests {
     }
 
     // CAMV-003
+    // CAMV-030
+    #[test]
+    fn camv_030_first_person_eye_eases_to_the_cart_seat() {
+        let feet = Vec3::new(3.0, 0.0, -5.0);
+        let mut cam = zoo_cam();
+        cam.set_view(ViewMode::FirstPerson, 0.7);
+        cam.snap(feet);
+        assert!(cam
+            .eye()
+            .abs_diff_eq(feet + Vec3::Y * FP_EYE_HEIGHT_M, 1e-4));
+        let seat = feet + Vec3::new(0.3, 0.5 + 0.9, 0.2);
+        cam.set_seat_eye(Some(seat));
+        let jump = run(&mut cam, 0.3, feet);
+        assert!(jump < 0.15, "no jump: {jump}");
+        let _ = run(&mut cam, 1.0, feet);
+        assert!(cam.eye().abs_diff_eq(seat, 1e-2), "{}", cam.eye());
+        assert!(
+            (cam.look_yaw() - 0.7).abs() < 1e-5,
+            "yaw independent of the seat"
+        );
+        cam.face(1.5);
+        assert!((cam.look_yaw() - 1.5).abs() < 1e-5);
+        cam.set_seat_eye(None);
+        let _ = run(&mut cam, 1.5, feet);
+        assert!(cam
+            .eye()
+            .abs_diff_eq(feet + Vec3::Y * FP_EYE_HEIGHT_M, 1e-2));
+    }
+
     #[test]
     fn camv_003_first_person_pose_pitch_limit_and_back() {
         let feet = Vec3::new(-2.0, 0.0, 4.0);

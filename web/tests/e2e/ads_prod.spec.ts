@@ -1,5 +1,5 @@
 // ADS-023: the RELEASE build (production key compiled in) accepts the real signed manifest
-// `ads/campaigns.json` (+ .sig) of this repo and shows the three own campaigns on the boards.
+// `boards/index.json` (+ .sig) of this repo and shows the three own campaigns on the boards.
 // This is the check that the connection works end to end (key, signature, hashes, serving).
 import { expect, test } from '@playwright/test';
 import { START_URL } from './helpers';

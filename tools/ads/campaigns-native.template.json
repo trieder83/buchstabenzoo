@@ -1,0 +1,35 @@
+{
+  "format": "buchstabenzoo-ads/1",
+  "version": 0,
+  "issued": "",
+  "valid_until": "",
+  "campaigns": [
+    {
+      "id": "mathfighter-ios",
+      "slot": 1,
+      "active": true,
+      "link": "https://apps.apple.com/app/id6760628828",
+      "tagline": { "de": "Lerne Mathe in einem lustigen Turnier", "en": "Learn math in a fun tournament" },
+      "images": [{ "lang": "*", "path": "img/c1-a.webp" }]
+    },
+    {
+      "id": "abcsmash-ios",
+      "slot": 2,
+      "active": true,
+      "link": "https://apps.apple.com/app/id6790508038",
+      "tagline": { "de": "Lesen lernen – flüssig und schnell", "en": "Learn to read – fluent and fast" },
+      "images": [
+        { "lang": "de", "path": "img/c2-de.webp" },
+        { "lang": "en", "path": "img/c2-en.webp" }
+      ]
+    },
+    {
+      "id": "mathfighter-ios-b",
+      "slot": 3,
+      "active": true,
+      "link": "https://apps.apple.com/app/id6760628828",
+      "tagline": { "de": "Lerne Mathe in einem lustigen Turnier", "en": "Learn math in a fun tournament" },
+      "images": [{ "lang": "*", "path": "img/c1-b.webp" }]
+    }
+  ]
+}

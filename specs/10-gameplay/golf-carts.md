@@ -92,13 +92,13 @@ Parked carts are prop colliders of the level (`Level::set_cart_shapes`); the dri
      when the held stick makes no progress for 1 s and points backwards the cart backs out at
      1.5 m/s (`REVERSE_SPEED_MS`); after 3 s without any progress the cart is lifted to the nearest
      **roomy pose** within 8 m (one where it can turn through every heading, no animal within
-     1 m; `Game::cart_rescues`). A friendly 🔔 horn button (Q-378, 2026-10-07: >= 64 px, only while seated, right column above the get-out button, key `H` while seated) makes only the sound `cart_horn` (`Game::honk()`, 0.6 s cooldown); animals do not react.
+     1 m; `Game::cart_rescues`). A friendly 🔔 horn button (Q-378, 2026-10-07: >= 64 px, only while seated, right column left of the view button and above the get-out button, key `H` while seated) makes only the sound `cart_horn` (`Game::honk()`, 0.6 s cooldown); animals do not react.
    - **Speed:** paths **4.5 m/s** (≈ 2.3 × walking), grass **2.0 m/s** (Q-120 answered),
      chosen from the surface of the cell under the box centre, smooth blend (the
      acceleration limits above).
-   - **Camera:** zooms out +3 m while driving and follows smoothly; only the zoo view is
-     available (GAME-CAMERA-VIEWS rule 11, CAMV-024); look-around/first person return after
-     getting out.
+   - **Camera:** zooms out +3 m while driving and follows smoothly; the zoo view and first
+     person from the driver's seat are available, the view button stays (GAME-CAMERA-VIEWS rule 11,
+     CAMV-024/029); the view from before boarding returns after getting out.
 6. **Where carts can go:** only walkable cells of **open** levels — paths and grass; never
    through barriers, fences, **gates into enclosures, doors and building interiors**, the
    garden gate, buildings, water (bridges are fine if at least 2 m wide), dense woods and
@@ -287,9 +287,9 @@ Report for the implementation (every package must repeat this check):
 | CART-005 | Given an animal, a visitor or a duck on the cart's path, then the cart stops >= 0.5 m before touching it, and no animal or visitor ever stands inside the cart's box. | unit |
 | CART-006 | Given the zebra is following, when the player gets into a cart and drives 20 m away, then the zebra waits where she got in; when she returns on foot within 5 m, it follows again. | unit |
 | CART-007 | Given the player carries the fish bowl with the fish (and food, the basket, the key), when she drives and gets out, then she still carries all of it. | unit |
-| CART-008 | Given the player drives past an info board, then no reading panel opens, and no board, door, bed, box or animal interaction is offered while seated except get-out. | unit |
+| CART-008 | Given the player drives past an info board, then no reading panel opens, and no board, door, bed, box or animal interaction is offered while seated except get-out. | unit The ad boards follow the same rule (ADS-050: no ad panel, chip, gate or carousel while seated). |
 | CART-009 | Given a save made while sitting in a cart, when restored, then she sits in the same cart at the same pose; given the pose is no longer walkable, then at the nearest free pose within 4 m, else the parking pose. | unit |
-| CART-010 | Given touch controls, then driving works with the left thumb exactly like walking and the get-out button (🚶, >= 64 px) is reachable with the right thumb, does not overlap the gear / compass and the view button is hidden (780×360, 360×780). | e2e (`web/tests/e2e/cart.spec.ts`), vitest (`ui.test.ts` icons) |
+| CART-010 | Given touch controls, then driving works with the left thumb exactly like walking and the get-out button (🚶, >= 64 px) is reachable with the right thumb, does not overlap the gear / compass, and the view button (visible) and the horn (left of it) do not overlap each other or the get-out button (780×360, 360×780). | e2e (`web/tests/e2e/cart.spec.ts`), vitest (`ui.test.ts` icons) |
 | CART-011 | Given a new game, then the carts cannot be entered (🔒 badge on the interact button) until the cart key is in the pocket; given the key but a closed level, the cart of that level stays locked. | unit |
 | CART-012 | Given the note on the desk, then it shows the title "Math Fighter" and a math task for the child's math level; its result is the key-box combination (3 digits, leading zeros); different seeds give different tasks (CONT-MATH MATH-007…013). | unit (`tests/cart.rs`) |
 | CART-013 | Given the key box, when the right combination is entered, then the box opens, the key goes into the pocket and all carts of open levels can be used; a wrong combination shakes and counts a try; from 3 wrong codes the note pulses and the 🧭 hint leads to the note. | unit |
@@ -317,7 +317,7 @@ Report for the implementation (every package must repeat this check):
 
 - Q-119 answered 2026-09-27: parking spots as in rule 1; a cart stays where it was left.
 - Q-120 answered 2026-09-27: paths 4.5 m/s, grass 2.0 m/s (carts may drive on grass).
-- Q-125 answered 2026-09-27: zoo view only while driving (GAME-CAMERA-VIEWS rule 11, CAMV-024).
+- Q-125 answered 2026-09-27: zoo view only while driving; superseded 2026-10-08, first person allowed (Q-381, GAME-CAMERA-VIEWS rule 11).
 - Q-132 answered 2026-09-27: 3 digits with leading zeros.
 - Q-368 answered 2026-10-06 (user, as recommended): math level in the settings next to the reading level, default `mathe1`.
 - Q-369 answered 2026-10-06 (user, as recommended): after 3 wrong codes the note pulses and 🧭 leads to it; never a lockout, never time pressure.

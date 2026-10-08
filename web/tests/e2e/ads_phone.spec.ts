@@ -95,13 +95,13 @@ for (const vp of VIEWPORTS) {
       await standAt(page, b, 3.3);
       await face(page, key);
       await standAt(page, b, 3.3);
-      await expect(page.locator('#ad-panel')).toBeVisible({ timeout: 15_000 });
+      await expect(page.locator('#zb-panel')).toBeVisible({ timeout: 15_000 });
       await walkAway(page, b);
-      await expect(page.locator('#ad-panel')).toBeHidden();
+      await expect(page.locator('#zb-panel')).toBeHidden();
     }
     await standAt(page, b, 1.6, 2.4); // beside the picture, still on the readable side
-    await expect(page.locator('#ad-panel')).toBeVisible({ timeout: 15_000 });
-    const link = page.locator('#ad-link');
+    await expect(page.locator('#zb-panel')).toBeVisible({ timeout: 15_000 });
+    const link = page.locator('#zb-link');
     await expect(link).toBeVisible();
     const box = (await link.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
@@ -112,7 +112,7 @@ for (const vp of VIEWPORTS) {
     await page.waitForTimeout(500);
     await page.screenshot({ path: `../qa/reports/img/2026-10-03-ad-phone-${vp.width}x${vp.height}.png` });
     await link.tap();
-    await expect(page.locator('#ad-gate')).toBeVisible();
+    await expect(page.locator('#zb-gate')).toBeVisible();
     expect((await opens(page)).length).toBe(0);
     await page.screenshot({ path: `../qa/reports/img/2026-10-03-ad-phone-gate-${vp.width}x${vp.height}.png` });
     expect(errors).toEqual([]);
@@ -126,7 +126,7 @@ test('ADS-027 phone: accidental ✖ ignored, interact button reopens, walking aw
   const b = (await boards(page)).find((x) => x.slot === 1)!;
   await walkAway(page, b);
   await page.locator('#game').tap({ position: { x: 300, y: 200 } }); // first touch: touch controls on
-  await expect(page.locator('#ad-act')).toBeHidden();
+  await expect(page.locator('#zb-act')).toBeHidden();
   // walk in and tap ✖ straight after the panel opened (the first-contact touch): ignored
   const stillOpen = await page.evaluate(
     ([x, z]) =>
@@ -135,10 +135,10 @@ test('ADS-027 phone: accidental ✖ ignored, interact button reopens, walking aw
         app.debug_teleport(x, z); // (the scripted walk from the spawn is blocked by the parked golf cart)
         app.debug_step(0.3);
         const poll = () => {
-          const btn = document.querySelector<HTMLButtonElement>('#ad-panel .ad-x');
+          const btn = document.querySelector<HTMLButtonElement>('#zb-panel .zb-x');
           if (!btn) return requestAnimationFrame(poll);
           btn.click();
-          requestAnimationFrame(() => resolve(!document.getElementById('ad-panel')!.hidden));
+          requestAnimationFrame(() => resolve(!document.getElementById('zb-panel')!.hidden));
         };
         poll();
       }),
@@ -146,40 +146,40 @@ test('ADS-027 phone: accidental ✖ ignored, interact button reopens, walking aw
   );
   expect(stillOpen, 'early ✖ ignored').toBe(true);
   await page.waitForTimeout(600);
-  await page.locator('#ad-panel .ad-x').tap();
-  await expect(page.locator('#ad-panel')).toBeHidden();
+  await page.locator('#zb-panel .zb-x').tap();
+  await expect(page.locator('#zb-panel')).toBeHidden();
   // the interact button (🔗) appears and reopens the dialog
-  const act = page.locator('#ad-act');
+  const act = page.locator('#zb-act');
   await expect(act).toBeVisible();
   const ab = (await act.boundingBox())!;
   expect(ab.width).toBeGreaterThanOrEqual(64);
   await page.screenshot({ path: '../qa/reports/img/2026-10-03-ad-phone-act-780x360.png' });
   await act.tap();
-  await expect(page.locator('#ad-panel')).toBeVisible();
+  await expect(page.locator('#zb-panel')).toBeVisible();
   await expect(act).toBeHidden();
   // close again, walk away and come back: opens by itself
   await page.waitForTimeout(600);
-  await page.locator('#ad-panel .ad-x').tap();
-  await expect(page.locator('#ad-panel')).toBeHidden();
+  await page.locator('#zb-panel .zb-x').tap();
+  await expect(page.locator('#zb-panel')).toBeHidden();
   await walkAway(page, b);
   await expect(act).toBeHidden();
   await standAt(page, b, 2.0);
-  await expect(page.locator('#ad-panel')).toBeVisible();
+  await expect(page.locator('#zb-panel')).toBeVisible();
   await ctx.close();
 });
 
 test('ADS-027 phone: the manifest arrives late — the panel opens once it is verified', async ({ browser }) => {
   const { ctx, page } = await phone(browser, 780, 360, async (p) => {
-    await p.route('**/ads/campaigns.*', async (route) => {
+    await p.route('**/boards/index.*', async (route) => {
       await new Promise((r) => setTimeout(r, 3500));
       await route.continue();
     });
   });
   const b = (await boards(page)).find((x) => x.slot === 1)!;
   await standAt(page, b, 2.0);
-  await expect(page.locator('#ad-panel')).toBeHidden();
+  await expect(page.locator('#zb-panel')).toBeHidden();
   await verified(page);
-  await expect(page.locator('#ad-panel')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('#zb-panel')).toBeVisible({ timeout: 5000 });
   await ctx.close();
 });
 
@@ -194,9 +194,9 @@ for (const vp of [
     const b = (await boards(page)).find((x) => x.slot === 1)!;
     await page.locator('#game').tap({ position: { x: 100, y: 100 } });
     await standAt(page, b, 2.0);
-    await expect(page.locator('#ad-panel')).toBeVisible();
+    await expect(page.locator('#zb-panel')).toBeVisible();
     await page.waitForTimeout(300);
-    const body = (await rect(page, '.ad-body'))!;
+    const body = (await rect(page, '.zb-body'))!;
     expect(body.x).toBeGreaterThanOrEqual(0);
     expect(body.x + body.width).toBeLessThanOrEqual(vp.width + 0.5);
     expect(body.y + body.height).toBeLessThanOrEqual(vp.height + 0.5);
@@ -212,7 +212,7 @@ for (const vp of [
 
 /** Real touch hold through CDP (Playwright's touchscreen can only tap). */
 async function touchHold(page: Page, cdp: import('@playwright/test').CDPSession, ms: number, wiggle: boolean): Promise<void> {
-  const hb = (await page.locator('#ad-hold').boundingBox())!;
+  const hb = (await page.locator('#zb-hold').boundingBox())!;
   const x = hb.x + hb.width / 2;
   const y = hb.y + hb.height / 2;
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
@@ -232,38 +232,38 @@ test('ADS-029 ADC1-004 phone: gate by touch, full hold, release opens the link d
   const b = (await boards(page)).find((x) => x.slot === 1)!;
   await standAt(page, b, 2.0);
   await page.waitForTimeout(600);
-  await page.locator('#ad-link').tap();
-  const q = (await page.locator('#ad-gate-question').textContent())!;
+  await page.locator('#zb-link').tap();
+  const q = (await page.locator('#zb-gate-question').textContent())!;
   const [, a, op, c] = /(\d+) ([+−]) (\d+)/.exec(q)!;
   const answer = op === '+' ? Number(a) + Number(c) : Number(a) - Number(c);
-  await page.locator('.ad-choice', { hasText: new RegExp(`^${answer}$`) }).tap();
-  await expect(page.locator('#ad-hold')).toBeVisible();
+  await page.locator('.zb-choice', { hasText: new RegExp(`^${answer}$`) }).tap();
+  await expect(page.locator('#zb-hold')).toBeVisible();
   // no context menu / selection on the hold button
-  expect(await page.evaluate(() => getComputedStyle(document.getElementById('ad-hold')!).touchAction)).toBe('none');
+  expect(await page.evaluate(() => getComputedStyle(document.getElementById('zb-hold')!).touchAction)).toBe('none');
   // a short touch resets
   const cdp = await ctx.newCDPSession(page);
   await touchHold(page, cdp, 800, false);
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForTimeout(200);
-  expect(await page.locator('#ad-hold.ready').count()).toBe(0);
+  expect(await page.locator('#zb-hold.ready').count()).toBe(0);
   // 2 s with a moving finger: the ✔ shows, nothing has been opened yet
   await touchHold(page, cdp, 2400, true);
-  await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 4000 });
+  await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 4000 });
   expect(await opens(page), 'no window.open from the hold timer').toEqual([]);
   await page.screenshot({ path: '../qa/reports/img/2026-10-03-ad-phone-open-780x360.png' });
   // releasing the finger opens the link directly, once (ADS-030)
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   await page.waitForTimeout(400);
-  expect(await opens(page)).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
-  await expect(page.locator('#ad-gate')).toBeHidden();
-  await expect(page.locator('#ad-panel')).toBeHidden();
+  expect(await opens(page)).toEqual([['https://play.google.com/store/apps/details?id=com.mathfighter.app', '_blank', 'noopener,noreferrer']]); // Pixel 7 user agent -> Play Store link (ADS-049)
+  await expect(page.locator('#zb-gate')).toBeHidden();
+  await expect(page.locator('#zb-panel')).toBeHidden();
   expect(errors).toEqual([]);
   await ctx.close();
 });
 
 test('ADS-029 phone: images that need 6 s (slow mobile data) still show the campaign', async ({ browser }) => {
   const { ctx, page } = await phone(browser, 412, 892, async (p) => {
-    await p.route('**/ads/img/**', async (route) => {
+    await p.route('**/boards/img/**', async (route) => {
       await new Promise((r) => setTimeout(r, 6000));
       await route.continue();
     });
@@ -277,7 +277,7 @@ test('ADS-029 phone: a failed first load is retried once', async ({ browser }) =
   test.setTimeout(120_000);
   let n = 0;
   const { ctx, page } = await phone(browser, 412, 892, async (p) => {
-    await p.route('**/ads/campaigns.json', async (route) => {
+    await p.route('**/boards/index.json', async (route) => {
       n += 1;
       if (n === 1) return route.abort('connectionreset');
       return route.continue();

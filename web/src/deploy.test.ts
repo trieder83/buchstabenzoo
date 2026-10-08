@@ -178,15 +178,65 @@ describe('deploy script', () => {
   });
 });
 
-describe('ad content hosting (GAME-ADS "External content")', () => {
-  const adsDir = path.join(repoRoot, 'ads');
+/** Names that browser ad blockers filter by (EasyList / EasyPrivacy): a standalone `ad`/`ads`, advert, banner, sponsor, promo. */
+const BLOCKABLE = /(^|[^a-z])ads?([^a-z]|$)|advert|banner|sponsor|promo/i;
+/** Fluent keys are not visible in the DOM or the network (they are only looked up in the loaded .ftl text). */
+const FLUENT_KEYS = /ad-(placeholder|link-open|link-blocked|gate-(title|sum|hold)|close|carousel-(title|prev|next))/g;
 
-  it('PLAT-010 ads/** is cached briefly so campaigns can change without an app update', () => {
-    const age = maxAge(header('ads/**', 'Cache-Control'));
+describe('blocker-neutral ad UI (ADS-043)', () => {
+  const uiFiles = ['web/src/ads-ui.ts', 'web/src/ads-rescue.ts', 'web/src/ads-debug.ts'];
+
+  it('ADS-043 no CSS id/class selector, element id, class name or data attribute of the ad UI contains an ad-blocker word', () => {
+    for (const f of uiFiles) {
+      const src = read(f).replace(FLUENT_KEYS, 'KEY');
+      const names: string[] = [];
+      // CSS selectors #id / .class (inside the STYLE template only: lines that start a rule)
+      for (const m of src.matchAll(/(^|[,}\s>])[#.]([a-z][a-z0-9_-]*)/gm)) names.push(m[2]);
+      // el('tag', 'id'), .id = '…', className = '…', classList.add('…'), dataset.x, querySelector('#x')
+      for (const m of src.matchAll(/\bel\('[a-z0-9]+',\s*'([^']+)'/g)) names.push(m[1]);
+      for (const m of src.matchAll(/\.id\s*=\s*'([^']+)'/g)) names.push(m[1]);
+      for (const m of src.matchAll(/className\s*=\s*[`']([^`']+)[`']/g)) names.push(...m[1].split(/\s+/));
+      for (const m of src.matchAll(/classList\.(?:add|remove|toggle)\('([^']+)'/g)) names.push(m[1]);
+      for (const m of src.matchAll(/dataset\.([A-Za-z]+)/g)) names.push(m[1]);
+      for (const m of src.matchAll(/querySelector(?:All)?(?:<[^>]+>)?\('([^']+)'\)/g)) names.push(m[1]);
+      for (const n of names) expect(n, `${f}: ${n}`).not.toMatch(BLOCKABLE);
+    }
+  });
+
+  it('ADS-043 the served paths and file names are neutral (boards/index.json, boards/img/…)', () => {
+    for (const f of ['index.json', 'index.sig', ...listAds()]) expect(`boards/${f}`).not.toMatch(BLOCKABLE);
+    expect(read('web/src/ads-ui.ts')).toContain("'boards/'");
+    expect(read('web/src/ads.ts')).not.toMatch(/['"`]ads\//);
+    expect(fs.existsSync(path.join(repoRoot, 'ads'))).toBe(false);
+    expect(hosting.headers.some((h) => BLOCKABLE.test(h.source))).toBe(false);
+  });
+
+  const dist = path.join(repoRoot, 'web', 'dist');
+  it.skipIf(!fs.existsSync(path.join(dist, 'index.html')))('ADS-043 the built dist has no request path, DOM id/class or CSS selector of the ad UI that a blocker filters', () => {
+    const walk = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
+    const files = walk(dist).map((f) => path.relative(dist, f).split(path.sep).join('/'));
+    // every published path (privacy.html's text is allowed to say "ad"; its path does not)
+    for (const f of files) expect(f, f).not.toMatch(BLOCKABLE);
+    const code = files.filter((f) => /\.(js|css|html)$/.test(f) && f !== 'privacy.html').map((f) => fs.readFileSync(path.join(dist, f), 'utf8'));
+    for (const text of code) {
+      const t = text.replace(FLUENT_KEYS, 'KEY');
+      expect(t).not.toMatch(/["'`#.\s(\[]ads?-[a-z]/); // ids / classes / selectors like #ad-panel, .ad-body, 'ad-gate'
+      expect(t).not.toMatch(/["'`/]ads\//); // request path ads/…
+      expect(t).not.toMatch(/ads-debug/);
+      expect(t).not.toMatch(/campaigns\.(json|sig)/);
+    }
+  });
+});
+
+describe('ad content hosting (GAME-ADS "External content")', () => {
+  const adsDir = path.join(repoRoot, 'boards');
+
+  it('PLAT-010 boards/** is cached briefly so campaigns can change without an app update', () => {
+    const age = maxAge(header('boards/**', 'Cache-Control'));
     expect(age).toBeGreaterThan(0);
     expect(age).toBeLessThanOrEqual(600);
-    expect(header('ads/**', 'Cache-Control')).toContain('must-revalidate');
-    expect(header('ads/**', 'Cache-Control')).not.toContain('immutable');
+    expect(header('boards/**', 'Cache-Control')).toContain('must-revalidate');
+    expect(header('boards/**', 'Cache-Control')).not.toContain('immutable');
   });
 
   it('PLAT-010 the CSP stays strict: ads are same-origin (connect-src and img-src self)', () => {
@@ -207,7 +257,7 @@ describe('ad content hosting (GAME-ADS "External content")', () => {
 
   it('PLAT-011 the served ads are the manifest, its signature and images of at most 512 KB', () => {
     const files = listAds();
-    expect(files.every((f) => f === 'campaigns.json' || f === 'campaigns.sig' || /^img\/[a-z0-9._-]+\.(png|webp|jpe?g)$/.test(f))).toBe(true);
+    expect(files.every((f) => f === 'index.json' || f === 'index.sig' || /^img\/[a-z0-9._-]+\.(png|webp|jpe?g)$/.test(f))).toBe(true);
     const images = files.filter((f) => f.startsWith('img/'));
     expect(images.length).toBeGreaterThanOrEqual(4); // ADC1-001, ADC2-001
     for (const f of images) expect(fs.statSync(path.join(adsDir, f)).size, f).toBeLessThanOrEqual(512 * 1024);
@@ -216,9 +266,9 @@ describe('ad content hosting (GAME-ADS "External content")', () => {
   });
 
   it('PLAT-011 a shipped manifest has its signature and matches its images (size, SHA-256)', () => {
-    const manifest = path.join(adsDir, 'campaigns.json');
+    const manifest = path.join(adsDir, 'index.json');
     if (!fs.existsSync(manifest)) return; // no production manifest until the owner signed one
-    expect(fs.existsSync(path.join(adsDir, 'campaigns.sig'))).toBe(true);
+    expect(fs.existsSync(path.join(adsDir, 'index.sig'))).toBe(true);
     const m = JSON.parse(fs.readFileSync(manifest, 'utf8')) as { campaigns: { images: { path: string; bytes: number; sha256: string }[] }[] };
     for (const c of m.campaigns) {
       for (const im of c.images) {

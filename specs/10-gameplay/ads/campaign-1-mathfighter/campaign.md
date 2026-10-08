@@ -20,7 +20,7 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**. C
 | Type | own cross-promotion (no third-party legal check needed, rule 6) |
 | Tagline (signed manifest, `tagline.de` / `tagline.en`, Q-246) | de: **Lerne Mathe in einem lustigen Turnier** · en: **Learn math in a fun tournament** |
 | Link | https://mathfighter.rcms.ch — clickable when the child has read the ad in the game (see below, Q-217) |
-| Images | sources `resources/feature_graphic_5.png` (2722 × 1536, RGBA, 7.2 MB) and `resources/feature_graphic_2.png` (1360 × 768, RGB, 1.3 MB) from `mathegame/images/`. Served copies (`tools/ads/prepare_images.py`): `ads/img/mathfighter-wide.webp` and `ads/img/mathfighter-alt.webp` (1024 × 578, WebP, ≈ 80 KB each, licence `own`), listed with size and SHA-256 in the **signed manifest** (GAME-ADS rules 7–8); not part of the game build. |
+| Images | sources `resources/feature_graphic_5.png` (2722 × 1536, RGBA, 7.2 MB) and `resources/feature_graphic_2.png` (1360 × 768, RGB, 1.3 MB) from `mathegame/images/`. Served copies (`tools/ads/prepare_images.py`): `boards/img/c1-a.webp` and `boards/img/c1-b.webp` (1024 × 578, WebP, ≈ 80 KB each, licence `own`), listed with size and SHA-256 in the **signed manifest** (GAME-ADS rules 7–8); not part of the game build. |
 
 ## Behaviour
 
@@ -45,7 +45,7 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**. C
 
 | ID | Given / When / Then | Level |
 |---|---|---|
-| ADC1-001 | Given the repo, then both served images of `mathfighter` exist in `ads/img/` (≤ 512 KB, 1024 px wide), the template manifest names them (`tools/ads/campaigns.template.json`) and the test-signed fixture manifest lists campaign `mathfighter` (slot 1, link host `mathfighter.rcms.ch`); with a signed manifest the slot appears on ≥ 2 boards (ADS-002). | unit |
+| ADC1-001 | Given the repo, then both served images of `mathfighter` exist in `boards/img/` (≤ 512 KB, 1024 px wide), the template manifest names them (`tools/ads/campaigns.template.json`) and the test-signed fixture manifest lists campaign `mathfighter` (slot 1, link host `mathfighter.rcms.ch`); with a signed manifest the slot appears on ≥ 2 boards (ADS-002). | unit |
 | ADC1-002 | Given the player stands in front of a Math Fighter board, then a reading panel opens with the image; in `klasse1+` also the tagline (de/en from Fluent); on `kiga` only the picture. | e2e |
 | ADC1-003 | Given the open panel, then it has a link button ≥ 64 px with the host `mathfighter.rcms.ch`; pressing it first shows the parental gate and does **not** open anything yet (test build, ADS-020). | e2e |
 | ADC1-004 | Given the parental gate was passed (answer + 3 s hold) and the open button was tapped, then the URL opens in a new browser tab/external browser exactly once (`noopener`), with no query parameters; given the gate was failed or cancelled, nothing opens. | e2e |
@@ -56,3 +56,5 @@ Own cross-promotion (GAME-ADS rule 6, Q-128): the maths game **Math Fighter**. C
 
 - Q-217 answered 2026-09-30 (option (a)). Still to do before a store release: check the gate
   against Google Play Families / Apple Kids rules (Q-242); the user updates CLAUDE.md.
+
+Store links (ADS rule 16): iOS `https://apps.apple.com/app/id6760628828`, Android `https://play.google.com/store/apps/details?id=com.mathfighter.app`, web `https://mathfighter.rcms.ch` (Q-397 for the iOS id).

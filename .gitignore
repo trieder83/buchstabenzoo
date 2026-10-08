@@ -71,3 +71,6 @@ art/marketing/screens/*_2160x3840.png
 art/marketing/screens/*.mp4
 art/marketing/screens/*.webm
 __pycache__/
+
+# App Store screenshots made by tools/store/make_appstore_screenshots.py (~100 MB)
+store/appstore/screenshots/

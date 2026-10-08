@@ -9,10 +9,23 @@
       "slot": 1,
       "active": true,
       "link": "https://mathfighter.rcms.ch",
-      "tagline": { "de": "Lerne Mathe in einem lustigen Turnier", "en": "Learn math in a fun tournament" },
+      "links": {
+        "ios": "https://apps.apple.com/app/id6760628828",
+        "android": "https://play.google.com/store/apps/details?id=com.mathfighter.app"
+      },
+      "tagline": {
+        "de": "Lerne Mathe in einem lustigen Turnier",
+        "en": "Learn math in a fun tournament"
+      },
       "images": [
-        { "lang": "*", "path": "img/mathfighter-wide.webp" },
-        { "lang": "*", "path": "img/mathfighter-alt.webp" }
+        {
+          "lang": "*",
+          "path": "img/c1-a.webp"
+        },
+        {
+          "lang": "*",
+          "path": "img/c1-b.webp"
+        }
       ]
     },
     {
@@ -20,10 +33,23 @@
       "slot": 2,
       "active": true,
       "link": "https://abcsmash.rcms.ch",
-      "tagline": { "de": "Lesen lernen – flüssig und schnell", "en": "Learn to read – fluent and fast" },
+      "links": {
+        "ios": "https://apps.apple.com/app/id6790508038",
+        "android": "https://play.google.com/store/apps/details?id=app.abcshooter.twa"
+      },
+      "tagline": {
+        "de": "Lesen lernen – flüssig und schnell",
+        "en": "Learn to read – fluent and fast"
+      },
       "images": [
-        { "lang": "de", "path": "img/abcsmash-de.webp" },
-        { "lang": "en", "path": "img/abcsmash-en.webp" }
+        {
+          "lang": "de",
+          "path": "img/c2-de.webp"
+        },
+        {
+          "lang": "en",
+          "path": "img/c2-en.webp"
+        }
       ]
     },
     {
@@ -31,10 +57,19 @@
       "slot": 3,
       "active": true,
       "link": "https://edugamegalaxy.rcms.ch",
-      "tagline": { "de": "Effizient und mit Spaß lernen – für den Erfolg im Leben", "en": "Learn efficiently and with fun – for success in life" },
+      "tagline": {
+        "de": "Effizient und mit Spaß lernen – für den Erfolg im Leben",
+        "en": "Learn efficiently and with fun – for success in life"
+      },
       "images": [
-        { "lang": "de", "path": "img/edugamegalaxy-de.webp" },
-        { "lang": "en", "path": "img/edugamegalaxy-en.webp" }
+        {
+          "lang": "de",
+          "path": "img/c3-de.webp"
+        },
+        {
+          "lang": "en",
+          "path": "img/c3-en.webp"
+        }
       ]
     }
   ]

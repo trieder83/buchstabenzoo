@@ -40,11 +40,11 @@
         "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
       },
       {
-        "source": "ads/**",
+        "source": "boards/**",
         "headers": [{ "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }]
       },
       {
-        "source": "ads/*.sig",
+        "source": "boards/*.sig",
         "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
       },
       {

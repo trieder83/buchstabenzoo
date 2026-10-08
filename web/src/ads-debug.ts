@@ -1,4 +1,4 @@
-// Field diagnostics of the ad boards (GAME-ADS ADS-038): `?adsdebug=1` shows a small panel with the live
+// Field diagnostics of the ad boards (GAME-ADS ADS-038): `?adsdebug=1` (alias `?boarddebug=1`) shows a small panel with the live
 // ad state; `window.__zoo.adsDebug()` returns the same data as JSON. Works in release builds. Never
 // makes a request, stores nothing and sends nothing: the data stays on the device (a "copy" button
 // puts it on the clipboard so a tester can paste it into a message).
@@ -20,7 +20,7 @@ export interface ImageTel {
 export interface Telemetry {
   attempts: number;
   manifest: { state: LoadState; ms?: number; bytes?: number; error?: string; version?: number };
-  sig: { ok: boolean | null; verifier: 'subtle' | 'js' | null; ms?: number; error?: string };
+  sig: { ok: boolean | null; verifier: 'subtle' | 'js' | null; ms?: number; error?: string; tries?: string[] };
   images: Record<string, ImageTel>;
   /** `set_ad_texture` results: board id → true (uploaded) / false. */
   uploads: Record<string, boolean>;
@@ -29,6 +29,10 @@ export interface Telemetry {
   events: string[];
   errors: string[];
   glLost: number;
+  /** Suspected interference by the browser / an ad blocker (ADS-044): what was blocked or hidden, with the URL / element. */
+  blocked: string[];
+  /** The visibility check of each view after it was shown (ADS-044). */
+  views: Record<string, { display: string; width: number; height: number; ok: boolean; rescued?: boolean }>;
 }
 
 export const adsTelemetry: Telemetry = {
@@ -42,12 +46,25 @@ export const adsTelemetry: Telemetry = {
   events: [],
   errors: [],
   glLost: 0,
+  blocked: [],
+  views: {},
 };
 
 const MAX_ERRORS = 20;
 
 export function adsDebugEnabled(search: string): boolean {
-  return new URLSearchParams(search).get('adsdebug') === '1';
+  const q = new URLSearchParams(search);
+  return q.get('adsdebug') === '1' || q.get('boarddebug') === '1';
+}
+
+export const BLOCKED_VERDICT = 'blocked by browser/ad blocker (suspected)';
+
+/** Records one suspected block (a request that failed at network level, an element hidden by the browser); keeps the last 20. */
+export function logBlocked(what: string): void {
+  const line = `${Math.round(performance.now())}ms ${what}`.slice(0, 300);
+  if (!adsTelemetry.blocked.includes(line)) adsTelemetry.blocked.push(line);
+  if (adsTelemetry.blocked.length > MAX_ERRORS) adsTelemetry.blocked.shift();
+  logAdError(`${BLOCKED_VERDICT}: ${what}`);
 }
 
 export function logAdError(msg: string): void {
@@ -109,6 +126,33 @@ export function glCaps(): GlCaps {
   return out;
 }
 
+/** Which newer JS / CSS features this browser has (old Samsung Internet = old Chromium); `false` entries explain a failure. */
+export function featureReport(): Record<string, boolean> {
+  const css = (p: string, v: string) => typeof CSS !== 'undefined' && !!CSS.supports?.(p, v);
+  const t = (f: () => unknown): boolean => {
+    try {
+      return !!f();
+    } catch {
+      return false;
+    }
+  };
+  return {
+    bigint: typeof BigInt === 'function',
+    subtleDigest: t(() => globalThis.crypto?.subtle?.digest),
+    createImageBitmap: typeof createImageBitmap === 'function',
+    arrayAt: t(() => [1].at?.(0) === 1),
+    objectHasOwn: typeof Object.hasOwn === 'function',
+    structuredClone: typeof structuredClone === 'function',
+    dialogShowModal: t(() => typeof HTMLDialogElement !== 'undefined' && typeof HTMLDialogElement.prototype.showModal === 'function'),
+    cssInset: css('inset', '0'),
+    cssDvh: css('height', '1dvh'),
+    cssAspectRatio: css('aspect-ratio', '1/1'),
+    cssHas: t(() => CSS.supports('selector(:has(a))')),
+    cssConic: css('background', 'conic-gradient(red, blue)'),
+    pointerEvents: typeof PointerEvent === 'function',
+  };
+}
+
 export function envInfo(): Record<string, unknown> {
   const n = navigator as Navigator & { userAgentData?: { brands?: { brand: string; version: string }[]; mobile?: boolean }; connection?: { effectiveType?: string; saveData?: boolean } };
   return {
@@ -131,6 +175,7 @@ export function envInfo(): Record<string, unknown> {
     memoryGB: (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? null,
     cores: navigator.hardwareConcurrency,
     gl: glCaps(),
+    features: featureReport(),
   };
 }
 
@@ -142,7 +187,7 @@ export class AdsDebugOverlay {
 
   constructor(private readonly snapshot: () => unknown) {
     const r = this.root;
-    r.id = 'ads-debug';
+    r.id = 'zb-dbg';
     r.style.cssText =
       'position:fixed;left:0;right:0;top:0;bottom:0;z-index:99;display:flex;flex-direction:column;background:rgba(15,15,25,.94);color:#e8ffe8;font:15px/1.35 monospace;padding:max(8px,env(safe-area-inset-top)) 8px 8px;box-sizing:border-box;touch-action:pan-y';
     const bar = document.createElement('div');
@@ -157,8 +202,8 @@ export class AdsDebugOverlay {
       return b;
     };
     bar.append(
-      btn('ads-debug-copy', 'copy', () => void this.copy()),
-      btn('ads-debug-close', 'close', () => this.hide()),
+      btn('zb-dbg-copy', 'copy', () => void this.copy()),
+      btn('zb-dbg-close', 'close', () => this.hide()),
     );
     this.pre.style.cssText = 'flex:1;overflow:auto;margin:0;white-space:pre-wrap;word-break:break-all;user-select:text;-webkit-user-select:text;-webkit-touch-callout:default;touch-action:pan-y';
     r.append(bar, this.pre);
@@ -190,7 +235,7 @@ export class AdsDebugOverlay {
 
   private async copy(): Promise<void> {
     const json = JSON.stringify(this.snapshot(), null, 1);
-    const btn = this.root.querySelector<HTMLButtonElement>('#ads-debug-copy')!;
+    const btn = this.root.querySelector<HTMLButtonElement>('#zb-dbg-copy')!;
     try {
       await navigator.clipboard.writeText(json);
       btn.textContent = 'copied';

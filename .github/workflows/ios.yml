@@ -1,0 +1,185 @@
+name: iOS build
+
+# Builds the Letter Zoo iOS app (Capacitor wrapper of the web build, VITE_NATIVE=1) on a GitHub-hosted
+# macOS runner and (optionally) uploads it to App Store Connect / TestFlight. Same approach as
+# ABC Smash (~/workspace/abcshooter/.github/workflows/ios.yml): manual start only, manual signing with a
+# distribution certificate + provisioning profile from repository secrets, `xcrun altool` upload.
+# Specs: specs/40-tech/app-store.md (PLAT-034..), guide: BUILD_IOS.md.
+#
+# Required repository secrets (NAMES only; BUILD_IOS.md says where each value comes from):
+#   IOS_DIST_CERT_P12          base64 of the Apple Distribution .p12 (the team certificate, same as ABC Smash)
+#   IOS_DIST_CERT_PASSWORD     password of that .p12
+#   IOS_PROVISIONING_PROFILE   base64 of the "Letter Zoo App Store" .mobileprovision (bundle id ch.rcms.letterzoo)
+#   ASC_KEY_ID                 App Store Connect API key id
+#   ASC_ISSUER_ID              App Store Connect API issuer id
+#   ASC_KEY_P8                 base64 of the AuthKey_<id>.p8
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: Upload the build to App Store Connect (TestFlight)
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    env:
+      PROFILE_NAME: Letter Zoo App Store
+      TEAM_ID: AZFUSL233G
+      BUNDLE_ID: ch.rcms.letterzoo
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Select Xcode
+        run: |
+          set -euo pipefail
+          # App Store Connect rejects uploads built with an SDK older than the current requirement
+          # (iOS 26 SDK, ABC Smash pitfall): pick the newest Xcode 26+ explicitly.
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -z "$XCODE" ]; then
+            echo "::error::No Xcode 26+ on this runner image."
+            exit 1
+          fi
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+          echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Rust + wasm-pack
+        run: |
+          set -euo pipefail
+          rustup toolchain install stable --profile minimal
+          rustup target add wasm32-unknown-unknown
+          brew install wasm-pack
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Resolve version
+        id: cfg
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./web/package.json').version")
+          # CFBundleVersion: integers only; the run number is unique and increasing per workflow.
+          BUILD="${GITHUB_RUN_NUMBER}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "### Letter Zoo $VERSION ($BUILD)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build the web game (native variant) and sync the Capacitor project
+        working-directory: web
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build:native        # VITE_NATIVE=1: wasm-pack release + tsc + vite build -> web/dist
+          npx cap sync ios            # copies web/dist into ios/App/App/public, writes Package.swift
+
+      - name: Import signing certificate and profile
+        env:
+          CERT_P12_BASE64: ${{ secrets.IOS_DIST_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DIST_CERT_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CERT_P12_BASE64:-}" ] || [ -z "${PROFILE_BASE64:-}" ]; then
+            echo "::error::Signing secrets are missing (IOS_DIST_CERT_P12, IOS_DIST_CERT_PASSWORD, IOS_PROVISIONING_PROFILE) - see BUILD_IOS.md."
+            exit 1
+          fi
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          CERT_PATH="$RUNNER_TEMP/dist.p12"
+          echo "$CERT_P12_BASE64" | base64 --decode > "$CERT_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$CERT_PATH" -P "$CERT_PASSWORD" -A -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN"
+          rm -f "$CERT_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+          PROFILE_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILE_DIR"
+          echo "$PROFILE_BASE64" | base64 --decode > "$PROFILE_DIR/letterzoo-appstore.mobileprovision"
+
+      - name: Archive
+        working-directory: web/ios/App
+        run: |
+          # Signing (manual, "Apple Distribution", profile "Letter Zoo App Store") is set on the
+          # Release configuration of the App target in App.xcodeproj; only version numbers come from here.
+          xcodebuild archive \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/LetterZoo.xcarchive" \
+            MARKETING_VERSION="${{ steps.cfg.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.cfg.outputs.build }}"
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/LetterZoo.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist web/ios/ExportOptions.plist
+          ls -lh "$RUNNER_TEMP/export"
+
+      - name: Check the bundle is self-contained (no web start, no analytics, App Store links only)
+        run: |
+          set -euo pipefail
+          IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
+          unzip -Z1 "$IPA" | grep -q '\.app/public/index.html' || { echo "::error::game not bundled"; exit 1; }
+          unzip -Z1 "$IPA" | grep -q '\.wasm$' || { echo "::error::no .wasm in the app"; exit 1; }
+          # posters: only the native manifest, whose links all point to the developer's App Store pages (PLAT-038)
+          if [ -f web/dist/boards/index.json ]; then
+            BAD=$(grep -o '"link": *"[^"]*"' web/dist/boards/index.json | grep -v '"https://apps.apple.com/' || true)
+            if [ -n "$BAD" ]; then echo "::error::non-App-Store link in the native manifest: $BAD"; exit 1; fi
+          fi
+          if [ -f web/dist/assets/index.json ] && grep -rq 'googletagmanager.com/gtag' web/dist/index.html; then echo "::error::analytics script in index.html"; exit 1; fi
+
+      - name: Upload to App Store Connect
+        if: inputs.upload
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ASC_KEY_ID:-}" ]; then
+            echo "::error::ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_P8 secrets are missing."
+            exit 1
+          fi
+          mkdir -p "$HOME/private_keys"
+          echo "$ASC_KEY_P8" | base64 --decode > "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
+          xcrun altool --validate-app -f "$IPA" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          xcrun altool --upload-app -f "$IPA" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          rm -f "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          echo "Uploaded - processing in App Store Connect takes ~5-15 min." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: LetterZoo-${{ steps.cfg.outputs.version }}-${{ steps.cfg.outputs.build }}
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/build.keychain-db" 2>/dev/null || true
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/letterzoo-appstore.mobileprovision"

@@ -14,7 +14,7 @@ updated: 2026-10-04
 ## Platforms
 
 1. Browser: current Chrome, Firefox, Safari (desktop and mobile) with WebGL2.
-2. Android and iOS via Capacitor from the same web build (Q-013 minimum versions).
+2. Android and iOS via Capacitor from the same web build (Q-013 minimum versions); iOS: TECH-STORE (`specs/40-tech/app-store.md`, PLAT-034..043).
 3. Local development on Linux: Vite dev server, reachable from a phone over LAN.
 
 ## Performance
@@ -54,9 +54,9 @@ External testers (families, teachers) play a **preview** build on the web; how-t
    Google Analytics hosts of PLAT-028 and the script is added only after consent; `default-src 'self'`
    stays.
 6. **Ad content** (GAME-ADS "External content"): the signed ad manifest, its signature and images
-   are served from the same origin under `ads/` (`web/dist/ads/`, from the repo's `ads/`):
-   `ads/**` caches `max-age=300, must-revalidate` (a campaign swap reaches players within
-   minutes, without an app update); `ads/*.sig` is `text/plain`. The CSP is unchanged (same origin:
+   are served from the same origin under `boards/` (`web/dist/boards/`, from the repo's `boards/`; a neutral name, ADS-043):
+   `boards/**` caches `max-age=300, must-revalidate` (a campaign swap reaches players within
+   minutes, without an app update); `boards/*.sig` is `text/plain`. The CSP is unchanged (same origin:
    `connect-src 'self'`, `img-src 'self' data: blob:`). The Capacitor app fetches from the https
    origin of the hosted site (not from its own `capacitor://` / `https://localhost` origin; the
    constant is set when packaging, Q-243). No production manifest ships until the owner signed one
@@ -80,8 +80,8 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 | PLAT-007 | Given a release build in `web/dist`, then it contains `index.html`, a `.wasm` and `assets/index.json`, and its total size is ≤ 30 MB. | unit (skipped without a build) |
 | PLAT-008 | Given `scripts/deploy-preview.sh`, then it deploys with `hosting:channel:deploy … --expires` (≤ 30 days by default) and never runs a live `firebase deploy`. | unit |
 | PLAT-009 | Given the preview URL on a phone (Android Chrome, iOS Safari), then the game loads over HTTPS and the player can walk; after a redeploy the same URL shows the new build. | manual |
-| PLAT-010 | Given `firebase.json`, then `ads/**` is cached ≤ 10 minutes with `must-revalidate` (not immutable) and the CSP still has `connect-src 'self'`, `img-src 'self' data: blob:`, `form-action 'none'` and no external URL. | unit |
-| PLAT-011 | Given the repo's `ads/`, then only manifest, signature and images of ≤ 512 KB are served (no template / key), a shipped manifest has its signature and matches its images' size and SHA-256, and no private key file is tracked except the TEST-ONLY fixture key. | unit |
+| PLAT-010 | Given `firebase.json`, then `boards/**` is cached ≤ 10 minutes with `must-revalidate` (not immutable) and the CSP still has `connect-src 'self'`, `img-src 'self' data: blob:`, `form-action 'none'` and no external URL. | unit |
+| PLAT-011 | Given the repo's `boards/`, then only manifest, signature and images of ≤ 512 KB are served (no template / key), a shipped manifest has its signature and matches its images' size and SHA-256, and no private key file is tracked except the TEST-ONLY fixture key. | unit |
 | PLAT-012 | Given the release configuration, then it has no test-key override: `VITE_AD_TEST` is set by no npm script, `ad-keys.ts` does not contain the test key, the `adkey` parameter is read only behind the build-time switch, and a release bundle in `web/dist` does not contain `adkey`. | unit |
 | PLAT-013 | Given `web/public/manifest.webmanifest`, then it has name "Buchstabenzoo", short_name "Zoo", lang `de`, `start_url` and `scope` `./`, `display_override` `["fullscreen","standalone"]`, `orientation` `any`, cream background and brown theme colour. | unit |
 | PLAT-014 | Given the manifest, then every icon exists with exactly the declared size, 192, 512 and a `maskable` 512 are present, each PNG ≤ 60 KB, and `apple-touch-icon` (180) and favicon (32) exist. | unit |
@@ -103,7 +103,16 @@ External testers (families, teachers) play a **preview** build on the web; how-t
 | PLAT-030 | Given host polling of the game events, then `level_started` (first time per session the player stands in a level part, `level_id`), `level_complete` (`level_id`), `mission_complete` (`animal_id`), `night_started`, `all_animals_home`, `baby_born` (`species_id`) are tracked from the existing `poll_events` messages and `App.player_level()`; the parameters are ids only. | unit, e2e |
 | PLAT-031 | Given 412×892, 892×412, 1280×800 and 780×360 viewports, then `#analytics-toggle` is ≥ 72 px, shows on/off (`aria-pressed`), and the settings menu stays inside the viewport (scrolls when short). | e2e |
 | PLAT-032 | Given the de and en `ui.ftl`, then the `analytics-*` and `ui-analytics` keys exist; `web/public/privacy.html` has a German and an English part, mentions what is collected / not, parental consent, switching off in the settings, retention and a controller placeholder. | unit |
-| PLAT-033 | Given analytics is available (measurement id set), no decision was made and the intro is enabled (a new player), when the game starts, then BEFORE the intro a welcome dialog shows: the story ("Die Tiere sind aus dem Zoo ausgebrochen – bring sie nach Hause!"), a smaller data note ("Das Spiel sammelt anonyme Daten, nur um das Spiel zu analysieren und zu bewerben."), and two buttons ≥ 64 px: light "Nein, ich will nicht spielen" and bold green "Ja, einverstanden, los geht's!"; Yes grants consent (analytics starts) and the intro follows; No stores nothing, sends nothing and shows a goodbye card whose ↩ button asks again; given consent was granted/denied earlier or the id is empty, no welcome shows; the ⚙️ 📊 button (parental gate) still changes the decision later (user request 2026-10-04, replaces the 3 s notice). | e2e |
+| PLAT-033 | Given analytics is available (measurement id set), no decision was made and the intro is enabled (a new player), when the game starts, then BEFORE the intro a welcome dialog shows: the story ("Die Tiere sind aus dem Zoo ausgebrochen – bring sie nach Hause!"), a smaller data note ("Das Spiel sammelt anonyme Daten, nur um das Spiel zu analysieren und zu bewerben."), and two buttons ≥ 64 px: light "Nein, ich will nicht spielen" and bold green "Ja, einverstanden, los geht's!"; Yes grants consent (analytics starts) and the intro follows; No stores nothing, sends nothing and shows a goodbye card whose ↩ button asks again; given consent was granted/denied earlier or the id is empty, no welcome shows; the button texts always stay inside their boxes: on small screens the text wraps and the font scales down (≥ 11 px), the two buttons stack below 340 px width (user request 2026-10-08); the ⚙️ 📊 button (parental gate) still changes the decision later (user request 2026-10-04, replaces the 3 s notice). | e2e |
+| PLAT-034 | Given `web/capacitor.config.ts`, then appId is `ch.rcms.letterzoo`, appName `Letter Zoo`, webDir `dist`, the default origin is kept and no `server.url` loads the game from the web (TECH-STORE). | unit |
+| PLAT-035 | Given `web/ios` Info.plist and project, then `ITSAppUsesNonExemptEncryption` is false, no `NS*UsageDescription` / background modes, `CFBundleLocalizations` de + en, portrait + landscape, deployment target 15.0, bundle id `ch.rcms.letterzoo`. | unit |
+| PLAT-036 | Given `VITE_NATIVE=1` (`npm run build:native`), then the analytics id is `''` (no button, no script, no request) and ads are off unless `NATIVE_ADS`; the web build keeps both. | unit |
+| PLAT-037 | Given the iOS `AppDelegate`, then the audio session is `.playback` (sound with the ringer on silent) and re-activated when the app becomes active. | unit, manual |
+| PLAT-038 | Given `tools/ads/campaigns-native.template.json` (and `boards-native/index.json` once signed), then all three slots are covered and every link is `https://apps.apple.com/app/id<ID>`; the native build emits `boards-native/` instead of `boards/`. | unit |
+| PLAT-039 | Given `.github/workflows/ios.yml`, then it starts manually only, runs on macOS, builds with `npm run build:native`, uses the six secret names and contains no key material. | unit |
+| PLAT-040 | Given `tools/store/make_appstore_screenshots.py`, then it knows the exact App Store sizes (6.9", 6.5", iPad 13") and never upscales. | unit |
+| PLAT-041 | Given the App Store icon, then it is 1024x1024 RGB without alpha and the launch image exists. | unit |
+| PLAT-042 | Given `web/public/privacy.html`, then it covers the iOS app (no data collected) and the alias `https://letterzoo.rcms.ch`. | unit |
 
 ## Analytics (opt-in)
 

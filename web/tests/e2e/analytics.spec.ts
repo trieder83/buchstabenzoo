@@ -224,3 +224,36 @@ test('PLAT-033 "No, I don\'t want to play" stores nothing, sends nothing, shows 
   await waitFrames(page, 3);
   await expect(page.locator('#analytics-welcome')).toHaveCount(0);
 });
+
+for (const [w, h] of [
+  [280, 560],
+  [320, 568],
+  [360, 640],
+  [360, 780],
+  [412, 892],
+  [568, 320],
+  [780, 360],
+] as const) {
+  test(`PLAT-033 welcome buttons keep their text inside the box (${w}x${h})`, async ({ page }) => {
+    await spy(page);
+    await page.setViewportSize({ width: w, height: h });
+    await page.addInitScript(() => localStorage.clear());
+    await page.goto(`${START_URL}${START_URL.includes('?') ? '&' : '?'}intro=1`);
+    await expect(page.locator('#analytics-welcome')).toBeVisible({ timeout: 15_000 });
+    for (const sel of ['#welcome-yes', '#welcome-no']) {
+      const m = await page.locator(sel).evaluate((e) => ({
+        sw: e.scrollWidth,
+        cw: e.clientWidth,
+        sh: e.scrollHeight,
+        ch: e.clientHeight,
+        fs: parseFloat(getComputedStyle(e).fontSize),
+      }));
+      expect(m.sw, `${sel} text wider than the box`).toBeLessThanOrEqual(m.cw + 1);
+      expect(m.sh, `${sel} text taller than the box`).toBeLessThanOrEqual(m.ch + 1);
+      expect(m.fs, `${sel} font size`).toBeGreaterThanOrEqual(11);
+    }
+    const card = (await page.locator('.an-card').boundingBox())!;
+    expect(card.x).toBeGreaterThanOrEqual(0);
+    expect(card.x + card.width).toBeLessThanOrEqual(w + 0.5);
+  });
+}

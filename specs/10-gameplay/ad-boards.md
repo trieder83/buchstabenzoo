@@ -6,7 +6,7 @@ module: ad-boards
 status: draft
 depends_on: [GAME-LAYOUT, ART-ENVIRONMENT, PROD-VISION, TECH-PLATFORMS]
 test_prefix: ADS
-updated: 2026-10-07
+updated: 2026-10-08
 ---
 
 # Ad billboards (in-world)
@@ -82,10 +82,10 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 ### External content (user requirements 2026-09-30, Q-240…Q-247)
 
 7. **Loaded from outside, accepted only if signed by us.** The campaign content is **not part of
-   the game build**: `ads/campaigns.json` (manifest), `ads/campaigns.sig` (detached signature)
-   and `ads/img/*` are served from our own origin (`<origin>/ads/`, same origin: CSP
+   the game build**: `boards/index.json` (manifest), `boards/index.sig` (detached signature)
+   and `boards/img/*` are served from our own origin (`<origin>/boards/`, same origin: CSP
    `connect-src 'self'` / `img-src 'self'` stay unchanged) and can be swapped without an app
-   update (`ads/**` cache: `max-age=300, must-revalidate`, PLAT-010). The manifest is
+   update (`boards/**` cache: `max-age=300, must-revalidate`, PLAT-010). The manifest is
    authenticated by an **Ed25519** signature (over `"buchstabenzoo-ads/1\n"` + the exact manifest
    bytes); the **public key is compiled into the game** (`web/src/ad-keys.ts`, ≤ 2 keys for a
    rotation), the private key never enters the repo (`tools/ads/keygen.py`, `sign.py`,
@@ -118,7 +118,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 9. **Test key hook.** `?adkey=<base64 public key>` replaces the compiled keys **only** in the dev
    server and in the e2e test build (`VITE_AD_TEST=1`, `dist-adtest`, Q-245); the release build
    contains no such code path (PLAT-012, ADS-019). Test fixtures and the TEST-ONLY key live in
-   `web/tests/fixtures/ads/`.
+   `web/tests/fixtures/ads/` (served as `boards/` by the tests).
 10. **Reading panel** (GAME-PLAYER §4 pattern; Q-247; touch rules user report 2026-10-03): a
     readable board is "near" when the player is within **3.5 m** of its centre and on its
     readable side (in front of the picture, up to 3 m beside its centre) — **no facing
@@ -169,12 +169,12 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
     the web it does"; no real phone available, so the flow is emulated and the phone can report itself).
     - **Release of the hold.** The link opens at the finger release (`pointerup`, ADS-030). If the
       touch is **cancelled** after the full hold (`pointercancel`, an Android gesture), nothing is
-      opened (a cancel is no gesture); the hold button turns into a big real link (`<a id="ad-open"
+      opened (a cancel is no gesture); the hold button turns into a big real link (`<a id="zb-open"
       href=canonical target=_blank rel="noopener noreferrer">`, ≥ 64 px) that the child taps (a tap on a
       link is never blocked). Losing the pointer capture while the finger is down never resets the
       hold. A mouse leaving the button during the ✔ counts as a cancel, not as a release.
     - **Blocked pop-up.** After `window.open` the page must have been hidden by the new tab within
-      1.5 s; if not (blocked, or the browser did nothing), a card `#ad-fallback` ("Der Link hat sich
+      1.5 s; if not (blocked, or the browser did nothing), a card `#zb-fallback` ("Der Link hat sich
       nicht geöffnet. Tippe hier:" / "The link did not open. Tap here:") with the same real link
       appears for 15 s (✖ closes it).
     - **Back button.** While the gate or the carousel is open one history entry is pushed; Android
@@ -182,9 +182,9 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
       the entry again. (The auto-opening board panel does not push an entry.)
     - **Hold text.** `ad-gate-hold` no longer names a number of seconds ("Halte den Knopf gedrückt,
       bis ✔ erscheint. Dann lass los.").
-    - **Field diagnostics (ADS-038).** `?adsdebug=1` (release builds too; no network, no storage, no
+    - **Field diagnostics (ADS-038).** `?adsdebug=1` or the neutral alias `?boarddebug=1` (release builds too; no network, no storage, no
       tracking) opens a full-screen dismissible text panel (≥ 15 px monospace, selectable, buttons
-      *copy* and *close* ≥ 48 px high; a round `AD` chip reopens it) with the live state: user agent,
+      *copy* and *close* ≥ 48 px high; a round `ZB` chip reopens it) with the live state: user agent,
       secure context, `crypto.subtle`, iframe, online, DPR, viewport, touch points, WebGL version,
       `MAX_TEXTURE_SIZE`, renderer; manifest fetch state/ms/bytes/version; signature result, the
       verifier (`subtle` or pure `js`) and its ms; per image load state / bytes / ms / decode result;
@@ -194,6 +194,79 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
       page was hidden afterwards); WebGL context losses; the last 20 errors and events.
       `window.__zoo.adsDebug()` returns the same data as an object. The recording itself is always on
       (a few counters, nothing per frame); only the overlay needs the parameter.
+
+14. **Blocker-neutral naming and block detection** (user report 2026-10-08: "on the Android browser we still
+    do not see the billboards open the dialog with the link"; emulation passes, so the cause is on the
+    device). Browser **ad blockers filter by name**: network rules (EasyList/EasyPrivacy) match paths such
+    as `/ads/`, `ad-`, `banner`, `sponsor`, `promo`; cosmetic rules **hide elements by id/class**
+    (EasyList hides `#ad-panel`, `#ad-carousel`, `.ad-body`, `.ad-choices` … with `display:none !important`
+    on every site). Proven with the Ghostery/EasyList engine against the live build 2026-10-08: the
+    board panel and the link inside had size 0x0 (see the fix log). Therefore:
+    - **Neutral names everywhere the browser sees them.** URL path `boards/` (`boards/index.json`,
+      `boards/index.sig`, `boards/img/c1-a.webp`, `c1-b`, `c2-de`, `c2-en`, `c3-de`, `c3-en`); DOM ids,
+      classes and data attributes use the prefix `zb-` (`#zb-panel`, `#zb-link`, `#zb-gate`, `#zb-hold`,
+      `#zb-act`, `#zb-fallback`, `#zb-carousel`, `.zb-body`, `.zb-x`, `.zb-choice`, `.zb-car-*`,
+      `#zb-dbg`, `data-card`); no id, class, data attribute, CSS selector, request path or file name of
+      the ad UI contains `ad`/`ads` as a word, `advert`, `banner`, `sponsor` or `promo` (ADS-043).
+      Internal code names (`AdsHost`, `ad_near`, Fluent keys `ad-*`) are not visible to the browser and stay.
+      The signature scheme (`buchstabenzoo-ads/1`) is unchanged.
+    - **Block detection (ADS-044).** A `fetch` of the manifest or an image that is rejected with a
+      `TypeError` (`Failed to fetch`, `net::ERR_BLOCKED_BY_CLIENT`; not our own timeout, not an HTTP
+      status) is recorded as *blocked by browser/ad blocker (suspected)* with the URL; after a view
+      (panel, gate, carousel, link card, 🔗 button) is shown it is checked once (two frames later): computed
+      `display:none`, `visibility:hidden` or a size under 8 px counts as hidden by the browser and is
+      recorded with the element id. `?adsdebug=1` / `?boarddebug=1` and `adsDebug()` show `verdict`,
+      `blocked[]`, `views` and `rescue`.
+    - **Fallback (ADS-045).** A hidden view is first forced back (`display:flex !important` inline beats a
+      stylesheet rule). If it is still hidden, a native `<dialog>` with a random id, no class names and
+      inline styles only (`ads-rescue.ts`) takes over: the panel case shows picture, tagline and the link
+      button; the gate case shows only the gate. **The parental gate stays**: question, then the
+      press-and-hold, the link opens at the release; a cancelled touch gives a real `<a>`. ✖ / Esc closes it.
+      A request that is blocked cannot be rescued (no content): the boards then keep their placeholders and
+      the debug panel names the URL.
+15. **Samsung Internet and older Chromium** (user report 2026-10-08: works in Android Chrome, not in Samsung
+    Internet). Samsung Internet lags several Chromium versions behind, has its own ad-blocker add-ons,
+    *smart anti-tracking* and a strict pop-up blocker. Beside rule 14: (a) the signature check tries Web
+    Crypto first and, if it throws or answers *false*, the pure-JS Ed25519/SHA-512 once more (same for the
+    image SHA-256: `subtle.digest` failing falls back to pure JS); every attempt and exception message is in
+    `signature.tries` of the diagnostics (ADS-046); (b) the bundle is built for `chrome87` / `es2020`
+    (Samsung Internet 15+); (c) the diagnostics list a `features` table (BigInt, `subtle.digest`,
+    `createImageBitmap`, `<dialog>`, CSS `inset`, `dvh`, `:has`, conic-gradient …) so a missing feature
+    shows; (d) the ad flow makes **no request to a third-party host** (only `boards/…` of the own origin; the
+    link host is contacted only by the browser after the gate).
+16. **Platform-dependent links** (user request 2026-10-08). A campaign can carry a link per platform:
+    `links: { ios, android }` next to the old `link` (= web / default; a manifest without `links` stays valid).
+    - **Detection** (`web/src/platform.ts`, `detectPlatform(ua, platform, maxTouchPoints, uaDataPlatform)`):
+      `navigator.userAgentData.platform` first when it names a known platform (Android -> `android`; iOS,
+      macOS -> `ios`; Windows, Linux, Chrome OS -> `web`), else the user agent: `Android` -> `android`
+      (Chrome, Samsung Internet, Firefox); `iPhone|iPad|iPod`, `Macintosh|Mac OS X` (iPadOS 13+ in desktop
+      mode, macOS Safari / Chrome) or `navigator.platform = MacIntel` -> `ios`; an ARM `Linux` platform
+      with a touch screen (Android "desktop site") -> `android`; anything else, empty or unknown -> `web`.
+      Overrides, strongest first: `setPlatformOverride()` (native wrappers), `?platform=ios|android|web`
+      (harmless: only chooses which public store page a link opens), `window.__ZOO_PLATFORM__` or
+      `VITE_NATIVE` = `ios|android` (a native build flag), then the detection.
+    - **Choice.** At the moment the panel / carousel is built the platform link is chosen (`linkFor`): the
+      store link of the platform, else the web link. The button shows the chosen link's **host**
+      (`apps.apple.com`, `play.google.com`, the web host); the parental gate and the release-to-open flow are
+      unchanged and open exactly that URL.
+    - **Validation** when parsing the signed manifest (`checkStoreLink`, mirrored in `tools/ads/sign.py`):
+      https, no user info / port / fragment; `ios`: host `apps.apple.com` or `itunes.apple.com`, path
+      `/app/id<digits>` or `/<cc>/app/<slug>/id<digits>`, no query; `android`: host `play.google.com`, path
+      `/store/apps/details`, query exactly `id=<package name>`. The canonical URL is rebuilt. An invalid
+      store link is dropped (that platform then uses the web link); the web `link` keeps its strict rule.
+      The signature scheme and `format` are unchanged (additive field).
+    - **Content** (verified in the sibling repos 2026-10-08): Math Fighter iOS
+      `https://apps.apple.com/app/id6760628828` (from `mathfighter-ios/videos/.../youtube.md`, App Store
+      `us/app/math-fighter/id6760628828`), Android `https://play.google.com/store/apps/details?id=com.mathfighter.app`
+      (`mathfighter-main/public/about.html`, `android-twa/app/build.gradle`); ABC Smash iOS
+      `https://apps.apple.com/app/id6790508038` (`abcshooter/marketing/tiktok-de.md`), Android
+      `https://play.google.com/store/apps/details?id=app.abcshooter.twa` (`abcshooter/android-twa/README.md`);
+      EduGameGalaxy: web only. The Play pages of both packages were fetched (HTTP 200, "Math Fighter - Learn Math" / "ABC Smash: Learn to Read"), as were the App Store pages. **Native app build:** its own manifest `boards-native/` (campaign ids `mathfighter-ios`, `abcsmash-ios`, `mathfighter-ios-b`, link = the fixed App Store page, nothing else, PLAT-038). (The id `6760028628` named in the request appears in no file; the repo has
+      `6760628828`, which is used: see the open question.)
+17. **No ad flow while seated** (camera agent report 2026-10-08; GAME-CART CART-008 "no panels while driving"):
+    while she sits in a golf cart (`App.driving()`), the board panel does not open, the 🔗 chip is hidden,
+    the carousel does not open and `interact()` is not taken; boarding closes an open panel, gate, rescue
+    dialog and carousel. Getting out in front of a board opens the panel again.
 
 ### Threat model (what the signature does and does not protect)
 
@@ -236,7 +309,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-020 | Given a correctly signed test manifest (test build), then the boards show the campaign pictures, the panel shows picture + tagline + link button ≥ 64 px, and the link opens (`noopener`, canonical URL) exactly once, only after the gate and the tap on the open button. | e2e |
 | ADS-021 | Given a manifest signed with a wrong key (test build) or a tampered image, then the placeholders remain / only that campaign is missing, and no panel opens. | e2e |
 | ADS-022 | Given the test build without `?adkey=`, then the test manifest is not trusted and not even requested. | e2e |
-| ADS-023 | Given the RELEASE build (production key compiled in, no `?adkey=`) and the real signed `ads/campaigns.json`, then campaigns 1, 2 and 3 are accepted and loaded (needs the owner's public key in `ad-keys.ts` and a signed manifest; `web/tests/e2e/ads_prod.spec.ts`). | e2e |
+| ADS-023 | Given the RELEASE build (production key compiled in, no `?adkey=`) and the real signed `boards/index.json`, then campaigns 1, 2 and 3 are accepted and loaded (needs the owner's public key in `ad-keys.ts` and a signed manifest; `web/tests/e2e/ads_prod.spec.ts`). | e2e |
 | ADS-026 | Given an emulated phone (touch, 780×360, 360×780, 412×892), when the player stands in front of a verified board (any facing, 1…3.4 m), then the panel and the link button (≥ 56 px) are inside the viewport and tapping the button starts the gate. | e2e |
 | ADS-027 | Given a phone, a verified board is near and the panel was closed by ✖ (or the ✖ was tapped < 400 ms after opening: ignored), then the interact button (🔗) is visible and tapping it reopens the panel; leaving and coming back also reopens it; the manifest arriving late opens the panel for a child already standing there. | e2e |
 | ADS-028 | Given a small screen (780×360), then the open panel does not overlap `#settings-btn`, `#compass-btn`, `#view-btn` and `#act` (bounding boxes) and is a compact card; at 360×780 it does not overlap them either. | e2e |
@@ -247,11 +320,19 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-033 | Given the carousel, when the picture is tapped, then the parental gate starts and `window.open` is not called; after the right answer + 2 s hold + release the link of the shown campaign opens exactly once and the carousel closes; the timer does not advance while the gate is up. | e2e |
 | ADS-034 | Given `next = all_done` but no verified campaign (no key / failed load) or `next` is not `all_done`, when the compass is tapped, then no carousel opens (the normal bubble shows). On 780x360 and 360x780 the carousel is inside the viewport, its buttons are ≥ 64 px and it overlaps none of `#settings-btn`, `#compass-btn`, `#view-btn`, `#act`. | e2e |
 
-| ADS-038 | Given `?adsdebug=1`, then the overlay `#ads-debug` is visible with the listed fields (UA, secure context, subtle, MAX_TEXTURE_SIZE, manifest, signature + verifier, images, near, pointer, windowOpen, errors), its text is ≥ 14 px, *copy* is ≥ 48 px high, *close* hides it and the `AD` chip shows it again; `window.__zoo.adsDebug()` has the same fields; without the parameter there is no overlay and no chip; the recording makes no request. Unit: the recorder keeps the last 20 errors and the last 30 events. | e2e + unit |
+| ADS-038 | Given `?adsdebug=1`, then the overlay `#zb-dbg` is visible with the listed fields (UA, secure context, subtle, MAX_TEXTURE_SIZE, manifest, signature + verifier, images, near, pointer, windowOpen, errors), its text is ≥ 14 px, *copy* is ≥ 48 px high, *close* hides it and the `ZB` chip shows it again; `window.__zoo.adsDebug()` has the same fields; without the parameter there is no overlay and no chip; the recording makes no request. Unit: the recorder keeps the last 20 errors and the last 30 events. | e2e + unit |
 | ADS-039 | Given a failed first load (offline, 4 s manifest timeout was too short for slow networks), then the manifest timeout is 10 s; a failed or incomplete load (an active campaign missing) is retried after 20 s and at once on the `online` event / when the tab becomes visible; at most 4 loads; a complete load is never repeated. | unit + e2e |
-| ADS-040 | Given the full hold, when the touch is cancelled (`touchCancel`), then `window.open` has NOT been called and `#ad-gate a#ad-open` (canonical href, `_blank`, `noopener noreferrer`) is visible; when `window.open` was called but the page did not become hidden within 1.5 s, `#ad-fallback a#ad-open` shows and ✖ closes it; a lost pointer capture while the finger is down does not reset the hold. | e2e |
+| ADS-040 | Given the full hold, when the touch is cancelled (`touchCancel`), then `window.open` has NOT been called and `#zb-gate a#zb-open` (canonical href, `_blank`, `noopener noreferrer`) is visible; when `window.open` was called but the page did not become hidden within 1.5 s, `#zb-fallback a#zb-open` shows and ✖ closes it; a lost pointer capture while the finger is down does not reset the hold. | e2e |
 | ADS-041 | Given the gate (or the carousel) is open, when the browser Back button is pressed, then the gate (carousel) closes and the page URL and the game stay; closing by ✖ does not leave an extra history entry behind. | e2e |
-| ADS-042 | Given Android Chrome emulation (Pixel 7, Galaxy S9+ and a low-end 640x360 DPR 3 profile; touch, mobile UA, CPU 4-6x, slow-network model for `ads/**`, CDP touch hold), then on every profile all three campaigns load and verify, near a board of each slot the panel shows the campaign picture and the board texture is uploaded, the gate flow with a real 2 s touch hold opens the link once on release, rotation keeps the panel in the viewport, a frozen + resumed tab still works, and the game inside a cross-origin iframe (itch.io style) loads and verifies the ads. Report table per step: `web/test-results/ads-android-<profile>.json`. | e2e |
+| ADS-042 | Given Android Chrome emulation (Pixel 7, Galaxy S9+ and a low-end 640x360 DPR 3 profile; touch, mobile UA, CPU 4-6x, slow-network model for `boards/**`, CDP touch hold), then on every profile all three campaigns load and verify, near a board of each slot the panel shows the campaign picture and the board texture is uploaded, the gate flow with a real 2 s touch hold opens the link once on release, rotation keeps the panel in the viewport, a frozen + resumed tab still works, and the game inside a cross-origin iframe (itch.io style) loads and verifies the ads. Report table per step: `web/test-results/ads-android-<profile>.json`. | e2e |
+| ADS-043 | Given the sources and the built `web/dist`, then no served path (`boards/…`), id, class, data attribute, CSS selector or request URL of the ad UI, the debug overlay and the rescue dialog contains `ad`/`ads` as a word, `advert`, `banner`, `sponsor` or `promo`; `dist` has no `ads/`, `#ad-`, `.ad-`, `ads-debug`, `campaigns.json` string (Fluent keys and `privacy.html` text excepted); `?boarddebug=1` shows the overlay like `?adsdebug=1`; `firebase.json` caches `boards/**`. | unit (vitest on sources + dist) + e2e (DOM names of the open panel / gate / overlay and all requests) |
+| ADS-044 | Given a manifest or image `fetch` that rejects with a `TypeError` (blocked by the client), then `blocked[]` names the URL and the verdict is *blocked by browser/ad blocker (suspected)*; a timeout abort or an HTTP 404 is not reported as a block; given a stylesheet that hides `#zb-panel` with `!important`, then the panel is forced visible, the block is recorded with the element id and shown in the overlay. | unit + e2e |
+| ADS-045 | Given a "blocker" that keeps `#zb-panel` hidden, then a `<dialog open>` with a random id shows the picture and the link button; the link starts the parental gate, a wrong answer closes it, the right answer + full hold + release opens the link once (not before the release); given the same for `#zb-gate`, the gate runs inside the dialog and the link opens only after it. | e2e |
+| ADS-046 | Given `crypto.subtle` whose `digest` rejects (old / odd Chromium), then the manifest signature still verifies via the pure-JS retry, the image hash check still works, and `signature.tries` lists `subtle: threw …` then `js: ok`; a tampered body gives `subtle: false`, `js: false`; given a Samsung Internet user agent on an old Chromium (≈ 100), the release bundle loads, verifies the three campaigns and opens the panel / gate / link (manual / emulated, see the fix log). | unit + e2e (emulated) |
+| ADS-047 | Given real user agent strings, then `detectPlatform` gives `ios` for iPhone Safari/Chrome, iPad desktop mode, Mac Safari/Chrome; `android` for Android Chrome, Samsung Internet, Firefox Android; `web` for Windows, Linux, ChromeOS, unknown and empty; `userAgentData.platform` wins when present; `?platform=` and `setPlatformOverride` beat the detection, invalid values are ignored. | unit |
+| ADS-048 | Given store links, then the App Store / Play Store product URLs are accepted and rebuilt canonically; http, wrong or look-alike hosts, `javascript:`, extra query, fragment, user info, port and wrong paths are rejected; an invalid store link is dropped (the platform falls back to the web link), a manifest without `links` is valid, a campaign without store links opens the web link on every platform. | unit |
+| ADS-049 | Given emulated iPhone, iPad desktop mode, Mac Chrome, Pixel, Samsung Internet, Windows, Linux and unknown user agents, then the button shows `apps.apple.com` / `play.google.com` / the web host and the gate opens exactly the matching URL once (stubbed `window.open`); EduGameGalaxy opens its web link on iOS and Android; `?platform=android` overrides; the debug panel lists `platform` and `linkHosts`. | e2e |
+| ADS-050 | Given the panel and the gate are open, when `driving()` becomes true, then both close, the 🔗 chip stays hidden, `interact()` and `openCarousel()` return false and nothing is opened; when she gets out in front of the board the panel opens again (cross-reference CART-008). | e2e |
 
 ## Open questions
 

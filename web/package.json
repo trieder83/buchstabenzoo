@@ -12,9 +12,15 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
-    "deploy:preview": "bash ../scripts/deploy-preview.sh"
+    "deploy:preview": "bash ../scripts/deploy-preview.sh",
+    "build:native": "VITE_NATIVE=1 npm run build",
+    "cap:sync": "npm run build:native && cap sync ios",
+    "cap:open": "cap open ios"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@playwright/test": "^1.55.0",
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",

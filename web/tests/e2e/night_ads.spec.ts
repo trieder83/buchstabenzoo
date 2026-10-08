@@ -21,7 +21,7 @@ async function start(page: Page) {
     localStorage.clear();
     localStorage.setItem('zoo.readingLevel', 'klasse2');
   });
-  await page.route('**/ads/**', (r) => r.abort()); // placeholders only
+  await page.route('**/boards/**', (r) => r.abort()); // placeholders only
   await page.goto(START_URL);
   await waitFrames(page, 3);
   await page.evaluate(() => window.__zoo!.app.debug_set_daytime('night'));
@@ -63,7 +63,7 @@ for (const level of ['night_1', 'night_2']) {
       await page.evaluate(() => window.__zoo!.app.debug_step(0.3));
       await nextFrames(page, 4);
       expect(await page.evaluate(() => window.__zoo!.app.ad_near()), b.id).toBe(b.id);
-      await expect(page.locator('#ad-panel')).toBeHidden(); // placeholder: passive
+      await expect(page.locator('#zb-panel')).toBeHidden(); // placeholder: passive
       expect(await page.evaluate(() => window.__zoo!.app.target_kind())).toBe('');
       await page.screenshot({ path: path.join(shots, `night_ads_${b.id}.png`) });
     }

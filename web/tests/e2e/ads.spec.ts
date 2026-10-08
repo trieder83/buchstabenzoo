@@ -11,7 +11,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ftl, goto, nextFrames, repo, shots, waitFrames } from './helpers';
 
 const fixtures = path.join(repo, 'web/tests/fixtures/ads');
-const adsDir = path.join(fixtures, 'ads');
+const adsDir = path.join(fixtures, 'boards');
 const PUB = fs.readFileSync(path.join(fixtures, 'TEST-ONLY-public.key'), 'utf8').trim();
 const TEST_BUILD = process.env.E2E_DIST === 'dist-adtest';
 
@@ -23,10 +23,10 @@ interface Board {
   z: number;
 }
 
-/** Serves `ads/**` from memory (the Vite preview has no manifest); records every request URL. */
+/** Serves `boards/**` from memory (the Vite preview has no manifest); records every request URL. */
 async function serveAds(page: Page, files: Map<string, Buffer>, requests: string[]): Promise<void> {
-  await page.route('**/ads/**', async (route) => {
-    const rel = new URL(route.request().url()).pathname.replace(/^.*\/ads\//, '');
+  await page.route('**/boards/**', async (route) => {
+    const rel = new URL(route.request().url()).pathname.replace(/^.*\/boards\//, '');
     const body = files.get(rel);
     if (!body) return route.fulfill({ status: 404 });
     return route.fulfill({ status: 200, body, contentType: rel.endsWith('.png') ? 'image/png' : 'text/plain' });
@@ -36,8 +36,8 @@ async function serveAds(page: Page, files: Map<string, Buffer>, requests: string
 
 function fixtureFiles(): Map<string, Buffer> {
   const files = new Map<string, Buffer>();
-  files.set('campaigns.json', fs.readFileSync(path.join(adsDir, 'campaigns.json')));
-  files.set('campaigns.sig', fs.readFileSync(path.join(adsDir, 'campaigns.sig')));
+  files.set('index.json', fs.readFileSync(path.join(adsDir, 'index.json')));
+  files.set('index.sig', fs.readFileSync(path.join(adsDir, 'index.sig')));
   for (const f of fs.readdirSync(path.join(adsDir, 'img'))) files.set(`img/${f}`, fs.readFileSync(path.join(adsDir, 'img', f)));
   return files;
 }
@@ -45,10 +45,10 @@ function fixtureFiles(): Map<string, Buffer> {
 /** The fixture manifest re-signed with another (wrong) key. */
 async function wrongKeyFiles(): Promise<Map<string, Buffer>> {
   const files = fixtureFiles();
-  const body = files.get('campaigns.json')!;
+  const body = files.get('index.json')!;
   const domain = Buffer.from('buchstabenzoo-ads/1\n');
   const sig = await ed.signAsync(Buffer.concat([domain, body]), ed.utils.randomSecretKey());
-  files.set('campaigns.sig', Buffer.from(Buffer.from(sig).toString('base64')));
+  files.set('index.sig', Buffer.from(Buffer.from(sig).toString('base64')));
   return files;
 }
 
@@ -103,7 +103,7 @@ test('ADS-003 ADS-004 placeholders (no manifest available): every board has its 
   const requests: string[] = [];
   page.on('request', (r) => requests.push(r.url()));
   // the production key is compiled in, so the real manifest would load: simulate "offline" (no manifest)
-  await page.route('**/ads/**', (r) => r.abort());
+  await page.route('**/boards/**', (r) => r.abort());
   await start(page);
   const list = await boards(page);
   expect(list.length).toBe(18); // 4 per day level + 3 per night level (ADS-001)
@@ -124,7 +124,7 @@ test('ADS-003 ADS-004 placeholders (no manifest available): every board has its 
   // standing in front of a placeholder board: no panel, no interact target (ADS-004)
   await standAt(page, list[0]);
   expect(await page.evaluate(() => window.__zoo!.app.ad_near())).toBe(list[0].id);
-  await expect(page.locator('#ad-panel')).toBeHidden();
+  await expect(page.locator('#zb-panel')).toBeHidden();
   expect(await page.evaluate(() => window.__zoo!.app.target_kind())).toBe('');
   expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]); // never a request to the advertiser (ADC1-005)
   await page.screenshot({ path: path.join(shots, 'ads-placeholder.png') });
@@ -141,29 +141,29 @@ test.describe('signed campaigns (test build)', () => {
     expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 1: 'mathfighter', 2: 'abcsmash', 3: 'edugamegalaxy' });
     const mf = (await boards(page)).find((b) => b.slot === 1)!;
     await standAt(page, mf);
-    await expect(page.locator('#ad-panel')).toBeVisible();
-    await expect(page.locator('#ad-image')).toBeVisible();
-    await expect(page.locator('#ad-tagline')).toHaveText('Lerne Mathe in einem lustigen Turnier');
-    expect(await page.locator('#ad-image').getAttribute('src')).toMatch(/^blob:/);
+    await expect(page.locator('#zb-panel')).toBeVisible();
+    await expect(page.locator('#zb-image')).toBeVisible();
+    await expect(page.locator('#zb-tagline')).toHaveText('Lerne Mathe in einem lustigen Turnier');
+    expect(await page.locator('#zb-image').getAttribute('src')).toMatch(/^blob:/);
     await page.screenshot({ path: path.join(shots, 'ads-panel.png') });
     // no request to the campaign host before the click (ADC1-005); only own same-origin ads files
     expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]);
-    expect(requests.filter((u) => /\/ads\//.test(u)).every((u) => new URL(u).origin === new URL(page.url()).origin)).toBe(true);
+    expect(requests.filter((u) => /\/boards\//.test(u)).every((u) => new URL(u).origin === new URL(page.url()).origin)).toBe(true);
     // link button >= 64 px with the host as text
-    const link = page.locator('#ad-link');
+    const link = page.locator('#zb-link');
     const box = (await link.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(64);
     expect(box.width).toBeGreaterThanOrEqual(64);
-    await expect(page.locator('#ad-link-text')).toHaveText('mathfighter.rcms.ch');
+    await expect(page.locator('#zb-link-text')).toHaveText('mathfighter.rcms.ch');
     // the gate comes first; nothing opens yet
     await link.click();
-    await expect(page.locator('#ad-gate')).toBeVisible();
+    await expect(page.locator('#zb-gate')).toBeVisible();
     expect(await opens(page)).toEqual([]);
     // the sum: the right answer, then 2 s of holding
-    const q = (await page.locator('#ad-gate-question').textContent())!;
+    const q = (await page.locator('#zb-gate-question').textContent())!;
     const answer = gateAnswer(q);
-    await page.locator('.ad-choice', { hasText: new RegExp(`^${answer}$`) }).click();
-    const hold = page.locator('#ad-hold');
+    await page.locator('.zb-choice', { hasText: new RegExp(`^${answer}$`) }).click();
+    const hold = page.locator('#zb-hold');
     await expect(hold).toBeVisible();
     const hb = (await hold.boundingBox())!;
     // releasing early opens nothing
@@ -172,16 +172,16 @@ test.describe('signed campaigns (test build)', () => {
     await page.waitForTimeout(1200);
     await page.mouse.up();
     expect(await opens(page)).toEqual([]);
-    await expect(page.locator('#ad-gate')).toBeVisible();
+    await expect(page.locator('#zb-gate')).toBeVisible();
     // holding for 2 s opens the link exactly once, in a new tab without opener
     await page.mouse.down();
     // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
-    await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 8000 });
     expect(await opens(page)).toEqual([]);
     await page.mouse.up();
     await page.waitForTimeout(500);
     expect(await opens(page)).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
-    await expect(page.locator('#ad-gate')).toBeHidden();
+    await expect(page.locator('#zb-gate')).toBeHidden();
     expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]); // the game itself never calls it
   });
 
@@ -191,22 +191,22 @@ test.describe('signed campaigns (test build)', () => {
     await settled(page);
     const mf = (await boards(page)).find((b) => b.slot === 1)!;
     await standAt(page, mf);
-    await page.locator('#ad-link').click();
-    const q = (await page.locator('#ad-gate-question').textContent())!;
+    await page.locator('#zb-link').click();
+    const q = (await page.locator('#zb-gate-question').textContent())!;
     const answer = gateAnswer(q);
-    const wrong = page.locator('.ad-choice').filter({ hasNotText: new RegExp(`^${answer}$`) }).first();
+    const wrong = page.locator('.zb-choice').filter({ hasNotText: new RegExp(`^${answer}$`) }).first();
     await wrong.click();
-    await expect(page.locator('#ad-gate')).toBeHidden();
+    await expect(page.locator('#zb-gate')).toBeHidden();
     expect(await opens(page)).toEqual([]);
     // the cancel button of a new gate
-    await page.locator('#ad-link').click();
-    await page.locator('#ad-gate .ad-x').click();
-    await expect(page.locator('#ad-gate')).toBeHidden();
+    await page.locator('#zb-link').click();
+    await page.locator('#zb-gate .zb-x').click();
+    await expect(page.locator('#zb-gate')).toBeHidden();
     // Esc closes the panel, which stays closed until the player walks away and comes back
     await page.keyboard.press('Escape');
-    await expect(page.locator('#ad-panel')).toBeHidden();
+    await expect(page.locator('#zb-panel')).toBeHidden();
     await nextFrames(page, 3);
-    await expect(page.locator('#ad-panel')).toBeHidden();
+    await expect(page.locator('#zb-panel')).toBeHidden();
     expect(await opens(page)).toEqual([]);
   });
 
@@ -216,30 +216,31 @@ test.describe('signed campaigns (test build)', () => {
     await settled(page);
     const abc = (await boards(page)).find((b) => b.slot === 2)!;
     await standAt(page, abc);
-    await expect(page.locator('#ad-tagline')).toHaveText('Lesen lernen – flüssig und schnell');
-    await expect(page.locator('#ad-link-text')).toHaveText('abcsmash.rcms.ch');
-    expect(await page.locator('#ad-image').getAttribute('data-path')).toContain('abcsmash-de');
+    await expect(page.locator('#zb-tagline')).toHaveText('Lesen lernen – flüssig und schnell');
+    await expect(page.locator('#zb-link-text')).toHaveText('abcsmash.rcms.ch');
+    expect(await page.locator('#zb-image').getAttribute('data-path')).toContain('abcsmash-de');
     await page.evaluate(() => window.__zoo!.app.set_language('en'));
-    await expect(page.locator('#ad-tagline')).toHaveText('Learn to read – fluent and fast');
-    expect(await page.locator('#ad-image').getAttribute('data-path')).toContain('abcsmash-en');
+    await nextFrames(page, 5); // the host re-renders in its next frame (slow software GL under load)
+    await expect(page.locator('#zb-tagline')).toHaveText('Learn to read – fluent and fast');
+    expect(await page.locator('#zb-image').getAttribute('data-path')).toContain('abcsmash-en');
     await page.evaluate(() => window.__zoo!.app.set_reading_level('kiga'));
-    await expect(page.locator('#ad-tagline')).toHaveCount(0);
-    await expect(page.locator('#ad-image')).toBeVisible();
+    await expect(page.locator('#zb-tagline')).toHaveCount(0);
+    await expect(page.locator('#zb-image')).toBeVisible();
     await page.evaluate(() => window.__zoo!.app.set_reading_level('klasse2'));
-    await page.locator('#ad-link').click();
+    await page.locator('#zb-link').click();
     // ABC Smash asks a language question (ADS-025): the right German article, e.g. "… Gabel" → die
-    const q = (await page.locator('#ad-gate-question').textContent())!;
+    const q = (await page.locator('#zb-gate-question').textContent())!;
     const plurals: Record<string, string> = { mouse: 'mice', child: 'children', foot: 'feet', man: 'men', tooth: 'teeth', goose: 'geese' };
     const one = /one (\S+),/.exec(q)?.[1];
     const noun = one ?? /… (\S+)/.exec(q)![1];
     const article = one ? plurals[one] : ({ Gabel: 'die', Löffel: 'der', Messer: 'das', Tisch: 'der', Lampe: 'die', Haus: 'das', Hund: 'der', Katze: 'die', Buch: 'das', Ball: 'der', Schule: 'die', Auto: 'das', Apfel: 'der', Blume: 'die', Fenster: 'das', Stuhl: 'der' } as Record<string, string>)[noun];
     expect(article, `noun ${noun}`).toBeTruthy();
-    await page.locator('.ad-choice', { hasText: new RegExp(`^${article}$`) }).click();
-    const hb = (await page.locator('#ad-hold').boundingBox())!;
+    await page.locator('.zb-choice', { hasText: new RegExp(`^${article}$`) }).click();
+    const hb = (await page.locator('#zb-hold').boundingBox())!;
     await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
     await page.mouse.down();
     // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
-    await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 8000 });
     expect(await opens(page)).toEqual([]);
     await page.mouse.up();
     expect(await opens(page)).toEqual([['https://abcsmash.rcms.ch/', '_blank', 'noopener,noreferrer']]);
@@ -252,25 +253,25 @@ test.describe('signed campaigns (test build)', () => {
     await settled(page);
     const edu = (await boards(page)).find((b) => b.slot === 3)!;
     await standAt(page, edu);
-    await expect(page.locator('#ad-panel')).toBeVisible();
-    await expect(page.locator('#ad-tagline')).toHaveText('Effizient und mit Spaß lernen – für den Erfolg im Leben');
-    await expect(page.locator('#ad-link-text')).toHaveText('edugamegalaxy.rcms.ch');
-    expect(await page.locator('#ad-image').getAttribute('data-path')).toContain('edugamegalaxy-de');
+    await expect(page.locator('#zb-panel')).toBeVisible();
+    await expect(page.locator('#zb-tagline')).toHaveText('Effizient und mit Spaß lernen – für den Erfolg im Leben');
+    await expect(page.locator('#zb-link-text')).toHaveText('edugamegalaxy.rcms.ch');
+    expect(await page.locator('#zb-image').getAttribute('data-path')).toContain('edugamegalaxy-de');
     await page.evaluate(() => window.__zoo!.app.set_language('en'));
-    await expect(page.locator('#ad-tagline')).toHaveText('Learn efficiently and with fun – for success in life');
-    expect(await page.locator('#ad-image').getAttribute('data-path')).toContain('edugamegalaxy-en');
+    await expect(page.locator('#zb-tagline')).toHaveText('Learn efficiently and with fun – for success in life');
+    expect(await page.locator('#zb-image').getAttribute('data-path')).toContain('edugamegalaxy-en');
     await page.evaluate(() => window.__zoo!.app.set_reading_level('kiga'));
-    await expect(page.locator('#ad-tagline')).toHaveCount(0);
+    await expect(page.locator('#zb-tagline')).toHaveCount(0);
     await page.evaluate(() => window.__zoo!.app.set_reading_level('klasse2'));
     expect(requests.filter((u) => /rcms\.ch/.test(u))).toEqual([]); // ADC3-004
-    await page.locator('#ad-link').click();
-    const q = (await page.locator('#ad-gate-question').textContent())!;
-    await page.locator('.ad-choice', { hasText: new RegExp(`^${gateAnswer(q)}$`) }).click();
-    const hb = (await page.locator('#ad-hold').boundingBox())!;
+    await page.locator('#zb-link').click();
+    const q = (await page.locator('#zb-gate-question').textContent())!;
+    await page.locator('.zb-choice', { hasText: new RegExp(`^${gateAnswer(q)}$`) }).click();
+    const hb = (await page.locator('#zb-hold').boundingBox())!;
     await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
     await page.mouse.down();
     // full hold: the ✔ shows, nothing opened yet (a timer is no user gesture); the RELEASE opens it (ADS-030)
-    await expect(page.locator('#ad-hold.ready')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 8000 });
     expect(await opens(page)).toEqual([]);
     await page.mouse.up();
     expect(await opens(page)).toEqual([['https://edugamegalaxy.rcms.ch/', '_blank', 'noopener,noreferrer']]);
@@ -290,7 +291,7 @@ test.describe('signed campaigns (test build)', () => {
     expect(await page.evaluate(() => window.__zoo!.ads.state().campaigns)).toEqual({ 1: 'mathfighter', 2: 'abcsmash' });
     const third = (await boards(page)).find((b) => b.slot === 3)!;
     await standAt(page, third);
-    await expect(page.locator('#ad-panel')).toBeHidden();
+    await expect(page.locator('#zb-panel')).toBeHidden();
     expect(await page.evaluate(() => window.__zoo!.app.target_kind())).toBe('');
     expect(await page.evaluate((id) => window.__zoo!.app.decal_drawn(`ad:${id}`), third.id)).toBe(true);
   });
@@ -303,10 +304,10 @@ test.describe('signed campaigns (test build)', () => {
     const st = await page.evaluate(() => window.__zoo!.ads.state());
     expect(st.loaded).toBe(false);
     expect(st.campaigns).toEqual({});
-    expect(requests.filter((u) => /\/ads\/img\//.test(u))).toEqual([]); // no image fetched
+    expect(requests.filter((u) => /\/boards\/img\//.test(u))).toEqual([]); // no image fetched
     const mf = (await boards(page))[0];
     await standAt(page, mf);
-    await expect(page.locator('#ad-panel')).toBeHidden();
+    await expect(page.locator('#zb-panel')).toBeHidden();
   });
 
   test('ADS-021 a tampered image drops its campaign, the others still show', async ({ page }) => {
@@ -326,5 +327,214 @@ test.describe('signed campaigns (test build)', () => {
     await start(page); // no ?adkey=: only the compiled production key is trusted
     await settled(page);
     expect(await page.evaluate(() => window.__zoo!.ads.state().loaded)).toBe(false);
+  });
+});
+
+// ADS-043..045: the browser / an ad blocker hides the ad UI by name (EasyList generic cosmetic filters hide
+// `#ad-panel`, `.ad-body`, … with `display:none !important`). The shipped UI uses neutral names; if a view is
+// hidden anyway, it is forced back, and if that fails too a native <dialog> (random id, inline styles) takes over.
+test.describe('hidden by the browser (test build)', () => {
+  test.skip(!TEST_BUILD, 'needs E2E_DIST=dist-adtest (?adkey= test hook)');
+
+  /** A "blocker" that sets `display:none !important` inline again and again on the named views. */
+  const stubbornBlocker = (page: Page, ids: string[]) =>
+    page.addInitScript((names) => {
+      setInterval(() => {
+        for (const id of names) document.getElementById(id)?.style.setProperty('display', 'none', 'important');
+      }, 5);
+    }, ids);
+
+  async function openGate(page: Page, hiddenIds: string[]): Promise<void> {
+    await serveAds(page, fixtureFiles(), []);
+    await stubbornBlocker(page, hiddenIds);
+    await start(page, `&adkey=${encodeURIComponent(PUB)}`);
+    await settled(page);
+    await standAt(page, (await boards(page)).find((b) => b.slot === 1)!);
+  }
+
+  async function passGateInDialog(page: Page): Promise<void> {
+    const dlg = page.locator('dialog[open]');
+    await expect(dlg).toBeVisible({ timeout: 5000 });
+    expect(await dlg.getAttribute('id')).toMatch(/^q[a-z0-9]{6,}$/);
+    const q = (await dlg.locator('div').filter({ hasText: /^\d+ [+−] \d+ = \?$/ }).first().textContent())!;
+    await dlg.locator('button', { hasText: new RegExp(`^${gateAnswer(q)}$`) }).click();
+    const hold = dlg.locator('button', { hasText: '✋' });
+    await expect(hold).toBeVisible();
+    const hb = (await hold.boundingBox())!;
+    await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+    await page.mouse.down();
+    await expect(dlg.locator('button', { hasText: '✔' })).toBeVisible({ timeout: 8000 });
+    expect(await opens(page)).toEqual([]); // the timer is no user gesture: nothing opened before the release
+    await page.mouse.up();
+    await page.waitForTimeout(500);
+  }
+
+  test('ADS-044 a stylesheet that hides the panel with !important is overridden and the block is reported', async ({ page }) => {
+    await serveAds(page, fixtureFiles(), []);
+    await page.addInitScript(() => {
+      document.addEventListener('DOMContentLoaded', () => {
+        const st = document.createElement('style');
+        st.textContent = '#zb-panel{display:none!important}';
+        document.documentElement.append(st);
+      });
+    });
+    await start(page, `&adkey=${encodeURIComponent(PUB)}`);
+    await settled(page);
+    await standAt(page, (await boards(page)).find((b) => b.slot === 1)!);
+    await expect(page.locator('#zb-link')).toBeVisible({ timeout: 5000 });
+    const d = await page.evaluate(() => window.__zoo!.adsDebug!() as { verdict: string; blocked: string[]; views: Record<string, { ok: boolean }> });
+    expect(d.verdict).toBe('blocked by browser/ad blocker (suspected)');
+    expect(d.blocked.some((b) => b.includes('#zb-panel') && b.includes('hidden by the browser'))).toBe(true);
+  });
+
+  test('ADS-045 the panel is kept hidden: a native dialog shows the picture and the link, behind the parental gate', async ({ page }) => {
+    await openGate(page, ['zb-panel']);
+    const dlg = page.locator('dialog[open]');
+    await expect(dlg).toBeVisible({ timeout: 5000 });
+    await expect(dlg.locator('img')).toBeVisible();
+    expect(await dlg.locator('img').getAttribute('src')).toMatch(/^blob:/);
+    await dlg.locator('button', { hasText: 'mathfighter.rcms.ch' }).click(); // the card's link starts the gate
+    expect(await opens(page)).toEqual([]);
+    await passGateInDialog(page);
+    expect(await opens(page)).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+    const d = await page.evaluate(() => window.__zoo!.adsDebug!() as { blocked: string[] });
+    expect(d.blocked.join('\n')).toContain('#zb-panel');
+  });
+
+  test('ADS-045 the gate view is kept hidden: the gate runs inside a native dialog and the link still opens only after it', async ({ page }) => {
+    await openGate(page, ['zb-gate']);
+    await expect(page.locator('#zb-link')).toBeVisible();
+    await page.locator('#zb-link').click();
+    await passGateInDialog(page);
+    expect(await opens(page)).toEqual([['https://mathfighter.rcms.ch/', '_blank', 'noopener,noreferrer']]);
+    const d = await page.evaluate(() => window.__zoo!.adsDebug!() as { blocked: string[] });
+    expect(d.blocked.join('\n')).toContain('#zb-gate');
+  });
+
+  test('ADS-045 a wrong answer in the dialog gate closes it and opens nothing', async ({ page }) => {
+    await openGate(page, ['zb-panel']);
+    const dlg = page.locator('dialog[open]');
+    await dlg.locator('button', { hasText: 'mathfighter.rcms.ch' }).click();
+    const q = (await dlg.locator('div').filter({ hasText: /^\d+ [+−] \d+ = \?$/ }).first().textContent())!;
+    await dlg.locator('button').filter({ hasNotText: new RegExp(`^(${gateAnswer(q)}|✖)$`) }).first().click();
+    await expect(page.locator('dialog[open]')).toHaveCount(0);
+    expect(await opens(page)).toEqual([]);
+  });
+
+  test('ADS-043 the DOM of the open panel, gate and debug overlay has no ad-blocker word in any id, class or data attribute', async ({ page }) => {
+    await serveAds(page, fixtureFiles(), []);
+    await start(page, `&adkey=${encodeURIComponent(PUB)}&boarddebug=1`);
+    await settled(page);
+    await standAt(page, (await boards(page)).find((b) => b.slot === 2)!);
+    await expect(page.locator('#zb-dbg')).toBeVisible(); // ?boarddebug=1 is the neutral alias
+    await expect(page.locator('#zb-dbg')).toContainText('no interference detected');
+    await page.locator('#zb-dbg-close').click();
+    await expect(page.locator('#zb-link')).toBeVisible();
+    await page.locator('#zb-link').click();
+    await expect(page.locator('#zb-gate')).toBeVisible();
+    await page.locator('#zb-dbg-chip').evaluate((e) => e.id); // the chip exists, overlay closed
+    const names = await page.evaluate(() => {
+      const out: string[] = [];
+      // the ad UI only (zb-* subtrees and the rescue dialog); other parts of the game have their own names
+      for (const e of document.querySelectorAll('[id^="zb-"], [id^="zb-"] *, dialog, dialog *')) {
+        if (e.id) out.push(e.id);
+        e.classList.forEach((c) => out.push(c));
+        for (const a of e.getAttributeNames()) if (a.startsWith('data-')) out.push(a, e.getAttribute(a) ?? '');
+      }
+      return out;
+    });
+    expect(names.length).toBeGreaterThan(10);
+    for (const n of names) expect(n, n).not.toMatch(/(^|[^a-z])ads?([^a-z]|$)|advert|banner|sponsor|promo/i);
+    const requests: string[] = [];
+    page.on('request', (r) => requests.push(r.url()));
+    await page.reload();
+    await waitFrames(page, 3);
+    for (const u of requests) expect(u, u).not.toMatch(/(^|[^a-z])ads?([^a-z]|$)|advert|banner|sponsor|promo/i);
+  });
+});
+
+// ADS-049: the link behind the gate depends on the platform (iOS/macOS -> App Store, Android -> Play Store,
+// everything else -> web); the host on the panel button is the chosen link's host.
+test.describe('platform links (test build)', () => {
+  test.skip(!TEST_BUILD, 'needs E2E_DIST=dist-adtest (?adkey= test hook)');
+
+  const UAS: Record<string, { ua: string; noUaData: boolean; expectLink: string; host: string }> = {
+    iphone: { ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1', noUaData: true, expectLink: 'https://apps.apple.com/app/id6760628828', host: 'apps.apple.com' },
+    'ipad-desktop-mode': { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15', noUaData: true, expectLink: 'https://apps.apple.com/app/id6760628828', host: 'apps.apple.com' },
+    'mac-chrome': { ua: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36', noUaData: true, expectLink: 'https://apps.apple.com/app/id6760628828', host: 'apps.apple.com' },
+    pixel: { ua: 'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36', noUaData: true, expectLink: 'https://play.google.com/store/apps/details?id=com.mathfighter.app', host: 'play.google.com' },
+    'samsung-internet': { ua: 'Mozilla/5.0 (Linux; Android 13; SAMSUNG SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/24.0 Chrome/117.0.0.0 Mobile Safari/537.36', noUaData: true, expectLink: 'https://play.google.com/store/apps/details?id=com.mathfighter.app', host: 'play.google.com' },
+    windows: { ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36', noUaData: true, expectLink: 'https://mathfighter.rcms.ch/', host: 'mathfighter.rcms.ch' },
+    linux: { ua: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36', noUaData: true, expectLink: 'https://mathfighter.rcms.ch/', host: 'mathfighter.rcms.ch' },
+    unknown: { ua: 'SomeUnknownBrowser/1.0', noUaData: true, expectLink: 'https://mathfighter.rcms.ch/', host: 'mathfighter.rcms.ch' },
+  };
+
+  for (const [name, c] of Object.entries(UAS)) {
+    test(`ADS-049 ${name}: the button shows ${c.host} and the gate opens ${c.expectLink}`, async ({ browser }) => {
+      const ctx = await browser.newContext({ userAgent: c.ua, viewport: { width: 1280, height: 720 } });
+      const page = await ctx.newPage();
+      if (c.noUaData) await page.addInitScript(() => Object.defineProperty(navigator, 'userAgentData', { value: undefined, configurable: true })); // real Safari / old browsers have none
+      await serveAds(page, fixtureFiles(), []);
+      await start(page, `&adkey=${encodeURIComponent(PUB)}`);
+      await settled(page);
+      await standAt(page, (await boards(page)).find((b) => b.slot === 1)!);
+      await expect(page.locator('#zb-link-text')).toHaveText(c.host);
+      await page.locator('#zb-link').click();
+      const q = (await page.locator('#zb-gate-question').textContent())!;
+      await page.locator('.zb-choice', { hasText: new RegExp(`^${gateAnswer(q)}$`) }).click();
+      const hb = (await page.locator('#zb-hold').boundingBox())!;
+      await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+      await page.mouse.down();
+      await expect(page.locator('#zb-hold.ready')).toBeVisible({ timeout: 8000 });
+      await page.mouse.up();
+      await page.waitForTimeout(400);
+      expect(await opens(page)).toEqual([[c.expectLink, '_blank', 'noopener,noreferrer']]);
+      await ctx.close();
+    });
+  }
+
+  test('ADS-049 a campaign without store links (EduGameGalaxy) opens the web link on iOS and Android; ?platform= overrides; the debug panel shows platform and host', async ({ page }) => {
+    await serveAds(page, fixtureFiles(), []);
+    await start(page, `&adkey=${encodeURIComponent(PUB)}&platform=android`);
+    await settled(page);
+    await standAt(page, (await boards(page)).find((b) => b.slot === 3)!);
+    await expect(page.locator('#zb-link-text')).toHaveText('edugamegalaxy.rcms.ch');
+    const d = await page.evaluate(() => window.__zoo!.adsDebug!() as { platform: { platform: string; source: string }; linkHosts: Record<string, string> });
+    expect(d.platform).toEqual({ platform: 'android', source: 'param' });
+    expect(d.linkHosts['mathfighter#1']).toBe('play.google.com');
+    expect(d.linkHosts['abcsmash#2']).toBe('play.google.com');
+    expect(d.linkHosts['edugamegalaxy#3']).toBe('edugamegalaxy.rcms.ch');
+  });
+});
+
+// ADS-050 / CART-008: nothing of the ad flow over the driving view.
+test.describe('seated in a golf cart (test build)', () => {
+  test.skip(!TEST_BUILD, 'needs E2E_DIST=dist-adtest (?adkey= test hook)');
+
+  test('ADS-050 boarding closes the panel and the gate; while seated no panel, chip, gate or carousel; getting out brings the panel back', async ({ page }) => {
+    await serveAds(page, fixtureFiles(), []);
+    await start(page, `&adkey=${encodeURIComponent(PUB)}`);
+    await settled(page);
+    await standAt(page, (await boards(page)).find((b) => b.slot === 1)!);
+    await expect(page.locator('#zb-panel')).toBeVisible();
+    await page.locator('#zb-link').click();
+    await expect(page.locator('#zb-gate')).toBeVisible();
+    // the cart state comes from the WASM `driving()`; the cart itself is covered by cart.spec.ts (CART-008)
+    await page.evaluate(() => {
+      (window.__zoo!.app as unknown as { driving: () => boolean }).driving = () => true;
+    });
+    await nextFrames(page, 4);
+    await expect(page.locator('#zb-gate')).toBeHidden();
+    await expect(page.locator('#zb-panel')).toBeHidden();
+    await expect(page.locator('#zb-act')).toBeHidden();
+    expect(await page.evaluate(() => window.__zoo!.ads.interact())).toBe(false);
+    expect(await page.evaluate(() => window.__zoo!.ads.openCarousel())).toBe(false);
+    expect(await opens(page)).toEqual([]);
+    await page.evaluate(() => {
+      delete (window.__zoo!.app as unknown as { driving?: () => boolean }).driving;
+    });
+    await nextFrames(page, 4);
+    await expect(page.locator('#zb-panel')).toBeVisible(); // out of the cart in front of the board
   });
 });

@@ -15,6 +15,8 @@ import {
   type AdContent,
   type VerifiedCampaign,
   checkLink,
+  checkStoreLink,
+  linkFor,
   checkTagline,
   GATE_HOLD_MS,
   imageInfo,
@@ -34,11 +36,11 @@ import {
   VERSION_KEY,
   type LoadOptions,
 } from './ads';
-import { adsDebugEnabled, adsTelemetry, logAdError, logAdEvent } from './ads-debug';
+import { adsDebugEnabled, adsTelemetry, BLOCKED_VERDICT, logAdError, logAdEvent, logBlocked } from './ads-debug';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixtures = path.resolve(here, '../tests/fixtures/ads');
-const adsDir = path.join(fixtures, 'ads');
+const adsDir = path.join(fixtures, 'boards');
 const seed = b64decode(fs.readFileSync(path.join(fixtures, 'TEST-ONLY-private.key'), 'utf8'))!;
 const pub = b64decode(fs.readFileSync(path.join(fixtures, 'TEST-ONLY-public.key'), 'utf8'))!;
 const DOMAIN = new TextEncoder().encode(`${AD_FORMAT}\n`);
@@ -65,7 +67,7 @@ type Json = Record<string, unknown>;
 
 /** The fixture manifest (signed by tools/ads/sign.py) as an editable object. */
 function fixtureManifest(): { campaigns: { id: string; link: string; tagline: Json; images: Img[]; [k: string]: unknown }[]; [k: string]: unknown } {
-  return JSON.parse(fs.readFileSync(path.join(adsDir, 'campaigns.json'), 'utf8'));
+  return JSON.parse(fs.readFileSync(path.join(adsDir, 'index.json'), 'utf8'));
 }
 
 interface Served {
@@ -73,13 +75,13 @@ interface Served {
   requests: string[];
 }
 
-/** A fake same-origin server: `ads/…` paths → bytes. */
+/** A fake same-origin server: `boards/…` paths → bytes. */
 function server(manifest: unknown, opts: { key?: Uint8Array; tamper?: Record<string, Uint8Array>; rawBody?: Uint8Array; sig?: string } = {}): Promise<Served> {
   const body = opts.rawBody ?? new TextEncoder().encode(JSON.stringify(manifest));
   return sign(body, opts.key ?? seed).then((sig) => {
     const files = new Map<string, Uint8Array>();
-    files.set('campaigns.json', body);
-    files.set('campaigns.sig', new TextEncoder().encode(opts.sig ?? sig));
+    files.set('index.json', body);
+    files.set('index.sig', new TextEncoder().encode(opts.sig ?? sig));
     for (const f of fs.readdirSync(path.join(adsDir, 'img'))) files.set(`img/${f}`, read(`img/${f}`));
     for (const [k, v] of Object.entries(opts.tamper ?? {})) files.set(k, v);
     return { files, requests: [] };
@@ -89,13 +91,13 @@ function server(manifest: unknown, opts: { key?: Uint8Array; tamper?: Record<str
 function options(s: Served, extra: Partial<LoadOptions> = {}): LoadOptions {
   const mem = new Map<string, string>();
   return {
-    base: 'ads/',
+    base: 'boards/',
     keys: [pub],
     now: NOW,
     store: { getItem: (k) => mem.get(k) ?? null, setItem: (k, v) => void mem.set(k, v) },
     fetchFn: async (url) => {
       s.requests.push(url);
-      const f = s.files.get(url.replace(/^ads\//, ''));
+      const f = s.files.get(url.replace(/^boards\//, ''));
       if (!f) return new Response(null, { status: 404 });
       return new Response(f as BufferSource, { status: 200 });
     },
@@ -126,8 +128,8 @@ describe('language gate of the reading campaign (ADS-025)', () => {
 
 describe('no Web Crypto (plain http on the LAN, ADS-024)', () => {
   it('ADS-024 signature and SHA-256 give the same results with the pure-JS fallback', async () => {
-    const body = read('campaigns.json');
-    const sig = fs.readFileSync(path.join(adsDir, 'campaigns.sig'), 'utf8');
+    const body = read('index.json');
+    const sig = fs.readFileSync(path.join(adsDir, 'index.sig'), 'utf8');
     const withSubtle = await sha256Hex(body);
     vi.stubGlobal('crypto', {}); // insecure context: no crypto.subtle
     try {
@@ -142,10 +144,37 @@ describe('no Web Crypto (plain http on the LAN, ADS-024)', () => {
   });
 });
 
+describe('broken Web Crypto (old / odd Chromium such as Samsung Internet, ADS-046)', () => {
+  it('ADS-046 crypto.subtle that throws on digest still verifies the signature and hashes (pure-JS retry), and the attempts are recorded', async () => {
+    const body = read('index.json');
+    const sig = fs.readFileSync(path.join(adsDir, 'index.sig'), 'utf8');
+    const expected = await sha256Hex(body);
+    vi.stubGlobal('crypto', { subtle: { digest: () => Promise.reject(new DOMException('not supported', 'NotSupportedError')) } });
+    try {
+      expect(await verifySignature(body, sig, [pub])).toBe(true);
+      expect(adsTelemetry.sig.verifier).toBe('js');
+      expect(adsTelemetry.sig.tries?.[0]).toContain('subtle: threw');
+      expect(adsTelemetry.sig.tries?.at(-1)).toBe('js: ok');
+      expect(await sha256Hex(body)).toBe(expected);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('ADS-046 a subtle path that wrongly answers false is retried in pure JS (still false for a tampered body)', async () => {
+    const body = read('index.json');
+    const sig = fs.readFileSync(path.join(adsDir, 'index.sig'), 'utf8');
+    const tampered = new Uint8Array(body);
+    tampered[10] ^= 1;
+    expect(await verifySignature(tampered, sig, [pub])).toBe(false);
+    expect(adsTelemetry.sig.tries).toEqual(['subtle: false', 'js: false']);
+  });
+});
+
 describe('signature (ADS-008, ADS-009)', () => {
   it('ADS-008 the manifest signed by tools/ads/sign.py verifies and parses', async () => {
-    const body = read('campaigns.json');
-    const sig = fs.readFileSync(path.join(adsDir, 'campaigns.sig'), 'utf8');
+    const body = read('index.json');
+    const sig = fs.readFileSync(path.join(adsDir, 'index.sig'), 'utf8');
     expect(await verifySignature(body, sig, [pub])).toBe(true);
     const m = parseManifest(body, NOW, 0);
     expect(m.campaigns.map((c) => c.id)).toEqual(['mathfighter', 'abcsmash', 'edugamegalaxy']);
@@ -161,8 +190,8 @@ describe('signature (ADS-008, ADS-009)', () => {
   });
 
   it('ADS-009 a wrong key, a changed byte, a changed signature and a missing domain prefix are rejected', async () => {
-    const body = read('campaigns.json');
-    const sig = fs.readFileSync(path.join(adsDir, 'campaigns.sig'), 'utf8');
+    const body = read('index.json');
+    const sig = fs.readFileSync(path.join(adsDir, 'index.sig'), 'utf8');
     const other = ed.utils.randomSecretKey();
     const otherPub = await ed.getPublicKeyAsync(other);
     expect(await verifySignature(body, sig, [otherPub])).toBe(false);
@@ -180,7 +209,7 @@ describe('signature (ADS-008, ADS-009)', () => {
   it('ADS-009 a manifest signed with the wrong key yields no content', async () => {
     const s = await server(fixtureManifest(), { key: ed.utils.randomSecretKey() });
     expect(await loadAds(options(s))).toBeNull();
-    expect(s.requests.some((r) => r.startsWith('ads/img/'))).toBe(false); // no image is even fetched
+    expect(s.requests.some((r) => r.startsWith('boards/img/'))).toBe(false); // no image is even fetched
   });
 
   it('ADS-009 a rotated second key is accepted, an unknown one is not', async () => {
@@ -220,7 +249,7 @@ describe('manifest rules (ADS-010, ADS-011)', () => {
   });
 
   it('ADS-011 an expired manifest and one issued in the future are refused', () => {
-    const body = read('campaigns.json');
+    const body = read('index.json');
     expect(() => parseManifest(body, Date.parse('2200-01-01T00:00:00Z'), 0)).toThrow(/expired/);
     expect(() => parseManifest(body, Date.parse('2025-06-01T00:00:00Z'), 0)).toThrow(/not-yet-valid/);
     expect(() => parseManifest(body, NOW, 6)).toThrow(/rollback/);
@@ -327,7 +356,7 @@ describe('images (ADS-012, ADS-013, ADS-014)', () => {
   });
 
   it('reads the header of the shipped WebP and PNG files (same numbers as tools/ads/sign.py)', () => {
-    const adsImg = path.resolve(here, '../../ads/img');
+    const adsImg = path.resolve(here, '../../boards/img');
     for (const f of fs.readdirSync(adsImg)) {
       const info = imageInfo(new Uint8Array(fs.readFileSync(path.join(adsImg, f))));
       expect(info, f).not.toBeNull();
@@ -371,7 +400,7 @@ describe('links (ADS-015)', () => {
     ];
     for (const [id, l] of bad) expect(ok(id, l), l).toBeNull();
     expect(checkLink('mathfighter', 42)).toBeNull();
-    expect(Object.values(KNOWN_CAMPAIGNS).map((k) => k.host)).toEqual(['mathfighter.rcms.ch', 'abcsmash.rcms.ch', 'edugamegalaxy.rcms.ch']);
+    expect(Object.values(KNOWN_CAMPAIGNS).map((k) => k.host)).toEqual(['mathfighter.rcms.ch', 'abcsmash.rcms.ch', 'edugamegalaxy.rcms.ch', 'apps.apple.com', 'apps.apple.com', 'apps.apple.com']); // + the native-build App Store campaigns (PLAT-038)
   });
 
   it('ADS-015 a manifest with a bad link drops that campaign', () => {
@@ -415,14 +444,14 @@ describe('loader (ADS-004, ADS-017)', () => {
   it('ADS-017 only the manifest, its signature and images of the same directory are requested', async () => {
     const s = await server(fixtureManifest());
     await loadAds(options(s));
-    expect(s.requests.every((u) => u.startsWith('ads/') && !u.includes('//') && !u.includes('?'))).toBe(true);
-    expect(s.requests).toContain('ads/campaigns.json');
-    expect(s.requests).toContain('ads/campaigns.sig');
+    expect(s.requests.every((u) => u.startsWith('boards/') && !u.includes('//') && !u.includes('?'))).toBe(true);
+    expect(s.requests).toContain('boards/index.json');
+    expect(s.requests).toContain('boards/index.sig');
   });
 
   it('ADS-017 a missing file, an HTTP error or a hanging server ends in placeholders within the timeout', async () => {
     const s = await server(fixtureManifest());
-    s.files.delete('campaigns.sig');
+    s.files.delete('index.sig');
     expect(await loadAds(options(s))).toBeNull();
     const s2 = await server(fixtureManifest());
     const hang = options(s2, { timeoutMs: 60, fetchFn: (_u, init) => new Promise((_, rej) => init.signal.addEventListener('abort', () => rej(new Error('abort')))) });
@@ -539,6 +568,7 @@ describe('carousel', () => {
     slot,
     active: true,
     link: `https://${id}.rcms.ch/`,
+    links: {},
     tagline: { de: 'a', en: 'b' },
     images: [
       { lang: 'de', path: `img/${id}-de.png`, mime: 'image/png', bytes: 1, width: 64, height: 64, sha256: '', data: new Uint8Array(1) },
@@ -624,7 +654,83 @@ describe('phone robustness and diagnostics (ADS-038, ADS-039)', () => {
     expect(adsTelemetry.events.length).toBe(30);
     expect(adsDebugEnabled('?adsdebug=1')).toBe(true);
     expect(adsDebugEnabled('?seed=3&adsdebug=1')).toBe(true);
+    expect(adsDebugEnabled('?boarddebug=1')).toBe(true); // ADS-043 neutral alias
     expect(adsDebugEnabled('?adsdebug=0')).toBe(false);
     expect(adsDebugEnabled('')).toBe(false);
+  });
+});
+
+describe('browser / ad-blocker interference (ADS-044)', () => {
+  it('ADS-044 a fetch rejected at network level (ERR_BLOCKED_BY_CLIENT) is recorded as a suspected block with the URL', async () => {
+    adsTelemetry.blocked.length = 0;
+    const s = await server(fixtureManifest());
+    const blocked = options(s, { fetchFn: () => Promise.reject(new TypeError('Failed to fetch')) });
+    expect(await loadAds(blocked)).toBeNull();
+    expect(adsTelemetry.blocked.some((b) => b.includes('request boards/index.json') && b.includes('Failed to fetch'))).toBe(true);
+    expect(adsTelemetry.errors.some((e) => e.includes(BLOCKED_VERDICT))).toBe(true);
+  });
+
+  it('ADS-044 our own timeout abort and an HTTP 404 are not reported as a block', async () => {
+    adsTelemetry.blocked.length = 0;
+    const s = await server(fixtureManifest());
+    await loadAds(options(s, { fetchFn: async () => new Response(null, { status: 404 }) }));
+    expect(adsTelemetry.blocked).toEqual([]);
+    await loadAds(options(s, { timeoutMs: 50, fetchFn: (_u, init) => new Promise((_, rej) => init.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')))) }));
+    expect(adsTelemetry.blocked).toEqual([]);
+  });
+
+  it('ADS-044 logBlocked keeps the last 20 distinct lines', () => {
+    adsTelemetry.blocked.length = 0;
+    for (let i = 0; i < 30; i++) logBlocked(`element #x${i} hidden`);
+    expect(adsTelemetry.blocked.length).toBe(20);
+    expect(adsTelemetry.blocked[19]).toContain('x29');
+  });
+});
+
+describe('store links per platform (ADS-048)', () => {
+  const good = {
+    ios: ['https://apps.apple.com/app/id6760628828', 'https://apps.apple.com/us/app/math-fighter/id6760628828', 'https://itunes.apple.com/app/id6790508038'],
+    android: ['https://play.google.com/store/apps/details?id=com.mathfighter.app', 'https://play.google.com/store/apps/details?id=app.abcshooter.twa'],
+  };
+
+  it('ADS-048 accepts App Store and Play Store product URLs and rebuilds them canonically', () => {
+    for (const u of good.ios) expect(checkStoreLink('ios', u)).toBe(u);
+    for (const u of good.android) expect(checkStoreLink('android', u)).toBe(u);
+  });
+
+  it('ADS-048 rejects http, wrong hosts, javascript:, extra query / fragment / user info / port / paths', () => {
+    const badIos = ['http://apps.apple.com/app/id6760628828', 'https://evil.example/app/id6760628828', 'https://apps.apple.com.evil.example/app/id6760628828', 'javascript:alert(1)', 'https://apps.apple.com/app/id6760628828?ct=x', 'https://apps.apple.com/app/id6760628828#x', 'https://u@apps.apple.com/app/id6760628828', 'https://apps.apple.com:444/app/id6760628828', 'https://apps.apple.com/', 'https://apps.apple.com/app/idabc', 'https://play.google.com/store/apps/details?id=com.mathfighter.app'];
+    for (const u of badIos) expect(checkStoreLink('ios', u), u).toBeNull();
+    const badAndroid = ['http://play.google.com/store/apps/details?id=com.a.b', 'https://evil.example/store/apps/details?id=com.a.b', 'https://play.google.com/store/apps/details?id=com.a.b&referrer=x', 'https://play.google.com/store/apps/details', 'https://play.google.com/store/apps/details?id=nodot', 'https://play.google.com/store/apps/details?id=com.a.b#x', 'javascript:alert(1)', 'https://apps.apple.com/app/id6760628828', 'https://play.google.com/store/search?q=x', 12, null];
+    for (const u of badAndroid) expect(checkStoreLink('android', u), String(u)).toBeNull();
+  });
+
+  it('ADS-048 the manifest keeps valid store links, drops an invalid one (that platform then opens the web link), and stays valid without `links`', async () => {
+    const m = fixtureManifest();
+    expect(m.campaigns[0].links).toEqual({ ios: good.ios[0], android: good.android[0] });
+    const body = (mod: (c: Json) => void) => {
+      const x = fixtureManifest();
+      mod(x.campaigns[0] as Json);
+      return new TextEncoder().encode(JSON.stringify(x));
+    };
+    const bad = parseManifest(body((c) => (c.links = { ios: 'http://apps.apple.com/app/id1234567', android: 'https://evil.example/x' })), NOW, 0);
+    expect(bad.campaigns[0].links).toEqual({});
+    expect(bad.dropped).toEqual([]);
+    const none = parseManifest(body((c) => delete c.links), NOW, 0);
+    expect(none.campaigns[0].links).toEqual({});
+    const c0 = none.campaigns[0];
+    expect(linkFor(c0, 'ios')).toBe(c0.link);
+    expect(linkFor(c0, 'android')).toBe(c0.link);
+    const ok = parseManifest(body(() => undefined), NOW, 0).campaigns[0];
+    expect(linkFor(ok, 'ios')).toBe(good.ios[0]);
+    expect(linkFor(ok, 'android')).toBe(good.android[0]);
+    expect(linkFor(ok, 'web')).toBe('https://mathfighter.rcms.ch/');
+  });
+
+  it('ADS-048 a campaign without store links (EduGameGalaxy) opens the web link on every platform', () => {
+    const e = fixtureManifest().campaigns.find((c) => c.id === 'edugamegalaxy')!;
+    expect(e.links).toBeUndefined();
+    const pm = parseManifest(new TextEncoder().encode(JSON.stringify(fixtureManifest())), NOW, 0).campaigns.find((c) => c.id === 'edugamegalaxy')!;
+    for (const p of ['ios', 'android', 'web'] as const) expect(linkFor(pm, p)).toBe('https://edugamegalaxy.rcms.ch/');
   });
 });

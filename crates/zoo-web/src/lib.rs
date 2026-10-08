@@ -1301,7 +1301,7 @@ impl App {
     /// mouse button. Only from the zoo view; returns whether look-around is now active.
     pub fn look_hold(&mut self, on: bool) -> bool {
         if self.driving {
-            return false; // zoo view only while driving (CAMV-024)
+            return false; // look-around is not available while driving (CAMV-024)
         }
         let facing = views::level_to_yaw(self.game.player.facing);
         match (on, self.camera.mode()) {
@@ -1325,7 +1325,8 @@ impl App {
     /// → zoo. Returns the new view id. Look-around chosen this way stays until the next tap.
     pub fn cycle_view(&mut self) -> String {
         if self.driving {
-            return self.view_mode();
+            // seated: zoo <-> first person only (CAMV-029, no look-around inside the cart)
+            return self.toggle_first_person();
         }
         self.look_held = false;
         match self.camera.mode() {
@@ -1341,9 +1342,6 @@ impl App {
 
     /// Toggles first person (GAME-CAMERA-VIEWS 3; `V`, 👓 button). Returns the new view id.
     pub fn toggle_first_person(&mut self) -> String {
-        if self.driving {
-            return self.view_mode();
-        }
         self.look_held = false;
         let next = if self.camera.mode() == ViewMode::FirstPerson {
             ViewMode::Zoo
@@ -1351,7 +1349,16 @@ impl App {
             ViewMode::FirstPerson
         };
         self.set_view(next);
+        self.face_cart();
         self.view_mode()
+    }
+
+    /// Seated in first person: look along the cart heading (CAMV-024).
+    fn face_cart(&mut self) {
+        if let (Some(i), ViewMode::FirstPerson) = (self.game.seated, self.camera.mode()) {
+            self.camera
+                .face(views::level_to_yaw(self.game.carts[i].dir));
+        }
     }
 
     /// Sets the view by id (`zoo`, `first_person`; restored from the settings at start, no
@@ -2231,6 +2238,12 @@ impl App {
         self.simulate(dt);
 
         let player = player_feet(&self.game);
+        // first person in a golf cart: the eye sits at the driver's seat (CAMV-024/030)
+        let seat_eye = self.game.seated.map(|i| {
+            self.cart_point(i, self.cart_sockets.driver)
+                + Vec3::Y * zoo_core::view::CART_EYE_ABOVE_SEAT_M
+        });
+        self.camera.set_seat_eye(seat_eye);
         self.camera.update(dt, player);
         if let Some(p) = self.look_at {
             self.camera.snap(level_to_world(p));
@@ -3504,8 +3517,8 @@ impl App {
         })
     }
 
-    /// Enters / leaves the driving camera: the zoo view only and 3 m further away; the stored
-    /// view returns afterwards (CAMV-024).
+    /// Enters / leaves the driving camera: 3 m further away (zoo view), look-around becomes the zoo
+    /// view; the view from before boarding returns afterwards (CAMV-024).
     fn sync_driving(&mut self) {
         let seated = self.game.seated.is_some();
         if seated == self.driving {
@@ -3515,7 +3528,8 @@ impl App {
         self.look_held = false;
         if seated {
             self.view_before = Some(self.camera.mode().saved());
-            self.set_view(zoo_core::view::view_while_driving(ViewMode::Zoo, true));
+            self.set_view(zoo_core::view::view_while_driving(self.camera.mode(), true));
+            self.face_cart();
             self.camera
                 .set_extra_distance(zoo_core::view::CART_EXTRA_DISTANCE_M);
         } else {
@@ -3669,9 +3683,9 @@ impl App {
             f32::from(u8::from(k.up)) - f32::from(u8::from(k.down)),
         );
         // first person: the facing is the view direction (CAMV-006)
-        self.game
-            .player
-            .lock_facing(first_person.then(|| self.camera.look_level()));
+        self.game.player.lock_facing(
+            (first_person && self.game.seated.is_none()).then(|| self.camera.look_level()),
+        );
         if kv != Vec2::ZERO {
             stick = kv.normalize();
         }

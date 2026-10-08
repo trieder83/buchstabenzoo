@@ -8,14 +8,18 @@ import {
   GATE_HOLD_MS,
   loadAds,
   ParentalGate,
+  makeGateQuestion,
   makeLanguageGateQuestion,
   pickImage,
+  linkFor,
   type AdContent,
   type KeyValue,
   type LoadOptions,
   type VerifiedCampaign,
 } from './ads';
-import { AdsDebugOverlay, adsDebugEnabled, adsTelemetry, envInfo, logAdError, logAdEvent } from './ads-debug';
+import { AdsDebugOverlay, BLOCKED_VERDICT, adsDebugEnabled, adsTelemetry, envInfo, logAdError, logAdEvent, logBlocked } from './ads-debug';
+import { showRescue, type Rescue } from './ads-rescue';
+import { currentPlatform, type Platform } from './platform';
 import { CREAM, renderTextTexture } from './text';
 
 /** The subset of the WASM `App` the ads need. */
@@ -30,6 +34,8 @@ export interface AdsApp {
   t(key: string): string;
   panel_key(): string;
   target_kind?(): string;
+  /** True while she sits in a golf cart (CART-008: no ad panel, chip, gate or carousel then). */
+  driving?(): boolean;
 }
 
 interface Board {
@@ -51,6 +57,8 @@ export interface AdsHostOptions {
   /** Opens the link (default `window.open` with `noopener,noreferrer`), called once per passed gate. */
   open?: (url: string) => void;
   now?: () => number;
+  /** The platform that picks the store link (default: detected, `?platform=`, native wrapper). */
+  platform?: () => Platform;
   /** Delay before the single retry of a failed load (ms, default 20 s; ADS-029). */
   retryMs?: number;
 }
@@ -64,65 +72,65 @@ export const OPEN_CHECK_MS = 1500;
 export const CLOSE_GUARD_MS = 400;
 
 const STYLE = `
-#ad-panel{position:fixed;left:0;right:0;top:0;z-index:5;display:flex;justify-content:center;pointer-events:none;padding:calc(10px + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
-#ad-panel[hidden],#ad-gate[hidden]{display:none}
-.ad-body{position:relative;box-sizing:border-box;width:min(96vw,900px);pointer-events:auto;padding:10px 12px 12px;border-radius:22px;border:6px solid #3b2314;background:#fff8e7;box-shadow:0 8px 0 rgba(59,35,20,.5);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
-.ad-text{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
-#ad-act{position:fixed;z-index:4;right:calc(24px + env(safe-area-inset-right));bottom:calc(28px + env(safe-area-inset-bottom));width:96px;height:96px;font-size:50px;background:#ffd65c}
-#ad-act[hidden]{display:none}
-.ad-x{position:absolute;right:8px;top:8px;width:64px;height:64px;border-radius:50%;border:4px solid #3b2314;background:#fff;font-size:28px;z-index:1}
-#ad-image{display:block;max-width:calc(100% - 80px);max-height:16vh;max-height:16dvh;border:4px solid #3b2314;border-radius:12px;background:${CREAM}}
-#ad-tagline{margin:0;font-size:max(2.6vh,18px);line-height:1.2;padding:0 70px;font-weight:bold;color:#3b2314}
-#ad-link,.ad-choice,#ad-hold{touch-action:manipulation;min-height:64px;min-width:64px;border-radius:32px;border:5px solid #3b2314;background:#7cc46a;color:#3b2314;font-size:max(2.2vh,17px);font-weight:bold;padding:6px 14px;max-width:100%;box-sizing:border-box;display:inline-flex;gap:12px;align-items:center;justify-content:center;box-shadow:0 5px 0 rgba(59,35,20,.55)}
-#ad-gate{position:fixed;top:0;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(40,25,15,.6);pointer-events:auto}
-.ad-gate-card{position:relative;box-sizing:border-box;width:min(92vw,620px);padding:18px;border-radius:26px;border:6px solid #3b2314;background:#fff8e7;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;font-weight:bold;color:#3b2314;font-size:max(3.2vh,20px)}
-.ad-gate-card h2{margin:0;font-size:1.2em}
-#ad-gate-question{font-size:1.8em}
-.ad-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
-.ad-choice{background:#ffd65c}
-#ad-hold{--p:0;width:150px;height:150px;border-radius:50%;padding:0;font-size:64px;background:conic-gradient(#e8604c calc(var(--p) * 360deg),#fff 0);touch-action:none;user-select:none}
-#ad-hold span{display:flex;width:112px;height:112px;border-radius:50%;background:#ffd65c;align-items:center;justify-content:center;pointer-events:none}
-#ad-hold,#ad-gate{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
-#ad-open{min-height:72px;max-width:100%;box-sizing:border-box;border-radius:36px;border:5px solid #3b2314;background:#7cc46a;color:#3b2314;font-size:max(2.6vh,19px);font-weight:bold;padding:8px 22px;display:inline-flex;gap:12px;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 5px 0 rgba(59,35,20,.55)}
-#ad-fallback{position:fixed;z-index:9;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);box-sizing:border-box;width:min(92vw,520px);padding:12px;border-radius:22px;border:6px solid #3b2314;background:#fff8e7;color:#3b2314;font-weight:bold;font-size:max(2.2vh,17px);text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:auto;touch-action:manipulation}
-#ad-fallback[hidden]{display:none}
-.ad-open-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
-#ad-dbg-chip{position:fixed;z-index:98;left:6px;bottom:6px;width:56px;height:56px;border-radius:50%;border:3px solid #fff;background:#2d5a3a;color:#fff;font:bold 16px monospace;opacity:.85}
-#ad-carousel{position:fixed;left:0;right:0;top:0;z-index:5;display:flex;justify-content:center;pointer-events:none;padding:calc(10px + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
-#ad-carousel[hidden]{display:none}
-#ad-car-title{margin:0;padding:0 70px;font-size:max(2.8vh,18px);line-height:1.2;color:#3b2314}
-#ad-car-image{display:block;max-width:100%;max-height:30vh;max-height:30dvh;border:4px solid #3b2314;border-radius:12px;background:${CREAM};cursor:pointer;touch-action:pan-y;-webkit-user-drag:none}
-#ad-car-tagline{margin:0;font-weight:bold;color:#3b2314;font-size:max(2.4vh,16px)}
-.ad-car-nav{display:flex;align-items:center;justify-content:center;gap:14px}
-.ad-car-arrow{width:64px;height:64px;border-radius:50%;border:5px solid #3b2314;background:#ffd65c;font-size:30px;color:#3b2314;touch-action:manipulation;box-shadow:0 5px 0 rgba(59,35,20,.55)}
-.ad-car-dots{display:flex;gap:10px;align-items:center}
-.ad-car-dot{width:16px;height:16px;border-radius:50%;border:3px solid #3b2314;background:#fff;padding:0}
-.ad-car-dot.on{background:#e8604c}
+#zb-panel{position:fixed;left:0;right:0;top:0;z-index:5;display:flex;justify-content:center;pointer-events:none;padding:calc(10px + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#zb-panel[hidden],#zb-gate[hidden]{display:none}
+.zb-body{position:relative;box-sizing:border-box;width:min(96vw,900px);pointer-events:auto;padding:10px 12px 12px;border-radius:22px;border:6px solid #3b2314;background:#fff8e7;box-shadow:0 8px 0 rgba(59,35,20,.5);text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
+.zb-text{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+#zb-act{position:fixed;z-index:4;right:calc(24px + env(safe-area-inset-right));bottom:calc(28px + env(safe-area-inset-bottom));width:96px;height:96px;font-size:50px;background:#ffd65c}
+#zb-act[hidden]{display:none}
+.zb-x{position:absolute;right:8px;top:8px;width:64px;height:64px;border-radius:50%;border:4px solid #3b2314;background:#fff;font-size:28px;z-index:1}
+#zb-image{display:block;max-width:calc(100% - 80px);max-height:16vh;max-height:16dvh;border:4px solid #3b2314;border-radius:12px;background:${CREAM}}
+#zb-tagline{margin:0;font-size:max(2.6vh,18px);line-height:1.2;padding:0 70px;font-weight:bold;color:#3b2314}
+#zb-link,.zb-choice,#zb-hold{touch-action:manipulation;min-height:64px;min-width:64px;border-radius:32px;border:5px solid #3b2314;background:#7cc46a;color:#3b2314;font-size:max(2.2vh,17px);font-weight:bold;padding:6px 14px;max-width:100%;box-sizing:border-box;display:inline-flex;gap:12px;align-items:center;justify-content:center;box-shadow:0 5px 0 rgba(59,35,20,.55)}
+#zb-gate{position:fixed;top:0;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(40,25,15,.6);pointer-events:auto}
+.zb-gate-card{position:relative;box-sizing:border-box;width:min(92vw,620px);padding:18px;border-radius:26px;border:6px solid #3b2314;background:#fff8e7;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center;font-weight:bold;color:#3b2314;font-size:max(3.2vh,20px)}
+.zb-gate-card h2{margin:0;font-size:1.2em}
+#zb-gate-question{font-size:1.8em}
+.zb-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+.zb-choice{background:#ffd65c}
+#zb-hold{--p:0;width:150px;height:150px;border-radius:50%;padding:0;font-size:64px;background:conic-gradient(#e8604c calc(var(--p) * 360deg),#fff 0);touch-action:none;user-select:none}
+#zb-hold span{display:flex;width:112px;height:112px;border-radius:50%;background:#ffd65c;align-items:center;justify-content:center;pointer-events:none}
+#zb-hold,#zb-gate{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:none}
+#zb-open{min-height:72px;max-width:100%;box-sizing:border-box;border-radius:36px;border:5px solid #3b2314;background:#7cc46a;color:#3b2314;font-size:max(2.6vh,19px);font-weight:bold;padding:8px 22px;display:inline-flex;gap:12px;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 5px 0 rgba(59,35,20,.55)}
+#zb-fallback{position:fixed;z-index:9;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);box-sizing:border-box;width:min(92vw,520px);padding:12px;border-radius:22px;border:6px solid #3b2314;background:#fff8e7;color:#3b2314;font-weight:bold;font-size:max(2.2vh,17px);text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;pointer-events:auto;touch-action:manipulation}
+#zb-fallback[hidden]{display:none}
+.zb-open-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+#zb-dbg-chip{position:fixed;z-index:98;left:6px;bottom:6px;width:56px;height:56px;border-radius:50%;border:3px solid #fff;background:#2d5a3a;color:#fff;font:bold 16px monospace;opacity:.85}
+#zb-carousel{position:fixed;left:0;right:0;top:0;z-index:5;display:flex;justify-content:center;pointer-events:none;padding:calc(10px + env(safe-area-inset-top)) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+#zb-carousel[hidden]{display:none}
+#zb-car-title{margin:0;padding:0 70px;font-size:max(2.8vh,18px);line-height:1.2;color:#3b2314}
+#zb-car-image{display:block;max-width:100%;max-height:30vh;max-height:30dvh;border:4px solid #3b2314;border-radius:12px;background:${CREAM};cursor:pointer;touch-action:pan-y;-webkit-user-drag:none}
+#zb-car-tagline{margin:0;font-weight:bold;color:#3b2314;font-size:max(2.4vh,16px)}
+.zb-car-nav{display:flex;align-items:center;justify-content:center;gap:14px}
+.zb-car-arrow{width:64px;height:64px;border-radius:50%;border:5px solid #3b2314;background:#ffd65c;font-size:30px;color:#3b2314;touch-action:manipulation;box-shadow:0 5px 0 rgba(59,35,20,.55)}
+.zb-car-dots{display:flex;gap:10px;align-items:center}
+.zb-car-dot{width:16px;height:16px;border-radius:50%;border:3px solid #3b2314;background:#fff;padding:0}
+.zb-car-dot.on{background:#e8604c}
 /* small screens (GAME-PLAYER 3): a compact card that leaves the right-hand control column free */
 @media (orientation:landscape) and (max-height:460px){
-#ad-panel{justify-content:flex-start;padding:calc(8px + env(safe-area-inset-top)) calc(96px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left))}
-.ad-body{width:auto;max-width:640px;flex-direction:row;gap:12px;padding:8px 10px;border-width:5px;border-radius:18px;text-align:left}
-.ad-text{flex:1;align-items:center;margin-right:68px;gap:6px}
-#ad-image{max-width:40vw;max-height:min(30vh,110px);max-height:min(30dvh,110px)}
-#ad-tagline{padding:0;font-size:16px}
-#ad-link{min-height:64px;font-size:17px}
-#ad-act{right:calc(8px + env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:42px}
-#ad-carousel{justify-content:flex-start;padding:calc(6px + env(safe-area-inset-top)) calc(96px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left))}
-#ad-carousel .ad-body{width:auto;max-width:560px;flex-direction:column;gap:4px;padding:6px 10px;text-align:center}
-#ad-car-title{font-size:15px;padding:0 70px 0 0}
-#ad-car-image{max-height:min(24vh,92px);max-height:min(24dvh,92px);max-width:60vw}
-#ad-car-tagline{display:none}
-.ad-gate-card{padding:10px 14px;gap:6px;font-size:16px}
-#ad-gate-question{font-size:1.5em}
-.ad-choices{grid-template-columns:repeat(4,1fr);gap:8px}
-#ad-hold{width:110px;height:110px;font-size:44px}
-#ad-hold span{width:80px;height:80px}
+#zb-panel{justify-content:flex-start;padding:calc(8px + env(safe-area-inset-top)) calc(96px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left))}
+.zb-body{width:auto;max-width:640px;flex-direction:row;gap:12px;padding:8px 10px;border-width:5px;border-radius:18px;text-align:left}
+.zb-text{flex:1;align-items:center;margin-right:68px;gap:6px}
+#zb-image{max-width:40vw;max-height:min(30vh,110px);max-height:min(30dvh,110px)}
+#zb-tagline{padding:0;font-size:16px}
+#zb-link{min-height:64px;font-size:17px}
+#zb-act{right:calc(8px + env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:42px}
+#zb-carousel{justify-content:flex-start;padding:calc(6px + env(safe-area-inset-top)) calc(96px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left))}
+#zb-carousel .zb-body{width:auto;max-width:560px;flex-direction:column;gap:4px;padding:6px 10px;text-align:center}
+#zb-car-title{font-size:15px;padding:0 70px 0 0}
+#zb-car-image{max-height:min(24vh,92px);max-height:min(24dvh,92px);max-width:60vw}
+#zb-car-tagline{display:none}
+.zb-gate-card{padding:10px 14px;gap:6px;font-size:16px}
+#zb-gate-question{font-size:1.5em}
+.zb-choices{grid-template-columns:repeat(4,1fr);gap:8px}
+#zb-hold{width:110px;height:110px;font-size:44px}
+#zb-hold span{width:80px;height:80px}
 }
 @media (orientation:portrait) and (max-width:480px){
-#ad-panel{padding-top:calc(152px + env(safe-area-inset-top))}
-#ad-act{right:calc(8px + env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:42px}
-#ad-carousel{padding-top:calc(152px + env(safe-area-inset-top))}
-#ad-car-image{max-height:24vh;max-height:24dvh}
+#zb-panel{padding-top:calc(152px + env(safe-area-inset-top))}
+#zb-act{right:calc(8px + env(safe-area-inset-right));bottom:calc(8px + env(safe-area-inset-bottom));width:80px;height:80px;font-size:42px}
+#zb-carousel{padding-top:calc(152px + env(safe-area-inset-top))}
+#zb-car-image{max-height:24vh;max-height:24dvh}
 }
 `;
 
@@ -155,13 +163,15 @@ export class AdsHost {
   private ignorePop = false;
   private dbg: AdsDebugOverlay | null = null;
   private fallbackTimer = 0;
-  readonly actBtn = el('button', 'ad-act', '🔗');
-  readonly panel = el('div', 'ad-panel');
-  readonly gateView = el('div', 'ad-gate');
+  /** The last-resort native dialog while the browser hides our own views (ADS-045). */
+  private rescue: Rescue | null = null;
+  readonly actBtn = el('button', 'zb-act', '🔗');
+  readonly panel = el('div', 'zb-panel');
+  readonly gateView = el('div', 'zb-gate');
   /** Shown when the browser did not open the link after the gate (pop-up blocked): a real link to tap (ADS-040). */
-  readonly fallbackView = el('div', 'ad-fallback');
+  readonly fallbackView = el('div', 'zb-fallback');
   /** The all-done carousel of the verified campaigns (ADS-031). */
-  readonly carouselView = el('div', 'ad-carousel');
+  readonly carouselView = el('div', 'zb-carousel');
   private carousel: Carousel | null = null;
   private carouselOpenedAt = 0;
   /** Links opened so far (debug / tests). */
@@ -202,7 +212,7 @@ export class AdsHost {
     });
     if (adsDebugEnabled(window.location.search)) {
       this.dbg = new AdsDebugOverlay(() => this.debug());
-      const chip = el('button', 'ad-dbg-chip', 'AD');
+      const chip = el('button', 'zb-dbg-chip', 'ZB');
       chip.type = 'button';
       chip.addEventListener('click', () => this.dbg?.show());
       document.body.append(chip);
@@ -239,7 +249,7 @@ export class AdsHost {
     let c: AdContent | null = null;
     try {
       c = await loadAds({
-        base: this.o.base ?? 'ads/',
+        base: this.o.base ?? 'boards/',
         keys: this.o.keys,
         fetchFn: this.o.fetchFn ?? ((url, init) => fetch(url, init)),
         now: (this.o.now ?? Date.now)(),
@@ -289,6 +299,12 @@ export class AdsHost {
     const st = this.state();
     return {
       app: 'letterzoo ads debug 1',
+      platform: this.o.platform ? { platform: this.o.platform(), source: 'host option' } : currentPlatform(),
+      linkHosts: Object.fromEntries([...(this.content?.bySlot ?? [])].map(([slot, c]) => [c.id + '#' + slot, new URL(this.linkOf(c)).hostname])),
+      verdict: adsTelemetry.blocked.length > 0 ? BLOCKED_VERDICT : 'no interference detected',
+      blocked: adsTelemetry.blocked,
+      views: adsTelemetry.views,
+      rescue: this.rescue !== null,
       uptimeS: Math.round(performance.now() / 100) / 10,
       env: envInfo(),
       keys: this.o.keys.length,
@@ -319,6 +335,11 @@ export class AdsHost {
     };
   }
 
+  /** The link for this device: the store link of its platform, else the web link (ADS rule 16). */
+  private linkOf(c: VerifiedCampaign): string {
+    return linkFor(c, this.o.platform ? this.o.platform() : currentPlatform().platform);
+  }
+
   private safe<T>(f: () => T): T | null {
     try {
       return f();
@@ -328,11 +349,15 @@ export class AdsHost {
   }
 
   get panelOpen(): boolean {
-    return !this.panel.hidden || this.carousel !== null;
+    return !this.panel.hidden || this.carousel !== null || this.rescue !== null;
   }
 
   /** Esc / ✖: closes the gate, else the panel. True if something was closed. */
   closeIfOpen(): boolean {
+    if (this.rescue) {
+      this.rescue.close();
+      return true;
+    }
     if (this.gate) {
       this.closeGate();
       return true;
@@ -421,6 +446,15 @@ export class AdsHost {
 
   tick(): void {
     if (!this.started) return;
+    if (this.app.driving?.()) {
+      // CART-008 / ADS rule 17: nothing of the ad flow over the driving view; boarding closes what is open
+      if (this.carousel) this.closeCarousel();
+      if (this.shown) this.hide();
+      else this.closeGate();
+      this.dismissed = null;
+      this.syncButton(null);
+      return;
+    }
     const lang = this.app.language();
     const level = this.app.reading_level();
     if (lang !== this.lang) {
@@ -474,7 +508,11 @@ export class AdsHost {
       (this.app.target_kind?.() ?? '') === '';
     if (this.actBtn.hidden === want) {
       this.actBtn.hidden = !want;
-      if (want) this.actBtn.setAttribute('aria-label', this.app.t('ad-link-open'));
+      if (!want) this.release(this.actBtn);
+      if (want) {
+        this.actBtn.setAttribute('aria-label', this.app.t('ad-link-open'));
+        this.audit(this.actBtn, 'button', null);
+      }
     }
   }
 
@@ -484,7 +522,7 @@ export class AdsHost {
    */
   interact(): boolean {
     const id = this.app.ad_near();
-    if (!this.started || !id || !this.canOpen(id) || (this.app.target_kind?.() ?? '') !== '') return false;
+    if (this.app.driving?.() || !this.started || !id || !this.canOpen(id) || (this.app.target_kind?.() ?? '') !== '') return false;
     if (this.shown !== id) {
       this.dismissed = null;
       if (this.shown) this.hide();
@@ -508,8 +546,8 @@ export class AdsHost {
     const { board, campaign } = cur;
     const lang = this.app.language() === 'en' ? 'en' : 'de';
     const im = pickImage(campaign, lang, board.n);
-    const close = el('button', 'ad-close', '✖');
-    close.className = 'ad-x';
+    const close = el('button', 'zb-close', '✖');
+    close.className = 'zb-x';
     close.type = 'button';
     close.setAttribute('aria-label', this.app.t('ad-close'));
     close.addEventListener('click', () => {
@@ -518,30 +556,126 @@ export class AdsHost {
       this.dismiss();
     });
     const body = el('div');
-    body.className = 'ad-body';
-    body.dataset.campaign = campaign.id;
-    const img = el('img', 'ad-image') as HTMLImageElement;
+    body.className = 'zb-body';
+    body.dataset.card = campaign.id;
+    const img = el('img', 'zb-image') as HTMLImageElement;
     img.alt = '';
-    const old = this.panel.querySelector<HTMLImageElement>('#ad-image');
+    const old = this.panel.querySelector<HTMLImageElement>('#zb-image');
     if (old?.dataset.path === im.path && old.src) img.src = old.src;
     else img.src = URL.createObjectURL(new Blob([im.data as BlobPart], { type: im.mime }));
     img.dataset.path = im.path;
     const text = el('div');
-    text.className = 'ad-text';
+    text.className = 'zb-text';
     body.append(close, img, text);
-    if (this.app.reading_level() !== 'kiga') text.append(el('p', 'ad-tagline', campaign.tagline[lang]));
-    const link = el('button', 'ad-link');
+    if (this.app.reading_level() !== 'kiga') text.append(el('p', 'zb-tagline', campaign.tagline[lang]));
+    const link = el('button', 'zb-link');
     link.type = 'button';
-    link.append(el('span', undefined, '🔗'), el('span', 'ad-link-text', new URL(campaign.link).hostname));
-    link.addEventListener('click', () => this.startGate(campaign.link, campaign.id === 'abcsmash'));
+    link.append(el('span', undefined, '🔗'), el('span', 'zb-link-text', new URL(this.linkOf(campaign)).hostname));
+    link.addEventListener('click', () => this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash'));
     link.setAttribute('aria-label', this.app.t('ad-link-open'));
     text.append(link);
     this.panel.replaceChildren(body);
     this.panel.hidden = false;
+    this.audit(this.panel, 'panel', () => this.rescuePanel());
+  }
+
+  // ------------------------------------------------------------ blocked by the browser (ADS-044/045)
+
+  /**
+   * One check after a view was shown: a browser / ad blocker can hide it by name (`display:none`). Then the
+   * block is recorded for the field diagnostics, `display` is forced back inline (!important beats a
+   * stylesheet rule), and if it is still not visible `rescue` shows the native dialog instead.
+   */
+  private audit(view: HTMLElement, name: string, rescue: (() => void) | null): void {
+    const probe = (second: boolean) => {
+      if (view.hidden || !view.isConnected) return;
+      const cs = getComputedStyle(view);
+      const r = view.getBoundingClientRect();
+      const ok = cs.display !== 'none' && cs.visibility !== 'hidden' && r.width >= 8 && r.height >= 8;
+      adsTelemetry.views[name] = { display: cs.display, width: Math.round(r.width), height: Math.round(r.height), ok };
+      if (ok) return;
+      logBlocked(`element #${view.id} (${name}) hidden by the browser: display:${cs.display} ${Math.round(r.width)}x${Math.round(r.height)}`);
+      if (!second) {
+        view.style.setProperty('display', 'flex', 'important');
+        view.style.setProperty('visibility', 'visible', 'important');
+        window.setTimeout(() => probe(true), 120);
+      } else if (rescue) {
+        this.release(view);
+        view.hidden = true;
+        adsTelemetry.views[name].rescued = true;
+        rescue();
+      }
+    };
+    requestAnimationFrame(() => requestAnimationFrame(() => probe(false)));
+  }
+
+  /** Removes the inline overrides of {@link audit} (before the view is hidden again). */
+  private release(view: HTMLElement): void {
+    view.style.removeProperty('display');
+    view.style.removeProperty('visibility');
+  }
+
+  private questionFor(campaignId: string): ReturnType<typeof makeGateQuestion> {
+    return campaignId === 'abcsmash' ? makeLanguageGateQuestion(this.app.language()) : makeGateQuestion();
+  }
+
+  /** The panel stays hidden by the browser: the same picture + link as a native dialog with its own gate. */
+  private rescuePanel(): void {
+    const cur = this.current();
+    if (!cur || this.rescue) return;
+    const { board, campaign } = cur;
+    const lang = this.app.language() === 'en' ? 'en' : 'de';
+    const im = pickImage(campaign, lang, board.n);
+    const imageUrl = URL.createObjectURL(new Blob([im.data as BlobPart], { type: im.mime }));
+    this.rescue = showRescue({
+      t: (k) => this.app.t(k),
+      url: this.linkOf(campaign),
+      card: { imageUrl, tagline: this.app.reading_level() !== 'kiga' ? campaign.tagline[lang] : null },
+      question: this.questionFor(campaign.id),
+      onOpen: (url) => this.openLink(url),
+      onClose: (opened) => {
+        this.rescue = null;
+        URL.revokeObjectURL(imageUrl);
+        if (!opened) this.dismiss();
+      },
+    });
+    this.auditRescue();
+  }
+
+  /** The gate view is hidden by the browser: the question + hold inside a native dialog. */
+  private rescueGate(url: string, language: boolean): void {
+    if (this.rescue) return;
+    this.closeGate();
+    this.rescue = showRescue({
+      t: (k) => this.app.t(k),
+      url,
+      question: language ? makeLanguageGateQuestion(this.app.language()) : makeGateQuestion(),
+      startAtGate: true,
+      onOpen: (u) => this.openLink(u),
+      onClose: () => {
+        this.rescue = null;
+      },
+    });
+    this.auditRescue();
+  }
+
+  private auditRescue(): void {
+    const d = this.rescue?.dialog;
+    if (!d) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const r = d.getBoundingClientRect();
+      const ok = d.isConnected && r.width >= 8 && r.height >= 8 && getComputedStyle(d).display !== 'none';
+      adsTelemetry.views.rescue = { display: getComputedStyle(d).display, width: Math.round(r.width), height: Math.round(r.height), ok };
+      if (!ok) logBlocked('the fallback dialog is hidden too');
+    }));
   }
 
   private hide(): void {
     this.closeGate();
+    const r = this.rescue;
+    this.rescue = null;
+    r?.close(true);
+    this.release(this.panel);
     this.panel.hidden = true;
     this.panel.replaceChildren();
     this.shown = null;
@@ -565,7 +699,7 @@ export class AdsHost {
    * False (nothing shown) when no campaign is verified.
    */
   openCarousel(): boolean {
-    if (!this.started || !this.canCarousel()) return false;
+    if (!this.started || this.app.driving?.() || !this.canCarousel()) return false;
     if (this.carousel) return true;
     if (this.shown) this.hide();
     this.carousel = new Carousel(carouselItems(this.content, this.lang).length, performance.now());
@@ -579,6 +713,7 @@ export class AdsHost {
     if (!this.carousel) return;
     this.closeGate();
     this.carousel = null;
+    this.release(this.carouselView);
     this.carouselView.hidden = true;
     this.carouselView.replaceChildren();
     this.dismissed = this.app.ad_near() || null;
@@ -601,23 +736,23 @@ export class AdsHost {
     const { campaign, image } = items[car.index];
     const now = () => performance.now();
     const body = el('div');
-    body.className = 'ad-body';
-    body.dataset.campaign = campaign.id;
+    body.className = 'zb-body';
+    body.dataset.card = campaign.id;
     body.dataset.index = String(car.index);
-    const close = el('button', 'ad-car-close', '✖');
-    close.className = 'ad-x';
+    const close = el('button', 'zb-car-close', '✖');
+    close.className = 'zb-x';
     close.type = 'button';
     close.setAttribute('aria-label', this.app.t('ad-close'));
     close.addEventListener('click', () => {
       if (now() - this.carouselOpenedAt < CLOSE_GUARD_MS) return;
       this.closeCarousel();
     });
-    const title = el('h2', 'ad-car-title', this.app.t('ad-carousel-title'));
-    const img = el('img', 'ad-car-image') as HTMLImageElement;
+    const title = el('h2', 'zb-car-title', this.app.t('ad-carousel-title'));
+    const img = el('img', 'zb-car-image') as HTMLImageElement;
     img.alt = '';
     img.draggable = false;
     img.src = URL.createObjectURL(new Blob([image.data as BlobPart], { type: image.mime }));
-    img.dataset.campaign = campaign.id;
+    img.dataset.card = campaign.id;
     img.addEventListener('load', () => URL.revokeObjectURL(img.src), { once: true });
     // a tap opens the parental gate; a horizontal swipe turns the page (no link then)
     let down: { x: number; y: number } | null = null;
@@ -635,12 +770,12 @@ export class AdsHost {
         this.renderCarousel();
       } else if (Math.hypot(dx, dy) < 12) {
         car.go(car.index, now());
-        this.startGate(campaign.link, campaign.id === 'abcsmash');
+        this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash');
       }
     });
     const mk = (id: string, text: string, key: string, step: () => void): HTMLButtonElement => {
       const b = el('button', id, text);
-      b.className = 'ad-car-arrow';
+      b.className = 'zb-car-arrow';
       b.type = 'button';
       b.setAttribute('aria-label', this.app.t(key));
       b.addEventListener('click', () => {
@@ -649,11 +784,11 @@ export class AdsHost {
       });
       return b;
     };
-    const dots = el('div', 'ad-car-dots');
-    dots.className = 'ad-car-dots';
+    const dots = el('div', 'zb-car-dots');
+    dots.className = 'zb-car-dots';
     items.forEach((_, i) => {
       const d = el('button');
-      d.className = i === car.index ? 'ad-car-dot on' : 'ad-car-dot';
+      d.className = i === car.index ? 'zb-car-dot on' : 'zb-car-dot';
       d.type = 'button';
       d.setAttribute('aria-label', String(i + 1));
       d.addEventListener('click', () => {
@@ -663,17 +798,19 @@ export class AdsHost {
       dots.append(d);
     });
     const nav = el('div');
-    nav.className = 'ad-car-nav';
+    nav.className = 'zb-car-nav';
     nav.append(
-      mk('ad-car-prev', '◀', 'ad-carousel-prev', () => car.prev(now())),
+      mk('zb-car-prev', '◀', 'ad-carousel-prev', () => car.prev(now())),
       dots,
-      mk('ad-car-next', '▶', 'ad-carousel-next', () => car.next(now())),
+      mk('zb-car-next', '▶', 'ad-carousel-next', () => car.next(now())),
     );
     body.append(close, title, img);
-    if (this.app.reading_level() !== 'kiga') body.append(el('p', 'ad-car-tagline', campaign.tagline[lang]));
+    if (this.app.reading_level() !== 'kiga') body.append(el('p', 'zb-car-tagline', campaign.tagline[lang]));
     body.append(nav);
     this.carouselView.replaceChildren(body);
+    const wasHidden = this.carouselView.hidden;
     this.carouselView.hidden = false;
+    if (wasHidden) this.audit(this.carouselView, 'carousel', null);
   }
 
   // ------------------------------------------------------------ parental gate
@@ -684,19 +821,19 @@ export class AdsHost {
     this.gate = gate;
     this.pushModal();
     const card = el('div');
-    card.className = 'ad-gate-card';
-    const close = el('button', 'ad-gate-close', '✖');
-    close.className = 'ad-x';
+    card.className = 'zb-gate-card';
+    const close = el('button', 'zb-gate-close', '✖');
+    close.className = 'zb-x';
     close.type = 'button';
     close.setAttribute('aria-label', this.app.t('ad-close'));
     close.addEventListener('click', () => this.closeGate());
-    card.append(close, el('h2', 'ad-gate-title', this.app.t('ad-gate-title')), el('div', undefined, this.app.t('ad-gate-sum')));
-    card.append(el('div', 'ad-gate-question', gate.question.prompt ?? `${gate.question.a} ${gate.question.op === '-' ? '−' : '+'} ${gate.question.b} = ?`));
+    card.append(close, el('h2', 'zb-gate-title', this.app.t('ad-gate-title')), el('div', undefined, this.app.t('ad-gate-sum')));
+    card.append(el('div', 'zb-gate-question', gate.question.prompt ?? `${gate.question.a} ${gate.question.op === '-' ? '−' : '+'} ${gate.question.b} = ?`));
     const choices = el('div');
-    choices.className = 'ad-choices';
+    choices.className = 'zb-choices';
     for (const n of gate.question.options) {
       const b = el('button', undefined, gate.question.labels ? gate.question.labels[n] : String(n));
-      b.className = 'ad-choice';
+      b.className = 'zb-choice';
       b.type = 'button';
       b.addEventListener('click', () => {
         if (gate.answer(n) === 'hold') this.showHold(card, gate, url);
@@ -707,10 +844,11 @@ export class AdsHost {
     card.append(choices);
     this.gateView.replaceChildren(card);
     this.gateView.hidden = false;
+    this.audit(this.gateView, 'gate', () => this.rescueGate(url, language));
   }
 
   private showHold(card: HTMLElement, gate: ParentalGate, url: string): void {
-    const hold = el('button', 'ad-hold');
+    const hold = el('button', 'zb-hold');
     hold.type = 'button';
     hold.append(el('span', undefined, '✋'));
     const now = () => performance.now();
@@ -801,14 +939,15 @@ export class AdsHost {
       ptr.contextmenu += 1;
       e.preventDefault();
     });
-    const hint = el('div', 'ad-gate-hint', this.app.t('ad-gate-hold'));
-    card.replaceChildren(card.querySelector('.ad-x')!, el('h2', 'ad-gate-title', this.app.t('ad-gate-title')), hint, hold);
+    const hint = el('div', 'zb-gate-hint', this.app.t('ad-gate-hold'));
+    card.replaceChildren(card.querySelector('.zb-x')!, el('h2', 'zb-gate-title', this.app.t('ad-gate-title')), hint, hold);
   }
 
   private closeGate(): void {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.gate = null;
+    this.release(this.gateView);
     this.gateView.hidden = true;
     this.gateView.replaceChildren();
     this.popModalIfIdle();
@@ -863,8 +1002,8 @@ export class AdsHost {
   /** The big anchor: a real tap on a link is always allowed (no pop-up blocker). */
   private linkAnchor(url: string, onTap: () => void): HTMLElement {
     const row = el('div');
-    row.className = 'ad-open-row';
-    const a = el('a', 'ad-open');
+    row.className = 'zb-open-row';
+    const a = el('a', 'zb-open');
     a.href = url;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
@@ -883,8 +1022,8 @@ export class AdsHost {
 
   private showFallback(url: string): void {
     const note = el('div', undefined, this.app.t('ad-link-blocked'));
-    const close = el('button', 'ad-fallback-close', '✖');
-    close.className = 'ad-x';
+    const close = el('button', 'zb-fallback-close', '✖');
+    close.className = 'zb-x';
     close.type = 'button';
     close.setAttribute('aria-label', this.app.t('ad-close'));
     close.addEventListener('click', () => this.hideFallback());
@@ -892,12 +1031,14 @@ export class AdsHost {
     this.fallbackView.style.position = 'fixed';
     this.fallbackView.append(close);
     this.fallbackView.hidden = false;
+    this.audit(this.fallbackView, 'link-card', null);
     window.clearTimeout(this.fallbackTimer);
     this.fallbackTimer = window.setTimeout(() => this.hideFallback(), 15_000);
   }
 
   private hideFallback(): void {
     window.clearTimeout(this.fallbackTimer);
+    this.release(this.fallbackView);
     this.fallbackView.hidden = true;
     this.fallbackView.replaceChildren();
   }

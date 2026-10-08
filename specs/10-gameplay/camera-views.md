@@ -138,9 +138,20 @@ a hiding place is never visible from its own info board), stay comfortable for c
     in `zoo-render::camera` (pure, unit-tested) with constants from `zoo_core::view`; the
     facing lock in `zoo_core::player`; the host only maps buttons, keys and drags to
     `look_hold`, `toggle_first_person`, `cycle_view`, `look_drag`, `set_view_mode`.
-11. **Golf carts** (Q-125 answered): while driving a golf cart (GAME-CART) only the zoo view
-    is available — the view button is hidden, `V`, `F` and the right mouse button are
-    ignored; a stored first-person view returns when the child gets out.
+11. **Golf carts** (Q-125 answered 2026-09-27, replaced by Q-381 on 2026-10-08): while driving a golf
+    cart (GAME-CART) the zoo view (camera +3 m) and **first person from the driver's seat** are
+    available; look-around (`F`, right mouse button, the third step of the view button) is not (it
+    would put the camera inside the cart): the view button toggles zoo ↔ first person, `V` too.
+    Boarding keeps the current view (look-around becomes the zoo view); the view before boarding is
+    restored when the child gets out (what she chose inside the cart is not carried out, Q-381).
+    First person in the cart: the eye is the cart's `socket_driver` plus 1.15 m (`CART_EYE_ABOVE_SEAT_M`;
+    below the 2.0 m roof, so nothing blocks the view), the body is hidden, the cart stays drawn
+    (steering wheel, dashboard), the view looks along the cart heading when entered or boarded and
+    is then turned freely by the right thumb / mouse / arrow keys exactly as in rule 3 (same
+    pitch limit) — the look does **not** follow the steering; the stick / `WASD` steer relative to
+    the view like in the zoo view. The eye eases to the seat (no jump) and the glide to and from the
+    zoo pose is the same 0.4 s as walking. The view button stays visible and the horn button sits
+    to its left (no overlap).
 
 ## Acceptance criteria
 
@@ -192,7 +203,9 @@ render region, a building's name board with its roof.
 | CAMV-021 | Given night (GAME-NIGHT), then the close-view sky is a dark-blue gradient (`#1E2A5A` top → `#3B4C8C` horizon), the haze equals the horizon colour and the fog end stays the day fog end (20.8 m, `FOG_END_M`; shining eyes beyond it are hidden); by day the day sky colours are unchanged (rule 7, Q-126). | unit |
 | CAMV-022 | Given the player inside the zookeeper house (and the night house) in first person, then the roof is drawn and its ceiling is visible above (sky pixels absent in the upper screen area inside); switching to the zoo view hides the roof again (PLAY-028). | e2e |
 | CAMV-023 | Given look-around held, when `V` is pressed, then the view glides to first person within 0.4 s; releasing `F` afterwards keeps first person (rule 2, Q-124). | unit |
-| CAMV-024 | Given first person stored and the player gets into a golf cart, then the zoo view is shown, the view button is hidden and `V`/`F` do nothing while driving; when she gets out, first person returns (rule 11, Q-125). | unit (`view.rs` `view_while_driving`), e2e (`web/tests/e2e/cart.spec.ts`) |
+| CAMV-024 | Given a golf cart, then `view_while_driving` keeps zoo and first person and turns look-around into the zoo view; given first person and the player boards, then first person stays, the camera eye is the `socket_driver` + 1.15 m (below the 2.0 m roof) looking along the cart heading, the body is hidden, and `F` / right mouse do nothing; when she gets out, the view from before boarding returns (rule 11, Q-381). | unit (`view.rs` `view_while_driving`), e2e (`web/tests/e2e/cart.spec.ts`) |
+| CAMV-029 | Given the zoo view while seated, then the view button is visible, tapping it gives first person and tapping again the zoo view (never look-around); the camera eye in first person is at the driver's seat, the look turns with `look_drag` while the cart heading is unchanged; the horn and get-out buttons do not overlap the view button (780×360, 360×780). | e2e (`cart.spec.ts`) |
+| CAMV-030 | Given a camera with a seat eye set (`set_seat_eye`), then the first-person pose eases to it within 0.3 s without a jump, the yaw stays independent of the seat, and with `None` the normal eye height returns. | unit (zoo-render `camera.rs`) |
 | CAMV-025 | Given the zoo view, when the view button is tapped three times, then `view_mode()` is `first_person`, `look_around`, `zoo` in that order, the camera mode follows and the button's `data-view` / icon (🗺️ 👓 👁️, vitest `VIEW_ICONS`) / `aria-label` (Fluent `ui-view-cycle-<id>`, de + en) show the current view and name the next; `V` and the button stay in step (`V` in look-around → first person). | e2e, unit (Vitest) |
 | CAMV-026 | Given look-around chosen with the button, then it stays after the tap (no hold needed), a right-half drag turns it, `F` pressed and released does not leave it, the next tap returns to the zoo view; a reload (or `saved_view_mode`) gives zoo / first person, never look-around. | e2e |
 | CAMV-027 | Given the 780×360, 360×780, 412×892 and 892×412 viewports, then the single view button is ≥ 64 px, inside the viewport and overlaps no other control (PLAY-037); `#look-btn` no longer exists. | e2e |
@@ -211,7 +224,7 @@ render region, a building's name board with its roof.
 - Q-112 answered 2026-09-27: carried food/bowl are the only "hands" in first person for the PoC.
 - Q-123 answered 2026-09-27: rotation and zoom input is ignored in the close views (rule 2, CAMV-017).
 - Q-124 answered 2026-09-27: `V` while look-around is held switches to first person (rule 2, CAMV-023).
-- Q-125 answered 2026-09-27: only the zoo view while driving a golf cart (rule 11, CAMV-024).
+- Q-125 answered 2026-09-27: only the zoo view while driving a golf cart (rule 11, CAMV-024); superseded 2026-10-08 by the user request "allow first person also in the golf cart" (Q-381).
 - Q-126 (answered 2026-09-27, as recommended) Night colours of the comic sky and haze (GAME-NIGHT).
 - Q-171 answered 2026-09-28: `board_zebra` moved south of the zebra gate; CAMV-008 now also checks the ≥ 22 m planar margin of the level data for levels 1–3.
 

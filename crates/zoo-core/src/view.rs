@@ -65,10 +65,14 @@ impl ViewMode {
 /// While driving a golf cart the camera zooms out by this much (GAME-CART rule 5).
 pub const CART_EXTRA_DISTANCE_M: f32 = 3.0;
 
-/// The view shown while driving (GAME-CAMERA-VIEWS rule 11, CAMV-024): only the zoo view; the
-/// stored view returns after getting out. `look_around` and `first_person` are never shown.
+/// Eye height above the cart's `socket_driver` in first person while driving (m); below the
+/// 2.0 m roof (GAME-CAMERA-VIEWS rule 11, CAMV-024).
+pub const CART_EYE_ABOVE_SEAT_M: f32 = 1.15;
+
+/// The view shown while driving (GAME-CAMERA-VIEWS rule 11, CAMV-024): zoo view and first person
+/// stay; look-around (the camera would sit inside the cart) becomes the zoo view.
 pub fn view_while_driving(requested: ViewMode, driving: bool) -> ViewMode {
-    if driving {
+    if driving && requested == ViewMode::LookAround {
         ViewMode::Zoo
     } else {
         requested
@@ -175,9 +179,17 @@ mod tests {
 
     // CAMV-024
     #[test]
-    fn camv_024_only_the_zoo_view_while_driving() {
+    fn camv_024_zoo_and_first_person_while_driving() {
+        assert_eq!(
+            view_while_driving(ViewMode::FirstPerson, true),
+            ViewMode::FirstPerson
+        );
+        assert_eq!(
+            view_while_driving(ViewMode::LookAround, true),
+            ViewMode::Zoo
+        );
+        const { assert!(CART_EYE_ABOVE_SEAT_M + 0.5 < 2.0) };
         for m in [ViewMode::Zoo, ViewMode::LookAround, ViewMode::FirstPerson] {
-            assert_eq!(view_while_driving(m, true), ViewMode::Zoo);
             assert_eq!(view_while_driving(m, false), m);
         }
     }

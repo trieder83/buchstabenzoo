@@ -5,8 +5,8 @@
 
 Reads the template (default tools/ads/campaigns.template.json), fills every image's sha256 /
 bytes / width / height from the files in --ads-dir, sets version / issued / valid_until, checks
-the same limits the game enforces, then writes <ads-dir>/campaigns.json and campaigns.sig
-(base64 Ed25519 signature over b"buchstabenzoo-ads/1\\n" + the exact bytes of campaigns.json).
+the same limits the game enforces, then writes <ads-dir>/index.json and index.sig
+(base64 Ed25519 signature over b"buchstabenzoo-ads/1\\n" + the exact bytes of index.json).
 The key file can also be named by the environment variable ZOO_ADS_KEY. The version must be
 larger than the one deployed before (the game never accepts a lower one).
 """
@@ -18,6 +18,7 @@ import json
 import os
 import re
 import struct
+from urllib.parse import urlparse
 import sys
 from pathlib import Path
 
@@ -31,7 +32,13 @@ MAX_DIM = 2048
 MAX_TAGLINE = 80
 # the campaigns the game knows (web/src/ads.ts KNOWN_CAMPAIGNS): id -> (slot, link host)
 KNOWN = {"mathfighter": (1, "mathfighter.rcms.ch"), "abcsmash": (2, "abcsmash.rcms.ch"),
-         "edugamegalaxy": (3, "edugamegalaxy.rcms.ch")}
+         "edugamegalaxy": (3, "edugamegalaxy.rcms.ch"),
+         # native app build only (boards-native/): the own App Store pages, id fixed (web/src/ads.ts KNOWN_CAMPAIGNS)
+         "mathfighter-ios": (1, "apps.apple.com/app/id6760628828"), "abcsmash-ios": (2, "apps.apple.com/app/id6790508038"),
+         "mathfighter-ios-b": (3, "apps.apple.com/app/id6760628828")}
+IOS_HOSTS = ("apps.apple.com", "itunes.apple.com")
+IOS_PATH_RE = re.compile(r"^/(?:[a-z]{2}/)?app/(?:[a-z0-9-]{1,60}/)?id\d{6,12}$")
+PLAY_RE = re.compile(r"^https://play\.google\.com/store/apps/details\?id=[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$")
 PATH_RE = re.compile(r"^img/[a-z0-9][a-z0-9._-]{0,63}$")
 
 
@@ -69,7 +76,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--key", default=os.environ.get("ZOO_ADS_KEY"), help="private key file (or env ZOO_ADS_KEY)")
     ap.add_argument("--template", default=str(ROOT / "tools/ads/campaigns.template.json"))
-    ap.add_argument("--ads-dir", default=str(ROOT / "ads"))
+    ap.add_argument("--ads-dir", default=str(ROOT / "boards"))
     ap.add_argument("--version", type=int, required=True, help="monotonic manifest version")
     ap.add_argument("--valid-days", type=int, default=90)
     ap.add_argument("--now", help="ISO time for `issued` (tests)")
@@ -97,6 +104,17 @@ def main() -> None:
         slot, host = KNOWN[c["id"]]
         if c["slot"] != slot or c.get("link") != f"https://{host}":
             sys.exit(f"campaign {c['id']}: slot/link must be {slot} / https://{host}")
+        # optional store links per platform (GAME-ADS rule 16): the same rules as web/src/ads.ts checkStoreLink
+        for plat, link in (c.get("links") or {}).items():
+            if plat == "ios":
+                u = urlparse(link)
+                ok = u.scheme == "https" and u.hostname in IOS_HOSTS and not (u.query or u.fragment or u.port or u.username) and IOS_PATH_RE.match(u.path)
+            elif plat == "android":
+                ok = bool(PLAY_RE.match(link))
+            else:
+                ok = False
+            if not ok:
+                sys.exit(f"campaign {c['id']}: bad {plat} link {link!r}")
         for lang, text in c["tagline"].items():
             if lang not in ("de", "en") or not text or len(text) > MAX_TAGLINE or re.search(r"[<>\x00-\x1f]", text):
                 sys.exit(f"campaign {c['id']}: bad tagline {lang!r}")
@@ -112,9 +130,9 @@ def main() -> None:
             im.update(mime=mime, bytes=len(data), width=w, height=h, sha256=hashlib.sha256(data).hexdigest())
     body = (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf8")
     sig = key.sign(DOMAIN + body)
-    (ads / "campaigns.json").write_bytes(body)
-    (ads / "campaigns.sig").write_text(base64.b64encode(sig).decode() + "\n")
-    print(f"signed version {args.version}, valid until {manifest['valid_until']}: {ads / 'campaigns.json'} + campaigns.sig")
+    (ads / "index.json").write_bytes(body)
+    (ads / "index.sig").write_text(base64.b64encode(sig).decode() + "\n")
+    print(f"signed version {args.version}, valid until {manifest['valid_until']}: {ads / 'index.json'} + index.sig")
 
 
 if __name__ == "__main__":

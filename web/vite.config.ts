@@ -17,8 +17,10 @@ const repoRoot = path.resolve(here, '..');
 const assetsRoot = path.join(repoRoot, 'assets');
 const ASSET_DIRS = ['levels', 'models', 'textures', 'i18n', 'audio'];
 // Ad content (GAME-ADS "External content"): the signed manifest + its images live in the repo's
-// `ads/` and are served at `/ads/` (same origin, swapped without a game update, PLAT-010).
-const adsRoot = path.join(repoRoot, 'ads');
+// `boards/` and are served at `/boards/` (same origin, swapped without a game update, PLAT-010).
+// The URL, file and DOM names avoid the words ad/advert/banner/sponsor/promo: browser ad blockers
+// filter by name (ADS-043).
+const adsRoot = path.join(repoRoot, 'boards');
 const TYPES: Record<string, string> = {
   '.glb': 'model/gltf-binary',
   '.png': 'image/png',
@@ -50,10 +52,10 @@ export function listAssets(root = assetsRoot): string[] {
   return out.sort();
 }
 
-/** Files of `ads/` that are served: manifest, signature, images (not templates or keys). */
+/** Files of `boards/` that are served: manifest, signature, images (not templates or keys). */
 export function listAds(root = adsRoot): string[] {
   const out: string[] = [];
-  for (const f of ['campaigns.json', 'campaigns.sig']) {
+  for (const f of ['index.json', 'index.sig']) {
     if (fs.existsSync(path.join(root, f))) out.push(f);
   }
   const img = path.join(root, 'img');
@@ -66,8 +68,8 @@ export function listAds(root = adsRoot): string[] {
 function zooAssets(): Plugin {
   const middleware: Connect.NextHandleFunction = (req, res, next) => {
     const url = decodeURIComponent((req.url ?? '').split('?')[0]);
-    if (url.startsWith('/ads/')) {
-      const rel = url.slice('/ads/'.length);
+    if (url.startsWith('/boards/')) {
+      const rel = url.slice('/boards/'.length);
       if (!listAds().includes(rel)) {
         res.statusCode = 404;
         res.end();
@@ -115,8 +117,12 @@ function zooAssets(): Plugin {
         this.emitFile({ type: 'asset', fileName: `assets/${rel}`, source: fs.readFileSync(path.join(assetsRoot, rel)) });
       }
       this.emitFile({ type: 'asset', fileName: 'assets/index.json', source: JSON.stringify(files) });
-      for (const rel of listAds()) {
-        this.emitFile({ type: 'asset', fileName: `ads/${rel}`, source: fs.readFileSync(path.join(adsRoot, rel)) });
+      // the native app build (VITE_NATIVE=1, PLAT-036/038) carries NOT the web campaigns but its own signed
+      // manifest `boards-native/` (links only to the developer's App Store pages), emitted under the same `boards/` path
+      const native = process.env.VITE_NATIVE === '1';
+      const root = native ? path.join(repoRoot, 'boards-native') : adsRoot;
+      for (const rel of native && !fs.existsSync(root) ? [] : listAds(root)) {
+        this.emitFile({ type: 'asset', fileName: `boards/${rel}`, source: fs.readFileSync(path.join(root, rel)) });
       }
     },
   };
@@ -134,6 +140,6 @@ export default defineConfig(({ command }) => ({
   appType: 'mpa', // no SPA fallback: unknown paths are 404, never index.html
   plugins: [zooAssets()],
   server: { fs: { allow: [repoRoot] } },
-  build: { assetsDir: 'bundle', target: 'es2022' },
+  build: { assetsDir: 'bundle', target: ['chrome87', 'es2020', 'safari14'] },
   test: { include: ['src/**/*.test.ts'] },
 }));

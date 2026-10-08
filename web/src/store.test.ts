@@ -28,6 +28,11 @@ describe('App Store texts (STORE)', () => {
       expect(field(loc, 'privacy_url.txt')).toBe('https://letterzoo.web.app/privacy.html');
     }
   });
+  it('STORE-007 support page shows the contact e-mail; privacy page names the controller e-mail', () => {
+    expect(read('web/public/support.html')).toContain('riedermagic+letterzoo@gmail.com');
+    expect(read('web/public/privacy.html')).toContain('riedermagic+letterzoo@gmail.com');
+    for (const loc of LOCALES) expect(field(loc, 'support_url.txt')).toBe('https://letterzoo.web.app/support.html');
+  });
   it('STORE-002 exactly the three published localisations exist (en-US, en-GB, de-DE)', () => {
     const dirs = fs.readdirSync(path.join(root, 'store/appstore'), { withFileTypes: true }).filter((e) => e.isDirectory() && e.name !== 'screenshots');
     expect(dirs.map((d) => d.name).sort()).toEqual(LOCALES);

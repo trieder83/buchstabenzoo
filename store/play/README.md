@@ -5,7 +5,7 @@ Build + signing: `BUILD_ANDROID.md`.
 
 | Field | Value |
 |---|---|
-| App name | de-DE **Buchstabenzoo**, en-US **Letter Zoo: Read & Rescue** (default language: German) |
+| App name | de-DE **Buchstabenzoo: Rette die Tiere**, en-US **Letter Zoo: Read & Rescue** (default language: German) |
 | Package | `ch.rcms.letterzoo` |
 | App or game / free or paid | **Game**, **Free** (can never be changed to paid later) |
 | Category / tags | Game → **Adventure** (second tag Educational); tags: Educational, Adventure, Family |

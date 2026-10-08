@@ -84,3 +84,4 @@ web/android/app/build/
 web/android/build/
 web/android/capacitor-cordova-android-plugins/
 web/android/app/src/main/assets/public/
+store/play/graphics/*/phone/

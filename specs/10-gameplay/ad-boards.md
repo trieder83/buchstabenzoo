@@ -102,7 +102,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
      Q-241); unknown ids, a wrong slot, duplicates, `active = false` are not shown (ADS-011);
    - link: https only, exactly the allowlisted host of *that* campaign, no user info, port,
      path, query or fragment; the game opens the canonical URL it builds itself (ADS-015);
-   - tagline per language (de, en): plain text, 1…80 characters, no `< > & " \` or control
+   - tagline per language (de, en): plain text, 1…90 characters, no `< > & " \` or control
      characters; shown only with `textContent`, never as HTML (ADS-016);
    - per image: path `img/<name>` (no traversal, no scheme), type by **magic bytes** PNG / WebP /
      JPEG equal to the declared type, exact declared byte size ≤ 512 KB, dimensions from the
@@ -278,6 +278,17 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | Holder of the private key | show any content of a **known campaign id** (images, taglines, `active`) | add a new campaign id or another link host without a game release (Q-241) |
 | A child | tap / hold the gate by accident (needs the right plus/minus task **and** 2 s holding) | — (a grade-1/2 child can solve the task, so the gate only stops accidental taps, not a determined child; Q-242) |
 
+### Android native ads (PLAT-054..057, Q-420)
+
+The Android Capacitor app (Google Play, Families policy) bundles its own signed manifest
+`boards-native-android/` (template `tools/ads/campaigns-native-android.template.json`, version 1, valid 365 days, images
+of slots 1-2 shared with the iOS manifest, which carry no store wording). Campaign ids `mathfighter-android` (slot 1),
+`abcsmash-android` (slot 2), `credit-android` (slot 3, user decision 2026-10-08: a CREDIT poster, de/en images `credit-de/en.webp` rendered with PIL, taglines "Buchstabenzoo basiert auf den Ideen von Elena Rieder, entwickelt von Thomas Rieder" / "Letter Zoo is based on the ideas of Elena Rieder, engineered by Thomas Rieder"; the tagline limit is now 90 characters) with NO link: `KNOWN_CAMPAIGNS` `noLink`, the manifest entry has no `link` / `links` key (so the CI check over `"link"` lines sees only Play links), the board shows no link chip, no parental gate, no tap action, no rescue dialog. For the other two the link is the fixed Google Play page
+(`play.google.com/store/apps/details?id=com.mathfighter.app` resp. `app.abcshooter.twa`): `KNOWN_CAMPAIGNS` fixes host, path and
+the exact query per id (`query` field), everything else is dropped. No itch.io, website, App Store or other-store link or wording; the iOS bundle stays
+iOS-only. The build picks the dir with `VITE_NATIVE_PLATFORM=ios|android` (default ios), scripts `build:native` / `build:native:android`.
+Links open behind the parental gate like on iOS. Tests: PLAT-054..057 in `web/src/native.test.ts` (listed in `platforms-and-testing.md`).
+
 ## Test cases
 
 | ID | Given / When / Then | Level |
@@ -300,7 +311,7 @@ image + tagline + link) and [`ads/campaign-3-edugamegalaxy/`](ads/campaign-3-edu
 | ADS-013 | Given an image over 512 KB (declared or served), dimensions outside 64…2048 px or different from the file header, then its campaign is dropped. | unit |
 | ADS-014 | Given an image whose magic bytes differ from the declared type (or are not PNG/WebP/JPEG), or a path with traversal / scheme / outside `img/`, then the campaign is dropped. | unit |
 | ADS-015 | Given a link with http, another host, another campaign's host, user info, port, path, query, fragment or a look-alike host, then the campaign is dropped; a valid one is opened in its canonical form. | unit |
-| ADS-016 | Given a tagline with markup characters, control characters or over 80 characters, then the campaign is dropped; shown texts are set as text only. | unit |
+| ADS-016 | Given a tagline with markup characters, control characters or over 90 characters, then the campaign is dropped; shown texts are set as text only. | unit |
 | ADS-017 | Given no key / a missing file / a hanging server / offline, then placeholders remain within the timeout (10 s manifest, 15 s images); only same-origin `ads/` URLs are requested. | unit |
 | ADS-024 | Given a browser without Web Crypto (plain http on a LAN IP, e.g. the phone on the dev server http://192.168.x.x:5173), then the signature check and the SHA-256 image hashes use the pure-JS fallback (@noble/hashes) and give exactly the same result (a tampered manifest is still rejected), so the signed ads show there too. | unit |
 | ADS-025 | Given the gate of the reading campaign (ABC Smash), then it asks a language question instead of a sum: German a noun and its right article (e.g. "… Gabel" → der / die / das, answer die), English the right plural (one mouse → mice) with 4 answers; the maths campaign keeps the plus/minus task up to 20. | unit, e2e |

@@ -29,13 +29,18 @@ DOMAIN = b"buchstabenzoo-ads/1\n"
 FORMAT = "buchstabenzoo-ads/1"
 MAX_IMAGE_BYTES = 512 * 1024
 MAX_DIM = 2048
-MAX_TAGLINE = 80
+MAX_TAGLINE = 90
 # the campaigns the game knows (web/src/ads.ts KNOWN_CAMPAIGNS): id -> (slot, link host)
 KNOWN = {"mathfighter": (1, "mathfighter.rcms.ch"), "abcsmash": (2, "abcsmash.rcms.ch"),
          "edugamegalaxy": (3, "edugamegalaxy.rcms.ch"),
          # native app build only (boards-native/): the own App Store pages, id fixed (web/src/ads.ts KNOWN_CAMPAIGNS)
          "mathfighter-ios": (1, "apps.apple.com/app/id6760628828"), "abcsmash-ios": (2, "apps.apple.com/app/id6790508038"),
-         "mathfighter-ios-b": (3, "apps.apple.com/app/id6760628828")}
+         "mathfighter-ios-b": (3, "apps.apple.com/app/id6760628828"),
+         # Android native build only (boards-native-android/): the own Google Play pages
+         "mathfighter-android": (1, "play.google.com/store/apps/details?id=com.mathfighter.app"),
+         "abcsmash-android": (2, "play.google.com/store/apps/details?id=app.abcshooter.twa"),
+         # credit poster without any link (host None): web/src/ads.ts KNOWN_CAMPAIGNS `noLink`
+         "credit-android": (3, None)}
 IOS_HOSTS = ("apps.apple.com", "itunes.apple.com")
 IOS_PATH_RE = re.compile(r"^/(?:[a-z]{2}/)?app/(?:[a-z0-9-]{1,60}/)?id\d{6,12}$")
 PLAY_RE = re.compile(r"^https://play\.google\.com/store/apps/details\?id=[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)+$")
@@ -102,7 +107,10 @@ def main() -> None:
         if c["id"] not in KNOWN:
             sys.exit(f"campaign {c['id']!r} is not compiled into the game (web/src/ads.ts KNOWN_CAMPAIGNS)")
         slot, host = KNOWN[c["id"]]
-        if c["slot"] != slot or c.get("link") != f"https://{host}":
+        if host is None:
+            if c["slot"] != slot or "link" in c or "links" in c:
+                sys.exit(f"campaign {c['id']}: slot must be {slot} and it must have no link / links")
+        elif c["slot"] != slot or c.get("link") != f"https://{host}":
             sys.exit(f"campaign {c['id']}: slot/link must be {slot} / https://{host}")
         # optional store links per platform (GAME-ADS rule 16): the same rules as web/src/ads.ts checkStoreLink
         for plat, link in (c.get("links") or {}).items():

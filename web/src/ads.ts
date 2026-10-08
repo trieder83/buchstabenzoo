@@ -20,7 +20,7 @@ const DOMAIN = new TextEncoder().encode(`${AD_FORMAT}\n`);
 export const MAX_IMAGE_BYTES = 512 * 1024;
 export const MAX_DIM = 2048;
 export const MIN_DIM = 64;
-export const MAX_TAGLINE = 80;
+export const MAX_TAGLINE = 90;
 export const MAX_CAMPAIGNS = 3;
 /** Manifest + signature (2.7 KB): generous, because a phone on a weak mobile network needs seconds for the TLS handshake alone (ADS-039). */
 export const FETCH_TIMEOUT_MS = 10000;
@@ -32,7 +32,7 @@ export const VERSION_KEY = 'zoo.ads.version';
 const SCHEME = 'https:';
 
 /** The campaigns compiled into the game (Q-241): id → slot and the ONLY host its link may use. */
-export const KNOWN_CAMPAIGNS: Readonly<Record<string, { slot: number; host: string; path?: string }>> = {
+export const KNOWN_CAMPAIGNS: Readonly<Record<string, { slot: number; host: string; path?: string; query?: string; noLink?: true }>> = {
   mathfighter: { slot: 1, host: 'mathfighter.rcms.ch' },
   abcsmash: { slot: 2, host: 'abcsmash.rcms.ch' },
   edugamegalaxy: { slot: 3, host: 'edugamegalaxy.rcms.ch' },
@@ -40,6 +40,11 @@ export const KNOWN_CAMPAIGNS: Readonly<Record<string, { slot: number; host: stri
   'mathfighter-ios': { slot: 1, host: 'apps.apple.com', path: '/app/id6760628828' },
   'abcsmash-ios': { slot: 2, host: 'apps.apple.com', path: '/app/id6790508038' },
   'mathfighter-ios-b': { slot: 3, host: 'apps.apple.com', path: '/app/id6760628828' },
+  // Android native build only (boards-native-android/, PLAT-054): the developer's own Google Play pages, package fixed here
+  'mathfighter-android': { slot: 1, host: 'play.google.com', path: '/store/apps/details', query: 'id=com.mathfighter.app' },
+  'abcsmash-android': { slot: 2, host: 'play.google.com', path: '/store/apps/details', query: 'id=app.abcshooter.twa' },
+  // credit poster: NO link at all (no click, no gate); the manifest entry must not carry `link` / `links`
+  'credit-android': { slot: 3, host: '', noLink: true },
 };
 
 export type AdErrorCode =
@@ -81,7 +86,7 @@ export interface AdCampaign {
   id: string;
   slot: number;
   active: boolean;
-  /** Canonical link (scheme + allowlisted host + "/"), built by us, not copied from the manifest. */
+  /** '' for a link-less credit poster ({@link KNOWN_CAMPAIGNS} `noLink`). Canonical link (scheme + allowlisted host + "/"), built by us, not copied from the manifest. */
   link: string;
   /** Store links per platform (ADS rule 16); a missing entry falls back to {@link link}. */
   links: { ios?: string; android?: string };
@@ -220,13 +225,13 @@ export function checkLink(campaignId: string, link: unknown): string | null {
     u.username === '' &&
     u.password === '' &&
     u.port === '' &&
-    u.search === '' &&
+    (known.query ? u.search === `?${known.query}` : u.search === '') &&
     u.hash === '' &&
     (known.path ? u.pathname === known.path : u.pathname === '/' || u.pathname === '') &&
-    !link.includes('?') &&
+    (known.query ? link.indexOf('?') === link.lastIndexOf('?') : !link.includes('?')) &&
     !link.includes('#') &&
     !link.includes('@');
-  return ok ? `${SCHEME}//${known.host}${known.path ?? '/'}` : null;
+  return ok ? `${SCHEME}//${known.host}${known.path ?? '/'}${known.query ? `?${known.query}` : ''}` : null;
 }
 
 export const IOS_HOSTS: readonly string[] = ['apps.apple.com', 'itunes.apple.com'];
@@ -362,8 +367,9 @@ export function parseManifest(body: Uint8Array, nowMs: number, lastVersion: numb
       drop('campaign');
       continue;
     }
-    const link = checkLink(id, c.link);
-    if (!link) {
+    // a link-less credit poster must carry neither `link` nor `links`; every other campaign needs its exact link
+    const link = known.noLink ? (c.link === undefined && c.links === undefined ? '' : null) : checkLink(id, c.link);
+    if (link === null) {
       drop('link');
       continue;
     }

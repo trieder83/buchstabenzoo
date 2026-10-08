@@ -74,3 +74,13 @@ __pycache__/
 
 # App Store screenshots made by tools/store/make_appstore_screenshots.py (~100 MB)
 store/appstore/screenshots/
+
+# Android signing (never commit)
+*.jks
+*.keystore
+web/android/local.properties
+web/android/.gradle/
+web/android/app/build/
+web/android/build/
+web/android/capacitor-cordova-android-plugins/
+web/android/app/src/main/assets/public/

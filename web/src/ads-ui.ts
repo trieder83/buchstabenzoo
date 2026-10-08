@@ -303,7 +303,7 @@ export class AdsHost {
     return {
       app: 'letterzoo ads debug 1',
       platform: this.o.platform ? { platform: this.o.platform(), source: 'host option' } : currentPlatform(),
-      linkHosts: Object.fromEntries([...(this.content?.bySlot ?? [])].map(([slot, c]) => [c.id + '#' + slot, new URL(this.linkOf(c)).hostname])),
+      linkHosts: Object.fromEntries([...(this.content?.bySlot ?? [])].map(([slot, c]) => [c.id + '#' + slot, this.linkOf(c) ? new URL(this.linkOf(c)).hostname : ''])),
       verdict: adsTelemetry.blocked.length > 0 ? BLOCKED_VERDICT : 'no interference detected',
       blocked: adsTelemetry.blocked,
       views: adsTelemetry.views,
@@ -578,15 +578,18 @@ export class AdsHost {
     text.className = 'zb-text';
     body.append(close, img, text);
     if (this.app.reading_level() !== 'kiga') text.append(el('p', 'zb-tagline', campaign.tagline[lang]));
-    const link = el('button', 'zb-link');
-    link.type = 'button';
-    link.append(el('span', undefined, '🔗'), el('span', 'zb-link-text', new URL(this.linkOf(campaign)).hostname));
-    link.addEventListener('click', () => {
-      this.setCtx(campaign);
-      this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash');
-    });
-    link.setAttribute('aria-label', this.app.t('ad-link-open'));
-    text.append(link);
+    if (this.linkOf(campaign)) {
+      // a link-less credit poster has no link chip, no gate, no tap action
+      const link = el('button', 'zb-link');
+      link.type = 'button';
+      link.append(el('span', undefined, '🔗'), el('span', 'zb-link-text', new URL(this.linkOf(campaign)).hostname));
+      link.addEventListener('click', () => {
+        this.setCtx(campaign);
+        this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash');
+      });
+      link.setAttribute('aria-label', this.app.t('ad-link-open'));
+      text.append(link);
+    }
     this.panel.replaceChildren(body);
     this.panel.hidden = false;
     this.audit(this.panel, 'panel', () => this.rescuePanel());
@@ -638,6 +641,7 @@ export class AdsHost {
     const cur = this.current();
     if (!cur || this.rescue) return;
     const { board, campaign } = cur;
+    if (!this.linkOf(campaign)) return; // credit poster: nothing to open, no dialog
     const lang = this.app.language() === 'en' ? 'en' : 'de';
     const im = pickImage(campaign, lang, board.n);
     const imageUrl = URL.createObjectURL(new Blob([im.data as BlobPart], { type: im.mime }));
@@ -789,6 +793,7 @@ export class AdsHost {
         this.renderCarousel();
       } else if (Math.hypot(dx, dy) < 12) {
         car.go(car.index, now());
+        if (!this.linkOf(campaign)) return; // credit poster: no tap action
         this.setCtx(campaign);
         this.startGate(this.linkOf(campaign), campaign.id === 'abcsmash');
       }

@@ -1,0 +1,109 @@
+name: Android build
+
+# Builds the Letter Zoo Android App Bundle (Capacitor wrapper of the web build, VITE_NATIVE=1, VITE_NATIVE_PLATFORM=android)
+# on a GitHub-hosted Linux runner, signed with our UPLOAD key (Google Play App Signing holds the real key).
+# Manual start only. Specs: specs/40-tech/play-store.md (PLAY-*), guide: BUILD_ANDROID.md (first upload is manual in the Play Console).
+#
+# Required repository secrets (NAMES only; BUILD_ANDROID.md says how to create them):
+#   ANDROID_KEYSTORE_B64       base64 of letterzoo-upload.jks
+#   ANDROID_KEYSTORE_PASSWORD  store password (also used for the key)
+#   ANDROID_KEY_ALIAS          key alias (letterzoo)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: android-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Rust + wasm-pack
+        run: |
+          set -euo pipefail
+          rustup toolchain install stable --profile minimal
+          rustup target add wasm32-unknown-unknown
+          curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Resolve version
+        id: cfg
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./web/package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "### Letter Zoo $VERSION (${GITHUB_RUN_NUMBER}) Android" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build the web game (Android native variant) and sync the Capacitor project
+        working-directory: web
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build:native:android
+          npx cap sync android
+
+      - name: Decode the upload keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_B64:-}" ]; then
+            echo "::error::ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS secrets are missing - see BUILD_ANDROID.md."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/letterzoo-upload.jks"
+
+      - name: Build the signed App Bundle
+        working-directory: web/android
+        env:
+          LZ_KEYSTORE: ${{ runner.temp }}/letterzoo-upload.jks
+          LZ_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LZ_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LZ_VERSION_NAME: ${{ steps.cfg.outputs.version }}
+          LZ_VERSION_CODE: ${{ steps.cfg.outputs.build }}
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon bundleRelease
+          ls -lh app/build/outputs/bundle/release/
+
+      - name: Check the bundle (self-contained, Play links only, no ad id)
+        run: |
+          set -euo pipefail
+          AAB=$(ls web/android/app/build/outputs/bundle/release/*.aab | head -1)
+          unzip -Z1 "$AAB" | grep -q 'assets/public/index.html' || { echo "::error::game not bundled"; exit 1; }
+          unzip -Z1 "$AAB" | grep -q '\.wasm$' || { echo "::error::no .wasm in the app"; exit 1; }
+          BAD=$(grep -o '"link": *"[^"]*"' web/dist/boards/index.json | grep -v '"https://play.google.com/store/apps/details?id=' || true)
+          if [ -n "$BAD" ]; then echo "::error::non-Play link in the native manifest: $BAD"; exit 1; fi
+          if grep -rq 'googletagmanager.com/gtag' web/dist/index.html; then echo "::error::analytics script in index.html"; exit 1; fi
+          if grep -q 'AD_ID' web/android/app/build/intermediates/merged_manifests/release/*/AndroidManifest.xml 2>/dev/null; then echo "::error::AD_ID permission in the merged manifest"; exit 1; fi
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: LetterZoo-${{ steps.cfg.outputs.version }}-${{ steps.cfg.outputs.build }}
+          path: web/android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Clean up the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/letterzoo-upload.jks"

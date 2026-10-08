@@ -1,0 +1,63 @@
+{
+  "format": "buchstabenzoo-ads/1",
+  "version": 0,
+  "issued": "",
+  "valid_until": "",
+  "campaigns": [
+    {
+      "id": "mathfighter-android",
+      "slot": 1,
+      "active": true,
+      "link": "https://play.google.com/store/apps/details?id=com.mathfighter.app",
+      "tagline": {
+        "de": "Lerne Mathe in einem lustigen Turnier",
+        "en": "Learn math in a fun tournament"
+      },
+      "images": [
+        {
+          "lang": "*",
+          "path": "img/c1-a.webp"
+        }
+      ]
+    },
+    {
+      "id": "abcsmash-android",
+      "slot": 2,
+      "active": true,
+      "link": "https://play.google.com/store/apps/details?id=app.abcshooter.twa",
+      "tagline": {
+        "de": "Lesen lernen – flüssig und schnell",
+        "en": "Learn to read – fluent and fast"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/c2-de.webp"
+        },
+        {
+          "lang": "en",
+          "path": "img/c2-en.webp"
+        }
+      ]
+    },
+    {
+      "id": "credit-android",
+      "slot": 3,
+      "active": true,
+      "tagline": {
+        "de": "Buchstabenzoo basiert auf den Ideen von Elena Rieder, entwickelt von Thomas Rieder",
+        "en": "Letter Zoo is based on the ideas of Elena Rieder, engineered by Thomas Rieder"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/credit-de.webp"
+        },
+        {
+          "lang": "en",
+          "path": "img/credit-en.webp"
+        }
+      ]
+    }
+  ]
+}

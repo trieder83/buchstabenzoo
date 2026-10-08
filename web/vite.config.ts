@@ -66,6 +66,18 @@ export function listAds(root = adsRoot): string[] {
   return out;
 }
 
+/**
+ * The signed poster manifest dir of the native app build, or null for the web build (PLAT-057). `VITE_NATIVE_PLATFORM`
+ * is `ios` (default, `boards-native/`) or `android` (`boards-native-android/`); each bundle carries ONLY its own manifest.
+ */
+export function nativeBoardsDir(env: Record<string, string | undefined> = process.env): string | null {
+  if (env.VITE_NATIVE !== '1') return null;
+  const platform = env.VITE_NATIVE_PLATFORM ?? 'ios';
+  if (platform === 'ios') return path.join(repoRoot, 'boards-native');
+  if (platform === 'android') return path.join(repoRoot, 'boards-native-android');
+  throw new Error(`VITE_NATIVE_PLATFORM must be ios or android, got ${platform}`);
+}
+
 function zooAssets(): Plugin {
   const middleware: Connect.NextHandleFunction = (req, res, next) => {
     const url = decodeURIComponent((req.url ?? '').split('?')[0]);
@@ -121,7 +133,7 @@ function zooAssets(): Plugin {
       // the native app build (VITE_NATIVE=1, PLAT-036/038) carries NOT the web campaigns but its own signed
       // manifest `boards-native/` (links only to the developer's App Store pages), emitted under the same `boards/` path
       const native = process.env.VITE_NATIVE === '1';
-      const root = native ? path.join(repoRoot, 'boards-native') : adsRoot;
+      const root = nativeBoardsDir() ?? adsRoot;
       for (const rel of native && !fs.existsSync(root) ? [] : listAds(root)) {
         this.emitFile({ type: 'asset', fileName: `boards/${rel}`, source: fs.readFileSync(path.join(root, rel)) });
       }

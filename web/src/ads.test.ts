@@ -400,7 +400,7 @@ describe('links (ADS-015)', () => {
     ];
     for (const [id, l] of bad) expect(ok(id, l), l).toBeNull();
     expect(checkLink('mathfighter', 42)).toBeNull();
-    expect(Object.values(KNOWN_CAMPAIGNS).map((k) => k.host)).toEqual(['mathfighter.rcms.ch', 'abcsmash.rcms.ch', 'edugamegalaxy.rcms.ch', 'apps.apple.com', 'apps.apple.com', 'apps.apple.com']); // + the native-build App Store campaigns (PLAT-038)
+    expect(Object.values(KNOWN_CAMPAIGNS).map((k) => k.host)).toEqual(['mathfighter.rcms.ch', 'abcsmash.rcms.ch', 'edugamegalaxy.rcms.ch', 'apps.apple.com', 'apps.apple.com', 'apps.apple.com', 'play.google.com', 'play.google.com', '']); // + the native-build App Store campaigns (PLAT-038) + Google Play (PLAT-054)
   });
 
   it('ADS-015 a manifest with a bad link drops that campaign', () => {
@@ -417,10 +417,10 @@ describe('links (ADS-015)', () => {
 describe('text (ADS-016)', () => {
   it('ADS-016 plain taglines pass, markup / control characters / long text do not', () => {
     expect(checkTagline('Lesen lernen – flüssig und schnell')).toBe('Lesen lernen – flüssig und schnell');
-    for (const bad of ['<img src=x onerror=alert(1)>', 'a <b>b</b>', 'x & y', 'a\nb', 'a\u0000b', 'say "hi"', 'x'.repeat(81), '', '   ']) {
+    for (const bad of ['<img src=x onerror=alert(1)>', 'a <b>b</b>', 'x & y', 'a\nb', 'a\u0000b', 'say "hi"', 'x'.repeat(91), '', '   ']) {
       expect(checkTagline(bad), JSON.stringify(bad)).toBeNull();
     }
-    expect(checkTagline('x'.repeat(80))).not.toBeNull();
+    expect(checkTagline('x'.repeat(90))).not.toBeNull();
     expect(checkTagline(5)).toBeNull();
   });
 

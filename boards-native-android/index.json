@@ -1,0 +1,88 @@
+{
+  "format": "buchstabenzoo-ads/1",
+  "version": 1,
+  "issued": "2026-10-08T19:56:33Z",
+  "valid_until": "2027-10-08T19:56:33Z",
+  "campaigns": [
+    {
+      "id": "mathfighter-android",
+      "slot": 1,
+      "active": true,
+      "link": "https://play.google.com/store/apps/details?id=com.mathfighter.app",
+      "tagline": {
+        "de": "Lerne Mathe in einem lustigen Turnier",
+        "en": "Learn math in a fun tournament"
+      },
+      "images": [
+        {
+          "lang": "*",
+          "path": "img/c1-a.webp",
+          "mime": "image/webp",
+          "bytes": 78740,
+          "width": 1024,
+          "height": 578,
+          "sha256": "4f9e2e63fefc3f7da0858c06355d2dc3d2bc67f8603ec05722417c06a80243e4"
+        }
+      ]
+    },
+    {
+      "id": "abcsmash-android",
+      "slot": 2,
+      "active": true,
+      "link": "https://play.google.com/store/apps/details?id=app.abcshooter.twa",
+      "tagline": {
+        "de": "Lesen lernen – flüssig und schnell",
+        "en": "Learn to read – fluent and fast"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/c2-de.webp",
+          "mime": "image/webp",
+          "bytes": 44614,
+          "width": 1024,
+          "height": 500,
+          "sha256": "1a79f9368f9d546ddfd84af479702edf23177de14aa7b779fa8a532455104029"
+        },
+        {
+          "lang": "en",
+          "path": "img/c2-en.webp",
+          "mime": "image/webp",
+          "bytes": 44708,
+          "width": 1024,
+          "height": 500,
+          "sha256": "638caab3e9120795c8a1edf69cbe44e70d05ef5e58c80f6201f8836f6a2171f0"
+        }
+      ]
+    },
+    {
+      "id": "credit-android",
+      "slot": 3,
+      "active": true,
+      "tagline": {
+        "de": "Buchstabenzoo basiert auf den Ideen von Elena Rieder, entwickelt von Thomas Rieder",
+        "en": "Letter Zoo is based on the ideas of Elena Rieder, engineered by Thomas Rieder"
+      },
+      "images": [
+        {
+          "lang": "de",
+          "path": "img/credit-de.webp",
+          "mime": "image/webp",
+          "bytes": 29918,
+          "width": 1024,
+          "height": 500,
+          "sha256": "d438bf0fc4a7ea25428b4b320ab36f31786808982157dd49df7a92c88d598191"
+        },
+        {
+          "lang": "en",
+          "path": "img/credit-en.webp",
+          "mime": "image/webp",
+          "bytes": 25780,
+          "width": 1024,
+          "height": 500,
+          "sha256": "8fe68f77cf8e3f779959bf76f30928ceeee8a426a9b20140a35c42498d32eea9"
+        }
+      ]
+    }
+  ]
+}

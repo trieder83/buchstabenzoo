@@ -8,8 +8,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // CI passes the release version (web/package.json) and the run number; local builds fall back to 1 / 0.1.0
-        versionCode (System.getenv("LZ_VERSION_CODE") ?: "1").toInteger()
-        versionName System.getenv("LZ_VERSION_NAME") ?: "0.1.0"
+        versionCode = (System.getenv("LZ_VERSION_CODE") ?: "1").toInteger()
+        versionName = System.getenv("LZ_VERSION_NAME") ?: "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -21,16 +21,16 @@ android {
         release {
             // upload key from the CI secrets (BUILD_ANDROID.md); without LZ_KEYSTORE the release bundle is unsigned
             if (System.getenv("LZ_KEYSTORE")) {
-                storeFile file(System.getenv("LZ_KEYSTORE"))
-                storePassword System.getenv("LZ_KEYSTORE_PASSWORD")
-                keyAlias System.getenv("LZ_KEY_ALIAS")
-                keyPassword System.getenv("LZ_KEYSTORE_PASSWORD")
+                storeFile = file(System.getenv("LZ_KEYSTORE"))
+                storePassword = System.getenv("LZ_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("LZ_KEY_ALIAS")
+                keyPassword = System.getenv("LZ_KEYSTORE_PASSWORD")
             }
         }
     }
     buildTypes {
         release {
-            signingConfig System.getenv("LZ_KEYSTORE") ? signingConfigs.release : null
+            if (System.getenv("LZ_KEYSTORE")) { signingConfig = signingConfigs.release }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
